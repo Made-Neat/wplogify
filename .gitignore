@@ -49,3 +49,6 @@ wp-config.php
 
 # Omit certain local folders
 original-code
+
+# Jetbrains files
+.idea

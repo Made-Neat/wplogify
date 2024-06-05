@@ -5,11 +5,15 @@
 - Docker
 - Docker Compose
 
+Ensure Docker is running before starting the setup.
+
+Adjust any other configuration settings in docker-compose.yml as needed for your environment.
+
 ## Steps
 
 1. **Update Hosts File**
 
-   Add this line to your `/etc/hosts` file to map `wplogify.localhost` to `127.0.0.1`:
+Add this line to your `/etc/hosts` file to map `wplogify.localhost` to `127.0.0.1`:
 
 ```
 127.0.0.1   wplogify.localhost
@@ -28,15 +32,11 @@ services:
 
 3. **Build the Containers**
 
-   Build the Docker containers:
-
 ```
 docker-compose build
 ```
 
 4. **Start the Containers**
-
-   Start the Docker containers:
 
 ```
 docker-compose -p madeneat-wplogify up -d
@@ -44,21 +44,34 @@ docker-compose -p madeneat-wplogify up -d
 
 5. **Install WordPress**
 
-   Open your browser and go to http://wplogify.localhost to complete the WordPress installation.
+Open your browser and go to http://wplogify.localhost to complete the WordPress installation.
 
 
 6. **Copy Plugin Code**
 
-   Copy your plugin code to the wp-content/plugins/wp-logify directory:
+Copy your plugin code to the wp-content/plugins/wp-logify directory:
 
 ```
 cp -r /path/to/your/plugin wp-content/plugins/wp-logify
 ```
 
-   Replace /path/to/your/plugin with the actual path to your plugin code.
+Replace /path/to/your/plugin with the actual path to your plugin code.
 
-## Notes
+# How to access the database from a SQL client
 
-Ensure that Docker is running before starting the setup.
+Driver: `MySQL`
 
-Adjust any other configuration settings in docker-compose.yml as needed for your environment.
+Connect by: `Host`
+
+Server host: `localhost` (or `127.0.0.1`)
+
+Port: `3307`
+As specified in docker-compose.yml, docker will port forward from `3307` on local to `3306` on the container.
+
+**Make sure these match the settings in docker-compose.yml**
+
+Database: `wplogifydev`
+
+Username: `wplogifyuser`
+
+Password: `freedom`
