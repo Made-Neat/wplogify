@@ -1,17 +1,17 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     console.log('Admin.js loaded'); // Debug: Check if the script is loaded
 
-    var table = $('#wp-logify-activity-log').DataTable({
+    let table = $('#wp-logify-activity-log').DataTable({
         "processing": true,
         "serverSide": true,
         "ajax": {
-            "url": ajaxurl,
+            "url": wpLogifyAdmin.ajaxurl,
             "type": "POST",
-            "data": function(d) {
+            "data": function (d) {
                 d.action = 'wp_logify_fetch_logs';
                 console.log('Sending AJAX request with data:', d); // Debug: Check data sent with the request
             },
-            "error": function(xhr, error, code) {
+            "error": function (xhr, error, code) {
                 console.log('AJAX error:', error); // Debug: Log any AJAX errors
             }
         },
@@ -32,7 +32,7 @@ jQuery(document).ready(function($) {
     });
 
     // Custom search box
-    $('#wp-logify-search-box').on('keyup', function() {
+    $('#wp-logify-search-box').on('keyup', function () {
         table.search(this.value).draw();
     });
 });

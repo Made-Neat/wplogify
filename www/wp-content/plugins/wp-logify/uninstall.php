@@ -12,4 +12,3 @@ $wpdb->query("DROP TABLE IF EXISTS $table_name");
 // Delete the plugin options
 delete_option('wp_logify_api_key');
 delete_option('wp_logify_delete_on_uninstall');
-?>
