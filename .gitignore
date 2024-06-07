@@ -55,3 +55,6 @@ original-code
 
 # Node modules
 node_modules
+
+# Zip files
+*.zip
