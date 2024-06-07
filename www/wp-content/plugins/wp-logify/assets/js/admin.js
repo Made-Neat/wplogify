@@ -1,17 +1,20 @@
-jQuery(document).ready(function ($) {
+jQuery(($) => {
     console.log('Admin.js loaded'); // Debug: Check if the script is loaded
 
     let table = $('#wp-logify-activity-log').DataTable({
         "processing": true,
+        "language": {
+            processing: 'Please wait...'
+        },
         "serverSide": true,
         "ajax": {
             "url": wpLogifyAdmin.ajaxurl,
             "type": "POST",
-            "data": function (d) {
+            "data": (d) => {
                 d.action = 'wp_logify_fetch_logs';
                 console.log('Sending AJAX request with data:', d); // Debug: Check data sent with the request
             },
-            "error": function (xhr, error, code) {
+            "error": (xhr, error, code) => {
                 console.log('AJAX error:', error); // Debug: Log any AJAX errors
             }
         },

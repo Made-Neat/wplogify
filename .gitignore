@@ -52,3 +52,6 @@ original-code
 
 # Jetbrains files
 .idea
+
+# Node modules
+node_modules

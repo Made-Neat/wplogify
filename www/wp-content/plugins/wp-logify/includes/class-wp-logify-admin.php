@@ -192,11 +192,29 @@ class WP_Logify_Admin {
 		);
 		register_setting(
 			'wp_logify_settings_group',
-			'wp_logify_keep_days',
+			'wp_logify_keep_period_limited',
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'default'           => false,
+			)
+		);
+		register_setting(
+			'wp_logify_settings_group',
+			'wp_logify_keep_period_quantity',
 			array(
 				'type'              => 'integer',
 				'sanitize_callback' => 'absint',
-				'default'           => 30,
+				'default'           => 1,
+			)
+		);
+		register_setting(
+			'wp_logify_settings_group',
+			'wp_logify_keep_period_units',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => 'month',
 			)
 		);
 		register_setting(
@@ -308,7 +326,7 @@ class WP_Logify_Admin {
 			return;
 		}
 
-		wp_add_dashboard_widget( 'wp_logify_dashboard_widget', 'WP Logify - Recent Site Activities', array( __CLASS__, 'display_dashboard_widget' ) );
+		wp_add_dashboard_widget( 'wp_logify_dashboard_widget', 'WP Logify - Recent Site Activity', array( __CLASS__, 'display_dashboard_widget' ) );
 	}
 
 	/**
@@ -319,24 +337,81 @@ class WP_Logify_Admin {
 	}
 
 	/**
+	 * Converts a filename to a handle for WP Logify plugin.
+	 *
+	 * This function takes a filename and converts it into a handle by replacing dots with dashes and converting it to lowercase.
+	 * The resulting handle is prefixed with 'wp-logify-'.
+	 *
+	 * @param string $filename The filename to convert.
+	 * @return string The handle for the WP Logify plugin.
+	 */
+	private static function filename_to_handle( $filename ) {
+		return 'wp-logify-' . strtolower( str_replace( '.', '-', pathinfo( $filename, PATHINFO_FILENAME ) ) );
+	}
+
+	/**
+	 * Enqueues a stylesheet for the WP Logify plugin.
+	 *
+	 * @param string           $src    The source file path of the stylesheet.
+	 * @param array            $deps   Optional. An array of dependencies for the stylesheet. Default is an empty array.
+	 * @param string|bool|null $ver    Optional. The version number of the stylesheet.
+	 *      If set to false (default), the WordPress version number will be used.
+	 *      If set to 'auto', it will use the last modified time of the source file as the version.
+	 *      If set to null, no version number will be added.
+	 * @param string           $media  Optional. The media type for which the stylesheet is defined. Default is 'all'.
+	 */
+	public static function enqueue_style( $src, $deps = array(), $ver = false, $media = 'all' ) {
+		$handle = self::filename_to_handle( $src );
+		$src    = plugin_dir_url( __FILE__ ) . '../assets/css/' . $src;
+		echo $src;
+		$ver = $ver == 'auto' ? filemtime( $src ) : $ver;
+		wp_enqueue_style( $handle, $src, $deps, $ver, $media );
+	}
+
+	/**
+	 * Enqueues a script in WordPress.
+	 *
+	 * @param string           $src The source file path of the script.
+	 * @param array            $deps Optional. An array of script handles that this script depends on.
+	 * @param string|bool|null $ver Optional. The version number of the script.
+	 *      If set to false (default), the WordPress version number will be used.
+	 *      If set to 'auto', it will use the last modified time of the source file as the version.
+	 *      If set to null, no version number will be added.
+	 * @param array|bool       $args Optional. Additional arguments for the script.
+	 * @return void
+	 */
+	public static function enqueue_script( $src, $deps = array(), $ver = false, $args = array() ) {
+		$handle = self::filename_to_handle( $src );
+		$src    = plugin_dir_url( __FILE__ ) . '../assets/js/' . $src;
+		$ver    = $ver == 'auto' ? filemtime( $src ) : $ver;
+		wp_enqueue_script( $handle, $src, $deps, $ver, $args );
+	}
+
+	/**
 	 * Enqueues the necessary assets for the WP Logify admin pages.
 	 *
 	 * @param string $hook The current admin page hook.
 	 * @return void
 	 */
 	public static function enqueue_assets( $hook ) {
-		if ( $hook != 'toplevel_page_wp-logify' && $hook != 'wp-logify_page_wp-logify-settings' ) {
+		$valid_hooks = array( 'toplevel_page_wp-logify', 'wp-logify_page_wp-logify-settings', 'index.php' );
+		if ( ! in_array( $hook, $valid_hooks ) ) {
 			return;
 		}
-		wp_enqueue_style( 'wp-logify-admin-css', plugin_dir_url( __FILE__ ) . '../assets/css/admin.css' );
-		wp_enqueue_script( 'wp-logify-admin-js', plugin_dir_url( __FILE__ ) . '../assets/js/admin.js', array( 'jquery' ), null, true );
 
-		// Enqueue DataTables CSS and JS from local files.
-		wp_enqueue_style( 'datatables-css', plugin_dir_url( __FILE__ ) . '../assets/css/jquery.dataTables.min.css' );
-		wp_enqueue_script( 'datatables-js', plugin_dir_url( __FILE__ ) . '../assets/js/jquery.dataTables.min.js', array( 'jquery' ), null, true );
+		// Enqueue styles.
+		self::enqueue_style( 'admin.css', array(), 'auto' );
+		self::enqueue_style( 'log.css', array(), 'auto' );
 
-		// Localize script to provide ajaxurl.
-		wp_localize_script( 'wp-logify-admin-js', 'wpLogifyAdmin', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+		// Enqueue scripts.
+		self::enqueue_script( 'admin.js', array( 'jquery' ), 'auto', true );
+		// The handle here must match the handle of the JS script to attach to.
+		// So we must remember that the self::enqueue_script() method prepends 'wp-logify-' to the handle.
+		wp_localize_script( 'wp-logify-admin', 'wpLogifyAdmin', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+
+		// Enqueue DataTables assets.
+		self::enqueue_style( 'jquery.dataTables.min.css' );
+		self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
 	}
 
 	/**

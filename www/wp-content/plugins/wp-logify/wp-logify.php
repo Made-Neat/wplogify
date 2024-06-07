@@ -61,8 +61,12 @@ function wp_logify_uninstall() {
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wp_logify_action_links' );
 
 function wp_logify_action_links( $links ) {
-	$view_log_link = '<a href="' . admin_url( 'admin.php?page=wp-logify' ) . '">' . __( 'View Log', 'wp-logify' ) . '</a>';
+	$settings_link = '<a href="' . admin_url( 'admin.php?page=wp-logify-settings' ) . '">' . __( 'Settings', 'wp-logify' ) . '</a>';
+	array_unshift( $links, $settings_link );
+
+	$view_log_link = '<a href="' . admin_url( 'admin.php?page=wp-logify' ) . '">' . __( 'View log', 'wp-logify' ) . '</a>';
 	array_unshift( $links, $view_log_link );
+
 	return $links;
 }
 
