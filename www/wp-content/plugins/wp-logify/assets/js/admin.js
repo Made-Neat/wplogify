@@ -15,7 +15,8 @@ jQuery(($) => {
                 console.log('Sending AJAX request with data:', d); // Debug: Check data sent with the request
             },
             "error": (xhr, error, code) => {
-                console.log('AJAX error:', error); // Debug: Log any AJAX errors
+                console.log('AJAX error:', error);
+                console.log('AJAX error code:', code);
             }
         },
         "columns": [

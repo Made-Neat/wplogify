@@ -55,24 +55,16 @@ class WP_Logify_Admin {
 		$order_by     = $columns[ $_POST['order'][0]['column'] ] ?? 'date_time';
 		$order        = isset( $_POST['order'][0]['dir'] ) && in_array( $_POST['order'][0]['dir'], array( 'asc', 'desc' ) ) ? $_POST['order'][0]['dir'] : 'desc';
 		$search_value = $_POST['search']['value'] ?? '';
-		// $search_value_like = '%' . $wpdb->esc_like($search_value) . '%';
-
-		echo "search value = $search_value\n";
-		echo 'escaped search value = ' . $wpdb->esc_like( $search_value ) . "\n";
 
 		// Get the log records from the database.
 		$sql = "SELECT * FROM $table_name";
 
-		echo $sql . "\n";
-
 		// Filter by the search value, if provided.
 		if ( ! empty( $search_value ) ) {
 			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
-
-			echo "$like_value\n";
-
-			$sql .= $wpdb->prepare(
-				' WHERE id LIKE %s OR date_time LIKE %s OR user_id LIKE %s OR user_role LIKE %s OR source_ip LIKE %s OR event LIKE %s OR object LIKE %s OR editor LIKE %s',
+			$sql       .= ' WHERE id LIKE %s OR date_time LIKE %s OR user_id LIKE %s OR user_role LIKE %s
+			OR source_ip LIKE %s OR event LIKE %s OR object LIKE %s OR details LIKE %s';
+			$args       = array(
 				$like_value,
 				$like_value,
 				$like_value,
@@ -80,17 +72,19 @@ class WP_Logify_Admin {
 				$like_value,
 				$like_value,
 				$like_value,
-				$like_value
+				$like_value,
 			);
+		} else {
+			$args = array();
 		}
 
-		echo $sql . "\n";
-
 		// Add the order by parameters.
-		$sql .= " ORDER BY $order_by $order LIMIT %d OFFSET %d";
-		$sql  = $wpdb->prepare( $sql, $limit, $offset );
+		$sql   .= " ORDER BY $order_by $order LIMIT %d OFFSET %d";
+		$args[] = $limit;
+		$args[] = $offset;
 
-		echo $sql . "\n";
+		// Prepare the statement.
+		$sql = $wpdb->prepare( $sql, $args );
 
 		// Get the requested records.
 		$results = $wpdb->get_results( $sql, ARRAY_A );
@@ -102,19 +96,30 @@ class WP_Logify_Admin {
 		if ( empty( $search_value ) ) {
 			$filtered_records = $total_records;
 		} else {
-			$filtered_sql     = "SELECT COUNT(*) FROM $table_name WHERE id LIKE %s OR date_time LIKE %s OR user_id LIKE %s OR user_role LIKE %s OR source_ip LIKE %s OR event LIKE %s OR object LIKE %s OR editor LIKE %s";
-			$filtered_sql     = $wpdb->prepare(
+			$search_value_like = '%' . $wpdb->esc_like( $search_value ) . '%';
+			$filtered_sql      = "
+                SELECT COUNT(*)
+                FROM $table_name 
+                WHERE id LIKE %s
+                    OR date_time LIKE %s
+                    OR user_id LIKE %s
+                    OR user_role LIKE %s
+                    OR source_ip LIKE %s
+                    OR event LIKE %s
+                    OR object LIKE %s
+                    OR details LIKE %s";
+			$filtered_sql      = $wpdb->prepare(
 				$filtered_sql,
-				'%' . $wpdb->esc_like( $search_value ) . '%',
-				'%' . $wpdb->esc_like( $search_value ) . '%',
-				'%' . $wpdb->esc_like( $search_value ) . '%',
-				'%' . $wpdb->esc_like( $search_value ) . '%',
-				'%' . $wpdb->esc_like( $search_value ) . '%',
-				'%' . $wpdb->esc_like( $search_value ) . '%',
-				'%' . $wpdb->esc_like( $search_value ) . '%',
-				'%' . $wpdb->esc_like( $search_value ) . '%'
+				$search_value_like,
+				$search_value_like,
+				$search_value_like,
+				$search_value_like,
+				$search_value_like,
+				$search_value_like,
+				$search_value_like,
+				$search_value_like
 			);
-			$filtered_records = $wpdb->get_var( $filtered_sql );
+			$filtered_records  = $wpdb->get_var( $filtered_sql );
 		}
 
 		$data = array();
@@ -360,12 +365,12 @@ class WP_Logify_Admin {
 	 *      If set to null, no version number will be added.
 	 * @param string           $media  Optional. The media type for which the stylesheet is defined. Default is 'all'.
 	 */
-	public static function enqueue_style( $src, $deps = array(), $ver = false, $media = 'all' ) {
-		$handle = self::filename_to_handle( $src );
-		$src    = plugin_dir_url( __FILE__ ) . '../assets/css/' . $src;
-		echo $src;
-		$ver = $ver == 'auto' ? filemtime( $src ) : $ver;
-		wp_enqueue_style( $handle, $src, $deps, $ver, $media );
+	public static function enqueue_style( $src, $deps = array(), $ver = 'auto', $media = 'all' ) {
+		$handle   = self::filename_to_handle( $src );
+		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/css/' . $src;
+		$src_path = plugin_dir_path( __FILE__ ) . '../assets/css/' . $src;
+		$ver      = $ver == 'auto' ? filemtime( $src_path ) : $ver;
+		wp_enqueue_style( $handle, $src_url, $deps, $ver, $media );
 	}
 
 	/**
@@ -380,11 +385,12 @@ class WP_Logify_Admin {
 	 * @param array|bool       $args Optional. Additional arguments for the script.
 	 * @return void
 	 */
-	public static function enqueue_script( $src, $deps = array(), $ver = false, $args = array() ) {
-		$handle = self::filename_to_handle( $src );
-		$src    = plugin_dir_url( __FILE__ ) . '../assets/js/' . $src;
-		$ver    = $ver == 'auto' ? filemtime( $src ) : $ver;
-		wp_enqueue_script( $handle, $src, $deps, $ver, $args );
+	public static function enqueue_script( $src, $deps = array(), $ver = 'auto', $args = array() ) {
+		$handle   = self::filename_to_handle( $src );
+		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/js/' . $src;
+		$src_path = plugin_dir_path( __FILE__ ) . '../assets/js/' . $src;
+		$ver      = $ver == 'auto' ? filemtime( $src_path ) : $ver;
+		wp_enqueue_script( $handle, $src_url, $deps, $ver, $args );
 	}
 
 	/**
@@ -400,8 +406,8 @@ class WP_Logify_Admin {
 		}
 
 		// Enqueue styles.
-		self::enqueue_style( 'admin.css', array(), 'auto' );
-		self::enqueue_style( 'log.css', array(), 'auto' );
+		self::enqueue_style( 'admin.css', array() );
+		self::enqueue_style( 'log.css', array() );
 
 		// Enqueue scripts.
 		self::enqueue_script( 'admin.js', array( 'jquery' ), 'auto', true );
@@ -410,7 +416,7 @@ class WP_Logify_Admin {
 		wp_localize_script( 'wp-logify-admin', 'wpLogifyAdmin', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 
 		// Enqueue DataTables assets.
-		self::enqueue_style( 'jquery.dataTables.min.css' );
+		self::enqueue_style( 'jquery.dataTables.min.css', array(), null );
 		self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
 	}
 
