@@ -369,7 +369,7 @@ class WP_Logify_Admin {
 		$handle   = self::filename_to_handle( $src );
 		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/css/' . $src;
 		$src_path = plugin_dir_path( __FILE__ ) . '../assets/css/' . $src;
-		$ver      = $ver == 'auto' ? filemtime( $src_path ) : $ver;
+		$ver      = 'auto' === $ver ? filemtime( $src_path ) : $ver;
 		wp_enqueue_style( $handle, $src_url, $deps, $ver, $media );
 	}
 
@@ -389,7 +389,7 @@ class WP_Logify_Admin {
 		$handle   = self::filename_to_handle( $src );
 		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/js/' . $src;
 		$src_path = plugin_dir_path( __FILE__ ) . '../assets/js/' . $src;
-		$ver      = $ver == 'auto' ? filemtime( $src_path ) : $ver;
+		$ver      = 'auto' === $ver ? filemtime( $src_path ) : $ver;
 		wp_enqueue_script( $handle, $src_url, $deps, $ver, $args );
 	}
 
@@ -405,19 +405,34 @@ class WP_Logify_Admin {
 			return;
 		}
 
-		// Enqueue styles.
+		// Common styles.
 		self::enqueue_style( 'admin.css', array() );
-		self::enqueue_style( 'log.css', array() );
 
-		// Enqueue scripts.
-		self::enqueue_script( 'admin.js', array( 'jquery' ), 'auto', true );
-		// The handle here must match the handle of the JS script to attach to.
-		// So we must remember that the self::enqueue_script() method prepends 'wp-logify-' to the handle.
-		wp_localize_script( 'wp-logify-admin', 'wpLogifyAdmin', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+		// Dashboard widget.
+		if ( $hook === 'index.php' ) {
+			self::enqueue_style( 'dashboard-widget.css', array() );
+		}
 
-		// Enqueue DataTables assets.
-		self::enqueue_style( 'jquery.dataTables.min.css', array(), null );
-		self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
+		// Settings.
+		if ( $hook === 'wp-logify_page_wp-logify-settings' ) {
+			// self::enqueue_style( 'settings.css', array() );
+		}
+
+		// Main activity log styles.
+		if ( $hook === 'toplevel_page_wp-logify' ) {
+			// Styles.
+			self::enqueue_style( 'log.css', array() );
+
+			// Scripts.
+			self::enqueue_script( 'admin.js', array( 'jquery' ), 'auto', true );
+			// The handle here must match the handle of the JS script to attach to.
+			// So we must remember that the self::enqueue_script() method prepends 'wp-logify-' to the handle.
+			wp_localize_script( 'wp-logify-admin', 'wpLogifyAdmin', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+
+			// Enqueue DataTables assets.
+			self::enqueue_style( 'jquery.dataTables.min.css', array(), null );
+			self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
+		}
 	}
 
 	/**
@@ -426,7 +441,7 @@ class WP_Logify_Admin {
 	 * @param string $datetime The datetime string to format.
 	 * @return string The formatted datetime string.
 	 */
-	private static function format_datetime( $datetime ) {
+	public static function format_datetime( $datetime ) {
 		$timestamp   = strtotime( $datetime );
 		$timezone    = wp_timezone();
 		$wp_datetime = new DateTime( 'now', $timezone );
@@ -442,7 +457,7 @@ class WP_Logify_Admin {
 	 * @param int $user_id The ID of the user.
 	 * @return string The username if found, otherwise 'Unknown'.
 	 */
-	private static function get_username( $user_id ) {
+	public static function get_username( $user_id ) {
 		$user = get_userdata( $user_id );
 		return $user ? $user->display_name : 'Unknown';
 	}

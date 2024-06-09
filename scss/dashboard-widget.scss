@@ -1,0 +1,62 @@
+$light-grey: #dcdcde;
+$lighter-grey: #f6f7f7;
+
+.wp-logify-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.wp-logify-stats-box {
+    flex: 1;
+    box-sizing: border-box;
+    padding: 10px;
+    text-align: center;
+    border: solid 1px $light-grey;
+    background-color: $lighter-grey;
+}
+
+.wp-logify-stats-number {
+    font-size: 4rem;
+    margin: 0;
+}
+
+.wp-logify-stats-title {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.wp-logify-widget-links {
+    margin: 0;
+    padding-bottom: 4px;
+
+    li {
+        display: inline;
+    }
+
+    .wp-logify-separator {
+        color: $light-grey;
+        padding: 0 8px;
+    }
+}
+
+.wp-logify-activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: solid 1px grey;
+    margin: 1rem 0;
+
+    th,
+    td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    th {
+        background-color: #f4f4f4;
+        text-align: left;
+    }
+
+    .wp-logify-user-info {
+        margin-left: 0;
+    }
+}
