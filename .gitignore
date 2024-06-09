@@ -47,18 +47,19 @@ wp-config.php
 # uncomment the next line
 #/wp-content/themes
 
-# Omit certain local folders
-original-code/
-
 # Jetbrains files
 .idea/
 
-# Node modules
+# Node.js modules
 node_modules/
 
 # Zip files
 zip/
 *.zip
 
-# WordPress site.
+# Local WordPress site.
 www/
+
+# OS-generated files.
+.DS_Store
+Thumbs.db
