@@ -48,17 +48,17 @@ wp-config.php
 #/wp-content/themes
 
 # Omit certain local folders
-original-code
+original-code/
 
 # Jetbrains files
-.idea
+.idea/
 
 # Node modules
-node_modules
+node_modules/
 
 # Zip files
-zip
+zip/
 *.zip
 
 # WordPress site.
-www
+www/
