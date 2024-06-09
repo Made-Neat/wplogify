@@ -57,4 +57,8 @@ original-code
 node_modules
 
 # Zip files
+zip
 *.zip
+
+# WordPress site.
+www

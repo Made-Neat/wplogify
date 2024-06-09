@@ -1,0 +1,20 @@
+#wp-logify-activity-log_length {
+  margin-bottom: 1rem;
+}
+
+#wp-logify-activity-log_processing {
+  margin-top: -8px;
+  background: repeating-linear-gradient(45deg, hsl(200, 66%, 95%), hsl(200, 66%, 95%) 1rem, #ffffff 1rem, #ffffff 2rem);
+  background-size: 200% 200%;
+  animation: slide 60s linear infinite;
+  border: solid 1px hsl(200, 66%, 85%);
+}
+
+@keyframes slide {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0%;
+  }
+}
