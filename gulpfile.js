@@ -13,11 +13,6 @@ console.log('cssPath:', cssPath);
 console.log('pluginSourcePath:', pluginSourcePath);
 console.log('pluginDestPath:', pluginDestPath);
 
-gulp.task('clean-css', function () {
-    return gulp.src(cssPath, { read: false, allowEmpty: true })
-        .pipe(clean());
-});
-
 gulp.task('sass', function () {
     return gulp.src(scssPath)
         .pipe(sass().on('error', sass.logError))
@@ -35,8 +30,8 @@ gulp.task('copy-plugin', function () {
 });
 
 gulp.task('watch', function () {
-    gulp.watch(scssPath, gulp.series('clean-css', 'sass'));
+    gulp.watch(scssPath, gulp.series('sass'));
     gulp.watch(pluginSourcePath, gulp.series('clean-plugin', 'copy-plugin'));
 });
 
-gulp.task('default', gulp.series('clean-css', 'sass', 'clean-plugin', 'copy-plugin', 'watch'));
+gulp.task('default', gulp.series('sass', 'clean-plugin', 'copy-plugin', 'watch'));

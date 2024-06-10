@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<ruleset
+    name="Custom WordPress Coding Standards">
+    <!-- Set the base standard to WordPress -->
+    <rule
+        ref="WordPress" />
+    <!-- Exclude a rule -->
+    <exclude
+        name="WordPress.WP.AlternativeFunctions.YodaConditions" />
+</ruleset>

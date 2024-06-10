@@ -40,7 +40,14 @@ class WP_Logify_Logger {
 		$wpdb->insert( "{$wpdb->prefix}logify_logs", $log_data );
 	}
 
-	public static function log_event( $event, $object, $user_id = null ) {
+	/**
+	 * Logs an event to the database.
+	 *
+	 * @param string $event_type The type of event.
+	 * @param array  $details    Additional details about the event.
+	 * @param int    $user_id    The ID of the user associated with the event (defaults to current).
+	 */
+	public static function log_event( string $event_type, array $details, int $user_id = null ) {
 		global $wpdb;
 
 		$user      = $user_id ? get_userdata( intval( $user_id ) ) : wp_get_current_user();
@@ -56,9 +63,9 @@ class WP_Logify_Logger {
 				'user_id'   => intval( $user_id ),
 				'user_role' => $user_role,
 				'source_ip' => $source_ip,
-				'event'     => sanitize_text_field( $event ),
-				'object'    => sanitize_text_field( $object ),
-				'details'   => maybe_serialize( array() ),
+				'event'     => sanitize_text_field( $event_type ),
+				// 'object'    => '',
+				'details'   => maybe_serialize( $details ),
 			)
 		);
 	}

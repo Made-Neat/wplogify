@@ -23,10 +23,11 @@ jQuery(($) => {
             { "data": "id" },
             { "data": "date_time" },
             { "data": "user" },
-            { "data": "user_role" },
+            // { "data": "user_role" },
             { "data": "source_ip" },
             { "data": "event" },
-            { "data": "object" }
+            // { "data": "object" },
+            { "data": "details" },
         ],
         "order": [[1, 'desc']],
         "searching": true,

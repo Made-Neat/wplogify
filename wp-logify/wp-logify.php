@@ -14,7 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Include core files
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-basic.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-user-events.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-post-events.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-api.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-admin.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-logger.php';
@@ -23,13 +24,18 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-cron.php';
 
 // Initialize the plugin
 function wp_logify_init() {
-	WP_Logify_Basic::init();
+	// Event logging classes.
+	WP_Logify_User_Events::init();
+	WP_Logify_Post_Events::init();
+
+	// Others.
 	WP_Logify_API::init();
 	WP_Logify_Admin::init();
 	WP_Logify_Logger::init();
 	WP_Logify_Tracker::init();
 	WP_Logify_Cron::init();
 }
+
 add_action( 'plugins_loaded', 'wp_logify_init' );
 
 // Activation and deactivation hooks

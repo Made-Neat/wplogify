@@ -12,10 +12,11 @@
 				<th class="column-id">ID</th>
 				<th>Date</th>
 				<th>User</th>
-				<th>Role</th>
+				<!-- <th>Role</th> -->
 				<th>Source IP</th>
 				<th>Event</th>
-				<th>Object</th>
+				<!-- <th>Object</th> -->
+				<th>Details</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -24,7 +25,7 @@
 	</table>
 
 	<?php
-	// Pagination logic
+	// Pagination logic.
 	$total_pages = ceil( intval( $total_items ) / intval( $per_page ) );
 	if ( $total_pages > 1 ) {
 		$current_page = max( 1, intval( $paged ) + 1 );
@@ -45,7 +46,7 @@
 	function display_log_details( $log_id ) {
 		global $wpdb;
 		$log_id = intval( $log_id );
-		$log    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}logify_logs WHERE id = %d", $log_id ) );
+		$log    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}logify_log WHERE id = %d", $log_id ) );
 
 		if ( $log ) {
 			$details = maybe_unserialize( $log->details );

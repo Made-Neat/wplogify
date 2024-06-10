@@ -153,4 +153,3 @@ add_action(
 		register_setting( 'wp_logify_settings_group', 'wp_logify_view_roles' );
 	}
 );
-?>

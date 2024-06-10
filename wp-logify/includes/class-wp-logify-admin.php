@@ -136,7 +136,8 @@ class WP_Logify_Admin {
 				$user_role        = esc_html( ucwords( $row['user_role'] ) );
 				$row['user']      = get_avatar( $row['user_id'], 32 ) . ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">' . $username . '</a><br><span class="wp-logify-user-role">' . $user_role . '</span></div>';
 				$row['source_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row['source_ip'] ) . '" target="_blank">' . esc_html( $row['source_ip'] ) . '</a>';
-				$data[]           = $row;
+
+				$data[] = $row;
 			}
 		}
 
