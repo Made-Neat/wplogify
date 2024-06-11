@@ -79,7 +79,7 @@ class WP_Logify_Logger {
 		$user_id   = $user->ID;
 		$user_role = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
 		$source_ip = sanitize_text_field( $_SERVER['REMOTE_ADDR'] );
-		$date_time = current_time( 'mysql', true );
+		$date_time = current_time( 'mysql' );
 
 		$wpdb->insert(
 			self::get_table_name(),

@@ -47,8 +47,8 @@ class WP_Logify_Admin {
 			'source_ip',
 			'event_type',
 			'details',
-			// 'object',
-			// 'editor',
+		// 'object',
+		// 'editor',
 		);
 
 		$limit        = isset( $_POST['length'] ) ? intval( $_POST['length'] ) : 10;
@@ -125,10 +125,10 @@ class WP_Logify_Admin {
 			if ( ! empty( $row['id'] ) ) {
 				// Date and time.
 				$date_time        = new DateTime( $row['date_time'], new DateTimeZone( wp_timezone_string() ) );
-				$time_ago         = human_time_diff( $date_time->getTimestamp(), current_time( 'timestamp' ) ) . ' ago';
+				$time_ago         = human_time_diff( $date_time->getTimestamp(), time() ) . ' ago';
 				$time_format      = $date_time->format( get_option( 'time_format' ) );
 				$date_format      = $date_time->format( get_option( 'date_format' ) );
-				$row['date_time'] = "<div>$time_ago</div><div>$time_format</div><div>$date_format</div>";
+				$row['date_time'] = "<div>$time_format</div><div>$date_format</div><div>($time_ago)</div>";
 
 				// User details.
 				$user_profile_url = admin_url( 'user-edit.php?user_id=' . $row['user_id'] );
@@ -300,9 +300,9 @@ class WP_Logify_Admin {
 		if ( ! $per_page ) {
 			$per_page = 20;
 		}
-		// $total_items = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-		$paged = isset( $_GET['paged'] ) ? max( 0, intval( $_GET['paged'] ) - 1 ) : 0;
-		// $offset = $paged * $per_page;
+		$total_items = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
+		$paged       = isset( $_GET['paged'] ) ? max( 0, intval( $_GET['paged'] ) - 1 ) : 0;
+		$offset      = $paged * $per_page;
 
 		include plugin_dir_path( __FILE__ ) . '../templates/log-page.php';
 	}
@@ -439,19 +439,21 @@ class WP_Logify_Admin {
 	}
 
 	/**
-	 * Formats a given datetime string into the specified date and time format.
+	 * Formats a given datetime string using the date and time format from the site settings.
 	 *
-	 * @param string $datetime The datetime string to format.
+	 * @param string $datetime_string The datetime string to format.
 	 * @return string The formatted datetime string.
 	 */
-	public static function format_datetime( $datetime ) {
-		$timestamp   = strtotime( $datetime );
-		$timezone    = wp_timezone();
-		$wp_datetime = new DateTime( 'now', $timezone );
-		$wp_datetime->setTimestamp( $timestamp );
-		$date_format = get_option( 'date_format' );
-		$time_format = get_option( 'time_format' );
-		return $wp_datetime->format( "{$date_format} {$time_format}" );
+	public static function format_datetime( string $datetime_string ): string {
+		// Get the site timezone. This is expected to match the timezone used in the database.
+		$timezone = wp_timezone();
+
+		// Convert the supplied string to a DateTime object.
+		// This can throw a DateMalformedStringException if the string is not a valid datetime.
+		$datetime = new DateTime( $datetime_string, $timezone );
+
+		// Return formatted strings.
+		return $datetime->format( get_option( 'time_format' ) ) . ' ' . $datetime->format( get_option( 'date_format' ) );
 	}
 
 	/**

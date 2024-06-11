@@ -11,8 +11,8 @@ class WP_Logify_Tracker {
 		add_action( 'delete_user', array( __CLASS__, 'track_user_deletion' ) );
 
 		// Post-related hooks
-		add_action( 'save_post', array( __CLASS__, 'track_post_changes' ) );
-		add_action( 'delete_post', array( __CLASS__, 'track_post_deletion' ) );
+		// add_action( 'save_post', array( __CLASS__, 'track_post_changes' ) );
+		// add_action( 'delete_post', array( __CLASS__, 'track_post_deletion' ) );
 
 		// Comment-related hooks
 		add_action( 'wp_insert_comment', array( __CLASS__, 'track_comment_changes' ), 10, 2 );
