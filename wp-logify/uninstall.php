@@ -5,7 +5,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 // Delete the custom table for logged activities
 global $wpdb;
-$table_name = $wpdb->prefix . 'wp_logify_activities';
+$table_name = WP_Logify_Logger::get_table_name();
 
 $wpdb->query( "DROP TABLE IF EXISTS $table_name" );
 

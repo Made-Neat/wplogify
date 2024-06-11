@@ -25,7 +25,7 @@ jQuery(($) => {
             { "data": "user" },
             // { "data": "user_role" },
             { "data": "source_ip" },
-            { "data": "event" },
+            { "data": "event_type" },
             // { "data": "object" },
             { "data": "details" },
         ],

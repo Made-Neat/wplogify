@@ -39,7 +39,7 @@ class WP_Logify_Cron {
 		$days = absint( ceil( $days ) );
 
 		// Delete old records.
-		$table_name = $wpdb->prefix . 'wp_logify_activities';
+		$table_name = WP_Logify_Logger::get_table_name();
 		$wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE date_time < NOW() - INTERVAL %d DAY", $days ) );
 	}
 }

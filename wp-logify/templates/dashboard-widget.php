@@ -6,7 +6,7 @@
  */
 
 global $wpdb;
-$table_name = $wpdb->prefix . 'wp_logify_activities';
+$table_name = WP_Logify_Logger::get_table_name();
 
 // Fetch the total activities for the last hour and last 24 hours.
 $one_hour_ago          = gmdate( 'Y-m-d H:i:s', strtotime( '-1 hour' ) );
@@ -16,7 +16,7 @@ $activities_last_hour     = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FRO
 $activities_last_24_hours = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE date_time > %s", $twenty_four_hours_ago ) );
 
 // Fetch the last 10 activities.
-$results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wp_logify_activities ORDER BY date_time DESC LIMIT 10" );
+$results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DESC LIMIT 10" );
 ?>
 
 <div class="wp-logify-dashboard-widget">
@@ -54,7 +54,7 @@ $results = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}wp_logify_activitie
 				<tr>
 					<td><?php echo esc_html( WP_Logify_Admin::format_datetime( $activity->date_time ) ); ?></td>
 					<td><?php echo $user_info; ?></td>
-					<td><?php echo esc_html( $activity->event ); ?></td>
+					<td><?php echo esc_html( $activity->event_type ); ?></td>
 					<!-- <td><?php echo esc_html( $activity->object ); ?></td> -->
 				</tr>
 			<?php endforeach; ?>

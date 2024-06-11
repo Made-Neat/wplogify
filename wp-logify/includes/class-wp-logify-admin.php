@@ -38,23 +38,24 @@ class WP_Logify_Admin {
 	public static function fetch_logs() {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . 'wp_logify_activities';
+		$table_name = WP_Logify_Logger::get_table_name();
 		$columns    = array(
 			'id',
 			'date_time',
 			'user_id',
 			'user_role',
 			'source_ip',
-			'event',
-			'object',
-			'editor',
+			'event_type',
+			'details',
+			// 'object',
+			// 'editor',
 		);
 
 		$limit        = isset( $_POST['length'] ) ? intval( $_POST['length'] ) : 10;
 		$offset       = isset( $_POST['start'] ) ? intval( $_POST['start'] ) : 0;
-		$order_by     = $columns[ $_POST['order'][0]['column'] ] ?? 'date_time';
-		$order        = isset( $_POST['order'][0]['dir'] ) && in_array( $_POST['order'][0]['dir'], array( 'asc', 'desc' ) ) ? $_POST['order'][0]['dir'] : 'desc';
-		$search_value = $_POST['search']['value'] ?? '';
+		$order_by     = isset( $_POST['order'][0]['column'] ) ? $columns[ wp_unslash( $_POST['order'][0]['column'] ) ] : 'date_time';
+		$order        = isset( $_POST['order'][0]['dir'] ) && in_array( $_POST['order'][0]['dir'], array( 'asc', 'desc' ), true ) ? wp_unslash( $_POST['order'][0]['dir'] ) : 'desc';
+		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
 		// Get the log records from the database.
 		$sql = "SELECT * FROM $table_name";
@@ -63,9 +64,8 @@ class WP_Logify_Admin {
 		if ( ! empty( $search_value ) ) {
 			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
 			$sql       .= ' WHERE id LIKE %s OR date_time LIKE %s OR user_id LIKE %s OR user_role LIKE %s
-			OR source_ip LIKE %s OR event LIKE %s OR object LIKE %s OR details LIKE %s';
+			OR source_ip LIKE %s OR event_type LIKE %s OR details LIKE %s';
 			$args       = array(
-				$like_value,
 				$like_value,
 				$like_value,
 				$like_value,
@@ -105,12 +105,10 @@ class WP_Logify_Admin {
                     OR user_id LIKE %s
                     OR user_role LIKE %s
                     OR source_ip LIKE %s
-                    OR event LIKE %s
-                    OR object LIKE %s
+                    OR event_type LIKE %s
                     OR details LIKE %s";
 			$filtered_sql      = $wpdb->prepare(
 				$filtered_sql,
-				$search_value_like,
 				$search_value_like,
 				$search_value_like,
 				$search_value_like,
@@ -125,16 +123,20 @@ class WP_Logify_Admin {
 		$data = array();
 		foreach ( $results as $row ) {
 			if ( ! empty( $row['id'] ) ) {
+				// Date and time.
 				$date_time        = new DateTime( $row['date_time'], new DateTimeZone( wp_timezone_string() ) );
 				$time_ago         = human_time_diff( $date_time->getTimestamp(), current_time( 'timestamp' ) ) . ' ago';
 				$time_format      = $date_time->format( get_option( 'time_format' ) );
 				$date_format      = $date_time->format( get_option( 'date_format' ) );
 				$row['date_time'] = "<div>$time_ago</div><div>$time_format</div><div>$date_format</div>";
 
+				// User details.
 				$user_profile_url = admin_url( 'user-edit.php?user_id=' . $row['user_id'] );
 				$username         = esc_html( self::get_username( $row['user_id'] ) );
 				$user_role        = esc_html( ucwords( $row['user_role'] ) );
 				$row['user']      = get_avatar( $row['user_id'], 32 ) . ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">' . $username . '</a><br><span class="wp-logify-user-role">' . $user_role . '</span></div>';
+
+				// Source IP.
 				$row['source_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row['source_ip'] ) . '" target="_blank">' . esc_html( $row['source_ip'] ) . '</a>';
 
 				$data[] = $row;
@@ -293,7 +295,7 @@ class WP_Logify_Admin {
 	 */
 	public static function display_log_page() {
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'wp_logify_activities';
+		$table_name = WP_Logify_Logger::get_table_name();
 		$per_page   = (int) get_user_option( 'activities_per_page', get_current_user_id(), 'edit_wp-logify' );
 		if ( ! $per_page ) {
 			$per_page = 20;
@@ -478,6 +480,11 @@ class WP_Logify_Admin {
 	 */
 	public static function restrict_access() {
 		$screen = get_current_screen();
+
+		if ( $screen === null ) {
+			return;
+		}
+
 		if ( strpos( $screen->id, 'wp-logify' ) !== false ) {
 			$access_control = get_option( 'wp_logify_access_control', 'only_me' );
 			if ( $access_control === 'only_me' && ! self::is_plugin_installer() ) {
@@ -491,13 +498,13 @@ class WP_Logify_Admin {
 	}
 
 	/**
-	 * Resets logs by truncating the wp_logify_activities table and redirects to the settings page.
+	 * Resets logs by truncating the wp_logify_events table and redirects to the settings page.
 	 *
 	 * @return void
 	 */
 	public static function reset_logs() {
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'wp_logify_activities';
+		$table_name = WP_Logify_Logger::get_table_name();
 		$wpdb->query( "TRUNCATE TABLE $table_name" );
 		wp_redirect( admin_url( 'admin.php?page=wp-logify-settings&reset=success' ) );
 		exit;

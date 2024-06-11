@@ -315,13 +315,13 @@ class WP_Logify_Tracker {
 		self::log_event( 'WordPress Core Updated', $details, $user_id );
 	}
 
-	private static function log_event( $event, $details, $user_id = null ) {
+	private static function log_event( $event_type, $details, $user_id = null ) {
 		if ( is_null( $user_id ) ) {
 			$user_id = get_current_user_id();
 		}
 
 		$logger = new WP_Logify_Logger();
-		$logger->log_change( $user_id, $event, $details );
+		$logger->log_change( $user_id, $event_type, $details );
 	}
 }
 
