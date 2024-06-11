@@ -124,11 +124,10 @@ class WP_Logify_Admin {
 		foreach ( $results as $row ) {
 			if ( ! empty( $row['id'] ) ) {
 				// Date and time.
-				$date_time        = new DateTime( $row['date_time'], new DateTimeZone( wp_timezone_string() ) );
-				$time_ago         = human_time_diff( $date_time->getTimestamp(), time() ) . ' ago';
-				$time_format      = $date_time->format( get_option( 'time_format' ) );
-				$date_format      = $date_time->format( get_option( 'date_format' ) );
-				$row['date_time'] = "<div>$time_format</div><div>$date_format</div><div>($time_ago)</div>";
+				$formatted_datetime = self::format_datetime( $row['date_time'] );
+				$date_time          = self::create_datetime( $row['date_time'] );
+				$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
+				$row['date_time']   = "<div>$formatted_datetime<br>($time_ago)</div>";
 
 				// User details.
 				$user_profile_url = admin_url( 'user-edit.php?user_id=' . $row['user_id'] );
@@ -138,6 +137,9 @@ class WP_Logify_Admin {
 
 				// Source IP.
 				$row['source_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row['source_ip'] ) . '" target="_blank">' . esc_html( $row['source_ip'] ) . '</a>';
+
+				// Format the data.
+				$row['details'] = self::format_details( $row['details'] );
 
 				$data[] = $row;
 			}
@@ -439,21 +441,29 @@ class WP_Logify_Admin {
 	}
 
 	/**
+	 * Creates a DateTime object from a given datetime string.
+	 */
+	public static function create_datetime( string $datetime_string ): DateTime {
+		// Get the site timezone. This is expected to match the timezone used in the database.
+		$timezone = wp_timezone();
+
+		// Convert the supplied string to a DateTime object.
+		// This can throw a DateMalformedStringException if the string is not a valid datetime.
+		return new DateTime( $datetime_string, $timezone );
+	}
+
+	/**
 	 * Formats a given datetime string using the date and time format from the site settings.
 	 *
 	 * @param string $datetime_string The datetime string to format.
 	 * @return string The formatted datetime string.
 	 */
 	public static function format_datetime( string $datetime_string ): string {
-		// Get the site timezone. This is expected to match the timezone used in the database.
-		$timezone = wp_timezone();
-
 		// Convert the supplied string to a DateTime object.
-		// This can throw a DateMalformedStringException if the string is not a valid datetime.
-		$datetime = new DateTime( $datetime_string, $timezone );
+		$datetime = self::create_datetime( $datetime_string );
 
 		// Return formatted strings.
-		return $datetime->format( get_option( 'time_format' ) ) . ' ' . $datetime->format( get_option( 'date_format' ) );
+		return $datetime->format( get_option( 'time_format' ) ) . ', ' . $datetime->format( get_option( 'date_format' ) );
 	}
 
 	/**
@@ -563,6 +573,22 @@ class WP_Logify_Admin {
 	private static function is_plugin_installer() {
 		$plugin_installer = get_option( 'wp_logify_plugin_installer' );
 		return $plugin_installer && get_current_user_id() == $plugin_installer;
+	}
+
+	/**
+	 * Formats the details of a log entry.
+	 *
+	 * @param string $details The details of the log entry as a JSON string.
+	 * @return string The formatted details as an HTML table.
+	 */
+	public static function format_details( string $details ): string {
+		$details_array = json_decode( $details );
+		$html          = "<table class='wp_logify_details'>";
+		foreach ( $details_array as $key => $value ) {
+			$html .= "<tr><th>$key</th><td>$value</td></tr>";
+		}
+		$html .= '</table>';
+		return $html;
 	}
 }
 
