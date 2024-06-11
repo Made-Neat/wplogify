@@ -40,19 +40,25 @@ jQuery(($) => {
     });
 
     // Add event listener for opening and closing details
-    table.on('click', 'td.details-control', function (e) {
-        let tr = e.target.closest('tr');
+    table.on('click', 'tr', function (e) {
+        // Check if the clicked element is a link.
+        if ($(e.target).is('a, a *')) {
+            return;
+        }
+
+        // Get the row.
+        let tr = $(this);
         let row = table.row(tr);
 
         if (row.child.isShown()) {
-            // This row is already open - close it
+            // This row is already open - close it.
             row.child.hide();
-            e.target.textContent = 'Show';
+            tr.find('td.details-controla ').text('Show');
         }
         else {
-            // Open this row
+            // Open this row.
             row.child(row.data().details).show();
-            e.target.textContent = 'Hide';
+            tr.find('td.details-control a').text('Hide');
         }
     });
 });

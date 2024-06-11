@@ -50,13 +50,23 @@ class WP_Logify_Post_Events {
 	 * @param bool    $update Whether this is an update or a new post.
 	 */
 	public static function track_post_save( $post_id, $post, $update ) {
-		// Check we haven't already logged this event.
+		// Check we haven't already logged an event.
 		if ( ! empty( $_SESSION['post event logged'] ) ) {
 			return;
 		}
 
-		// Ensure this is not a revision.
+		// Ignore autosave events.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Ignore events triggered by revisions.
 		if ( wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		// Check if the post is published or updated.
+		if ( 'auto-draft' === $post->post_status ) {
 			return;
 		}
 
@@ -65,11 +75,20 @@ class WP_Logify_Post_Events {
 			return;
 		}
 
-		// Determine the event type.
-		$event_type = $update ? 'Post Updated' : 'Post Created';
-
 		// Collect details.
 		$details = self::get_post_details( $post );
+
+		// Get the post meta indicating if this post has been logged as created.
+		$created_meta_key     = '_wp_logify_post_creation_logged';
+		$post_creation_logged = get_post_meta( $post_id, $created_meta_key, true );
+
+		// Get the event type.
+		$event_type = $post_creation_logged ? 'Post Updated' : 'Post Created';
+
+		// Note we recorded the creation event.
+		if ( ! $post_creation_logged ) {
+			update_post_meta( $post_id, $created_meta_key, true );
+		}
 
 		// Log the event.
 		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );

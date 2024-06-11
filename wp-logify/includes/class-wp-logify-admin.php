@@ -130,7 +130,7 @@ class WP_Logify_Admin {
 				$row['date_time']   = "<div>$formatted_datetime<br>($time_ago)</div>";
 
 				// User details.
-				$user_profile_url = admin_url( 'user-edit.php?user_id=' . $row['user_id'] );
+				$user_profile_url = site_url( '/?author=' . $row['user_id'] );
 				$username         = esc_html( self::get_username( $row['user_id'] ) );
 				$user_role        = esc_html( ucwords( $row['user_role'] ) );
 				$row['user']      = get_avatar( $row['user_id'], 32 ) . ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">' . $username . '</a><br><span class="wp-logify-user-role">' . $user_role . '</span></div>';
