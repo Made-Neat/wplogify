@@ -23,11 +23,9 @@ jQuery(($) => {
             { "data": "id" },
             { "data": "date_time" },
             { "data": "user" },
-            // { "data": "user_role" },
             { "data": "source_ip" },
             { "data": "event_type" },
-            // { "data": "object" },
-            { "data": "details" },
+            { className: 'details-control', orderable: false, defaultContent: '<a>Show</a>' }
         ],
         "order": [[1, 'desc']],
         "searching": true,
@@ -39,5 +37,22 @@ jQuery(($) => {
     // Custom search box
     $('#wp-logify-search-box').on('keyup', function () {
         table.search(this.value).draw();
+    });
+
+    // Add event listener for opening and closing details
+    table.on('click', 'td.details-control', function (e) {
+        let tr = e.target.closest('tr');
+        let row = table.row(tr);
+
+        if (row.child.isShown()) {
+            // This row is already open - close it
+            row.child.hide();
+            e.target.textContent = 'Show';
+        }
+        else {
+            // Open this row
+            row.child(row.data().details).show();
+            e.target.textContent = 'Hide';
+        }
     });
 });

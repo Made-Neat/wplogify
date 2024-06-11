@@ -12,10 +12,8 @@
 				<th class="column-id">ID</th>
 				<th>Date</th>
 				<th>User</th>
-				<!-- <th>Role</th> -->
 				<th>Source IP</th>
 				<th>Event</th>
-				<!-- <th>Object</th> -->
 				<th>Details</th>
 			</tr>
 		</thead>

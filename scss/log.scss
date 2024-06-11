@@ -22,3 +22,14 @@ $progress-bar-border-color: hsl(200, 66%, 85%);
         background-position: 0 0%;
     }
 }
+
+#wp-logify-activity-log {
+    th.details-control {
+        width: 50px !important;
+        text-align: center;
+    }
+
+    td.details-control {
+        text-align: center;
+    }
+}

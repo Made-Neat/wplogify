@@ -18,3 +18,10 @@
     background-position: 0 0%;
   }
 }
+#wp-logify-activity-log th.details-control {
+  width: 50px !important;
+  text-align: center;
+}
+#wp-logify-activity-log td.details-control {
+  text-align: center;
+}
