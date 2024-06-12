@@ -14,6 +14,7 @@
 				<th>User</th>
 				<th>Source IP</th>
 				<th>Event</th>
+				<th>Object</th>
 				<th>Details</th>
 			</tr>
 		</thead>

@@ -87,7 +87,7 @@ class WP_Logify_Admin {
 		$sql = $wpdb->prepare( $sql, $args );
 
 		// Get the requested records.
-		$results = $wpdb->get_results( $sql, ARRAY_A );
+		$results = $wpdb->get_results( $sql );
 
 		// Get the total record count.
 		$total_records = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
@@ -122,24 +122,27 @@ class WP_Logify_Admin {
 
 		$data = array();
 		foreach ( $results as $row ) {
-			if ( ! empty( $row['id'] ) ) {
+			if ( ! empty( $row->id ) ) {
 				// Date and time.
-				$formatted_datetime = self::format_datetime( $row['date_time'] );
-				$date_time          = self::create_datetime( $row['date_time'] );
+				$formatted_datetime = self::format_datetime( $row->date_time );
+				$date_time          = self::create_datetime( $row->date_time );
 				$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
-				$row['date_time']   = "<div>$formatted_datetime<br>($time_ago)</div>";
+				$row->date_time     = "<div>$formatted_datetime ($time_ago)</div>";
 
 				// User details.
-				$user_profile_url = site_url( '/?author=' . $row['user_id'] );
-				$username         = esc_html( self::get_username( $row['user_id'] ) );
-				$user_role        = esc_html( ucwords( $row['user_role'] ) );
-				$row['user']      = get_avatar( $row['user_id'], 32 ) . ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">' . $username . '</a><br><span class="wp-logify-user-role">' . $user_role . '</span></div>';
+				$user_profile_url = site_url( '/?author=' . $row->user_id );
+				$username         = esc_html( self::get_username( $row->user_id ) );
+				$user_role        = esc_html( ucwords( $row->user_role ) );
+				$row->user        = get_avatar( $row->user_id, 32 ) . ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">' . $username . '</a><br><span class="wp-logify-user-role">' . $user_role . '</span></div>';
 
 				// Source IP.
-				$row['source_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row['source_ip'] ) . '" target="_blank">' . esc_html( $row['source_ip'] ) . '</a>';
+				$row->source_ip = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->source_ip ) . '" target="_blank">' . esc_html( $row->source_ip ) . '</a>';
+
+				// Get the object link.
+				$row->object = self::get_object_link( $row );
 
 				// Format the data.
-				$row['details'] = self::format_details( $row['details'] );
+				$row->details = self::format_details( $row->details );
 
 				$data[] = $row;
 			}
@@ -589,6 +592,63 @@ class WP_Logify_Admin {
 		}
 		$html .= '</table>';
 		return $html;
+	}
+
+	/**
+	 * Retrieves the link to an object based on its type and ID.
+	 *
+	 * NB: The ID will be an integer (as a string) for posts and users, and a string for themes and plugins.
+	 *
+	 * @param object $event The event object from the database.
+	 */
+	public static function get_object_link( object $event ) {
+		// Check for valid object type.
+		if ( ! in_array( $event->object_type, WP_Logify_Logger::VALID_OBJECT_TYPES, ) ) {
+			throw new InvalidArgumentException( "Invalid object type: $event->object_type" );
+		}
+
+		// Check for valid object ID or name.
+		if ( $event->object_id === null ) {
+			throw new InvalidArgumentException( 'Object ID or name cannot be null.' );
+		}
+
+		// Generate the link based on the object type.
+		switch ( $event->object_type ) {
+			case 'post':
+				$post = get_post( $event->object_id );
+
+				// Get the URL based on the post status.
+				switch ( $post->post_status ) {
+					case 'publish':
+						// View the post.
+						$url = "/?p={$post->ID}";
+						break;
+
+					case 'trash':
+						// List trashed posts.
+						$url = '/wp-admin/edit.php?post_status=trash&post_type=post';
+						break;
+
+					default:
+						// post_status should be draft or auto-draft. Go to the edit page.
+						$url = "/wp-admin/post.php?post={$post->ID}&action=edit";
+						break;
+				}
+
+				return "<a href='$url'>{$post->post_title}</a>";
+
+			case 'user':
+				$user = get_userdata( $event->object_id );
+				return "<a href='/wp-admin/user-edit.php?user_id={$user->ID}'>{$user->display_name}</a>";
+
+			case 'theme':
+				$theme = wp_get_theme( $event->object_id );
+				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
+
+			case 'plugin':
+				$plugin = get_plugin_data( $event->object_id );
+				return $plugin['Name'];
+		}
 	}
 }
 

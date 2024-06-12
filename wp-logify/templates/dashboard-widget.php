@@ -39,23 +39,24 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 		<tr>
 			<th>Date & Time</th>
 			<th>User</th>
-			<th>Event type</th>
-			<!-- <th>Object</th> -->
+			<th>Event</th>
+			<th>Object</th>
 		</tr>
 	</thead>
 	<tbody>
 		<?php if ( $results ) : ?>
-			<?php foreach ( $results as $activity ) : ?>
+			<?php foreach ( $results as $event ) : ?>
 				<?php
-					$user_profile_url = admin_url( 'user-edit.php?user_id=' . $activity->user_id );
-					$username         = esc_html( WP_Logify_Admin::get_username( $activity->user_id ) );
+					$user_profile_url = admin_url( 'user-edit.php?user_id=' . $event->user_id );
+					$username         = esc_html( WP_Logify_Admin::get_username( $event->user_id ) );
 					$user_info        = '<div class="wp-logify-user-info"><a href="' . esc_url( $user_profile_url ) . '">' . $username . '</a></div>';
+					$object_link      = WP_Logify_Admin::get_object_link( $event );
 				?>
 				<tr>
-					<td><?php echo esc_html( WP_Logify_Admin::format_datetime( $activity->date_time ) ); ?></td>
+					<td><?php echo esc_html( WP_Logify_Admin::format_datetime( $event->date_time ) ); ?></td>
 					<td><?php echo $user_info; ?></td>
-					<td><?php echo esc_html( $activity->event_type ); ?></td>
-					<!-- <td><?php echo esc_html( $activity->object ); ?></td> -->
+					<td><?php echo esc_html( $event->event_type ); ?></td>
+					<td><?php echo $object_link; ?></td>
 				</tr>
 			<?php endforeach; ?>
 		<?php else : ?>

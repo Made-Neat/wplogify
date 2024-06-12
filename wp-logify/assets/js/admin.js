@@ -25,7 +25,12 @@ jQuery(($) => {
             { "data": "user" },
             { "data": "source_ip" },
             { "data": "event_type" },
-            { className: 'details-control', orderable: false, defaultContent: '<a>Show</a>' }
+            { "data": "object" },
+            {
+                className: 'details-control',
+                orderable: false,
+                defaultContent: '<span class="wp-logify-show-details">Show</span>'
+            }
         ],
         "order": [[1, 'desc']],
         "searching": true,
@@ -53,12 +58,12 @@ jQuery(($) => {
         if (row.child.isShown()) {
             // This row is already open - close it.
             row.child.hide();
-            tr.find('td.details-controla ').text('Show');
+            tr.find('td.details-control span').text('Show');
         }
         else {
             // Open this row.
             row.child(row.data().details).show();
-            tr.find('td.details-control a').text('Hide');
+            tr.find('td.details-control span').text('Hide');
         }
     });
 });

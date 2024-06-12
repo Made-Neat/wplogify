@@ -60,11 +60,6 @@ class WP_Logify_Post_Events {
 			return;
 		}
 
-		// Ignore events triggered by revisions.
-		if ( wp_is_post_revision( $post_id ) ) {
-			return;
-		}
-
 		// Check if the post is published or updated.
 		if ( 'auto-draft' === $post->post_status ) {
 			return;
@@ -75,23 +70,47 @@ class WP_Logify_Post_Events {
 			return;
 		}
 
-		// Collect details.
-		$details = self::get_post_details( $post );
+		// Only look at revisions.
+		if ( ! wp_is_post_revision( $post_id ) ) {
+			return;
+		}
 
-		// Get the post meta indicating if this post has been logged as created.
-		$created_meta_key     = '_wp_logify_post_creation_logged';
-		$post_creation_logged = get_post_meta( $post_id, $created_meta_key, true );
+		// Clearly name the revision and parent post.
+		$revision = $post;
+		$parent   = get_post( $post->post_parent );
+
+		// Collect details.
+		$details = self::get_post_details( $parent );
+
+		// Get all revisions for the parent post.
+		$revisions = wp_get_post_revisions( $parent );
+		debug_log( $revisions );
+
+		// Determine if this revision is the first save.
+		$creating = true;
+		foreach ( $revisions as $revision2 ) {
+			// Ignore autosaves.
+			if ( $revision2->post_status === 'inherit' && strpos( $revision2->post_name, 'autosave' ) !== false ) {
+				continue;
+			}
+			// Check if there are any revisions that are not auto-drafts, and not equal to the
+			// revision just saved. If so, the user is creating a new post.
+			if ( $revision2->post_status !== 'auto-draft' && $revision2->ID !== $revision->ID ) {
+				$creating = false;
+				break;
+			}
+		}
 
 		// Get the event type.
-		$event_type = $post_creation_logged ? 'Post Updated' : 'Post Created';
+		$event_type = $creating ? 'Post Created' : 'Post Updated';
 
-		// Note we recorded the creation event.
-		if ( ! $post_creation_logged ) {
-			update_post_meta( $post_id, $created_meta_key, true );
+		// If updating, provide a link to the revision comparison page.
+		if ( ! $creating ) {
+			$details['View changes'] = "<a href='" . admin_url( "/revision.php?revision={$revision->ID}" ) . "'>Revision {$revision->ID}</a>";
 		}
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $parent->ID, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;

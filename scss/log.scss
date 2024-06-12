@@ -32,4 +32,11 @@ $progress-bar-border-color: hsl(200, 66%, 85%);
     td.details-control {
         text-align: center;
     }
+
+    .wp-logify-show-details {
+        background-color: #eee;
+        color: #2271b1;
+        padding: 4px 8px;
+        border-radius: 3px;
+    }
 }
