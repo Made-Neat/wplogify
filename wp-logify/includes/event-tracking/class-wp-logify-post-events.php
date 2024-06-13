@@ -38,7 +38,7 @@ class WP_Logify_Post_Events {
 			'Post type' => $post->post_type,
 			'Author'    => "<a href='/?author={$post->post_author}'>{$author->display_name}</a>",
 			'Status'    => $post->post_status,
-			'Created'   => WP_Logify_Admin::format_datetime( $post->post_date ),
+			'Created'   => WP_Logify_DateTime::format_datetime_site( WP_Logify_DateTime::create_datetime( $post->post_date ) ),
 		);
 	}
 

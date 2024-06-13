@@ -17,14 +17,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once plugin_dir_path( __FILE__ ) . 'useful-functions.php';
 
 // Core classes.
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-api.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-admin.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-logger.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-api.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-cron.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-datetime.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-logger.php';
 
 // Event tracking classes.
-require_once plugin_dir_path( __FILE__ ) . 'includes/event-tracking/class-wp-logify-user-events.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/event-tracking/class-wp-logify-post-events.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/event-tracking/class-wp-logify-user-events.php';
 
 /**
  * Initialize the plugin.
@@ -70,7 +71,7 @@ function wp_logify_uninstall() {
 	// Check if the user has opted to delete the database.
 	if ( get_option( 'wp_logify_delete_on_uninstall' ) === 'yes' ) {
 		global $wpdb;
-        $table_name = WP_Logify_Logger::get_table_name();
+		$table_name = WP_Logify_Logger::get_table_name();
 		$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
 	}
 

@@ -124,8 +124,8 @@ class WP_Logify_Admin {
 		foreach ( $results as $row ) {
 			if ( ! empty( $row->id ) ) {
 				// Date and time.
-				$formatted_datetime = self::format_datetime( $row->date_time );
-				$date_time          = self::create_datetime( $row->date_time );
+				$date_time          = WP_Logify_DateTime::create_datetime( $row->date_time );
+				$formatted_datetime = WP_Logify_DateTime::format_datetime_site( $date_time );
 				$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
 				$row->date_time     = "<div>$formatted_datetime ($time_ago)</div>";
 
@@ -133,10 +133,15 @@ class WP_Logify_Admin {
 				$user_profile_url = site_url( '/?author=' . $row->user_id );
 				$username         = esc_html( self::get_username( $row->user_id ) );
 				$user_role        = esc_html( ucwords( $row->user_role ) );
-				$row->user        = get_avatar( $row->user_id, 32 ) . ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">' . $username . '</a><br><span class="wp-logify-user-role">' . $user_role . '</span></div>';
+				$row->user        = get_avatar( $row->user_id, 32 )
+					. ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">'
+					. $username . '</a><br><span class="wp-logify-user-role">' . $user_role
+					. '</span></div>';
 
 				// Source IP.
-				$row->source_ip = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->source_ip ) . '" target="_blank">' . esc_html( $row->source_ip ) . '</a>';
+				$row->source_ip = '<a href="https://whatismyipaddress.com/ip/'
+					. esc_html( $row->source_ip ) . '" target="_blank">'
+					. esc_html( $row->source_ip ) . '</a>';
 
 				// Get the object link.
 				$row->object = self::get_object_link( $row );
@@ -441,32 +446,6 @@ class WP_Logify_Admin {
 			self::enqueue_style( 'jquery.dataTables.min.css', array(), null );
 			self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
 		}
-	}
-
-	/**
-	 * Creates a DateTime object from a given datetime string.
-	 */
-	public static function create_datetime( string $datetime_string ): DateTime {
-		// Get the site timezone. This is expected to match the timezone used in the database.
-		$timezone = wp_timezone();
-
-		// Convert the supplied string to a DateTime object.
-		// This can throw a DateMalformedStringException if the string is not a valid datetime.
-		return new DateTime( $datetime_string, $timezone );
-	}
-
-	/**
-	 * Formats a given datetime string using the date and time format from the site settings.
-	 *
-	 * @param string $datetime_string The datetime string to format.
-	 * @return string The formatted datetime string.
-	 */
-	public static function format_datetime( string $datetime_string ): string {
-		// Convert the supplied string to a DateTime object.
-		$datetime = self::create_datetime( $datetime_string );
-
-		// Return formatted strings.
-		return $datetime->format( get_option( 'time_format' ) ) . ', ' . $datetime->format( get_option( 'date_format' ) );
 	}
 
 	/**
