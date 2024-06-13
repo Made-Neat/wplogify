@@ -29,9 +29,9 @@ class WP_Logify_Logger {
             user_role varchar(255) NOT NULL,
             source_ip varchar(100) NOT NULL,
             event_type varchar(255) NOT NULL,
-            object_type varchar(20) NOT NULL,
-            object_id varchar(20) NOT NULL,
-            details json NOT NULL,
+            object_type varchar(20) NULL,
+            object_id varchar(20) NULL,
+            details text NULL,
             PRIMARY KEY (id)
         ) $charset_collate;";
 
@@ -54,9 +54,8 @@ class WP_Logify_Logger {
 	 * @param string $object_type The type of object associated with the event.
 	 * @param string $object_id   The ID or name of the object associated with the event.
 	 * @param array  $details     Additional details about the event.
-	 * @param int    $user_id     The ID of the user associated with the event (defaults to current).
 	 */
-	public static function log_event( string $event_type, string $object_type = null, string $object_id = null, array $details = array(), int $user_id = null ) {
+	public static function log_event( string $event_type, string $object_type = null, string $object_id = null, array $details = null ) {
 		global $wpdb;
 
 		// Check object type is valid.
@@ -64,11 +63,13 @@ class WP_Logify_Logger {
 			throw new InvalidArgumentException( 'Invalid object type.' );
 		}
 
-		$user      = $user_id ? get_userdata( intval( $user_id ) ) : wp_get_current_user();
+		// Get the user info.
+		$user      = wp_get_current_user();
 		$user_id   = $user->ID;
 		$user_role = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
+
+		$date_time = WP_Logify_DateTime::format_datetime_mysql( WP_Logify_DateTime::current_datetime() );
 		$source_ip = sanitize_text_field( $_SERVER['REMOTE_ADDR'] );
-		$date_time = current_time( 'mysql' );
 
 		$wpdb->insert(
 			self::get_table_name(),
@@ -80,7 +81,7 @@ class WP_Logify_Logger {
 				'event_type'  => sanitize_text_field( $event_type ),
 				'object_type' => $object_type === null ? null : sanitize_text_field( $object_type ),
 				'object_id'   => $object_id === null ? null : sanitize_text_field( $object_id ),
-				'details'     => wp_json_encode( $details ),
+				'details'     => $details === null ? null : wp_json_encode( $details ),
 			)
 		);
 	}

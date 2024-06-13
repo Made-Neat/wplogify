@@ -20,6 +20,6 @@ class WP_Logify_User_Events {
 	 * @param WP_User $user The WP_User object of the user that logged in.
 	 */
 	public static function track_login( $user_login, $user ) {
-		WP_Logify_Logger::log_event( 'Login', array(), $user->ID );
+		WP_Logify_Logger::log_event( 'Login' );
 	}
 }

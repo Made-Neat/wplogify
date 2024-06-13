@@ -62,7 +62,7 @@ jQuery(($) => {
         }
         else {
             // Open this row.
-            row.child(row.data().details).show();
+            row.child(row.data().details, 'details-row').show();
             tr.find('td.details-control span').text('Hide');
         }
     });

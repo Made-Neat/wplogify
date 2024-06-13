@@ -45,15 +45,25 @@ class WP_Logify_DateTime {
 	 * Formats a given DateTime using the date and time format from the site settings.
 	 *
 	 * @param DateTime|string $datetime The DateTime object to format or the datetime as a string (presumably in some other format).
+	 * @param bool            $include_seconds Whether to include seconds in the time format if they aren't already.
 	 * @return string The formatted datetime string.
 	 */
-	public static function format_datetime_site( DateTime|string $datetime ): string {
+	public static function format_datetime_site( DateTime|string $datetime, bool $include_seconds = false ): string {
 		// Convert string to DateTime if necessary.
 		if ( is_string( $datetime ) ) {
 			$datetime = self::create_datetime( $datetime );
 		}
 
-		return $datetime->format( get_option( 'time_format' ) ) . ', ' . $datetime->format( get_option( 'date_format' ) );
+		// Get the date and time formats from the site settings.
+		$date_format = get_option( 'date_format' );
+		$time_format = get_option( 'time_format' );
+
+		// Include seconds in the time format if requested, and not already present.
+		if ( $include_seconds && strpos( $time_format, ':i:s' ) === false && strpos( $time_format, ':i' ) !== false ) {
+			$time_format = str_replace( ':i', ':i:s', $time_format );
+		}
+
+		return $datetime->format( $time_format ) . ', ' . $datetime->format( $date_format );
 	}
 
 	/**

@@ -32,3 +32,6 @@
   border-radius: 3px;
   cursor: pointer;
 }
+#wp-logify-activity-log tr.details-row {
+  background-color: hsl(200, 66%, 95%);
+}

@@ -17,6 +17,42 @@ class WP_Logify_Post_Events {
 	}
 
 	/**
+	 * Get the singular name of a custom post type.
+	 *
+	 * @param string $post_type The post type.
+	 * @return string The singular name of the post type.
+	 */
+	public static function get_post_type_singular_name( string $post_type ): string {
+		$post_type_object = get_post_type_object( $post_type );
+		if ( $post_type_object && isset( $post_type_object->labels->singular_name ) ) {
+			return $post_type_object->labels->singular_name;
+		}
+		return '';
+	}
+
+	/**
+	 * Get the datetime a post was created.
+	 *
+	 * This function ignores the post_date and post_date_gmt fields in the parent post record, which
+	 * seem to show the last time the post was updated, not the time it was created.
+	 *
+	 * @param WP_Post $post The post object.
+	 * @return DateTime The datetime the post was created.
+	 */
+	public static function get_post_created_datetime( WP_Post $post ): DateTime {
+		global $wpdb;
+		$table_name         = $wpdb->prefix . 'posts';
+		$sql                = $wpdb->prepare(
+			'SELECT post_date FROM %i WHERE ID=%d OR post_parent=%d ORDER BY post_date ASC LIMIT 1',
+			$table_name,
+			$post->ID,
+			$post->ID
+		);
+		$earliest_post_date = $wpdb->get_var( $sql );
+		return WP_Logify_DateTime::create_datetime( $earliest_post_date );
+	}
+
+	/**
 	 * Get the details of a post to show in the log.
 	 *
 	 * @param WP_Post|int $post The post object or ID.
@@ -33,12 +69,11 @@ class WP_Logify_Post_Events {
 
 		// Create the details array.
 		return array(
-			'Post'      => "<a href='/?p={$post->ID}'>{$post->post_title}</a>",
 			'Post ID'   => $post->ID,
 			'Post type' => $post->post_type,
 			'Author'    => "<a href='/?author={$post->post_author}'>{$author->display_name}</a>",
 			'Status'    => $post->post_status,
-			'Created'   => WP_Logify_DateTime::format_datetime_site( WP_Logify_DateTime::create_datetime( $post->post_date ) ),
+			'Created'   => WP_Logify_DateTime::format_datetime_site( self::get_post_created_datetime( $post ), true ),
 		);
 	}
 
@@ -84,7 +119,6 @@ class WP_Logify_Post_Events {
 
 		// Get all revisions for the parent post.
 		$revisions = wp_get_post_revisions( $parent );
-		debug_log( $revisions );
 
 		// Determine if this revision is the first save.
 		$creating = true;
@@ -102,11 +136,12 @@ class WP_Logify_Post_Events {
 		}
 
 		// Get the event type.
-		$event_type = $creating ? 'Post Created' : 'Post Updated';
+		$event_type = self::get_post_type_singular_name( $parent->post_type ) . ' ' . ( $creating ? 'created' : 'updated' );
 
-		// If updating, provide a link to the revision comparison page.
+		// If updating, show the modified time, and provide a link to the revision comparison page.
 		if ( ! $creating ) {
-			$details['View changes'] = "<a href='" . admin_url( "/revision.php?revision={$revision->ID}" ) . "'>Revision {$revision->ID}</a>";
+			$details['Modified'] = WP_Logify_DateTime::format_datetime_site( WP_Logify_DateTime::create_datetime( $parent->post_modified ), true );
+			$details['Changes']  = "<a href='" . admin_url( "/revision.php?revision={$revision->ID}" ) . "'>Compare revisions</a>";
 		}
 
 		// Log the event.
@@ -136,8 +171,11 @@ class WP_Logify_Post_Events {
 		// Collect details.
 		$details = self::get_post_details( $post );
 
+		// Get the event type.
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' deleted';
+
 		// Log the event.
-		WP_Logify_Logger::log_event( 'Post Deleted', 'post', $post_id, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -160,12 +198,18 @@ class WP_Logify_Post_Events {
 			return;
 		}
 
+		// Load the post.
+		$post = get_post( $post_id );
+
 		// Collect details.
-		$details                    = self::get_post_details( $post_id );
+		$details                    = self::get_post_details( $post );
 		$details['Previous status'] = $previous_status;
 
+		// Get the event type.
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' trashed';
+
 		// Log the event.
-		WP_Logify_Logger::log_event( 'Post Trashed', 'post', $post_id, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -190,8 +234,11 @@ class WP_Logify_Post_Events {
 		// Collect details.
 		$details = self::get_post_details( $post );
 
+		// Get the event type.
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' published';
+
 		// Log the event.
-		WP_Logify_Logger::log_event( 'Post Published', 'post', $post->ID, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $post->ID, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;

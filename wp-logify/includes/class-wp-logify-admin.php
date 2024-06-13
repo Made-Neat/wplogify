@@ -210,11 +210,11 @@ class WP_Logify_Admin {
 		);
 		register_setting(
 			'wp_logify_settings_group',
-			'wp_logify_keep_period_limited',
+			'wp_logify_keep_forever',
 			array(
 				'type'              => 'boolean',
 				'sanitize_callback' => 'rest_sanitize_boolean',
-				'default'           => false,
+				'default'           => true,
 			)
 		);
 		register_setting(
@@ -232,7 +232,7 @@ class WP_Logify_Admin {
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => 'month',
+				'default'           => 'year',
 			)
 		);
 		register_setting(

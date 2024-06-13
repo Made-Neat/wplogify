@@ -7,18 +7,21 @@ class WP_Logify_Cron {
 		}
 	}
 
+	/**
+	 * Cleanup old records from the log table.
+	 */
 	public static function cleanup_old_records() {
 		global $wpdb;
 
 		// Check if we need to delete any old records.
-		$limited = get_option( 'wp_logify_keep_period_limited', false );
-		if ( ! $limited ) {
+		$keep_forever = get_option( 'wp_logify_keep_forever', true );
+		if ( $keep_forever ) {
 			return;
 		}
 
 		// Calculate the number of days to keep records.
 		$quantity = get_option( 'wp_logify_keep_period_quantity', 1 );
-		$units    = get_option( 'wp_logify_keep_period_units', 'month' );
+		$units    = get_option( 'wp_logify_keep_period_units', 'year' );
 		switch ( $units ) {
 			case 'day':
 				$days = $quantity;

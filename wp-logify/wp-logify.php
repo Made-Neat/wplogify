@@ -75,7 +75,7 @@ function wp_logify_uninstall() {
 	// Delete the plugin options.
 	delete_option( 'wp_logify_api_key' );
 	delete_option( 'wp_logify_delete_on_uninstall' );
-	delete_option( 'wp_logify_keep_period_limited' );
+	delete_option( 'wp_logify_keep_forever' );
 	delete_option( 'wp_logify_keep_period_quantity' );
 	delete_option( 'wp_logify_keep_period_units' );
 }
@@ -116,6 +116,8 @@ function wp_logify_sanitize_roles( $roles ) {
 /**
  * Dump a variable into the error log.
  */
-function debug_log( $stuff ) {
-	error_log( is_string( $stuff ) ? $stuff : var_export( $stuff, true ) );
+function debug_log( mixed $stuff, string|null $label = null ) {
+	$output  = empty( $label ) ? '' : $label . ': ';
+	$output .= is_string( $stuff ) ? $stuff : var_export( $stuff, true );
+	error_log( $output );
 }

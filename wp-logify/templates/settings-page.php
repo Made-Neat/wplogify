@@ -36,15 +36,15 @@
 				<th scope="row">How long to keep records</th>
 				<td>
 					<?php
-					$limited  = get_option( 'wp_logify_keep_period_limited', false );
-					$quantity = get_option( 'wp_logify_keep_period_quantity', 1 );
-					$units    = get_option( 'wp_logify_keep_period_units', 'month' );
+					$keep_forever = get_option( 'wp_logify_keep_forever', true );
+					$quantity     = get_option( 'wp_logify_keep_period_quantity', 1 );
+					$units        = get_option( 'wp_logify_keep_period_units', 'year' );
 					?>
 					<label class="wp-logify-settings-radio">
-						<input type="radio" name="wp_logify_keep_period_limited" value="false" <?php checked( $limited, false ); ?>> Forever
+						<input type="radio" name="wp_logify_keep_forever" value="true" <?php checked( $keep_forever, true ); ?>> Forever
 					</label>
 					<label class="wp-logify-settings-radio">
-						<input type="radio" name="wp_logify_keep_period_limited" value="true" <?php checked( $limited, true ); ?>>
+						<input type="radio" name="wp_logify_keep_forever" value="false" <?php checked( $keep_forever, false ); ?>>
 						<select name="wp_logify_keep_period_quantity">
 							<?php
 							for ( $i = 1; $i <= 10; $i++ ) {
