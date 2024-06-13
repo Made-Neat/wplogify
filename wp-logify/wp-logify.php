@@ -13,9 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-// Useful functions.
-require_once plugin_dir_path( __FILE__ ) . 'useful-functions.php';
-
 // Core classes.
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-admin.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-api.php';
@@ -114,4 +111,11 @@ function wp_logify_sanitize_roles( $roles ) {
 			return in_array( $role, $valid_roles );
 		}
 	);
+}
+
+/**
+ * Dump a variable into the error log.
+ */
+function debug_log( $stuff ) {
+	error_log( is_string( $stuff ) ? $stuff : var_export( $stuff, true ) );
 }

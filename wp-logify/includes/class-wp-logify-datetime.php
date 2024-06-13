@@ -28,7 +28,6 @@ class WP_Logify_DateTime {
 	 */
 	public static function create_datetime( string $datetime_string, string $tz_string = 'site' ): \DateTime {
 		$tz = $tz_string === 'site' ? wp_timezone() : new DateTimeZone( $tz_string );
-		debug_log( $tz );
 		return new DateTime( $datetime_string, $tz );
 	}
 
