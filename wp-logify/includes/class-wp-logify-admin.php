@@ -42,31 +42,28 @@ class WP_Logify_Admin {
 		$columns    = array(
 			'id',
 			'date_time',
-			'user_id',
-			'user_role',
+			'user',
 			'source_ip',
 			'event_type',
-			'details',
-		// 'object',
-		// 'editor',
+			'object',
 		);
 
 		$limit        = isset( $_POST['length'] ) ? intval( $_POST['length'] ) : 10;
 		$offset       = isset( $_POST['start'] ) ? intval( $_POST['start'] ) : 0;
 		$order_by     = isset( $_POST['order'][0]['column'] ) ? $columns[ wp_unslash( $_POST['order'][0]['column'] ) ] : 'date_time';
-		$order        = isset( $_POST['order'][0]['dir'] ) && in_array( $_POST['order'][0]['dir'], array( 'asc', 'desc' ), true ) ? wp_unslash( $_POST['order'][0]['dir'] ) : 'desc';
+		$order_dir    = isset( $_POST['order'][0]['dir'] ) && in_array( $_POST['order'][0]['dir'], array( 'asc', 'desc' ), true ) ? $_POST['order'][0]['dir'] : 'desc';
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
 		// Get the log records from the database.
-		$sql = "SELECT * FROM $table_name";
+		$sql  = 'SELECT * FROM %i';
+		$args = array( $table_name );
 
 		// Filter by the search value, if provided.
 		if ( ! empty( $search_value ) ) {
 			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
-			$sql       .= ' WHERE id LIKE %s OR date_time LIKE %s OR user_id LIKE %s OR user_role LIKE %s
-			OR source_ip LIKE %s OR event_type LIKE %s OR details LIKE %s';
+			$sql       .= ' WHERE date_time LIKE %s OR user_role LIKE %s OR source_ip LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR details LIKE %s';
 			$args       = array(
-				$like_value,
+				...$args,
 				$like_value,
 				$like_value,
 				$like_value,
@@ -79,9 +76,8 @@ class WP_Logify_Admin {
 		}
 
 		// Add the order by parameters.
-		$sql   .= " ORDER BY $order_by $order LIMIT %d OFFSET %d";
-		$args[] = $limit;
-		$args[] = $offset;
+		$sql .= ' ORDER BY %i %i LIMIT %d OFFSET %d';
+		$args = array( ...$args, $order_by, $order_dir, $limit, $offset );
 
 		// Prepare the statement.
 		$sql = $wpdb->prepare( $sql, $args );
@@ -89,37 +85,13 @@ class WP_Logify_Admin {
 		// Get the requested records.
 		$results = $wpdb->get_results( $sql );
 
-		// Get the total record count.
-		$total_records = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
+		// Get the number of results.
+		$num_filtered_records = count( $results );
 
-		// Get the record count after filtering on the search value.
-		if ( empty( $search_value ) ) {
-			$filtered_records = $total_records;
-		} else {
-			$search_value_like = '%' . $wpdb->esc_like( $search_value ) . '%';
-			$filtered_sql      = "
-                SELECT COUNT(*)
-                FROM $table_name 
-                WHERE id LIKE %s
-                    OR date_time LIKE %s
-                    OR user_id LIKE %s
-                    OR user_role LIKE %s
-                    OR source_ip LIKE %s
-                    OR event_type LIKE %s
-                    OR details LIKE %s";
-			$filtered_sql      = $wpdb->prepare(
-				$filtered_sql,
-				$search_value_like,
-				$search_value_like,
-				$search_value_like,
-				$search_value_like,
-				$search_value_like,
-				$search_value_like,
-				$search_value_like
-			);
-			$filtered_records  = $wpdb->get_var( $filtered_sql );
-		}
+		// Get the total number of records in the table.
+		$num_total_records = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) );
 
+		// Construct the data array to return to the client.
 		$data = array();
 		foreach ( $results as $row ) {
 			if ( ! empty( $row->id ) ) {
@@ -130,8 +102,9 @@ class WP_Logify_Admin {
 				$row->date_time     = "<div>$formatted_datetime ($time_ago)</div>";
 
 				// User details.
+				$user             = get_userdata( $row->user_id );
 				$user_profile_url = site_url( '/?author=' . $row->user_id );
-				$username         = esc_html( self::get_username( $row->user_id ) );
+				$username         = esc_html( self::get_username( $user ) );
 				$user_role        = esc_html( ucwords( $row->user_role ) );
 				$row->user        = get_avatar( $row->user_id, 32 )
 					. ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">'
@@ -156,8 +129,8 @@ class WP_Logify_Admin {
 		wp_send_json(
 			array(
 				'draw'            => intval( $_POST['draw'] ),
-				'recordsTotal'    => intval( $total_records ),
-				'recordsFiltered' => intval( $filtered_records ),
+				'recordsTotal'    => intval( $num_total_records ),
+				'recordsFiltered' => intval( $num_filtered_records ),
 				'data'            => $data,
 			)
 		);
@@ -451,11 +424,15 @@ class WP_Logify_Admin {
 	/**
 	 * Retrieves the username associated with a given user ID.
 	 *
-	 * @param int $user_id The ID of the user.
+	 * @param int|WP_User $user The ID of the user or the user object.
 	 * @return string The username if found, otherwise 'Unknown'.
 	 */
-	public static function get_username( $user_id ) {
-		$user = get_userdata( $user_id );
+	public static function get_username( int|WP_User $user ) {
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user = get_userdata( $user );
+		}
+
 		return $user ? $user->display_name : 'Unknown';
 	}
 
@@ -563,7 +540,7 @@ class WP_Logify_Admin {
 	 * @param string $details The details of the log entry as a JSON string.
 	 * @return string The formatted details as an HTML table.
 	 */
-	public static function format_details( string $details ): string {
+	public static function format_details( WP_User $user, string $details ): string {
 		$details_array = json_decode( $details );
 		$html          = "<table class='wp_logify_details'>";
 		foreach ( $details_array as $key => $value ) {
