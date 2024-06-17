@@ -11,8 +11,8 @@
   background-color: #f7f7f7;
   text-align: left;
 }
-.table-wp-logify .column-id {
-  width: 70px;
+.table-wp-logify th.dt-type-numeric.column-id {
+  text-align: left;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
@@ -32,7 +32,7 @@
 
 #wp-logify-activity-log_processing {
   margin-top: -8px;
-  background: repeating-linear-gradient(45deg, hsl(200, 66%, 95%), hsl(200, 66%, 95%) 1rem, #ffffff 1rem, #ffffff 2rem);
+  background: repeating-linear-gradient(45deg, hsl(200, 66%, 95%), hsl(200, 66%, 95%) 1rem, white 1rem, white 2rem);
   background-size: 200% 200%;
   animation: slide 60s linear infinite;
   border: solid 1px hsl(200, 66%, 85%);
@@ -47,7 +47,6 @@
   }
 }
 #wp-logify-activity-log th.details-control {
-  width: 50px !important;
   text-align: center;
 }
 #wp-logify-activity-log td.details-control {

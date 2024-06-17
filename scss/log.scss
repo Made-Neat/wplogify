@@ -2,8 +2,11 @@ $blue: #2271b1;
 $very-pale-blue: hsl(200, 66%, 95%);
 $pale-blue: hsl(200, 66%, 85%);
 $light-blue: hsl(200, 66%, 65%);
-$very-pale-grey: #eee;
+
+$pale-grey: #eee;
+$very-pale-grey: #f7f7f7;
 $dark-grey: #555;
+$light-grey: #ddd;
 
 .table-wp-logify {
     width: 100%;
@@ -11,17 +14,18 @@ $dark-grey: #555;
 
     th,
     td {
-        border: 1px solid #ddd;
+        border: 1px solid $light-grey;
         padding: 8px;
     }
 
     th {
-        background-color: #f7f7f7;
+        background-color: $very-pale-grey;
         text-align: left;
     }
 
-    .column-id {
-        width: 70px;
+
+    th.dt-type-numeric.column-id {
+        text-align: left;
     }
 }
 
@@ -46,7 +50,7 @@ $dark-grey: #555;
 
 #wp-logify-activity-log_processing {
     margin-top: -8px;
-    background: repeating-linear-gradient(45deg, $very-pale-blue, $very-pale-blue 1rem, #ffffff 1rem, #ffffff 2rem);
+    background: repeating-linear-gradient(45deg, $very-pale-blue, $very-pale-blue 1rem, white 1rem, white 2rem);
     background-size: 200% 200%;
     animation: slide 60s linear infinite;
     border: solid 1px $pale-blue;
@@ -64,7 +68,6 @@ $dark-grey: #555;
 
 #wp-logify-activity-log {
     th.details-control {
-        width: 50px !important;
         text-align: center;
     }
 
@@ -73,7 +76,7 @@ $dark-grey: #555;
     }
 
     .wp-logify-show-details {
-        background-color: $very-pale-grey;
+        background-color: $pale-grey;
         color: $blue;
         padding: 4px 8px;
         border-radius: 3px;
