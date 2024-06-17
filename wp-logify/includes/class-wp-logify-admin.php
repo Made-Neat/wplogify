@@ -38,8 +38,12 @@ class WP_Logify_Admin {
 	public static function fetch_logs() {
 		global $wpdb;
 
-		$table_name = WP_Logify_Logger::get_table_name();
-		$columns    = array(
+		// Get table names.
+		$events_table_name = WP_Logify_Logger::get_table_name();
+		$user_table_name   = $wpdb->prefix . 'users';
+
+		// These should match the columns in admin.js.
+		$columns = array(
 			'id',
 			'date_time',
 			'user',
@@ -48,22 +52,51 @@ class WP_Logify_Admin {
 			'object',
 		);
 
-		$limit        = isset( $_POST['length'] ) ? intval( $_POST['length'] ) : 10;
-		$offset       = isset( $_POST['start'] ) ? intval( $_POST['start'] ) : 0;
-		$order_by     = isset( $_POST['order'][0]['column'] ) ? $columns[ wp_unslash( $_POST['order'][0]['column'] ) ] : 'date_time';
-		$order_dir    = isset( $_POST['order'][0]['dir'] ) && in_array( $_POST['order'][0]['dir'], array( 'asc', 'desc' ), true ) ? $_POST['order'][0]['dir'] : 'desc';
+		// Extract parameters from the request.
+
+		// Number of results per page.
+		if ( isset( $_POST['length'] ) ) {
+			$limit = intval( $_POST['length'] );
+		}
+		// Default to 10.
+		if ( ! isset( $limit ) || $limit < 1 ) {
+			$limit = 10;
+		}
+
+		// Offset.
+		if ( isset( $_POST['start'] ) ) {
+			$offset = intval( $_POST['start'] );
+		}
+		// Default to 0.
+		if ( ! isset( $start ) || $start < 0 ) {
+			$offset = 0;
+		}
+
+		// Order by column. Default to date_time.
+		$order_col = isset( $columns[ $_POST['order'][0]['column'] ] ) ? $columns[ $_POST['order'][0]['column'] ] : 'date_time';
+
+		// Order by direction.
+		if ( isset( $_POST['order'][0]['dir'] ) ) {
+			$order_dir = strtoupper( $_POST['order'][0]['dir'] );
+		}
+		// Default to DESC.
+		if ( ! isset( $order_dir ) || ! in_array( $order_dir, array( 'ASC', 'DESC' ), true ) ) {
+			$order_dir = 'DESC';
+		}
+
+		// Search value.
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
-		// Get the log records from the database.
-		$sql  = 'SELECT * FROM %i';
-		$args = array( $table_name );
+		// Start constructing the SQL statement to get records from the database.
+		$sql  = 'SELECT * FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
+		$args = array( $events_table_name, $user_table_name );
 
 		// Filter by the search value, if provided.
 		if ( ! empty( $search_value ) ) {
 			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
 			$sql       .= ' WHERE date_time LIKE %s OR user_role LIKE %s OR source_ip LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR details LIKE %s';
-			$args       = array(
-				...$args,
+			array_push(
+				$args,
 				$like_value,
 				$like_value,
 				$like_value,
@@ -71,16 +104,33 @@ class WP_Logify_Admin {
 				$like_value,
 				$like_value,
 			);
-		} else {
-			$args = array();
 		}
 
 		// Add the order by parameters.
-		$sql .= ' ORDER BY %i %i LIMIT %d OFFSET %d';
-		$args = array( ...$args, $order_by, $order_dir, $limit, $offset );
+		switch ( $order_col ) {
+			case 'id':
+				$order_by = "e.ID $order_dir";
+				break;
+
+			case 'user':
+				$order_by = "u.display_name $order_dir";
+				break;
+
+			case 'object':
+				$order_by = "object_type $order_dir, object_id $order_dir";
+				break;
+
+			default:
+				$order_by = "$order_col $order_dir";
+				break;
+		}
+		$sql .= " ORDER BY $order_by LIMIT %d OFFSET %d";
+		array_push( $args, $limit, $offset );
 
 		// Prepare the statement.
 		$sql = $wpdb->prepare( $sql, $args );
+
+		// debug_log( $sql );
 
 		// Get the requested records.
 		$results = $wpdb->get_results( $sql );
@@ -89,7 +139,7 @@ class WP_Logify_Admin {
 		$num_filtered_records = count( $results );
 
 		// Get the total number of records in the table.
-		$num_total_records = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) );
+		$num_total_records = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name ) );
 
 		// Construct the data array to return to the client.
 		$data = array();
@@ -102,9 +152,8 @@ class WP_Logify_Admin {
 				$row->date_time     = "<div>$formatted_datetime ($time_ago)</div>";
 
 				// User details.
-				$user             = get_userdata( $row->user_id );
 				$user_profile_url = site_url( '/?author=' . $row->user_id );
-				$username         = esc_html( self::get_username( $user ) );
+				$username         = self::get_display_username( $row );
 				$user_role        = esc_html( ucwords( $row->user_role ) );
 				$row->user        = get_avatar( $row->user_id, 32 )
 					. ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">'
@@ -416,8 +465,10 @@ class WP_Logify_Admin {
 			wp_localize_script( 'wp-logify-admin', 'wpLogifyAdmin', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 
 			// Enqueue DataTables assets.
-			self::enqueue_style( 'jquery.dataTables.min.css', array(), null );
-			self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
+			// self::enqueue_style( 'jquery.dataTables.min.css', array(), null );
+			// self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
+			self::enqueue_style( 'dataTables.2.0.8.css', array(), 'auto' );
+			self::enqueue_script( 'dataTables.2.0.8.js', array( 'jquery' ), 'auto', true );
 		}
 	}
 
@@ -540,7 +591,7 @@ class WP_Logify_Admin {
 	 * @param string $details The details of the log entry as a JSON string.
 	 * @return string The formatted details as an HTML table.
 	 */
-	public static function format_details( WP_User $user, string $details ): string {
+	public static function format_details( string $details ): string {
 		$details_array = json_decode( $details );
 		$html          = "<table class='wp_logify_details'>";
 		foreach ( $details_array as $key => $value ) {
@@ -605,6 +656,19 @@ class WP_Logify_Admin {
 				$plugin = get_plugin_data( $event->object_id );
 				return $plugin['Name'];
 		}
+	}
+
+	/**
+	 * Retrieves the display username for a given row.
+	 */
+	public static function get_display_username( $row ) {
+		return ! empty( $row->display_name )
+			? $row->display_name
+			: ( ! empty( $row->user_login )
+				? $row->user_login
+				: ( ! empty( $row->user_nicename )
+					? $row->user_nicename
+					: 'Unknown' ) );
 	}
 }
 

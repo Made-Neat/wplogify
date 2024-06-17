@@ -1,3 +1,31 @@
+.table-wp-logify {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-wp-logify th,
+.table-wp-logify td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+.table-wp-logify th {
+  background-color: #f7f7f7;
+  text-align: left;
+}
+.table-wp-logify .column-id {
+  width: 70px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  padding: 0.2em 0.5em;
+}
+.dataTables_wrapper .dataTables_filter {
+  display: none;
+  /* Hide default DataTables search box */
+}
+.dataTables_wrapper .dataTables_length select {
+  width: 53px;
+}
+
 #wp-logify-activity-log_length {
   margin-bottom: 1rem;
 }
@@ -32,6 +60,11 @@
   border-radius: 3px;
   cursor: pointer;
 }
-#wp-logify-activity-log tr.details-row {
-  background-color: hsl(200, 66%, 95%);
+#wp-logify-activity-log table.wp_logify_details {
+  border-collapse: collapse;
+}
+
+#wp-logify-activity-log_wrapper select {
+  background-color: white;
+  width: 55px;
 }

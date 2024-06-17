@@ -1,7 +1,44 @@
 $blue: #2271b1;
 $very-pale-blue: hsl(200, 66%, 95%);
 $pale-blue: hsl(200, 66%, 85%);
+$light-blue: hsl(200, 66%, 65%);
 $very-pale-grey: #eee;
+$dark-grey: #555;
+
+.table-wp-logify {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    th {
+        background-color: #f7f7f7;
+        text-align: left;
+    }
+
+    .column-id {
+        width: 70px;
+    }
+}
+
+.dataTables_wrapper {
+    .dataTables_paginate .paginate_button {
+        padding: 0.2em 0.5em;
+    }
+
+    .dataTables_filter {
+        display: none;
+        /* Hide default DataTables search box */
+    }
+
+    .dataTables_length select {
+        width: 53px;
+    }
+}
 
 #wp-logify-activity-log_length {
     margin-bottom: 1rem;
@@ -43,7 +80,12 @@ $very-pale-grey: #eee;
         cursor: pointer;
     }
 
-    tr.details-row {
-        background-color: $very-pale-blue;
+    table.wp_logify_details {
+        border-collapse: collapse;
     }
+}
+
+#wp-logify-activity-log_wrapper select {
+    background-color: white;
+    width: 55px;
 }

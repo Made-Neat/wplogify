@@ -46,13 +46,19 @@ jQuery(($) => {
 
     // Add event listener for opening and closing details
     table.on('click', 'tr', function (e) {
-        // Check if the clicked element is a link.
+        // Ignore link clicks.
         if ($(e.target).is('a, a *')) {
             return;
         }
 
         // Get the row.
         let tr = $(this);
+
+        // Ignore clicks on the header row.
+        if (tr.parent().is('thead')) {
+            return;
+        }
+
         let row = table.row(tr);
 
         if (row.child.isShown()) {
@@ -62,6 +68,8 @@ jQuery(($) => {
         }
         else {
             // Open this row.
+            console.log(row);
+            console.log(row.data());
             row.child(row.data().details, 'details-row').show();
             tr.find('td.details-control span').text('Hide');
         }

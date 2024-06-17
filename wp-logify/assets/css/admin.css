@@ -3,34 +3,6 @@
   width: 150px;
 }
 
-.table-wp-logify {
-  width: 100%;
-  border-collapse: collapse;
-}
-.table-wp-logify th,
-.table-wp-logify td {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-.table-wp-logify th {
-  background-color: #f1f1f1;
-  text-align: left;
-}
-.table-wp-logify .column-id {
-  width: 50px;
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button {
-  padding: 0.2em 0.5em;
-}
-.dataTables_wrapper .dataTables_filter {
-  display: none;
-  /* Hide default DataTables search box */
-}
-.dataTables_wrapper .dataTables_length select {
-  width: 53px;
-}
-
 .wp-logify-user-info {
   display: inline-block;
   vertical-align: top;
