@@ -169,7 +169,17 @@ class WP_Logify_Admin {
 				$row->object = self::get_object_link( $row );
 
 				// Format the data.
-				$row->details = self::format_details( $row->details );
+				$row->details = "
+                    <div class='wp-logify-details'>
+                        <div class='wp-logify-event-details wp-logify-details-section'>
+                            <div class='wp-logify-details-section-heading'><h4>Event Details</h4></div>
+                            <div class='wp-logify-details-section-content'>" . self::format_event_details( $row->details ) . "</div>
+                        </div>
+                        <div class='wp-logify-user-details wp-logify-details-section'>
+                            <div class='wp-logify-details-section-heading'><h4>User Details</h4></div>
+                            <div class='wp-logify-details-section-content'>" . self::format_user_details( $row ) . '</div>
+                        </div>
+                    </div>';
 
 				$data[] = $row;
 			}
@@ -465,8 +475,6 @@ class WP_Logify_Admin {
 			wp_localize_script( 'wp-logify-admin', 'wpLogifyAdmin', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 
 			// Enqueue DataTables assets.
-			// self::enqueue_style( 'jquery.dataTables.min.css', array(), null );
-			// self::enqueue_script( 'jquery.dataTables.min.js', array( 'jquery' ), null, true );
 			self::enqueue_style( 'dataTables.2.0.8.css', array(), 'auto' );
 			self::enqueue_script( 'dataTables.2.0.8.js', array( 'jquery' ), 'auto', true );
 		}
@@ -591,12 +599,45 @@ class WP_Logify_Admin {
 	 * @param string $details The details of the log entry as a JSON string.
 	 * @return string The formatted details as an HTML table.
 	 */
-	public static function format_details( string $details ): string {
+	public static function format_event_details( string $details ): string {
 		$details_array = json_decode( $details );
-		$html          = "<table class='wp_logify_details'>";
+		$html          = "<table class='wp-logify-event-details-table wp-logify-details-table'>";
 		foreach ( $details_array as $key => $value ) {
 			$html .= "<tr><th>$key</th><td>$value</td></tr>";
 		}
+		$html .= '</table>';
+		return $html;
+	}
+
+	/**
+	 * Formats user details for a log entry.
+	 *
+	 * @param object $row The data object selected from the database, which includes event details and user details.
+	 * @return string The formatted user details as an HTML table.
+	 */
+	public static function format_user_details( object $row ): string {
+		global $wpdb;
+
+		$html = "<table class='wp-logify-user-details-table wp-logify-details-table'>";
+
+		$user_profile_url   = site_url( '/?author=' . $row->user_id );
+		$user_disiplay_name = self::get_display_username( $row );
+		$html              .= "<tr><th>User</th><td><a href='$user_profile_url'>$user_disiplay_name</a></td></tr>";
+
+		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>";
+		$html .= "<tr><th>Role</th><td>$row->user_role</td></tr>";
+		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
+		$html .= "<tr><th>Source IP</th><td>$row->source_ip</td></tr>";
+		$html .= "<tr><th>Location</th><td>$row->location</td></tr>";
+
+		// Look for the last login.
+		$table_name                 = WP_Logify_Logger::get_table_name();
+		$sql                        = "SELECT MAX(date_time) FROM %i WHERE user_id = %d AND event_type = 'Login'";
+		$last_login_datetime        = $wpdb->get_var( $wpdb->prepare( $sql, $table_name, $row->user_id ) );
+		$last_login_datetime_string = empty( $last_login_datetime ) ? 'Unknown' : WP_Logify_DateTime::format_datetime_site( $last_login_datetime );
+		$html                      .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>";
+
+		$html .= "<tr><th>User agent</th><td>$user_agent</td></tr>";
 		$html .= '</table>';
 		return $html;
 	}

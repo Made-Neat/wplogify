@@ -82,13 +82,31 @@ $light-grey: #ddd;
         border-radius: 3px;
         cursor: pointer;
     }
-
-    table.wp_logify_details {
-        border-collapse: collapse;
-    }
 }
 
 #wp-logify-activity-log_wrapper select {
     background-color: white;
     width: 55px;
+}
+
+.wp-logify-details {
+    margin-bottom: 1rem;
+
+    .wp-logify-details-section {
+        display: inline-block;
+
+        .wp-logify-details-section-heading {
+            h4 {
+                margin-bottom: 0;
+            }
+        }
+
+        .wp-logify-details-section-content {
+            .wp-logify-details-table {
+                border-collapse: collapse;
+                width: 20rem;
+                margin-right: 1rem;
+            }
+        }
+    }
 }
