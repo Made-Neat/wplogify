@@ -20,7 +20,25 @@ class WP_Logify_Users {
 	 * @param WP_User $user The WP_User object of the user that logged in.
 	 */
 	public static function track_login( $user_login, $user ) {
-		WP_Logify_Logger::log_event( 'Login' );
+		debug_log( $user_login, '$user_login' );
+		debug_log( $user, '$user' );
+
+		$ip = self::get_user_ip();
+		debug_log( $ip, '$ip' );
+
+		$location = self::get_user_location( $ip );
+		debug_log( $location, '$location' );
+
+		$user_agent = self::get_user_agent();
+		debug_log( $user_agent, '$user_agent' );
+
+		$details = array(
+			'Location'   => $location,
+			'User agent' => $user_agent,
+		);
+
+		// Log the event.
+		WP_Logify_Logger::log_event( 'Login', 'user', $user->ID, $details );
 	}
 
 	public static function track_user_registration( $user_id ) {
@@ -85,7 +103,7 @@ class WP_Logify_Users {
 	/**
 	 * Retrieves the IP address of the user.
 	 *
-	 * @return string The IP address of the user or null if not found.
+	 * @return ?string The IP address of the user or null if not found.
 	 */
 	public static function get_user_ip(): ?string {
 		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
@@ -104,5 +122,47 @@ class WP_Logify_Users {
 
 		// Trim any whitespace.
 		return $ip === null ? null : trim( $ip );
+	}
+
+	/**
+	 * Retrieves the location of the user based on their IP address.
+	 *
+	 * @param string $ip The IP address of the user.
+	 * @return ?string The location of the user or null if not found.
+	 */
+	public static function get_user_location( string $ip ): ?string {
+		// Use a geolocation API to get location info from the IP address.
+		$response = wp_remote_get( "http://ip-api.com/json/$ip" );
+		if ( is_wp_error( $response ) ) {
+			return null;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// Construct the location string.
+		if ( $data['status'] === 'success' ) {
+			$location = array(
+				$data['city'],
+				$data['regionName'],
+				$data['country'],
+			);
+			return implode( ', ', array_filter( $location ) );
+		}
+
+		// Return null if the location could not be determined.
+		return null;
+	}
+
+	/**
+	 * Retrieves the user agent string from the server variables.
+	 *
+	 * @return ?string The user agent string or null if not found.
+	 */
+	public static function get_user_agent(): ?string {
+		// Retrieve the user agent string from the server variables.
+		return isset( $_SERVER['HTTP_USER_AGENT'] )
+			? trim( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) )
+			: null;
 	}
 }

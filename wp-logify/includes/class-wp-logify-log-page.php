@@ -241,13 +241,13 @@ class WP_Logify_Log_Page {
 				$details = json_decode( $last_login_event->details );
 
 				// User location.
-				if ( ! $details['user_location'] ) {
-					$user_location = esc_html( $details['user_location'] );
+				if ( ! $details['Location'] ) {
+					$user_location = esc_html( $details['Location'] );
 				}
 
 				// User agent.
-				if ( ! $details['user_agent'] ) {
-					$user_agent = esc_html( $details['user_agent'] );
+				if ( ! $details['User agent'] ) {
+					$user_agent = esc_html( $details['User agent'] );
 				}
 			}
 		}
@@ -341,8 +341,7 @@ class WP_Logify_Log_Page {
 				return "<a href='$url'>{$post->post_title}</a>";
 
 			case 'user':
-				$user = get_userdata( $event->object_id );
-				return "<a href='/wp-admin/user-edit.php?user_id={$user->ID}'>{$user->display_name}</a>";
+				return WP_Logify_Users::get_user_profile_link( $event->object_id );
 
 			case 'theme':
 				$theme = wp_get_theme( $event->object_id );

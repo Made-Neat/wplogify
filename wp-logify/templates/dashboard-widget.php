@@ -52,14 +52,9 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 		<tbody>
 			<?php if ( $results ) : ?>
 				<?php foreach ( $results as $event ) : ?>
-					<?php
-						$user_profile_url = admin_url( 'user-edit.php?user_id=' . $event->user_id );
-						$username         = esc_html( WP_Logify_Users::get_username( $event->user_id ) );
-						$user_info        = '<div class="wp-logify-user-info"><a href="' . esc_url( $user_profile_url ) . '">' . $username . '</a></div>';
-					?>
 					<tr>
 						<td><?php echo esc_html( WP_Logify_DateTime::format_datetime_site( $event->date_time ) ); ?></td>
-						<td><?php echo $user_info; ?></td>
+						<td><div class="wp-logify-user-info"><?php echo WP_Logify_Users::get_user_profile_link( $event->user_id ); ?></div></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
 						<td><?php echo WP_Logify_Log_Page::get_object_link( $event ); ?></td>
 					</tr>
