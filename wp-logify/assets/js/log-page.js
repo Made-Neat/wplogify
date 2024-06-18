@@ -26,7 +26,7 @@ jQuery(($) => {
             },
             { data: "date_time" },
             { data: "user" },
-            { data: "source_ip" },
+            { data: "user_ip" },
             { data: "event_type" },
             { data: "object" },
             {

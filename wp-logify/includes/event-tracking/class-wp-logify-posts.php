@@ -71,7 +71,7 @@ class WP_Logify_Posts {
 		return array(
 			'Post ID'   => $post->ID,
 			'Post type' => $post->post_type,
-			'Author'    => "<a href='/?author={$post->post_author}'>{$author->display_name}</a>",
+			'Author'    => WP_Logify_Users::get_user_profile_link( $post->post_author ),
 			'Status'    => $post->post_status,
 			'Created'   => WP_Logify_DateTime::format_datetime_site( self::get_post_created_datetime( $post ), true ),
 		);

@@ -43,7 +43,7 @@ class WP_Logify_Log_Page {
 			'id',
 			'date_time',
 			'user',
-			'source_ip',
+			'user_ip',
 			'event_type',
 			'object',
 		);
@@ -90,7 +90,7 @@ class WP_Logify_Log_Page {
 		// Filter by the search value, if provided.
 		if ( ! empty( $search_value ) ) {
 			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
-			$sql       .= ' WHERE date_time LIKE %s OR user_role LIKE %s OR source_ip LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR details LIKE %s';
+			$sql       .= ' WHERE date_time LIKE %s OR user_role LIKE %s OR user_ip LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR details LIKE %s';
 			array_push(
 				$args,
 				$like_value,
@@ -157,9 +157,9 @@ class WP_Logify_Log_Page {
 					. '</span></div>';
 
 				// Source IP.
-				$row->source_ip = '<a href="https://whatismyipaddress.com/ip/'
-					. esc_html( $row->source_ip ) . '" target="_blank">'
-					. esc_html( $row->source_ip ) . '</a>';
+				$row->user_ip = '<a href="https://whatismyipaddress.com/ip/'
+					. esc_html( $row->user_ip ) . '" target="_blank">'
+					. esc_html( $row->user_ip ) . '</a>';
 
 				// Get the object link.
 				$row->object = self::get_object_link( $row );
@@ -219,7 +219,7 @@ class WP_Logify_Log_Page {
 		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>";
 		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . '</td></tr>';
 		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
-		$html .= '<tr><th>Source IP</th><td>' . ( $row->source_ip ?? 'Unknown' ) . '</td></tr>';
+		$html .= '<tr><th>IP address</th><td>' . ( $row->user_ip ?? 'Unknown' ) . '</td></tr>';
 
 		// Default values.
 		$last_login_datetime_string = 'Unknown';

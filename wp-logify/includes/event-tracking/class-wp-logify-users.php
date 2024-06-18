@@ -23,22 +23,8 @@ class WP_Logify_Users {
 		debug_log( $user_login, '$user_login' );
 		debug_log( $user, '$user' );
 
-		$ip = self::get_user_ip();
-		debug_log( $ip, '$ip' );
-
-		$location = self::get_user_location( $ip );
-		debug_log( $location, '$location' );
-
-		$user_agent = self::get_user_agent();
-		debug_log( $user_agent, '$user_agent' );
-
-		$details = array(
-			'Location'   => $location,
-			'User agent' => $user_agent,
-		);
-
 		// Log the event.
-		WP_Logify_Logger::log_event( 'Login', 'user', $user->ID, $details );
+		WP_Logify_Logger::log_event( 'Login', 'user', $user->ID );
 	}
 
 	public static function track_user_registration( $user_id ) {
@@ -46,7 +32,7 @@ class WP_Logify_Users {
 			'event_type' => 'User registered',
 			'object'     => "User ID: $user_id",
 			'user_id'    => $user_id,
-			'source_ip'  => $_SERVER['REMOTE_ADDR'],
+			'user_ip'    => $_SERVER['REMOTE_ADDR'],
 			'date_time'  => current_time( 'mysql', true ),
 		);
 		// self::send_data_to_saas( $data );
@@ -86,12 +72,15 @@ class WP_Logify_Users {
 	 * Retrieves a link to the user's profile.
 	 *
 	 * @param int|object $user The ID of the user or the user object or a row from the users table.
-	 * @return string The link to the user's profile.
+	 * @return ?string The link to the user's profile or null if the user wasn't found.
 	 */
-	public static function get_user_profile_link( int|object $user ) {
+	public static function get_user_profile_link( int|object $user ): ?string {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			$user = get_userdata( $user );
+			if ( $user === false ) {
+				return null;
+			}
 		}
 
 		// Construct the link.

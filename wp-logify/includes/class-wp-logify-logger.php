@@ -27,7 +27,9 @@ class WP_Logify_Logger {
             date_time datetime NOT NULL,
             user_id bigint(20) unsigned NOT NULL,
             user_role varchar(255) NOT NULL,
-            source_ip varchar(100) NOT NULL,
+            user_ip varchar(100) NOT NULL,
+            user_location varchar(255) NULL,
+            user_agent varchar(255) NULL,
             event_type varchar(255) NOT NULL,
             object_type varchar(20) NULL,
             object_id varchar(20) NULL,
@@ -74,10 +76,12 @@ class WP_Logify_Logger {
 		$date_time = WP_Logify_DateTime::format_datetime_mysql( WP_Logify_DateTime::current_datetime() );
 
 		// Get the user info.
-		$user      = wp_get_current_user();
-		$user_id   = $user->ID;
-		$user_role = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
-		$source_ip = WP_Logify_Users::get_user_ip();
+		$user          = wp_get_current_user();
+		$user_id       = $user->ID;
+		$user_role     = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
+		$user_ip       = WP_Logify_Users::get_user_ip();
+		$user_location = WP_Logify_Users::get_user_location( $user_ip );
+		$user_agent    = WP_Logify_Users::get_user_agent();
 
 		// Encode the event details as JSON.
 		if ( $details !== null ) {
@@ -93,14 +97,16 @@ class WP_Logify_Logger {
 		$wpdb->insert(
 			self::get_table_name(),
 			array(
-				'date_time'   => $date_time,
-				'user_id'     => $user_id,
-				'user_role'   => $user_role,
-				'source_ip'   => $source_ip,
-				'event_type'  => $event_type,
-				'object_type' => $object_type,
-				'object_id'   => $object_id,
-				'details'     => $details_json,
+				'date_time'     => $date_time,
+				'user_id'       => $user_id,
+				'user_role'     => $user_role,
+				'user_ip'       => $user_ip,
+				'user_location' => $user_location,
+				'user_agent'    => $user_agent,
+				'event_type'    => $event_type,
+				'object_type'   => $object_type,
+				'object_id'     => $object_id,
+				'details'       => $details_json,
 			)
 		);
 	}
