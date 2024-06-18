@@ -1,11 +1,11 @@
 <?php
 /**
- * Class WP_Logify_Post_Events
+ * Class WP_Logify_Posts
  *
  * This class provides basic tracking functionalities for WordPress.
  * It tracks changes to posts and user logins.
  */
-class WP_Logify_Post_Events {
+class WP_Logify_Posts {
 	/**
 	 * Link the events we want to log to methods.
 	 */

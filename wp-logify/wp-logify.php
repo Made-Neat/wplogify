@@ -18,11 +18,12 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-admin.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-api.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-cron.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-datetime.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-log-page.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-logify-logger.php';
 
 // Event tracking classes.
-require_once plugin_dir_path( __FILE__ ) . 'includes/event-tracking/class-wp-logify-post-events.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/event-tracking/class-wp-logify-user-events.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/event-tracking/class-wp-logify-posts.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/event-tracking/class-wp-logify-users.php';
 
 /**
  * Initialize the plugin.
@@ -35,8 +36,8 @@ function wp_logify_init() {
 	WP_Logify_Cron::init();
 
 	// Initialise event logging classes.
-	WP_Logify_User_Events::init();
-	WP_Logify_Post_Events::init();
+	WP_Logify_Users::init();
+	WP_Logify_Posts::init();
 	// WP_Logify_Tracker::init();
 }
 

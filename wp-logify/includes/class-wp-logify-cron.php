@@ -8,7 +8,7 @@ class WP_Logify_Cron {
 	}
 
 	/**
-	 * Cleanup old records from the log table.
+	 * Cleanup old records from the events table.
 	 */
 	public static function cleanup_old_records() {
 		global $wpdb;

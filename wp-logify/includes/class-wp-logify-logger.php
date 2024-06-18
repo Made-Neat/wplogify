@@ -55,7 +55,7 @@ class WP_Logify_Logger {
 	 * @param string $object_id   The ID or name of the object associated with the event.
 	 * @param array  $details     Additional details about the event.
 	 */
-	public static function log_event( string $event_type, string $object_type = null, string $object_id = null, array $details = null ) {
+	public static function log_event( string $event_type, ?string $object_type = null, ?string $object_id = null, ?array $details = null ) {
 		global $wpdb;
 
 		// Check object type is valid.
@@ -69,18 +69,18 @@ class WP_Logify_Logger {
 		$user_role = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
 
 		$date_time = WP_Logify_DateTime::format_datetime_mysql( WP_Logify_DateTime::current_datetime() );
-		$source_ip = sanitize_text_field( $_SERVER['REMOTE_ADDR'] );
+		$source_ip = WP_Logify_Users::get_user_ip();
 
 		$wpdb->insert(
 			self::get_table_name(),
 			array(
-				'date_time'   => sanitize_text_field( $date_time ),
-				'user_id'     => intval( $user_id ),
+				'date_time'   => $date_time,
+				'user_id'     => $user_id,
 				'user_role'   => $user_role,
 				'source_ip'   => $source_ip,
-				'event_type'  => sanitize_text_field( $event_type ),
-				'object_type' => $object_type === null ? null : sanitize_text_field( $object_type ),
-				'object_id'   => $object_id === null ? null : sanitize_text_field( $object_id ),
+				'event_type'  => $event_type,
+				'object_type' => $object_type,
+				'object_id'   => $object_id,
 				'details'     => $details === null ? null : wp_json_encode( $details ),
 			)
 		);

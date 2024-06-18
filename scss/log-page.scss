@@ -1,12 +1,12 @@
 $blue: #2271b1;
-$very-pale-blue: hsl(200, 66%, 95%);
-$pale-blue: hsl(200, 66%, 85%);
 $light-blue: hsl(200, 66%, 65%);
+$pale-blue: hsl(200, 66%, 85%);
+$very-pale-blue: hsl(200, 66%, 95%);
 
-$pale-grey: #eee;
-$very-pale-grey: #f7f7f7;
 $dark-grey: #555;
 $light-grey: #ddd;
+$pale-grey: #eee;
+$very-pale-grey: #f7f7f7;
 
 .table-wp-logify {
     width: 100%;
@@ -15,7 +15,7 @@ $light-grey: #ddd;
     th,
     td {
         border: 1px solid $light-grey;
-        padding: 8px;
+        padding: 0.5rem;
     }
 
     th {
@@ -31,7 +31,7 @@ $light-grey: #ddd;
 
 .dataTables_wrapper {
     .dataTables_paginate .paginate_button {
-        padding: 0.2em 0.5em;
+        padding: 0.2rem 0.5rem;
     }
 
     .dataTables_filter {
@@ -78,7 +78,7 @@ $light-grey: #ddd;
     .wp-logify-show-details {
         background-color: $pale-grey;
         color: $blue;
-        padding: 4px 8px;
+        padding: 0.25rem 0.5rem;
         border-radius: 3px;
         cursor: pointer;
     }
@@ -95,18 +95,29 @@ $light-grey: #ddd;
     .wp-logify-details-section {
         display: inline-block;
 
-        .wp-logify-details-section-heading {
-            h4 {
-                margin-bottom: 0;
-            }
+        h4 {
+            margin-bottom: 0.25rem;
         }
 
-        .wp-logify-details-section-content {
-            .wp-logify-details-table {
-                border-collapse: collapse;
-                width: 20rem;
-                margin-right: 1rem;
-            }
+        .wp-logify-details-table {
+            border-collapse: collapse;
+            width: 20rem;
+            margin-right: 1rem;
         }
+    }
+}
+
+.wp-logify-user-info {
+    display: inline-block;
+    vertical-align: top;
+    margin-left: 0.5rem;
+
+    a {
+        font-weight: bold;
+    }
+
+    .wp-logify-user-role {
+        font-size: 0.9em;
+        color: #555;
     }
 }

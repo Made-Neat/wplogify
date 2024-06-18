@@ -27,15 +27,4 @@ class WP_Logify_API {
 			// Handle successful response
 		}
 	}
-
-	// public static function track_user_registration( $user_id ) {
-	// $data = array(
-	// 'event_type' => 'User Registered',
-	// 'object'     => "User ID: $user_id",
-	// 'user_id'    => $user_id,
-	// 'source_ip'  => $_SERVER['REMOTE_ADDR'],
-	// 'date_time'  => current_time( 'mysql', true ),
-	// );
-	// self::send_data_to_saas( $data );
-	// }
 }

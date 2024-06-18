@@ -8,7 +8,7 @@ jQuery(($) => {
         },
         serverSide: true,
         ajax: {
-            url: wpLogifyAdmin.ajaxurl,
+            url: wpLogifyLogPage.ajaxurl,
             type: "POST",
             data: (d) => {
                 d.action = 'wp_logify_fetch_logs';
