@@ -42,15 +42,34 @@ class WP_Logify_Posts {
 	 */
 	public static function get_post_created_datetime( WP_Post $post ): DateTime {
 		global $wpdb;
-		$table_name         = $wpdb->prefix . 'posts';
-		$sql                = $wpdb->prepare(
-			'SELECT post_date FROM %i WHERE ID=%d OR post_parent=%d ORDER BY post_date ASC LIMIT 1',
+		$table_name       = $wpdb->prefix . 'posts';
+		$sql              = $wpdb->prepare(
+			"SELECT MIN(post_date) FROM %i WHERE (ID=%d OR post_parent=%d) AND post_date != '0000-00-00 00:00:00'",
 			$table_name,
 			$post->ID,
 			$post->ID
 		);
-		$earliest_post_date = $wpdb->get_var( $sql );
-		return WP_Logify_DateTime::create_datetime( $earliest_post_date );
+		$created_datetime = $wpdb->get_var( $sql );
+		return WP_Logify_DateTime::create_datetime( $created_datetime );
+	}
+
+	/**
+	 * Get the datetime a post was last modified.
+	 *
+	 * @param WP_Post $post The post object.
+	 * @return DateTime The datetime the post was last modified.
+	 */
+	public static function get_post_last_modified_datetime( WP_Post $post ): DateTime {
+		global $wpdb;
+		$table_name             = $wpdb->prefix . 'posts';
+		$sql                    = $wpdb->prepare(
+			"SELECT MAX(post_modified) FROM %i WHERE (ID=%d OR post_parent=%d) AND post_modified != '0000-00-00 00:00:00'",
+			$table_name,
+			$post->ID,
+			$post->ID
+		);
+		$last_modified_datetime = $wpdb->get_var( $sql );
+		return WP_Logify_DateTime::create_datetime( $last_modified_datetime );
 	}
 
 	/**
@@ -65,16 +84,14 @@ class WP_Logify_Posts {
 			$post = get_post( $post );
 		}
 
-		// Get the author.
-		$author = get_userdata( $post->post_author );
-
 		// Create the details array.
 		return array(
-			'Post ID'   => $post->ID,
-			'Post type' => $post->post_type,
-			'Author'    => WP_Logify_Users::get_user_profile_link( $post->post_author ),
-			'Status'    => $post->post_status,
-			'Created'   => WP_Logify_DateTime::format_datetime_site( self::get_post_created_datetime( $post ), true ),
+			'Post ID'       => $post->ID,
+			'Post type'     => $post->post_type,
+			'Author'        => WP_Logify_Users::get_user_profile_link( $post->post_author ),
+			'Status'        => $post->post_status,
+			'Created'       => WP_Logify_DateTime::format_datetime_site( self::get_post_created_datetime( $post ), true ),
+			'Last modified' => WP_Logify_DateTime::format_datetime_site( self::get_post_last_modified_datetime( $post ), true ),
 		);
 	}
 
@@ -139,10 +156,9 @@ class WP_Logify_Posts {
 		// Get the event type.
 		$event_type = self::get_post_type_singular_name( $parent->post_type ) . ' ' . ( $creating ? 'Created' : 'Updated' );
 
-		// If updating, show the modified time, and provide a link to the revision comparison page.
+		// If updating, provide a link to the revision comparison page.
 		if ( ! $creating ) {
-			$details['Modified'] = WP_Logify_DateTime::format_datetime_site( WP_Logify_DateTime::create_datetime( $parent->post_modified ), true );
-			$details['Changes']  = "<a href='" . admin_url( "/revision.php?revision={$revision->ID}" ) . "'>Compare revisions</a>";
+			$details['Changes'] = "<a href='" . admin_url( "/revision.php?revision={$revision->ID}" ) . "'>Compare revisions</a>";
 		}
 
 		// Log the event.
