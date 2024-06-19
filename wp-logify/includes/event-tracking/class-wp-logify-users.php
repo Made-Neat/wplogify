@@ -12,6 +12,8 @@ class WP_Logify_Users {
 	public static function init() {
 		add_action( 'wp_login', array( __CLASS__, 'track_login' ), 10, 2 );
 		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
+		// add_action( 'wp_ajax_track_user_activity', 'wp_logify_track_user_activity' );
+		// add_action( 'wp_ajax_nopriv_track_user_activity', 'wp_logify_track_user_activity' );
 	}
 
 	/**
@@ -172,5 +174,56 @@ class WP_Logify_Users {
 		return isset( $_SERVER['HTTP_USER_AGENT'] )
 			? trim( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) )
 			: null;
+	}
+
+	function wp_logify_track_user_activity() {
+		check_ajax_referer( 'wp_logify_activity_nonce', 'nonce' );
+
+		$session_token = wp_get_session_token();
+		$user_id       = get_current_user_id();
+		$user_ip       = $_SERVER['REMOTE_ADDR'];
+		$user_agent    = $_SERVER['HTTP_USER_AGENT'];
+		$user_role     = implode( ', ', wp_get_current_user()->roles );
+		$date_time     = current_time( 'mysql' );
+		$details       = json_encode( array( 'Session end' => $date_time ) );
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wp_logify_events';
+
+		// Check if there's an existing record for this session
+		$existing_record = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE session_token = %s AND event_type = 'User Active'", $session_token ) );
+
+		if ( $existing_record ) {
+			// Update the session end time
+			$existing_details                = json_decode( $existing_record->details, true );
+			$existing_details['Session end'] = $date_time;
+			$updated_details                 = json_encode( $existing_details );
+
+			$wpdb->update(
+				$table_name,
+				array( 'details' => $updated_details ),
+				array( 'id' => $existing_record->id ),
+				array( '%s' ),
+				array( '%d' )
+			);
+		} else {
+			// Insert a new record
+			$wpdb->insert(
+				$table_name,
+				array(
+					'date_time'     => $date_time,
+					'user_id'       => $user_id,
+					'user_role'     => $user_role,
+					'user_ip'       => $user_ip,
+					'user_agent'    => $user_agent,
+					'session_token' => $session_token,
+					'event_type'    => 'User Active',
+					'details'       => $details,
+				),
+				array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
+			);
+		}
+
+		wp_send_json_success();
 	}
 }

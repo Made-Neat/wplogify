@@ -282,6 +282,19 @@ class WP_Logify_Admin {
 			self::enqueue_style( 'dataTables.2.0.8.css', array(), null );
 			self::enqueue_script( 'dataTables.2.0.8.js', array( 'jquery' ), null, true );
 		}
+
+		// All pages.
+		// self::enqueue_script( 'activity.js', array( 'jquery' ), 'auto', true );
+
+		// // Localise script to pass AJAX URL and nonce.
+		// wp_localize_script(
+		// 'wp-logify-activity',
+		// 'wpLogifyActivity',
+		// array(
+		// 'ajax_url' => admin_url( 'admin-ajax.php' ),
+		// 'nonce'    => wp_create_nonce( 'wp_logify_activity_nonce' ),
+		// )
+		// );
 	}
 
 	/**
