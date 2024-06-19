@@ -70,14 +70,22 @@
 }
 .wp-logify-details .wp-logify-details-section {
   display: inline-block;
+  margin-left: 1rem;
 }
 .wp-logify-details .wp-logify-details-section h4 {
   margin-bottom: 0.25rem;
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-details-table {
   border-collapse: collapse;
-  width: 20rem;
-  margin-right: 1rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-details-table th {
+  width: 8rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-event-details-table {
+  width: 24rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-user-details-table {
+  width: 48rem;
 }
 
 .wp-logify-user-info {

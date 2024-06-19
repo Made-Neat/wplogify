@@ -116,9 +116,12 @@ function wp_logify_sanitize_roles( $roles ) {
 
 /**
  * Dump a variable into the error log.
+ *
+ * @param string $label The label to prepend to the output.
+ * @param mixed  $var The variable to dump.
  */
-function debug_log( mixed $stuff, string|null $label = null ) {
+function debug_log( string $label, mixed $var ) {
 	$output  = empty( $label ) ? '' : $label . ': ';
-	$output .= is_string( $stuff ) ? $stuff : var_export( $stuff, true );
+	$output .= is_string( $var ) ? $var : var_export( $var, true );
 	error_log( $output );
 }

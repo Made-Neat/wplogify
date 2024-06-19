@@ -49,6 +49,6 @@
   background-color: #f4f4f4;
   text-align: left;
 }
-.wp-logify-activity-table .wp-logify-user-info a {
+.wp-logify-activity-table a.wp-logify-user-link {
   font-weight: bold;
 }

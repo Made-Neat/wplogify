@@ -126,8 +126,6 @@ class WP_Logify_Log_Page {
 		// Prepare the statement.
 		$sql = $wpdb->prepare( $sql, $args );
 
-		// debug_log( $sql );
-
 		// Get the requested records.
 		$results = $wpdb->get_results( $sql );
 
@@ -148,13 +146,10 @@ class WP_Logify_Log_Page {
 				$row->date_time     = "<div>$formatted_datetime ($time_ago)</div>";
 
 				// User details.
-				$user_profile_url = site_url( '/?author=' . $row->user_id );
-				$username         = WP_Logify_Users::get_username( $row );
-				$user_role        = esc_html( ucwords( $row->user_role ) );
-				$row->user        = get_avatar( $row->user_id, 32 )
-					. ' <div class="wp-logify-user-info"><a href="' . $user_profile_url . '">'
-					. $username . '</a><br><span class="wp-logify-user-role">' . $user_role
-					. '</span></div>';
+				$user_profile_link = WP_Logify_Users::get_user_profile_link( $row->user_id );
+				$user_role         = esc_html( ucwords( $row->user_role ) );
+				$row->user         = get_avatar( $row->user_id, 32 )
+					. " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 				// Source IP.
 				$row->user_ip = '<a href="https://whatismyipaddress.com/ip/'
@@ -212,52 +207,30 @@ class WP_Logify_Log_Page {
 	public static function format_user_details( object $row ): string {
 		global $wpdb;
 
-		$html = "<table class='wp-logify-user-details-table wp-logify-details-table'>";
+		// Get the last login datetime.
+		$table_name                 = WP_Logify_Logger::get_table_name();
+		$sql                        = "SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1";
+		$last_login_event           = $wpdb->get_row( $wpdb->prepare( $sql, $table_name, $row->user_id ) );
+		$last_login_datetime_string = $last_login_event !== null ? WP_Logify_DateTime::format_datetime_site( $last_login_event->date_time ) : 'Unknown';
 
-		// Core user details.
+		// User location.
+		$user_location = empty( $row->user_location ) ? 'Unknown' : esc_html( $row->user_location );
+
+		// User agent.
+		$user_agent = empty( $row->user_agent ) ? 'Unknown' : esc_html( $row->user_agent );
+
+		// Construct the HTML.
+		$html  = "<table class='wp-logify-user-details-table wp-logify-details-table'>";
 		$html .= '<tr><th>User</th><td>' . WP_Logify_Users::get_user_profile_link( $row->user_id ) . '</td></tr>';
 		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>";
 		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . '</td></tr>';
 		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
 		$html .= '<tr><th>IP address</th><td>' . ( $row->user_ip ?? 'Unknown' ) . '</td></tr>';
-
-		// Default values.
-		$last_login_datetime_string = 'Unknown';
-		$user_location              = 'Unknown';
-		$user_agent                 = 'Unknown';
-
-		// Look for the last login event.
-		$table_name       = WP_Logify_Logger::get_table_name();
-		$sql              = "SELECT * FROM %i WHERE user_id = %d AND event_type = 'Login' ORDER BY date_time DESC LIMIT 1";
-		$last_login_event = $wpdb->get_row( $wpdb->prepare( $sql, $table_name, $row->user_id ) );
-		if ( $last_login_event !== null ) {
-			// User's last login datetime.
-			if ( ! empty( $last_login_event->date_time ) ) {
-				$last_login_datetime_string = WP_Logify_DateTime::format_datetime_site( $last_login_event->date_time );
-			}
-
-			// Decode the event details.
-			if ( ! empty( $last_login_event->details ) ) {
-				$details = json_decode( $last_login_event->details );
-
-				// User location.
-				if ( ! $details['Location'] ) {
-					$user_location = esc_html( $details['Location'] );
-				}
-
-				// User agent.
-				if ( ! $details['User agent'] ) {
-					$user_agent = esc_html( $details['User agent'] );
-				}
-			}
-		}
-
-		// Additional details.
 		$html .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>";
 		$html .= "<tr><th>Location</th><td>$user_location</td></tr>";
 		$html .= "<tr><th>User agent</th><td>$user_agent</td></tr>";
-
 		$html .= '</table>';
+
 		return $html;
 	}
 

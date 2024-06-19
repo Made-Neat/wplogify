@@ -255,23 +255,22 @@ class WP_Logify_Admin {
 	 * Enqueues the necessary assets for the WP Logify admin pages.
 	 *
 	 * @param string $hook The current admin page hook.
-	 * @return void
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Dashboard widget.
 		if ( $hook === 'index.php' ) {
-			self::enqueue_style( 'dashboard-widget.css', array() );
+			self::enqueue_style( 'dashboard-widget.css' );
 		}
 
 		// Settings.
 		if ( $hook === 'wp-logify_page_wp-logify-settings' ) {
-			self::enqueue_style( 'settings.css', array() );
+			self::enqueue_style( 'settings.css' );
 		}
 
 		// Log page.
 		if ( $hook === 'toplevel_page_wp-logify' ) {
 			// Styles.
-			self::enqueue_style( 'log-page.css', array() );
+			self::enqueue_style( 'log-page.css' );
 
 			// Scripts.
 			self::enqueue_script( 'log-page.js', array( 'jquery' ), 'auto', true );
@@ -280,8 +279,8 @@ class WP_Logify_Admin {
 			wp_localize_script( 'wp-logify-log-page', 'wpLogifyLogPage', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 
 			// DataTables assets.
-			self::enqueue_style( 'dataTables.2.0.8.css', array(), 'auto' );
-			self::enqueue_script( 'dataTables.2.0.8.js', array( 'jquery' ), 'auto', true );
+			self::enqueue_style( 'dataTables.2.0.8.css', array(), null );
+			self::enqueue_script( 'dataTables.2.0.8.js', array( 'jquery' ), null, true );
 		}
 	}
 

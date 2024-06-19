@@ -94,6 +94,7 @@ $very-pale-grey: #f7f7f7;
 
     .wp-logify-details-section {
         display: inline-block;
+        margin-left: 1rem;
 
         h4 {
             margin-bottom: 0.25rem;
@@ -101,8 +102,18 @@ $very-pale-grey: #f7f7f7;
 
         .wp-logify-details-table {
             border-collapse: collapse;
-            width: 20rem;
-            margin-right: 1rem;
+
+            th {
+                width: 8rem;
+            }
+        }
+
+        .wp-logify-event-details-table {
+            width: 24rem;
+        }
+
+        .wp-logify-user-details-table {
+            width: 48rem;
         }
     }
 }

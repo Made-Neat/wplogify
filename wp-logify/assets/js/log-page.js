@@ -1,5 +1,5 @@
 jQuery(($) => {
-    console.log('Admin.js loaded'); // Debug: Check if the script is loaded
+    // console.log('Admin.js loaded'); // Debug: Check if the script is loaded
 
     let table = $('#wp-logify-activity-log').DataTable({
         processing: true,

@@ -11,32 +11,47 @@ class WP_Logify_Users {
 	 */
 	public static function init() {
 		add_action( 'wp_login', array( __CLASS__, 'track_login' ), 10, 2 );
+		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
 	}
 
 	/**
-	 * Tracks user logins.
+	 * Track user login.
 	 *
 	 * @param string  $user_login The username of the user that logged in.
 	 * @param WP_User $user The WP_User object of the user that logged in.
 	 */
-	public static function track_login( $user_login, $user ) {
-		debug_log( $user_login, '$user_login' );
-		debug_log( $user, '$user' );
+	public static function track_login( string $user_login, WP_User $user ) {
+		// debug_log( '$user_login', $user_login );
+		// debug_log( '$user', $user );
 
 		// Log the event.
-		WP_Logify_Logger::log_event( 'Login', 'user', $user->ID );
+		WP_Logify_Logger::log_event( 'User Login', 'user', $user->ID );
 	}
 
-	public static function track_user_registration( $user_id ) {
-		$data = array(
-			'event_type' => 'User registered',
-			'object'     => "User ID: $user_id",
-			'user_id'    => $user_id,
-			'user_ip'    => $_SERVER['REMOTE_ADDR'],
-			'date_time'  => current_time( 'mysql', true ),
-		);
-		// self::send_data_to_saas( $data );
+	/**
+	 * Track user logout.
+	 *
+	 * @param int $user_id The ID of the user that logged out.
+	 */
+	public static function track_logout( int $user_id ) {
+		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id );
 	}
+
+	// /**
+	// * Track user registration.
+	// */
+	// public static function track_user_registration( $user_id ) {
+	// $data = array(
+	// 'event_type' => 'User registered',
+	// 'object'     => "User ID: $user_id",
+	// 'user_id'    => $user_id,
+	// 'user_ip'    => $_SERVER['REMOTE_ADDR'],
+	// 'date_time'  => current_time( 'mysql', true ),
+	// );
+	// self::send_data_to_saas( $data );
+
+	// WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id );
+	// }
 
 	/**
 	 * Retrieves a username for a given user.
@@ -44,7 +59,7 @@ class WP_Logify_Users {
 	 * First preference is the display_name, second preference is the user_login, third preference
 	 * is the user_nicename.
 	 *
-	 * @param int|WP_User $user The ID of the user or the user object or a row from the users table.
+	 * @param int|WP_User $user The ID of the user, the user object, or a row from the users table.
 	 * @return string The username if found, otherwise 'Unknown'.
 	 */
 	public static function get_username( int|object $user ) {
@@ -71,22 +86,27 @@ class WP_Logify_Users {
 	/**
 	 * Retrieves a link to the user's profile.
 	 *
-	 * @param int|object $user The ID of the user or the user object or a row from the users table.
+	 * @param int|object $user The ID of the user, the user object, or a row from the users table.
 	 * @return ?string The link to the user's profile or null if the user wasn't found.
 	 */
 	public static function get_user_profile_link( int|object $user ): ?string {
+		// Check for a valid parameter.
+		if ( empty( $user ) ) {
+			return 'Unknown';
+		}
+
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			$user = get_userdata( $user );
 			if ( $user === false ) {
-				return null;
+				return 'Unknown';
 			}
 		}
 
 		// Construct the link.
 		$user_profile_url  = site_url( "/?author={$user->ID}" );
 		$user_display_name = self::get_username( $user );
-		return "<a href='$user_profile_url'>$user_display_name</a>";
+		return "<a href='$user_profile_url' class='wp-logify-user-link'>$user_display_name</a>";
 	}
 
 	/**
@@ -149,7 +169,6 @@ class WP_Logify_Users {
 	 * @return ?string The user agent string or null if not found.
 	 */
 	public static function get_user_agent(): ?string {
-		// Retrieve the user agent string from the server variables.
 		return isset( $_SERVER['HTTP_USER_AGENT'] )
 			? trim( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) )
 			: null;

@@ -14,6 +14,7 @@ class WP_Logify_Posts {
 		add_action( 'delete_post', array( __CLASS__, 'track_post_delete' ), 10, 2 );
 		add_action( 'trashed_post', array( __CLASS__, 'track_post_trash' ), 10, 2 );
 		add_action( 'draft_to_publish', array( __CLASS__, 'track_post_publish' ), 10, 1 );
+		add_action( 'publish_to_draft', array( __CLASS__, 'track_post_unpublish' ), 10, 1 );
 	}
 
 	/**
@@ -136,7 +137,7 @@ class WP_Logify_Posts {
 		}
 
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $parent->post_type ) . ' ' . ( $creating ? 'created' : 'updated' );
+		$event_type = self::get_post_type_singular_name( $parent->post_type ) . ' ' . ( $creating ? 'Created' : 'Updated' );
 
 		// If updating, show the modified time, and provide a link to the revision comparison page.
 		if ( ! $creating ) {
@@ -172,7 +173,7 @@ class WP_Logify_Posts {
 		$details = self::get_post_details( $post );
 
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' deleted';
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Deleted';
 
 		// Log the event.
 		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );
@@ -206,7 +207,7 @@ class WP_Logify_Posts {
 		$details['Previous status'] = $previous_status;
 
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' trashed';
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Trashed';
 
 		// Log the event.
 		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );
@@ -219,8 +220,9 @@ class WP_Logify_Posts {
 	 * Log the publishing of a post.
 	 *
 	 * @param WP_Post $post The post object that was published.
+	 * @param bool    $publish Whether the post was published or unpublished (default: true).
 	 */
-	public static function track_post_publish( WP_Post $post ) {
+	public static function track_post_publish( WP_Post $post, bool $publish = true ) {
 		// Check we haven't already logged this event.
 		if ( ! empty( $_SESSION['post event logged'] ) ) {
 			return;
@@ -235,12 +237,21 @@ class WP_Logify_Posts {
 		$details = self::get_post_details( $post );
 
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' published';
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $publish ? ' Published' : ' Unpublished' );
 
 		// Log the event.
 		WP_Logify_Logger::log_event( $event_type, 'post', $post->ID, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
+	}
+
+	/**
+	 * Log the unpublishing of a post.
+	 *
+	 * @param WP_Post $post The post object that was published.
+	 */
+	public static function track_post_unpublish( WP_Post $post ) {
+		self::track_post_publish( $post, false );
 	}
 }

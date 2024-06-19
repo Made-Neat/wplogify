@@ -75,8 +75,21 @@ class WP_Logify_Logger {
 		// Get the datetime.
 		$date_time = WP_Logify_DateTime::format_datetime_mysql( WP_Logify_DateTime::current_datetime() );
 
-		// Get the user info.
-		$user          = wp_get_current_user();
+		// Get the current user.
+		$user = wp_get_current_user();
+
+		// If the current user could not be loaded, this may be a login or logout event.
+		if ( $user->ID === 0 && $object_type === 'user' ) {
+			debug_log( 'User not found, trying to get user by ID', $object_id );
+			$user = get_userdata( $object_id );
+		}
+
+		// This shouldn't happen.
+		if ( empty( $user ) ) {
+			throw new RuntimeException( 'User not found' );
+		}
+
+		// Collect the rest of the user info.
 		$user_id       = $user->ID;
 		$user_role     = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
 		$user_ip       = WP_Logify_Users::get_user_ip();

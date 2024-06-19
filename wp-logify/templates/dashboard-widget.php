@@ -54,7 +54,7 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 				<?php foreach ( $results as $event ) : ?>
 					<tr>
 						<td><?php echo esc_html( WP_Logify_DateTime::format_datetime_site( $event->date_time ) ); ?></td>
-						<td><div class="wp-logify-user-info"><?php echo WP_Logify_Users::get_user_profile_link( $event->user_id ); ?></div></td>
+						<td><?php echo WP_Logify_Users::get_user_profile_link( $event->user_id ); ?></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
 						<td><?php echo WP_Logify_Log_Page::get_object_link( $event ); ?></td>
 					</tr>
