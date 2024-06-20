@@ -1,5 +1,6 @@
-// js/wp-logify-activity.js
-
+/**
+ * Track user activity.
+ */
 (function ($) {
     function sendActivity() {
         $.ajax({
@@ -18,11 +19,11 @@
         });
     }
 
-    $(document).ready(function () {
-        // Send initial activity on page load
+    $(function () {
+        // Send initial activity on page load.
         sendActivity();
 
-        // Send activity every 15 seconds
+        // Send activity every 15 seconds.
         setInterval(sendActivity, 15000);
     });
 })(jQuery);

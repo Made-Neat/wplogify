@@ -189,7 +189,11 @@ class WP_Logify_Admin {
 			return;
 		}
 
-		wp_add_dashboard_widget( 'wp_logify_dashboard_widget', 'WP Logify - Recent Site Activity', array( __CLASS__, 'display_dashboard_widget' ) );
+		wp_add_dashboard_widget(
+			'wp_logify_dashboard_widget',
+			'WP Logify - Recent Site Activity',
+			array( __CLASS__, 'display_dashboard_widget' )
+		);
 	}
 
 	/**
@@ -222,13 +226,15 @@ class WP_Logify_Admin {
 	 *      If set to 'auto', it will use the last modified time of the source file as the version.
 	 *      If set to null, no version number will be added.
 	 * @param string           $media  Optional. The media type for which the stylesheet is defined. Default is 'all'.
+	 * @return string The handle of the enqueued stylesheet.
 	 */
-	public static function enqueue_style( $src, $deps = array(), $ver = 'auto', $media = 'all' ) {
+	public static function enqueue_style( $src, $deps = array(), $ver = 'auto', $media = 'all' ): string {
 		$handle   = self::filename_to_handle( $src );
 		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/css/' . $src;
 		$src_path = plugin_dir_path( __FILE__ ) . '../assets/css/' . $src;
 		$ver      = 'auto' === $ver ? filemtime( $src_path ) : $ver;
 		wp_enqueue_style( $handle, $src_url, $deps, $ver, $media );
+		return $handle;
 	}
 
 	/**
@@ -241,14 +247,15 @@ class WP_Logify_Admin {
 	 *      If set to 'auto', it will use the last modified time of the source file as the version.
 	 *      If set to null, no version number will be added.
 	 * @param array|bool       $args Optional. Additional arguments for the script.
-	 * @return void
+	 * @return string The handle of the enqueued script.
 	 */
-	public static function enqueue_script( $src, $deps = array(), $ver = 'auto', $args = array() ) {
+	public static function enqueue_script( $src, $deps = array(), $ver = 'auto', $args = array() ): string {
 		$handle   = self::filename_to_handle( $src );
 		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/js/' . $src;
 		$src_path = plugin_dir_path( __FILE__ ) . '../assets/js/' . $src;
 		$ver      = 'auto' === $ver ? filemtime( $src_path ) : $ver;
 		wp_enqueue_script( $handle, $src_url, $deps, $ver, $args );
+		return $handle;
 	}
 
 	/**
@@ -273,28 +280,34 @@ class WP_Logify_Admin {
 			self::enqueue_style( 'log-page.css' );
 
 			// Scripts.
-			self::enqueue_script( 'log-page.js', array( 'jquery' ), 'auto', true );
+			$log_page_script_handle = self::enqueue_script( 'log-page.js', array( 'jquery' ), 'auto', true );
 			// The handle here must match the handle of the JS script to attach to.
 			// So we must remember that the self::enqueue_script() method prepends 'wp-logify-' to the handle.
-			wp_localize_script( 'wp-logify-log-page', 'wpLogifyLogPage', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+			wp_localize_script(
+				$log_page_script_handle,
+				'wpLogifyLogPage',
+				array(
+					'ajaxurl' => admin_url( 'admin-ajax.php' ),
+				)
+			);
 
 			// DataTables assets.
 			self::enqueue_style( 'dataTables.2.0.8.css', array(), null );
 			self::enqueue_script( 'dataTables.2.0.8.js', array( 'jquery' ), null, true );
 		}
 
-		// All pages.
-		// self::enqueue_script( 'activity.js', array( 'jquery' ), 'auto', true );
+		// Attach activity script to all pages.
+		$activity_script_handle = self::enqueue_script( 'activity.js', array( 'jquery' ), 'auto', true );
 
-		// // Localise script to pass AJAX URL and nonce.
-		// wp_localize_script(
-		// 'wp-logify-activity',
-		// 'wpLogifyActivity',
-		// array(
-		// 'ajax_url' => admin_url( 'admin-ajax.php' ),
-		// 'nonce'    => wp_create_nonce( 'wp_logify_activity_nonce' ),
-		// )
-		// );
+		// Localise script to pass AJAX URL and nonce.
+		wp_localize_script(
+			$activity_script_handle,
+			'wpLogifyActivity',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'wp_logify_activity_nonce' ),
+			)
+		);
 	}
 
 	/**

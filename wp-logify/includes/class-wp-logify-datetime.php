@@ -26,7 +26,7 @@ class WP_Logify_DateTime {
 	 * @param string $tz_string The timezone string to use. Defaults to 'site'.
 	 * @return DateTime The created DateTime object.
 	 */
-	public static function create_datetime( string $datetime_string, string $tz_string = 'site' ): \DateTime {
+	public static function create_datetime( string $datetime_string, string $tz_string = 'site' ): DateTime {
 		$tz = $tz_string === 'site' ? wp_timezone() : new DateTimeZone( $tz_string );
 		return new DateTime( $datetime_string, $tz );
 	}

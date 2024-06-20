@@ -12,8 +12,7 @@ class WP_Logify_Users {
 	public static function init() {
 		add_action( 'wp_login', array( __CLASS__, 'track_login' ), 10, 2 );
 		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
-		// add_action( 'wp_ajax_track_user_activity', 'wp_logify_track_user_activity' );
-		// add_action( 'wp_ajax_nopriv_track_user_activity', 'wp_logify_track_user_activity' );
+		add_action( 'wp_ajax_track_user_activity', array( __CLASS__, 'track_user_activity' ) );
 	}
 
 	/**
@@ -176,52 +175,71 @@ class WP_Logify_Users {
 			: null;
 	}
 
-	function wp_logify_track_user_activity() {
+	/**
+	 * Track user activity.
+	 */
+	public static function track_user_activity() {
 		check_ajax_referer( 'wp_logify_activity_nonce', 'nonce' );
 
-		$session_token = wp_get_session_token();
-		$user_id       = get_current_user_id();
-		$user_ip       = $_SERVER['REMOTE_ADDR'];
-		$user_agent    = $_SERVER['HTTP_USER_AGENT'];
-		$user_role     = implode( ', ', wp_get_current_user()->roles );
-		$date_time     = current_time( 'mysql' );
-		$details       = json_encode( array( 'Session end' => $date_time ) );
-
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'wp_logify_events';
+		$user_id    = get_current_user_id();
+		$table_name = WP_Logify_Logger::get_table_name();
+		$event_type = 'User Session';
 
-		// Check if there's an existing record for this session
-		$existing_record = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE session_token = %s AND event_type = 'User Active'", $session_token ) );
+		// Get the current datetime.
+		$now           = WP_Logify_DateTime::current_datetime();
+		$formatted_now = WP_Logify_DateTime::format_datetime_mysql( $now );
 
-		if ( $existing_record ) {
-			// Update the session end time
-			$existing_details                = json_decode( $existing_record->details, true );
-			$existing_details['Session end'] = $date_time;
-			$updated_details                 = json_encode( $existing_details );
+		// Check if this is a continuing session.
+		$continuing      = false;
+		$sql             = $wpdb->prepare(
+			'SELECT id, details FROM %i WHERE user_id = %d AND event_type = %s ORDER BY date_time DESC',
+			$table_name,
+			$user_id,
+			$event_type
+		);
+		$existing_record = $wpdb->get_row( $sql );
+		if ( $existing_record && $existing_record->details !== null ) {
 
-			$wpdb->update(
-				$table_name,
-				array( 'details' => $updated_details ),
-				array( 'id' => $existing_record->id ),
-				array( '%s' ),
-				array( '%d' )
+			// Extract the current session end datetime from the event details.
+			$details                = json_decode( $existing_record->details, true );
+			$session_start_datetime = WP_Logify_DateTime::create_datetime( $details['Session start'] );
+			$session_end_datetime   = WP_Logify_DateTime::create_datetime( $details['Session end'] );
+
+			// If the current value for session end time is less than 5 minutes (300 seconds) before
+			// now, we'll say the session is continuing, and update the session end time to now.
+			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
+			// debug_log( 'seconds diff', $seconds_diff );
+			if ( $seconds_diff <= 300 ) {
+				$continuing = true;
+
+				// Update the session end time to now.
+				$details['Session end'] = $formatted_now;
+
+				// Calculate the new duration.
+				$duration_seconds            = $now->getTimestamp() - $session_start_datetime->getTimestamp();
+				$duration_minutes            = ceil( $duration_seconds / 60 );
+				$details['Session duration'] = $duration_minutes . ' minute' . ( $duration_minutes === 1 ? '' : 's' );
+
+				// Encode the details as JSON and update the record.
+				$wpdb->update(
+					$table_name,
+					array( 'details' => wp_json_encode( $details ) ),
+					array( 'id' => $existing_record->id ),
+					array( '%s' ),
+					array( '%d' )
+				);
+			}
+		}
+
+		// If we're not continuing an existing session, record the start of a new one.
+		if ( ! $continuing ) {
+			$details = array(
+				'Session start'    => $formatted_now,
+				'Session end'      => $formatted_now,
+				'Session duration' => '0 minutes',
 			);
-		} else {
-			// Insert a new record
-			$wpdb->insert(
-				$table_name,
-				array(
-					'date_time'     => $date_time,
-					'user_id'       => $user_id,
-					'user_role'     => $user_role,
-					'user_ip'       => $user_ip,
-					'user_agent'    => $user_agent,
-					'session_token' => $session_token,
-					'event_type'    => 'User Active',
-					'details'       => $details,
-				),
-				array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
-			);
+			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, $details );
 		}
 
 		wp_send_json_success();

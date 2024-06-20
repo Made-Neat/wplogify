@@ -96,7 +96,6 @@ class WP_Logify_Logger {
 		$user_ip       = WP_Logify_Users::get_user_ip();
 		$user_location = WP_Logify_Users::get_user_location( $user_ip );
 		$user_agent    = WP_Logify_Users::get_user_agent();
-		$session_token = wp_get_session_token();
 
 		// Encode the event details as JSON.
 		if ( $details !== null ) {
@@ -118,7 +117,6 @@ class WP_Logify_Logger {
 				'user_ip'       => $user_ip,
 				'user_location' => $user_location,
 				'user_agent'    => $user_agent,
-				'session_token' => $session_token,
 				'event_type'    => $event_type,
 				'object_type'   => $object_type,
 				'object_id'     => $object_id,
