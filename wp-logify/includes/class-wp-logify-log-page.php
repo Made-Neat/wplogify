@@ -243,21 +243,21 @@ class WP_Logify_Log_Page {
 	public static function format_details( object $row ) {
 		$html = "<div class='wp-logify-details'>";
 
-		// Event details.
-		if ( ! empty( $row->details ) ) {
-			$html .= "
-                <div class='wp-logify-event-details wp-logify-details-section'>
-                    <h4>Event Details</h4>
-                    " . self::format_event_details( $row ) . '
-                </div>';
-		}
-
 		// User details.
 		if ( ! empty( $row->user_id ) ) {
 			$html .= "
                 <div class='wp-logify-user-details wp-logify-details-section'>
                     <h4>User Details</h4>
                     " . self::format_user_details( $row ) . '
+                </div>';
+		}
+
+		// Event details.
+		if ( ! empty( $row->details ) ) {
+			$html .= "
+                <div class='wp-logify-event-details wp-logify-details-section'>
+                    <h4>Event Details</h4>
+                    " . self::format_event_details( $row ) . '
                 </div>';
 		}
 

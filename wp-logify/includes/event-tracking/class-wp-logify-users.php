@@ -12,7 +12,9 @@ class WP_Logify_Users {
 	public static function init() {
 		add_action( 'wp_login', array( __CLASS__, 'track_login' ), 10, 2 );
 		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
-		add_action( 'wp_ajax_track_user_activity', array( __CLASS__, 'track_user_activity' ) );
+		add_action( 'wp_ajax_track_user_activity', array( __CLASS__, 'track_user_activity' ), 10, 0 );
+		add_action( 'user_register', array( __CLASS__, 'track_user_registration' ), 10, 2 );
+		add_action( 'delete_user', array( __CLASS__, 'track_user_deletion' ), 10, 3 );
 	}
 
 	/**
@@ -22,10 +24,6 @@ class WP_Logify_Users {
 	 * @param WP_User $user The WP_User object of the user that logged in.
 	 */
 	public static function track_login( string $user_login, WP_User $user ) {
-		// debug_log( '$user_login', $user_login );
-		// debug_log( '$user', $user );
-
-		// Log the event.
 		WP_Logify_Logger::log_event( 'User Login', 'user', $user->ID );
 	}
 
@@ -38,21 +36,64 @@ class WP_Logify_Users {
 		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id );
 	}
 
-	// /**
-	// * Track user registration.
-	// */
-	// public static function track_user_registration( $user_id ) {
-	// $data = array(
-	// 'event_type' => 'User registered',
-	// 'object'     => "User ID: $user_id",
-	// 'user_id'    => $user_id,
-	// 'user_ip'    => $_SERVER['REMOTE_ADDR'],
-	// 'date_time'  => current_time( 'mysql', true ),
-	// );
-	// self::send_data_to_saas( $data );
+	/**
+	 * Track user registration.
+	 */
+	public static function track_user_registration( int $user_id, array $userdata ) {
+		// Get the user's details.
+		$details = self::get_user_details( $user_id );
 
-	// WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id );
-	// }
+		WP_Logify_Logger::log_event( 'User Registered', 'user', $user_id, $details );
+	}
+
+	/**
+	 * Track user deletion.
+	 */
+	public static function track_user_deletion( int $id, ?int $reassign, WP_User $user ) {
+		// Get the user's details.
+		$details = self::get_user_details( $user );
+
+		// If the user is being reassigned, log that information.
+		if ( $reassign ) {
+			$details = array( 'Data reassigned to' => self::get_user_profile_link( $reassign ) );
+		}
+
+		WP_Logify_Logger::log_event( 'User Deleted', 'user', $id, $details );
+	}
+
+	/**
+	 * Get the details of a user to show in the log.
+	 *
+	 * @param int|WP_User $user The user ID or object.
+	 * @return array The details of the user.
+	 */
+	private static function get_user_details( int|WP_User $user ): array {
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user_id = $user;
+			$user    = get_userdata( $user );
+		} else {
+			$user_id = $user->ID;
+		}
+
+		// Create the details array.
+		$details = array(
+			'User ID' => $user_id,
+			'Profile' => self::get_user_profile_link( $user ),
+			'Login'   => $user->user_login,
+			'Email'   => $user->user_email,
+			'Roles'   => is_array( $user->roles ) ? implode( ', ', $user->roles ) : $user->roles,
+		);
+
+		// Add the datetime the user was registered, if set.
+		if ( $user->user_registered ) {
+			$user_registered_datetime_utc  = WP_Logify_DateTime::create_datetime( $user->user_registered, 'UTC' );
+			$user_registered_datetime_site = $user_registered_datetime_utc->setTimezone( wp_timezone() );
+			$details['Registered']         = WP_Logify_DateTime::format_datetime_site( $user_registered_datetime_site );
+		}
+
+		return $details;
+	}
 
 	/**
 	 * Retrieves a username for a given user.
@@ -69,14 +110,17 @@ class WP_Logify_Users {
 			$user = get_userdata( $user );
 		}
 
+		// Preference is the display name, which is their full name.
 		if ( ! empty( $user->display_name ) ) {
 			return $user->display_name;
 		}
 
+		// If that fails, use their login name.
 		if ( ! empty( $user->user_login ) ) {
 			return $user->user_login;
 		}
 
+		// If that fails, use the nice name.
 		if ( ! empty( $user->user_nicename ) ) {
 			return $user->user_nicename;
 		}
@@ -176,6 +220,32 @@ class WP_Logify_Users {
 	}
 
 	/**
+	 * Retrieves the duration of a session as a string.
+	 * The duration is rounded up to the nearest minute. Seconds aren't shown.
+	 *
+	 * @param DateTime $start The start of the session.
+	 * @param DateTime $end The end of the session.
+	 * @return string The duration of the session as a string.
+	 */
+	public static function get_duration_string( DateTime $start, DateTime $end ): string {
+		$seconds         = $end->getTimestamp() - $start->getTimestamp();
+		$minutes         = ceil( $seconds / 60 );
+		$hours           = floor( $minutes / 60 );
+		$minutes         = $minutes % 60;
+		$duration_string = '';
+		if ( $hours > 0 ) {
+			$duration_string .= "$hours hour" . ( $hours === 1 ? '' : 's' );
+		}
+		if ( $minutes > 0 ) {
+			if ( $duration_string !== '' ) {
+				$duration_string .= ', ';
+			}
+			$duration_string .= "$minutes minute" . ( $minutes === 1 ? '' : 's' );
+		}
+		return $duration_string;
+	}
+
+	/**
 	 * Track user activity.
 	 */
 	public static function track_user_activity() {
@@ -209,19 +279,14 @@ class WP_Logify_Users {
 			// If the current value for session end time is less than 5 minutes (300 seconds) before
 			// now, we'll say the session is continuing, and update the session end time to now.
 			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
-			// debug_log( 'seconds diff', $seconds_diff );
 			if ( $seconds_diff <= 300 ) {
 				$continuing = true;
 
-				// Update the session end time to now.
-				$details['Session end'] = $formatted_now;
+				// Update the session end time and duration.
+				$details['Session end']      = $formatted_now;
+				$details['Session duration'] = self::get_duration_string( $session_start_datetime, $now );
 
-				// Calculate the new duration.
-				$duration_seconds            = $now->getTimestamp() - $session_start_datetime->getTimestamp();
-				$duration_minutes            = ceil( $duration_seconds / 60 );
-				$details['Session duration'] = $duration_minutes . ' minute' . ( $duration_minutes === 1 ? '' : 's' );
-
-				// Encode the details as JSON and update the record.
+				// Update the record.
 				$wpdb->update(
 					$table_name,
 					array( 'details' => wp_json_encode( $details ) ),
