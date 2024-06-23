@@ -11,7 +11,7 @@
                 nonce: wpLogifyActivity.nonce
             },
             success: function (response) {
-                console.log('User activity tracked', response);
+                // console.log('User activity tracked', response);
             },
             error: function (error) {
                 console.error('Error tracking user activity', error);

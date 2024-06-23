@@ -1,4 +1,17 @@
 <?php
+/**
+ * Logger class file.
+ *
+ * This file contains the Logger class, which is responsible for logging events to the database.
+ *
+ * @package WP_Logify
+ */
+
+/**
+ * Class WP_Logify_Logger
+ *
+ * This class is responsible for logging events to the database.
+ */
 class WP_Logify_Logger {
 
 	/**
@@ -10,7 +23,7 @@ class WP_Logify_Logger {
 	 * Initializes the class by adding WordPress actions.
 	 */
 	public static function init() {
-		// Ensure table is created on plugin activation
+		// Ensure table is created on plugin activation.
 		self::create_table();
 	}
 
@@ -34,6 +47,7 @@ class WP_Logify_Logger {
             event_type varchar(255) NOT NULL,
             object_type varchar(20) NULL,
             object_id varchar(20) NULL,
+            object_name varchar(255) NULL,
             details text NULL,
             PRIMARY KEY (id)
         ) $charset_collate;";
@@ -55,7 +69,10 @@ class WP_Logify_Logger {
 	 *
 	 * @param string          $event_type  The type of event.
 	 * @param ?string         $object_type The type of object associated with the event.
-	 * @param null|int|string $object_id   The ID or name of the object associated with the event.
+	 * @param null|int|string $object_id   The ID of the object associated with the event. This can
+	 *                                     be a string for non-integer object identifiers, such as
+	 *                                     the machine name of a theme or plugin.
+	 * @param ?string         $object_name The name of the object associated with the event.
 	 * @param ?array          $details     Additional details about the event.
 	 *
 	 * @throws InvalidArgumentException If the object type is invalid.
@@ -64,6 +81,7 @@ class WP_Logify_Logger {
 		string $event_type,
 		?string $object_type = null,
 		null|int|string $object_id = null,
+		?string $object_name = null,
 		?array $details = null
 	) {
 		global $wpdb;
@@ -120,6 +138,7 @@ class WP_Logify_Logger {
 				'event_type'    => $event_type,
 				'object_type'   => $object_type,
 				'object_id'     => $object_id,
+				'object_name'   => $object_name,
 				'details'       => $details_json,
 			)
 		);

@@ -24,7 +24,7 @@ class WP_Logify_Users {
 	 * @param WP_User $user The WP_User object of the user that logged in.
 	 */
 	public static function track_login( string $user_login, WP_User $user ) {
-		WP_Logify_Logger::log_event( 'User Login', 'user', $user->ID );
+		WP_Logify_Logger::log_event( 'User Login', 'user', $user->ID, self::get_username( $user ) );
 	}
 
 	/**
@@ -33,7 +33,7 @@ class WP_Logify_Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function track_logout( int $user_id ) {
-		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id );
+		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id, self::get_username( $user ) );
 	}
 
 	/**
@@ -43,7 +43,7 @@ class WP_Logify_Users {
 		// Get the user's details.
 		$details = self::get_user_details( $user_id );
 
-		WP_Logify_Logger::log_event( 'User Registered', 'user', $user_id, $details );
+		WP_Logify_Logger::log_event( 'User Registered', 'user', $user_id, self::get_username( $user_id ), $details );
 	}
 
 	/**
@@ -58,7 +58,7 @@ class WP_Logify_Users {
 			$details = array( 'Data reassigned to' => self::get_user_profile_link( $reassign ) );
 		}
 
-		WP_Logify_Logger::log_event( 'User Deleted', 'user', $id, $details );
+		WP_Logify_Logger::log_event( 'User Deleted', 'user', $id, self::get_username( $user ), $details );
 	}
 
 	/**
@@ -110,7 +110,7 @@ class WP_Logify_Users {
 			$user = get_userdata( $user );
 		}
 
-		// Preference is the display name, which is their full name.
+		// First preference is the display name, which is their full name.
 		if ( ! empty( $user->display_name ) ) {
 			return $user->display_name;
 		}
@@ -304,9 +304,64 @@ class WP_Logify_Users {
 				'Session end'      => $formatted_now,
 				'Session duration' => '0 minutes',
 			);
-			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, $details );
+			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, self::get_username( $user_id ), $details );
 		}
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * Retrieves the last login datetime of a user.
+	 *
+	 * @param WP_User|int $user The user object or ID.
+	 * @return ?DateTime The last login datetime of the user or null if not found.
+	 */
+	public static function get_last_login_datetime( WP_User|int $user ): ?DateTime {
+		global $wpdb;
+
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user = get_userdata( $user );
+		}
+
+		// Get the last login datetime from the wp_logify_events table.
+		$table_name       = WP_Logify_Logger::get_table_name();
+		$sql              = $wpdb->prepare(
+			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1",
+			$table_name,
+			$user->ID
+		);
+		$last_login_event = $wpdb->get_row( $sql );
+		return $last_login_event === null ? null : WP_Logify_DateTime::create_datetime( $last_login_event->date_time );
+	}
+
+	/**
+	 * Retrieves the last active datetime of a user.
+	 *
+	 * @param WP_User|int $user The user object or ID.
+	 * @return ?DateTime The last active datetime of the user or null if not found.
+	 */
+	public static function get_last_active_datetime( WP_User|int $user ): ?DateTime {
+		global $wpdb;
+
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user = get_userdata( $user );
+		}
+
+		// Get the most recent session end datetime from the wp_logify_events table.
+		$table_name         = WP_Logify_Logger::get_table_name();
+		$sql                = $wpdb->prepare(
+			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY date_time DESC LIMIT 1",
+			$table_name,
+			$user->ID
+		);
+		$last_session_event = $wpdb->get_row( $sql );
+		if ( $last_session_event !== null && $last_session_event->details !== null ) {
+			$details = json_decode( $last_session_event->details, true );
+			return WP_Logify_DateTime::create_datetime( $details['Session end'] );
+		}
+
+		return null;
 	}
 }

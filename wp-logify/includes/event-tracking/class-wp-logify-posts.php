@@ -162,7 +162,7 @@ class WP_Logify_Posts {
 		}
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $parent->ID, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $parent->ID, $parent->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -185,14 +185,18 @@ class WP_Logify_Posts {
 			return;
 		}
 
-		// Collect details.
-		$details = self::get_post_details( $post );
-
 		// Get the event type.
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Deleted';
 
+		// Collect details.
+		$details = self::get_post_details( $post );
+
+		// Update a couple of details to show the changed status of the post.
+		$details['Status']        = 'delete';
+		$details['Last modified'] = WP_Logify_DateTime::format_datetime_site( 'now', true );
+
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -226,7 +230,7 @@ class WP_Logify_Posts {
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Trashed';
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -256,7 +260,7 @@ class WP_Logify_Posts {
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $publish ? ' Published' : ' Unpublished' );
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $post->ID, $details );
+		WP_Logify_Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;

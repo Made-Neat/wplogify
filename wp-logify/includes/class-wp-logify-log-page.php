@@ -189,7 +189,7 @@ class WP_Logify_Log_Page {
 		}
 
 		// Convert JSON string to a small table of key-value pairs.
-		$details = json_decode( $row->details );
+		$details = json_decode( $row->details, true );
 		$html    = "<table class='wp-logify-event-details-table wp-logify-details-table'>";
 		foreach ( $details as $key => $value ) {
 			$html .= "<tr><th>$key</th><td>$value</td></tr>";
@@ -208,10 +208,12 @@ class WP_Logify_Log_Page {
 		global $wpdb;
 
 		// Get the last login datetime.
-		$table_name                 = WP_Logify_Logger::get_table_name();
-		$sql                        = "SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1";
-		$last_login_event           = $wpdb->get_row( $wpdb->prepare( $sql, $table_name, $row->user_id ) );
-		$last_login_datetime_string = $last_login_event !== null ? WP_Logify_DateTime::format_datetime_site( $last_login_event->date_time ) : 'Unknown';
+		$last_login_datetime        = WP_Logify_Users::get_last_login_datetime( $row->user_id );
+		$last_login_datetime_string = $last_login_datetime !== null ? WP_Logify_DateTime::format_datetime_site( $last_login_datetime, true ) : 'Unknown';
+
+		// Get the last active datetime.
+		$last_active_datetime        = WP_Logify_Users::get_last_active_datetime( $row->user_id );
+		$last_active_datetime_string = $last_active_datetime !== null ? WP_Logify_DateTime::format_datetime_site( $last_active_datetime, true ) : 'Unknown';
 
 		// User location.
 		$user_location = empty( $row->user_location ) ? 'Unknown' : esc_html( $row->user_location );
@@ -227,6 +229,7 @@ class WP_Logify_Log_Page {
 		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
 		$html .= '<tr><th>IP address</th><td>' . ( $row->user_ip ?? 'Unknown' ) . '</td></tr>';
 		$html .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>";
+		$html .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>";
 		$html .= "<tr><th>Location</th><td>$user_location</td></tr>";
 		$html .= "<tr><th>User agent</th><td>$user_agent</td></tr>";
 		$html .= '</table>';
@@ -288,12 +291,21 @@ class WP_Logify_Log_Page {
 			throw new InvalidArgumentException( 'Object ID or name cannot be null.' );
 		}
 
+		// Deleted string.
+		$deleted_string = ( empty( $event->object_name ) ? "{$event->object_type} {$event->object_id}" : $event->object_name ) . ' (deleted)';
+
 		// Generate the link based on the object type.
 		switch ( $event->object_type ) {
 			case 'post':
+				// Attempt to load the post.
 				$post = get_post( $event->object_id );
 
-				// Get the URL based on the post status.
+				// Check if it was deleted.
+				if ( $post === null ) {
+					return $deleted_string;
+				}
+
+				// The desired URL will vary according to the post status.
 				switch ( $post->post_status ) {
 					case 'publish':
 						// View the post.
@@ -314,15 +326,40 @@ class WP_Logify_Log_Page {
 				return "<a href='$url'>{$post->post_title}</a>";
 
 			case 'user':
+				// Attempt to load the user.
+				$user = get_userdata( $event->object_id );
+
+				// Check if the user was deleted.
+				if ( $user === false ) {
+					return $deleted_string;
+				}
+
+				// Return the user profile link.
 				return WP_Logify_Users::get_user_profile_link( $event->object_id );
 
 			case 'theme':
+				// Attempt to load the theme.
 				$theme = wp_get_theme( $event->object_id );
+
+				// Check if the theme was deleted.
+				if ( ! $theme->exists() ) {
+					return $deleted_string;
+				}
+
+				// Return a link to the theme.
 				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
 
 			case 'plugin':
-				$plugin = get_plugin_data( $event->object_id );
-				return $plugin['Name'];
+				// Attempt to load the plugin.
+				$plugins = get_plugins();
+
+				// Check if the plugin was deleted.
+				if ( ! array_key_exists( $event->object_id, $plugins ) ) {
+					return $deleted_string;
+				}
+
+				// Link to the plugins page.
+				return "<a href='/wp-admin/plugins.php'>{$plugins[$event->object_id]['Name']}</a>";
 		}
 	}
 }

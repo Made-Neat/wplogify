@@ -408,6 +408,3 @@ class WP_Logify_Admin {
 		return $plugin_installer && get_current_user_id() == $plugin_installer;
 	}
 }
-
-// Initialize the plugin
-WP_Logify_Admin::init();
