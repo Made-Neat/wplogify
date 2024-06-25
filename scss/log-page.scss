@@ -100,7 +100,7 @@ $very-pale-grey: #f7f7f7;
             margin-bottom: 0.25rem;
         }
 
-        .wp-logify-details-table {
+        table {
             border-collapse: collapse;
 
             th {
@@ -117,7 +117,15 @@ $very-pale-grey: #f7f7f7;
         }
 
         .wp-logify-change-details-table {
-            width: 36rem;
+            width: 40rem;
+
+            th {
+                width: 10rem;
+            }
+
+            td {
+                width: 15rem;
+            }
         }
     }
 }

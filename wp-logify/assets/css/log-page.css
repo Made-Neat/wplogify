@@ -75,10 +75,10 @@
 .wp-logify-details .wp-logify-details-section h4 {
   margin-bottom: 0.25rem;
 }
-.wp-logify-details .wp-logify-details-section .wp-logify-details-table {
+.wp-logify-details .wp-logify-details-section table {
   border-collapse: collapse;
 }
-.wp-logify-details .wp-logify-details-section .wp-logify-details-table th {
+.wp-logify-details .wp-logify-details-section table th {
   width: 8rem;
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-event-details-table {
@@ -88,7 +88,13 @@
   width: 36rem;
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-change-details-table {
-  width: 36rem;
+  width: 40rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-change-details-table th {
+  width: 10rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-change-details-table td {
+  width: 15rem;
 }
 
 .wp-logify-user-info {

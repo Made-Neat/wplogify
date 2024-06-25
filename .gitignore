@@ -63,3 +63,6 @@ www/
 # OS-generated files.
 .DS_Store
 Thumbs.db
+
+# Old stuff, keep just in case, local only.
+old/

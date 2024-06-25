@@ -152,9 +152,7 @@ class WP_Logify_Log_Page {
 				$row->user         = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 				// Source IP.
-				$row->user_ip = '<a href="https://whatismyipaddress.com/ip/'
-				. esc_html( $row->user_ip ) . '" target="_blank">'
-				. esc_html( $row->user_ip ) . '</a>';
+				$row->user_ip = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
 
 				// Get the object link.
 				$row->object = self::get_object_link( $row );
@@ -205,7 +203,7 @@ class WP_Logify_Log_Page {
 		// Construct the HTML.
 		$html  = "<div class='wp-logify-user-details wp-logify-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
-		$html .= "<table class='wp-logify-user-details-table wp-logify-details-table'>\n";
+		$html .= "<table class='wp-logify-user-details-table'>\n";
 		$html .= '<tr><th>User</th><td>' . WP_Logify_Users::get_user_profile_link( $row->user_id ) . "</td></tr>\n";
 		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>\n";
 		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . "</td></tr>\n";
@@ -242,7 +240,7 @@ class WP_Logify_Log_Page {
 		// Convert JSON string to a small table of key-value pairs.
 		$html  = "<div class='wp-logify-event-details wp-logify-details-section'>\n";
 		$html .= "<h4>Event Details</h4>\n";
-		$html .= "<table class='wp-logify-event-details-table wp-logify-details-table'>\n";
+		$html .= "<table class='wp-logify-event-details-table'>\n";
 		foreach ( $details as $key => $value ) {
 			$html .= "<tr><th>$key</th><td>$value</td></tr>";
 		}
@@ -272,20 +270,21 @@ class WP_Logify_Log_Page {
 		// Convert JSON string to a table showing the changes.
 		$html  = "<div class='wp-logify-change-details wp-logify-details-section'>\n";
 		$html .= "<h4>Change Details</h4>\n";
-		$html .= "<table class='wp-logify-change-details-table wp-logify-details-table'>\n";
+		$html .= "<table class='wp-logify-change-details-table'>\n";
 		$html .= "<tr><th></th><th>Old value</th><th>New value</th></tr>\n";
 		foreach ( $changes as $key => $value ) {
-			$readable_key = $key === 'user_pass' ? 'Password' : self::make_key_readable( $key, array( 'wp', $row->object_type ) );
-			$html        .= "<tr><th>$readable_key</th>";
+			$readable_key = self::make_key_readable( $key, array( 'wp', $row->object_type ) );
 
-			if ( is_scalar( $value ) ) {
+			$html .= '<tr>';
+			$html .= "<th>$readable_key</th>";
+
+			if ( $key === 'user_pass' ) {
+				// Special handling for passwords.
+				$html .= '<td>(hidden)</td><td>(hidden)</td>';
+			} elseif ( is_scalar( $value ) ) {
 				$html .= "<td colspan='2'>$value</td>";
 			} elseif ( is_array( $value ) && count( $value ) === 2 ) {
-				if ( $key === 'user_pass' ) {
-					$html .= '<td>(hidden)</td><td>(hidden)</td>';
-				} else {
-					$html .= "<td>{$value[0]}</td><td>{$value[1]}</td>";
-				}
+				$html .= "<td>{$value[0]}</td><td>{$value[1]}</td>";
 			}
 
 			$html .= "</tr>\n";
@@ -307,12 +306,27 @@ class WP_Logify_Log_Page {
 	 * @return string The readable key.
 	 */
 	public static function make_key_readable( string $key, ?array $prefixes_to_ignore = null ): string {
+		// Special cases.
+		switch ( $key ) {
+			case 'user_pass':
+				return 'Password';
+
+			case 'show_admin_bar_front':
+				return 'Show toolbar';
+		}
+
 		// Split the key into words.
 		$words = explode( '_', $key );
 
 		// Remove any ignored prefix.
-		if ( $prefixes_to_ignore !== null && in_array( $words[0], $prefixes_to_ignore, true ) ) {
-			$words = array_slice( $words, 1 );
+		if ( ! empty( $prefixes_to_ignore ) ) {
+			while ( true ) {
+				if ( count( $words ) > 1 && in_array( $words[0], $prefixes_to_ignore, true ) ) {
+					$words = array_slice( $words, 1 );
+				} else {
+					break;
+				}
+			}
 		}
 
 		return ucfirst( implode( ' ', $words ) );
@@ -356,8 +370,8 @@ class WP_Logify_Log_Page {
 			throw new InvalidArgumentException( 'Object ID or name cannot be null . ' );
 		}
 
-		// Deleted string.
-		$deleted_string = ( empty( $event->object_name ) ? "{$event->object_type} {$event->object_id}" : $event->object_name ) . ' ( deleted )';
+		// Deleted string. Used in place of a link to the object if it's been deleted.
+		$deleted_string = ( empty( $event->object_name ) ? "{$event->object_type} {$event->object_id}" : $event->object_name ) . ' (deleted)';
 
 		// Generate the link based on the object type.
 		switch ( $event->object_type ) {
@@ -366,7 +380,7 @@ class WP_Logify_Log_Page {
 				$post = get_post( $event->object_id );
 
 				// Check if it was deleted.
-				if ( $post === null ) {
+				if ( ! $post ) {
 					return $deleted_string;
 				}
 
@@ -379,7 +393,7 @@ class WP_Logify_Log_Page {
 
 					case 'trash':
 						// List trashed posts.
-						$url = ' / wp - admin / edit . php ? post_status      = trash & post_type = post';
+						$url = '/wp-admin/edit.php?post_status=trash&post_type=post';
 						break;
 
 					default:
@@ -395,7 +409,7 @@ class WP_Logify_Log_Page {
 				$user = get_userdata( $event->object_id );
 
 				// Check if the user was deleted.
-				if ( $user === false ) {
+				if ( ! $user ) {
 					return $deleted_string;
 				}
 
@@ -412,7 +426,7 @@ class WP_Logify_Log_Page {
 				}
 
 				// Return a link to the theme.
-				return "<a href=' / wp - admin / theme - editor . php ? theme = {$theme->stylesheet}'>{$theme->name}</a>";
+				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
 
 			case 'plugin':
 				// Attempt to load the plugin.
@@ -424,7 +438,7 @@ class WP_Logify_Log_Page {
 				}
 
 				// Link to the plugins page.
-				return "<a href=' / wp - admin / plugins . php'>{$plugins[$event->object_id]['Name']}</a>";
+				return "<a href='/wp-admin/plugins.php'>{$plugins[$event->object_id]['Name']}</a>";
 		}
 	}
 }

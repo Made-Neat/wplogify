@@ -17,6 +17,7 @@ class WP_Logify_Users {
 		add_action( 'user_register', array( __CLASS__, 'track_user_registration' ), 10, 2 );
 		add_action( 'delete_user', array( __CLASS__, 'track_user_deletion' ), 10, 3 );
 		add_action( 'profile_update', array( __CLASS__, 'track_user_update' ), 10, 3 );
+		add_action( 'update_user_meta', array( __CLASS__, 'track_user_meta_update' ), 10, 4 );
 	}
 
 	// #region Tracking functions
@@ -28,7 +29,7 @@ class WP_Logify_Users {
 	 * @param WP_User $user The WP_User object of the user that logged in.
 	 */
 	public static function track_login( string $user_login, WP_User $user ) {
-		WP_Logify_Logger::log_event( 'User Login', 'user', $user->ID, self::get_username( $user ) );
+		WP_Logify_Logger::log_event( 'User Login', 'user', $user->ID, self::get_user_name( $user ) );
 	}
 
 	/**
@@ -37,7 +38,7 @@ class WP_Logify_Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function track_logout( int $user_id ) {
-		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id, self::get_username( $user_id ) );
+		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id, self::get_user_name( $user_id ) );
 	}
 
 	/**
@@ -50,7 +51,7 @@ class WP_Logify_Users {
 		// Get the user's details.
 		$details = self::get_user_details( $user_id );
 
-		WP_Logify_Logger::log_event( 'User Registered', 'user', $user_id, self::get_username( $user_id ), $details );
+		WP_Logify_Logger::log_event( 'User Registered', 'user', $user_id, self::get_user_name( $user_id ), $details );
 	}
 
 	/**
@@ -69,7 +70,7 @@ class WP_Logify_Users {
 			$details = array( 'Data reassigned to' => self::get_user_profile_link( $reassign ) );
 		}
 
-		WP_Logify_Logger::log_event( 'User Deleted', 'user', $user_id, self::get_username( $user ), $details );
+		WP_Logify_Logger::log_event( 'User Deleted', 'user', $user_id, self::get_user_name( $user ), $details );
 	}
 
 	/**
@@ -104,7 +105,7 @@ class WP_Logify_Users {
 		}
 
 		if ( ! empty( $user_changes ) ) {
-			WP_Logify_Logger::log_event( 'User Updated', 'user', $user_id, self::get_username( $user_id ), null, $user_changes );
+			WP_Logify_Logger::log_event( 'User Updated', 'user', $user_id, self::get_user_name( $user_id ), null, $user_changes );
 		}
 	}
 
@@ -169,13 +170,49 @@ class WP_Logify_Users {
 				'Session end'      => $formatted_now,
 				'Session duration' => '0 minutes',
 			);
-			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, self::get_username( $user_id ), $details );
+			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, self::get_user_name( $user_id ), $details );
 		}
 
 		wp_send_json_success();
 	}
 
+	/**
+	 * Track user meta update.
+	 *
+	 * @param int    $meta_id   The ID of the meta data.
+	 * @param int    $object_id The ID of the user.
+	 * @param string $meta_key  The key of the meta data.
+	 * @param mixed  $meta_value The new value of the meta data.
+	 */
+	public static function track_user_meta_update( int $meta_id, int $object_id, string $meta_key, mixed $meta_value ) {
+		// Get the current value.
+		$current_value = get_user_meta( $object_id, $meta_key, true );
+
+		// Get the old and new values as strings for comparison and display.
+		$old_value = self::value_to_string( $current_value );
+		$new_value = self::value_to_string( $meta_value );
+
+		// Track the change, if any.
+		if ( $old_value !== $new_value ) {
+			global $user_changes;
+			if ( ! isset( $user_changes ) ) {
+				$user_changes = array();
+			}
+			$user_changes[ $meta_key ] = array( $old_value, $new_value );
+		}
+	}
+
 	// #endregion Tracking functions
+
+	/**
+	 * Convert a value to a string for comparison and display.
+	 *
+	 * @param mixed $value The value to convert.
+	 * @return string The value as a string.
+	 */
+	private static function value_to_string( mixed $value ) {
+		return is_scalar( $value ) ? (string) $value : wp_json_encode( $value );
+	}
 
 	/**
 	 * Get the details of a user to show in the log.
@@ -212,44 +249,6 @@ class WP_Logify_Users {
 	}
 
 	/**
-	 * Flatten an array by converting single-value numeric arrays into scalars where possible and
-	 * discarding other non-scalar values.
-	 */
-	public static function flatten_array( array $input_array ): array {
-		$flat_array = array();
-		foreach ( $input_array as $key => $value ) {
-			if ( is_scalar( $value ) ) {
-				$flat_array[ $key ] = $value;
-			} elseif ( is_array( $value ) && count( $value ) === 1 && array_key_exists( 0, $value ) && is_scalar( $value[0] ) ) {
-				$flat_array[ $key ] = $value[0];
-			}
-		}
-		return $flat_array;
-	}
-
-	/**
-	 * Retrieves all the information about a user.
-	 *
-	 * This function retrieves all the information about a user, including the user object, user
-	 * data, and user meta data. It then flattens the data into a single array.
-	 *
-	 * @param int|WP_User $user The ID of the user or the user object.
-	 * @return array The user information.
-	 */
-	public static function get_user_info( int|WP_user $user ): array {
-		// Load the user if necessary.
-		if ( is_int( $user ) ) {
-			$user = get_userdata( $user );
-		}
-
-		// Get the data and merge into one flat array.
-		$flat_user = self::flatten_array( (array) $user );
-		$flat_data = self::flatten_array( (array) $user->data );
-		$flat_meta = self::flatten_array( get_user_meta( $user->ID ) );
-		return array_merge( $flat_user, $flat_data, $flat_meta );
-	}
-
-	/**
 	 * Retrieves a username for a given user.
 	 *
 	 * First preference is the display_name, second preference is the user_login, third preference
@@ -258,7 +257,7 @@ class WP_Logify_Users {
 	 * @param int|WP_User $user The ID of the user, the user object, or a row from the users table.
 	 * @return string The username if found, otherwise 'Unknown'.
 	 */
-	public static function get_username( int|object $user ) {
+	public static function get_user_name( int|object $user ) {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			$user = get_userdata( $user );
@@ -297,14 +296,14 @@ class WP_Logify_Users {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			$user = get_userdata( $user );
-			if ( $user === false ) {
+			if ( ! $user ) {
 				return 'Unknown';
 			}
 		}
 
 		// Construct the link.
 		$user_profile_url  = site_url( "/?author={$user->ID}" );
-		$user_display_name = self::get_username( $user );
+		$user_display_name = self::get_user_name( $user );
 		return "<a href='$user_profile_url' class='wp-logify-user-link'>$user_display_name</a>";
 	}
 

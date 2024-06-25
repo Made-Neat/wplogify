@@ -120,7 +120,7 @@ function debug_log( ...$args ) {
 	);
 
 	// Join the strings with ': ' separator.
-	$debug_string = implode( ': ', array_filter( $strings ) );
+	$debug_string = implode( ', ', array_filter( $strings ) );
 
 	// Log the debug string.
 	error_log( $debug_string );
