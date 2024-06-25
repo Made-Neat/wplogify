@@ -45,7 +45,7 @@
 	function display_log_details( $log_id ) {
 		global $wpdb;
 		$log_id = intval( $log_id );
-		$log    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}logify_log WHERE id = %d", $log_id ) );
+		$log    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}logify_log WHERE ID = %d", $log_id ) );
 
 		if ( $log ) {
 			$details = maybe_unserialize( $log->details );

@@ -6,6 +6,7 @@
  * It tracks changes to posts and user logins.
  */
 class WP_Logify_Users {
+
 	/**
 	 * Initializes the class by adding WordPress actions.
 	 */
@@ -15,7 +16,10 @@ class WP_Logify_Users {
 		add_action( 'wp_ajax_track_user_activity', array( __CLASS__, 'track_user_activity' ), 10, 0 );
 		add_action( 'user_register', array( __CLASS__, 'track_user_registration' ), 10, 2 );
 		add_action( 'delete_user', array( __CLASS__, 'track_user_deletion' ), 10, 3 );
+		add_action( 'profile_update', array( __CLASS__, 'track_user_update' ), 10, 3 );
 	}
+
+	// #region Tracking functions
 
 	/**
 	 * Track user login.
@@ -33,11 +37,14 @@ class WP_Logify_Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function track_logout( int $user_id ) {
-		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id, self::get_username( $user ) );
+		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id, self::get_username( $user_id ) );
 	}
 
 	/**
 	 * Track user registration.
+	 *
+	 * @param int   $user_id  The ID of the user that was registered.
+	 * @param array $userdata The data for the user that was registered.
 	 */
 	public static function track_user_registration( int $user_id, array $userdata ) {
 		// Get the user's details.
@@ -48,8 +55,12 @@ class WP_Logify_Users {
 
 	/**
 	 * Track user deletion.
+	 *
+	 * @param int     $user_id  The ID of the user that was deleted.
+	 * @param ?int    $reassign The ID of the user that the data was reassigned to.
+	 * @param WP_User $user     The WP_User object of the user that was deleted.
 	 */
-	public static function track_user_deletion( int $id, ?int $reassign, WP_User $user ) {
+	public static function track_user_deletion( int $user_id, ?int $reassign, WP_User $user ) {
 		// Get the user's details.
 		$details = self::get_user_details( $user );
 
@@ -58,8 +69,136 @@ class WP_Logify_Users {
 			$details = array( 'Data reassigned to' => self::get_user_profile_link( $reassign ) );
 		}
 
-		WP_Logify_Logger::log_event( 'User Deleted', 'user', $id, self::get_username( $user ), $details );
+		WP_Logify_Logger::log_event( 'User Deleted', 'user', $user_id, self::get_username( $user ), $details );
 	}
+
+	/**
+	 * Make a key readable.
+	 *
+	 * This function takes a key and makes it more readable by converting it to title case and
+	 * replacing underscores with spaces.
+	 *
+	 * @param string $key The key to make readable.
+	 * @param ?array $prefixes_to_ignore An array of prefixes to ignore when making the key readable. Examples: 'wp', 'user', 'post'.
+	 * @return string The readable key.
+	 */
+	public static function make_key_readable( string $key, ?array $prefixes_to_ignore = null ): string {
+		// Split the key into words.
+		$words = explode( '_', $key );
+
+		// Remove any ignored prefix.
+		if ( $prefixes_to_ignore !== null && in_array( $words[0], $prefixes_to_ignore, true ) ) {
+			$words = array_slice( $words, 1 );
+		}
+
+		return ucfirst( implode( ' ', $words ) );
+	}
+
+	/**
+	 * Track user update.
+	 *
+	 * @param int     $user_id       The ID of the user that was updated.
+	 * @param WP_User $old_user_data The WP_User object of the user before the update.
+	 * @param array   $userdata      The data for the user after the update.
+	 */
+	public static function track_user_update( int $user_id, WP_User $old_user_data, array $userdata ) {
+		// debug_log( 'user_id', $user_id );
+		// debug_log( 'old_user_data', $old_user_data );
+		// debug_log( 'userdata', $userdata );
+
+		// Record changes.
+		global $user_changes;
+		if ( ! isset( $user_changes ) ) {
+			$user_changes = array();
+		}
+
+		// Compare values.
+		foreach ( $old_user_data->data as $key => $value ) {
+			// debug_log( 'old user data', $key, $value );
+
+			$old_value = (string) $value;
+			$new_value = (string) $userdata[ $key ];
+
+			if ( $old_value !== $new_value ) {
+				// debug_log( 'record change', $old_value, $new_value );
+				$readable_key                  = self::make_key_readable( $key, array( 'user' ) );
+				$user_changes[ $readable_key ] = array( $old_value, $new_value );
+			}
+		}
+
+		if ( ! empty( $user_changes ) ) {
+			WP_Logify_Logger::log_event( 'User Updated', 'user', $user_id, self::get_username( $user_id ), null, $user_changes );
+		}
+	}
+
+	/**
+	 * Track user activity.
+	 *
+	 * This function is called via AJAX to track user activity.
+	 */
+	public static function track_user_activity() {
+		check_ajax_referer( 'wp_logify_activity_nonce', 'nonce' );
+
+		global $wpdb;
+		$user_id    = get_current_user_id();
+		$table_name = WP_Logify_Logger::get_table_name();
+		$event_type = 'User Session';
+
+		// Get the current datetime.
+		$now           = WP_Logify_DateTime::current_datetime();
+		$formatted_now = WP_Logify_DateTime::format_datetime_mysql( $now );
+
+		// Check if this is a continuing session.
+		$continuing      = false;
+		$sql             = $wpdb->prepare(
+			'SELECT ID, details FROM %i WHERE user_id = %d AND event_type = %s ORDER BY date_time DESC',
+			$table_name,
+			$user_id,
+			$event_type
+		);
+		$existing_record = $wpdb->get_row( $sql );
+		if ( $existing_record && $existing_record->details !== null ) {
+
+			// Extract the current session end datetime from the event details.
+			$details                = json_decode( $existing_record->details, true );
+			$session_start_datetime = WP_Logify_DateTime::create_datetime( $details['Session start'] );
+			$session_end_datetime   = WP_Logify_DateTime::create_datetime( $details['Session end'] );
+
+			// If the current value for session end time is less than 5 minutes (300 seconds) before
+			// now, we'll say the session is continuing, and update the session end time to now.
+			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
+			if ( $seconds_diff <= 300 ) {
+				$continuing = true;
+
+				// Update the session end time and duration.
+				$details['Session end']      = $formatted_now;
+				$details['Session duration'] = WP_Logify_DateTime::get_duration_string( $session_start_datetime, $now );
+
+				// Update the record.
+				$wpdb->update(
+					$table_name,
+					array( 'details' => wp_json_encode( $details ) ),
+					array( 'ID' => $existing_record->ID ),
+					array( '%s' ),
+					array( '%d' )
+				);
+			}
+		}
+
+		// If we're not continuing an existing session, record the start of a new one.
+		if ( ! $continuing ) {
+			$details = array(
+				'Session start'    => $formatted_now,
+				'Session end'      => $formatted_now,
+				'Session duration' => '0 minutes',
+			);
+			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, self::get_username( $user_id ), $details );
+		}
+
+		wp_send_json_success();
+	}
+
+	// #endregion Tracking functions
 
 	/**
 	 * Get the details of a user to show in the log.
@@ -93,6 +232,44 @@ class WP_Logify_Users {
 		}
 
 		return $details;
+	}
+
+	/**
+	 * Flatten an array by converting single-value numeric arrays into scalars where possible and
+	 * discarding other non-scalar values.
+	 */
+	public static function flatten_array( array $input_array ): array {
+		$flat_array = array();
+		foreach ( $input_array as $key => $value ) {
+			if ( is_scalar( $value ) ) {
+				$flat_array[ $key ] = $value;
+			} elseif ( is_array( $value ) && count( $value ) === 1 && array_key_exists( 0, $value ) && is_scalar( $value[0] ) ) {
+				$flat_array[ $key ] = $value[0];
+			}
+		}
+		return $flat_array;
+	}
+
+	/**
+	 * Retrieves all the information about a user.
+	 *
+	 * This function retrieves all the information about a user, including the user object, user
+	 * data, and user meta data. It then flattens the data into a single array.
+	 *
+	 * @param int|WP_User $user The ID of the user or the user object.
+	 * @return array The user information.
+	 */
+	public static function get_user_info( int|WP_user $user ): array {
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user = get_userdata( $user );
+		}
+
+		// Get the data and merge into one flat array.
+		$flat_user = self::flatten_array( (array) $user );
+		$flat_data = self::flatten_array( (array) $user->data );
+		$flat_meta = self::flatten_array( get_user_meta( $user->ID ) );
+		return array_merge( $flat_user, $flat_data, $flat_meta );
 	}
 
 	/**
@@ -217,97 +394,6 @@ class WP_Logify_Users {
 		return isset( $_SERVER['HTTP_USER_AGENT'] )
 			? trim( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) )
 			: null;
-	}
-
-	/**
-	 * Retrieves the duration of a session as a string.
-	 * The duration is rounded up to the nearest minute. Seconds aren't shown.
-	 *
-	 * @param DateTime $start The start of the session.
-	 * @param DateTime $end The end of the session.
-	 * @return string The duration of the session as a string.
-	 */
-	public static function get_duration_string( DateTime $start, DateTime $end ): string {
-		$seconds         = $end->getTimestamp() - $start->getTimestamp();
-		$minutes         = ceil( $seconds / 60 );
-		$hours           = floor( $minutes / 60 );
-		$minutes         = $minutes % 60;
-		$duration_string = '';
-		if ( $hours > 0 ) {
-			$duration_string .= "$hours hour" . ( $hours === 1 ? '' : 's' );
-		}
-		if ( $minutes > 0 ) {
-			if ( $duration_string !== '' ) {
-				$duration_string .= ', ';
-			}
-			$duration_string .= "$minutes minute" . ( $minutes === 1 ? '' : 's' );
-		}
-		return $duration_string;
-	}
-
-	/**
-	 * Track user activity.
-	 */
-	public static function track_user_activity() {
-		check_ajax_referer( 'wp_logify_activity_nonce', 'nonce' );
-
-		global $wpdb;
-		$user_id    = get_current_user_id();
-		$table_name = WP_Logify_Logger::get_table_name();
-		$event_type = 'User Session';
-
-		// Get the current datetime.
-		$now           = WP_Logify_DateTime::current_datetime();
-		$formatted_now = WP_Logify_DateTime::format_datetime_mysql( $now );
-
-		// Check if this is a continuing session.
-		$continuing      = false;
-		$sql             = $wpdb->prepare(
-			'SELECT id, details FROM %i WHERE user_id = %d AND event_type = %s ORDER BY date_time DESC',
-			$table_name,
-			$user_id,
-			$event_type
-		);
-		$existing_record = $wpdb->get_row( $sql );
-		if ( $existing_record && $existing_record->details !== null ) {
-
-			// Extract the current session end datetime from the event details.
-			$details                = json_decode( $existing_record->details, true );
-			$session_start_datetime = WP_Logify_DateTime::create_datetime( $details['Session start'] );
-			$session_end_datetime   = WP_Logify_DateTime::create_datetime( $details['Session end'] );
-
-			// If the current value for session end time is less than 5 minutes (300 seconds) before
-			// now, we'll say the session is continuing, and update the session end time to now.
-			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
-			if ( $seconds_diff <= 300 ) {
-				$continuing = true;
-
-				// Update the session end time and duration.
-				$details['Session end']      = $formatted_now;
-				$details['Session duration'] = self::get_duration_string( $session_start_datetime, $now );
-
-				// Update the record.
-				$wpdb->update(
-					$table_name,
-					array( 'details' => wp_json_encode( $details ) ),
-					array( 'id' => $existing_record->id ),
-					array( '%s' ),
-					array( '%d' )
-				);
-			}
-		}
-
-		// If we're not continuing an existing session, record the start of a new one.
-		if ( ! $continuing ) {
-			$details = array(
-				'Session start'    => $formatted_now,
-				'Session end'      => $formatted_now,
-				'Session duration' => '0 minutes',
-			);
-			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, self::get_username( $user_id ), $details );
-		}
-
-		wp_send_json_success();
 	}
 
 	/**

@@ -2,7 +2,7 @@
 /**
 Plugin Name: WP Logify
 Plugin URI: https://wplogify.com
-Description: WP Logify features advanced tracking to ensure you are aware of all changes made to your WordPress website.
+Description: WP Logify features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
 Version: 1.0
 Author: Made Neat
 Author URI: https://madeneat.com.au
@@ -35,10 +35,9 @@ function wp_logify_init() {
 	WP_Logify_Logger::init();
 	WP_Logify_Cron::init();
 
-	// Initialise event logging classes.
+	// Initialise event tracking classes.
 	WP_Logify_Users::init();
 	WP_Logify_Posts::init();
-	// WP_Logify_Tracker::init();
 }
 
 add_action( 'plugins_loaded', 'wp_logify_init' );
@@ -102,26 +101,27 @@ function wp_logify_action_links( array $links ) {
 }
 
 /**
- * Define the sanitize callback function.
- */
-function wp_logify_sanitize_roles( $roles ) {
-	$valid_roles = array_keys( wp_roles()->roles );
-	return array_filter(
-		$roles,
-		function ( $role ) use ( $valid_roles ) {
-			return in_array( $role, $valid_roles );
-		}
-	);
-}
-
-/**
- * Dump a variable into the error log.
+ * Dump one or more variables into the error log.
  *
- * @param string $label The label to prepend to the output.
- * @param mixed  $var The variable to dump.
+ * @param mixed ...$args The variable(s) to dump.
  */
-function debug_log( string $label, mixed $var ) {
-	$output  = empty( $label ) ? '' : $label . ': ';
-	$output .= is_string( $var ) ? $var : var_export( $var, true );
-	error_log( $output );
+function debug_log( ...$args ) {
+	// Ensure there is at least one argument.
+	if ( empty( $args ) ) {
+		return;
+	}
+
+	// Convert each argument to a string representation.
+	$strings = array_map(
+		function ( $arg ) {
+			return is_string( $arg ) ? $arg : var_export( $arg, true );
+		},
+		$args
+	);
+
+	// Join the strings with ': ' separator.
+	$debug_string = implode( ': ', array_filter( $strings ) );
+
+	// Log the debug string.
+	error_log( $debug_string );
 }

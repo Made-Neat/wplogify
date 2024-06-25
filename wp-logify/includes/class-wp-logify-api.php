@@ -1,8 +1,6 @@
 <?php
 class WP_Logify_API {
 	public static function init() {
-		// Hook into WordPress actions to track advanced functionalities
-		// add_action( 'user_register', array( __CLASS__, 'track_user_registration' ) );
 	}
 
 	public static function send_data_to_saas( $data ) {

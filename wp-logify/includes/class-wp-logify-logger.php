@@ -36,20 +36,20 @@ class WP_Logify_Logger {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            ID mediumint(9) NOT NULL AUTO_INCREMENT,
             date_time datetime NOT NULL,
             user_id bigint(20) unsigned NOT NULL,
             user_role varchar(255) NOT NULL,
             user_ip varchar(100) NOT NULL,
             user_location varchar(255) NULL,
             user_agent varchar(255) NULL,
-            session_token varchar(255) NULL,
             event_type varchar(255) NOT NULL,
             object_type varchar(20) NULL,
             object_id varchar(20) NULL,
             object_name varchar(255) NULL,
             details text NULL,
-            PRIMARY KEY (id)
+            changes text NULL,
+            PRIMARY KEY (ID)
         ) $charset_collate;";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -82,7 +82,8 @@ class WP_Logify_Logger {
 		?string $object_type = null,
 		null|int|string $object_id = null,
 		?string $object_name = null,
-		?array $details = null
+		?array $details = null,
+		?array $changes = null,
 	) {
 		global $wpdb;
 
@@ -108,7 +109,7 @@ class WP_Logify_Logger {
 			throw new RuntimeException( 'User not found' );
 		}
 
-		// Collect the rest of the user info.
+		// Collect other user info.
 		$user_id       = $user->ID;
 		$user_role     = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
 		$user_ip       = WP_Logify_Users::get_user_ip();
@@ -118,11 +119,21 @@ class WP_Logify_Logger {
 		// Encode the event details as JSON.
 		if ( $details !== null ) {
 			$details_json = wp_json_encode( $details );
-			if ( $details_json === false ) {
+			if ( ! $details_json ) {
 				throw new InvalidArgumentException( 'Failed to encode details as JSON.' );
 			}
 		} else {
 			$details_json = null;
+		}
+
+		// Encode the object changes as JSON.
+		if ( $changes !== null ) {
+			$changes_json = wp_json_encode( $changes );
+			if ( ! $changes_json ) {
+				throw new InvalidArgumentException( 'Failed to encode changes as JSON.' );
+			}
+		} else {
+			$changes_json = null;
 		}
 
 		// Insert the new record.
@@ -140,6 +151,7 @@ class WP_Logify_Logger {
 				'object_id'     => $object_id,
 				'object_name'   => $object_name,
 				'details'       => $details_json,
+				'changes'       => $changes_json,
 			)
 		);
 	}

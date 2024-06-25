@@ -21,7 +21,7 @@ jQuery(($) => {
         },
         columns: [
             {
-                data: "id",
+                data: "ID",
                 width: '70px'
             },
             { data: "date_time" },

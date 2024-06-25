@@ -92,4 +92,31 @@ class WP_Logify_DateTime {
 		$datetime2 = clone $datetime;
 		return $datetime2->sub( new DateInterval( 'PT' . $hours . 'H' ) );
 	}
+
+	/**
+	 * Retrieves the duration of a period as a string.
+	 * The period is defined by DateTimes indicating the start and end of the period.
+	 * The duration is rounded up to the nearest minute. Seconds aren't shown.
+	 *
+	 * @param DateTime $start The start of the period.
+	 * @param DateTime $end The end of the period.
+	 * @return string The duration of the period as a string.
+	 */
+	public static function get_duration_string( DateTime $start, DateTime $end ): string {
+		$seconds         = $end->getTimestamp() - $start->getTimestamp();
+		$minutes         = ceil( $seconds / 60 );
+		$hours           = floor( $minutes / 60 );
+		$minutes         = $minutes % 60;
+		$duration_string = '';
+		if ( $hours > 0 ) {
+			$duration_string .= "$hours hour" . ( $hours === 1 ? '' : 's' );
+		}
+		if ( $minutes > 0 ) {
+			if ( $duration_string !== '' ) {
+				$duration_string .= ', ';
+			}
+			$duration_string .= "$minutes minute" . ( $minutes === 1 ? '' : 's' );
+		}
+		return $duration_string;
+	}
 }

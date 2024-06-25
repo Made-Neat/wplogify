@@ -40,7 +40,7 @@ class WP_Logify_Log_Page {
 
 		// These should match the columns in admin.js.
 		$columns = array(
-			'id',
+			'ID',
 			'date_time',
 			'user',
 			'user_ip',
@@ -104,7 +104,7 @@ class WP_Logify_Log_Page {
 
 		// Add the order by parameters.
 		switch ( $order_col ) {
-			case 'id':
+			case 'ID':
 				$order_by = "e.ID $order_dir";
 				break;
 
@@ -128,6 +128,7 @@ class WP_Logify_Log_Page {
 
 		// Get the requested records.
 		$results = $wpdb->get_results( $sql );
+		// debug_log( $results );
 
 		// Get the number of results.
 		$num_filtered_records = count( $results );
@@ -138,7 +139,7 @@ class WP_Logify_Log_Page {
 		// Construct the data array to return to the client.
 		$data = array();
 		foreach ( $results as $row ) {
-			if ( ! empty( $row->id ) ) {
+			if ( ! empty( $row->ID ) ) {
 				// Date and time.
 				$date_time          = WP_Logify_DateTime::create_datetime( $row->date_time );
 				$formatted_datetime = WP_Logify_DateTime::format_datetime_site( $date_time );
@@ -148,13 +149,12 @@ class WP_Logify_Log_Page {
 				// User details.
 				$user_profile_link = WP_Logify_Users::get_user_profile_link( $row->user_id );
 				$user_role         = esc_html( ucwords( $row->user_role ) );
-				$row->user         = get_avatar( $row->user_id, 32 )
-					. " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
+				$row->user         = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 				// Source IP.
 				$row->user_ip = '<a href="https://whatismyipaddress.com/ip/'
-					. esc_html( $row->user_ip ) . '" target="_blank">'
-					. esc_html( $row->user_ip ) . '</a>';
+				. esc_html( $row->user_ip ) . '" target="_blank">'
+				. esc_html( $row->user_ip ) . '</a>';
 
 				// Get the object link.
 				$row->object = self::get_object_link( $row );
@@ -177,35 +177,16 @@ class WP_Logify_Log_Page {
 	}
 
 	/**
-	 * Formats the event details of a log entry.
-	 *
-	 * @param object $row The data object selected from the database, which includes event details and user details.
-	 * @return string The formatted event details as an HTML table.
-	 */
-	public static function format_event_details( object $row ): string {
-		// Handle the null case.
-		if ( empty( $row->details ) ) {
-			return '';
-		}
-
-		// Convert JSON string to a small table of key-value pairs.
-		$details = json_decode( $row->details, true );
-		$html    = "<table class='wp-logify-event-details-table wp-logify-details-table'>";
-		foreach ( $details as $key => $value ) {
-			$html .= "<tr><th>$key</th><td>$value</td></tr>";
-		}
-		$html .= '</table>';
-		return $html;
-	}
-
-	/**
 	 * Formats user details for a log entry.
 	 *
 	 * @param object $row The data object selected from the database, which includes event details and user details.
 	 * @return string The formatted user details as an HTML table.
 	 */
 	public static function format_user_details( object $row ): string {
-		global $wpdb;
+		// Handle the case where the user ID is empty. Should never happen.
+		if ( empty( $row->user_id ) ) {
+			return '';
+		}
 
 		// Get the last login datetime.
 		$last_login_datetime        = WP_Logify_Users::get_last_login_datetime( $row->user_id );
@@ -222,17 +203,90 @@ class WP_Logify_Log_Page {
 		$user_agent = empty( $row->user_agent ) ? 'Unknown' : esc_html( $row->user_agent );
 
 		// Construct the HTML.
-		$html  = "<table class='wp-logify-user-details-table wp-logify-details-table'>";
-		$html .= '<tr><th>User</th><td>' . WP_Logify_Users::get_user_profile_link( $row->user_id ) . '</td></tr>';
-		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>";
-		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . '</td></tr>';
+		$html  = "<div class='wp-logify-user-details wp-logify-details-section'>\n";
+		$html .= "<h4>User Details</h4>\n";
+		$html .= "<table class='wp-logify-user-details-table wp-logify-details-table'>\n";
+		$html .= '<tr><th>User</th><td>' . WP_Logify_Users::get_user_profile_link( $row->user_id ) . "</td></tr>\n";
+		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>\n";
+		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . "</td></tr>\n";
 		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
-		$html .= '<tr><th>IP address</th><td>' . ( $row->user_ip ?? 'Unknown' ) . '</td></tr>';
-		$html .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>";
-		$html .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>";
-		$html .= "<tr><th>Location</th><td>$user_location</td></tr>";
-		$html .= "<tr><th>User agent</th><td>$user_agent</td></tr>";
-		$html .= '</table>';
+		$html .= '<tr><th>IP address</th><td>' . ( $row->user_ip ?? 'Unknown' ) . "</td></tr>\n";
+		$html .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>\n";
+		$html .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>\n";
+		$html .= "<tr><th>Location</th><td>$user_location</td></tr>\n";
+		$html .= "<tr><th>User agent</th><td>$user_agent</td></tr>\n";
+		$html .= "</table>\n";
+		$html .= "</div>\n";
+
+		return $html;
+	}
+
+	/**
+	 * Formats the event details of a log entry.
+	 *
+	 * @param object $row The data object selected from the database, which includes event details and user details.
+	 * @return string The formatted event details as an HTML table.
+	 */
+	public static function format_event_details( object $row ): string {
+		// Handle the null case.
+		if ( empty( $row->details ) ) {
+			return '';
+		}
+
+		// Decode JSON.
+		$details = json_decode( $row->details, true );
+		if ( empty( $details ) ) {
+			return '';
+		}
+
+		// Convert JSON string to a small table of key-value pairs.
+		$html  = "<div class='wp-logify-event-details wp-logify-details-section'>\n";
+		$html .= "<h4>Event Details</h4>\n";
+		$html .= "<table class='wp-logify-event-details-table wp-logify-details-table'>\n";
+		foreach ( $details as $key => $value ) {
+			$html .= "<tr><th>$key</th><td>$value</td></tr>";
+		}
+		$html .= "</table>\n";
+		$html .= "</div>\n";
+		return $html;
+	}
+
+	/**
+	 * Format change details.
+	 *
+	 * @param object $row The data object selected from the database.
+	 * @return string The formatted change details as an HTML table.
+	 */
+	public static function format_change_details( object $row ): string {
+		// Handle the null case.
+		if ( empty( $row->changes ) ) {
+			return '';
+		}
+
+		// Decode JSON.
+		$changes = json_decode( $row->changes, true );
+		if ( empty( $changes ) ) {
+			return '';
+		}
+
+		// Convert JSON string to a table showing the changes.
+		$html  = "<div class='wp-logify-change-details wp-logify-details-section'>\n";
+		$html .= "<h4>Change Details</h4>\n";
+		$html .= "<table class='wp-logify-change-details-table wp-logify-details-table'>\n";
+		$html .= "<tr><th></th><th>Old value</th><th>New value</th></tr>\n";
+		foreach ( $changes as $key => $value ) {
+			$html .= "<tr><th>$key</th>";
+
+			if ( is_scalar( $value ) ) {
+				$html .= "<td colspan='2'>$value</td>";
+			} elseif ( is_array( $value ) && count( $value ) === 2 ) {
+				$html .= "<td>{$value[0]}</td><td>{$value[1]}</td>";
+			}
+
+			$html .= "</tr>\n";
+		}
+		$html .= "</table>\n";
+		$html .= "</div>\n";
 
 		return $html;
 	}
@@ -244,27 +298,11 @@ class WP_Logify_Log_Page {
 	 * @return string The formatted details as HTML.
 	 */
 	public static function format_details( object $row ) {
-		$html = "<div class='wp-logify-details'>";
-
-		// User details.
-		if ( ! empty( $row->user_id ) ) {
-			$html .= "
-                <div class='wp-logify-user-details wp-logify-details-section'>
-                    <h4>User Details</h4>
-                    " . self::format_user_details( $row ) . '
-                </div>';
-		}
-
-		// Event details.
-		if ( ! empty( $row->details ) ) {
-			$html .= "
-                <div class='wp-logify-event-details wp-logify-details-section'>
-                    <h4>Event Details</h4>
-                    " . self::format_event_details( $row ) . '
-                </div>';
-		}
-
-		$html .= '</div>';
+		$html  = "<div class='wp-logify-details'>\n";
+		$html .= self::format_user_details( $row );
+		$html .= self::format_event_details( $row );
+		$html .= self::format_change_details( $row );
+		$html .= "</div>\n";
 		return $html;
 	}
 
@@ -288,11 +326,11 @@ class WP_Logify_Log_Page {
 
 		// Check for valid object ID or name.
 		if ( $event->object_id === null ) {
-			throw new InvalidArgumentException( 'Object ID or name cannot be null.' );
+			throw new InvalidArgumentException( 'Object ID or name cannot be null . ' );
 		}
 
 		// Deleted string.
-		$deleted_string = ( empty( $event->object_name ) ? "{$event->object_type} {$event->object_id}" : $event->object_name ) . ' (deleted)';
+		$deleted_string = ( empty( $event->object_name ) ? "{$event->object_type} {$event->object_id}" : $event->object_name ) . ' ( deleted )';
 
 		// Generate the link based on the object type.
 		switch ( $event->object_type ) {
@@ -314,7 +352,7 @@ class WP_Logify_Log_Page {
 
 					case 'trash':
 						// List trashed posts.
-						$url = '/wp-admin/edit.php?post_status=trash&post_type=post';
+						$url = ' / wp - admin / edit . php ? post_status      = trash & post_type = post';
 						break;
 
 					default:
@@ -347,7 +385,7 @@ class WP_Logify_Log_Page {
 				}
 
 				// Return a link to the theme.
-				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
+				return "<a href=' / wp - admin / theme - editor . php ? theme = {$theme->stylesheet}'>{$theme->name}</a>";
 
 			case 'plugin':
 				// Attempt to load the plugin.
@@ -359,7 +397,7 @@ class WP_Logify_Log_Page {
 				}
 
 				// Link to the plugins page.
-				return "<a href='/wp-admin/plugins.php'>{$plugins[$event->object_id]['Name']}</a>";
+				return "<a href=' / wp - admin / plugins . php'>{$plugins[$event->object_id]['Name']}</a>";
 		}
 	}
 }

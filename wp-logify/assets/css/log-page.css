@@ -85,7 +85,10 @@
   width: 24rem;
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-user-details-table {
-  width: 48rem;
+  width: 36rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-change-details-table {
+  width: 36rem;
 }
 
 .wp-logify-user-info {

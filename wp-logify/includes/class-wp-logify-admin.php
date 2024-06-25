@@ -124,7 +124,7 @@ class WP_Logify_Admin {
 		return array_filter(
 			$roles,
 			function ( $role ) use ( $valid_roles ) {
-				return in_array( $role, $valid_roles );
+				return in_array( $role, $valid_roles, true );
 			}
 		);
 	}
@@ -156,7 +156,7 @@ class WP_Logify_Admin {
 	 * @return mixed The updated status of the screen option.
 	 */
 	public static function set_screen_option( $status, $option, $value ) {
-		if ( 'activities_per_page' == $option ) {
+		if ( 'activities_per_page' === $option ) {
 			return $value;
 		}
 		return $status;
@@ -204,10 +204,10 @@ class WP_Logify_Admin {
 	}
 
 	/**
-	 * Converts a filename to a handle for WP Logify plugin.
+	 * Converts a filename to a handle for WP Logify script or style.
 	 *
-	 * This function takes a filename and converts it into a handle by replacing dots with dashes and converting it to lowercase.
-	 * The resulting handle is prefixed with 'wp-logify-'.
+	 * This function takes a filename and converts it into a handle by replacing dots with dashes
+	 * and converting it to lowercase. The resulting handle is prefixed with 'wp-logify-'.
 	 *
 	 * @param string $filename The filename to convert.
 	 * @return string The handle for the WP Logify plugin.
@@ -391,7 +391,7 @@ class WP_Logify_Admin {
 	private static function current_user_has_access( $roles ) {
 		$user = wp_get_current_user();
 		foreach ( $roles as $role ) {
-			if ( in_array( $role, $user->roles ) ) {
+			if ( in_array( $role, $user->roles, true ) ) {
 				return true;
 			}
 		}
@@ -405,6 +405,6 @@ class WP_Logify_Admin {
 	 */
 	private static function is_plugin_installer() {
 		$plugin_installer = get_option( 'wp_logify_plugin_installer' );
-		return $plugin_installer && get_current_user_id() == $plugin_installer;
+		return $plugin_installer && get_current_user_id() === $plugin_installer;
 	}
 }
