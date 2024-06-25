@@ -275,12 +275,17 @@ class WP_Logify_Log_Page {
 		$html .= "<table class='wp-logify-change-details-table wp-logify-details-table'>\n";
 		$html .= "<tr><th></th><th>Old value</th><th>New value</th></tr>\n";
 		foreach ( $changes as $key => $value ) {
-			$html .= "<tr><th>$key</th>";
+			$readable_key = $key === 'user_pass' ? 'Password' : self::make_key_readable( $key, array( 'wp', $row->object_type ) );
+			$html        .= "<tr><th>$readable_key</th>";
 
 			if ( is_scalar( $value ) ) {
 				$html .= "<td colspan='2'>$value</td>";
 			} elseif ( is_array( $value ) && count( $value ) === 2 ) {
-				$html .= "<td>{$value[0]}</td><td>{$value[1]}</td>";
+				if ( $key === 'user_pass' ) {
+					$html .= '<td>(hidden)</td><td>(hidden)</td>';
+				} else {
+					$html .= "<td>{$value[0]}</td><td>{$value[1]}</td>";
+				}
 			}
 
 			$html .= "</tr>\n";
@@ -289,6 +294,28 @@ class WP_Logify_Log_Page {
 		$html .= "</div>\n";
 
 		return $html;
+	}
+
+	/**
+	 * Make a key readable.
+	 *
+	 * This function takes a key and makes it more readable by converting it to title case and
+	 * replacing underscores with spaces.
+	 *
+	 * @param string $key The key to make readable.
+	 * @param ?array $prefixes_to_ignore An array of prefixes to ignore when making the key readable. Examples: 'wp', 'user', 'post'.
+	 * @return string The readable key.
+	 */
+	public static function make_key_readable( string $key, ?array $prefixes_to_ignore = null ): string {
+		// Split the key into words.
+		$words = explode( '_', $key );
+
+		// Remove any ignored prefix.
+		if ( $prefixes_to_ignore !== null && in_array( $words[0], $prefixes_to_ignore, true ) ) {
+			$words = array_slice( $words, 1 );
+		}
+
+		return ucfirst( implode( ' ', $words ) );
 	}
 
 	/**

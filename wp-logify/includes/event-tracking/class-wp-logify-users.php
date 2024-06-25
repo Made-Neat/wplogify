@@ -73,28 +73,6 @@ class WP_Logify_Users {
 	}
 
 	/**
-	 * Make a key readable.
-	 *
-	 * This function takes a key and makes it more readable by converting it to title case and
-	 * replacing underscores with spaces.
-	 *
-	 * @param string $key The key to make readable.
-	 * @param ?array $prefixes_to_ignore An array of prefixes to ignore when making the key readable. Examples: 'wp', 'user', 'post'.
-	 * @return string The readable key.
-	 */
-	public static function make_key_readable( string $key, ?array $prefixes_to_ignore = null ): string {
-		// Split the key into words.
-		$words = explode( '_', $key );
-
-		// Remove any ignored prefix.
-		if ( $prefixes_to_ignore !== null && in_array( $words[0], $prefixes_to_ignore, true ) ) {
-			$words = array_slice( $words, 1 );
-		}
-
-		return ucfirst( implode( ' ', $words ) );
-	}
-
-	/**
 	 * Track user update.
 	 *
 	 * @param int     $user_id       The ID of the user that was updated.
@@ -121,8 +99,7 @@ class WP_Logify_Users {
 
 			if ( $old_value !== $new_value ) {
 				// debug_log( 'record change', $old_value, $new_value );
-				$readable_key                  = self::make_key_readable( $key, array( 'user' ) );
-				$user_changes[ $readable_key ] = array( $old_value, $new_value );
+				$user_changes[ $key ] = array( $old_value, $new_value );
 			}
 		}
 
