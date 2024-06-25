@@ -1,5 +1,18 @@
 <?php
-class WP_Logify_API {
+/**
+ * Contains the API class. Currently not used.
+ *
+ * @package WP_Logify
+ */
+
+namespace WP_Logify;
+
+/**
+ * Class WP_Logify\API
+ *
+ * Contains methods for interacting with the SAAS web service, for premium features.
+ */
+class API {
 	public static function init() {
 	}
 

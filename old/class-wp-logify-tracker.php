@@ -1,5 +1,16 @@
 <?php
-class WP_Logify_Tracker {
+/**
+ * Contains the Tracker class.
+ *
+ * @package WP_Logify
+ */
+
+namespace WP_Logify;
+
+/**
+ * Class WP_Logify\Tracker
+ */
+class Tracker {
 	public static function init() {
 		// Hook into various WordPress actions
 		// User-related hooks
@@ -320,10 +331,10 @@ class WP_Logify_Tracker {
 			$user_id = get_current_user_id();
 		}
 
-		$logger = new WP_Logify_Logger();
+		$logger = new Logger();
 		$logger->log_change( $user_id, $event_type, $details );
 	}
 }
 
 // Initialize the tracker
-WP_Logify_Tracker::init();
+Tracker::init();

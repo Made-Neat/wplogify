@@ -1,11 +1,21 @@
 <?php
 /**
- * Class WP_Logify_Basic
+ * Contains the Users class.
  *
- * This class provides basic tracking functionalities for WordPress.
- * It tracks changes to posts and user logins.
+ * @package WP_Logify
  */
-class WP_Logify_Users {
+
+namespace WP_Logify;
+
+use DateTime;
+use WP_User;
+
+/**
+ * Class WP_Logify\Users
+ *
+ * Provides tracking of events related to users.
+ */
+class Users {
 
 	/**
 	 * Initializes the class by adding WordPress actions.
@@ -29,7 +39,7 @@ class WP_Logify_Users {
 	 * @param WP_User $user The WP_User object of the user that logged in.
 	 */
 	public static function track_login( string $user_login, WP_User $user ) {
-		WP_Logify_Logger::log_event( 'User Login', 'user', $user->ID, self::get_user_name( $user ) );
+		Logger::log_event( 'User Login', 'user', $user->ID, self::get_user_name( $user ) );
 	}
 
 	/**
@@ -38,7 +48,7 @@ class WP_Logify_Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function track_logout( int $user_id ) {
-		WP_Logify_Logger::log_event( 'User Logout', 'user', $user_id, self::get_user_name( $user_id ) );
+		Logger::log_event( 'User Logout', 'user', $user_id, self::get_user_name( $user_id ) );
 	}
 
 	/**
@@ -51,7 +61,7 @@ class WP_Logify_Users {
 		// Get the user's details.
 		$details = self::get_user_details( $user_id );
 
-		WP_Logify_Logger::log_event( 'User Registered', 'user', $user_id, self::get_user_name( $user_id ), $details );
+		Logger::log_event( 'User Registered', 'user', $user_id, self::get_user_name( $user_id ), $details );
 	}
 
 	/**
@@ -70,7 +80,7 @@ class WP_Logify_Users {
 			$details = array( 'Data reassigned to' => self::get_user_profile_link( $reassign ) );
 		}
 
-		WP_Logify_Logger::log_event( 'User Deleted', 'user', $user_id, self::get_user_name( $user ), $details );
+		Logger::log_event( 'User Deleted', 'user', $user_id, self::get_user_name( $user ), $details );
 	}
 
 	/**
@@ -105,7 +115,7 @@ class WP_Logify_Users {
 		}
 
 		if ( ! empty( $user_changes ) ) {
-			WP_Logify_Logger::log_event( 'User Updated', 'user', $user_id, self::get_user_name( $user_id ), null, $user_changes );
+			Logger::log_event( 'User Updated', 'user', $user_id, self::get_user_name( $user_id ), null, $user_changes );
 		}
 	}
 
@@ -119,12 +129,12 @@ class WP_Logify_Users {
 
 		global $wpdb;
 		$user_id    = get_current_user_id();
-		$table_name = WP_Logify_Logger::get_table_name();
+		$table_name = Logger::get_table_name();
 		$event_type = 'User Session';
 
 		// Get the current datetime.
-		$now           = WP_Logify_DateTime::current_datetime();
-		$formatted_now = WP_Logify_DateTime::format_datetime_mysql( $now );
+		$now           = DateTimes::current_datetime();
+		$formatted_now = DateTimes::format_datetime_mysql( $now );
 
 		// Check if this is a continuing session.
 		$continuing      = false;
@@ -139,8 +149,8 @@ class WP_Logify_Users {
 
 			// Extract the current session end datetime from the event details.
 			$details                = json_decode( $existing_record->details, true );
-			$session_start_datetime = WP_Logify_DateTime::create_datetime( $details['Session start'] );
-			$session_end_datetime   = WP_Logify_DateTime::create_datetime( $details['Session end'] );
+			$session_start_datetime = DateTimes::create_datetime( $details['Session start'] );
+			$session_end_datetime   = DateTimes::create_datetime( $details['Session end'] );
 
 			// If the current value for session end time is less than 5 minutes (300 seconds) before
 			// now, we'll say the session is continuing, and update the session end time to now.
@@ -150,7 +160,7 @@ class WP_Logify_Users {
 
 				// Update the session end time and duration.
 				$details['Session end']      = $formatted_now;
-				$details['Session duration'] = WP_Logify_DateTime::get_duration_string( $session_start_datetime, $now );
+				$details['Session duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
 
 				// Update the record.
 				$wpdb->update(
@@ -170,7 +180,7 @@ class WP_Logify_Users {
 				'Session end'      => $formatted_now,
 				'Session duration' => '0 minutes',
 			);
-			WP_Logify_Logger::log_event( $event_type, 'user', $user_id, self::get_user_name( $user_id ), $details );
+			Logger::log_event( $event_type, 'user', $user_id, self::get_user_name( $user_id ), $details );
 		}
 
 		wp_send_json_success();
@@ -240,9 +250,9 @@ class WP_Logify_Users {
 
 		// Add the datetime the user was registered, if set.
 		if ( $user->user_registered ) {
-			$user_registered_datetime_utc  = WP_Logify_DateTime::create_datetime( $user->user_registered, 'UTC' );
+			$user_registered_datetime_utc  = DateTimes::create_datetime( $user->user_registered, 'UTC' );
 			$user_registered_datetime_site = $user_registered_datetime_utc->setTimezone( wp_timezone() );
-			$details['Registered']         = WP_Logify_DateTime::format_datetime_site( $user_registered_datetime_site );
+			$details['Registered']         = DateTimes::format_datetime_site( $user_registered_datetime_site );
 		}
 
 		return $details;
@@ -387,14 +397,14 @@ class WP_Logify_Users {
 		}
 
 		// Get the last login datetime from the wp_logify_events table.
-		$table_name       = WP_Logify_Logger::get_table_name();
+		$table_name       = Logger::get_table_name();
 		$sql              = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1",
 			$table_name,
 			$user->ID
 		);
 		$last_login_event = $wpdb->get_row( $sql );
-		return $last_login_event === null ? null : WP_Logify_DateTime::create_datetime( $last_login_event->date_time );
+		return $last_login_event === null ? null : DateTimes::create_datetime( $last_login_event->date_time );
 	}
 
 	/**
@@ -412,7 +422,7 @@ class WP_Logify_Users {
 		}
 
 		// Get the most recent session end datetime from the wp_logify_events table.
-		$table_name         = WP_Logify_Logger::get_table_name();
+		$table_name         = Logger::get_table_name();
 		$sql                = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY date_time DESC LIMIT 1",
 			$table_name,
@@ -421,7 +431,7 @@ class WP_Logify_Users {
 		$last_session_event = $wpdb->get_row( $sql );
 		if ( $last_session_event !== null && $last_session_event->details !== null ) {
 			$details = json_decode( $last_session_event->details, true );
-			return WP_Logify_DateTime::create_datetime( $details['Session end'] );
+			return DateTimes::create_datetime( $details['Session end'] );
 		}
 
 		return null;

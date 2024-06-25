@@ -1,5 +1,21 @@
 <?php
-class WP_Logify_Cron {
+/**
+ * Contains the Cron class.
+ *
+ * @package WP_Logify
+ */
+
+namespace WP_Logify;
+
+/**
+ * Class WP_Logify\Cron
+ *
+ * Encapsulates all cron-related methods.
+ */
+class Cron {
+	/**
+	 * Initializes the class.
+	 */
 	public static function init() {
 		add_action( 'wp_logify_cleanup', array( __CLASS__, 'cleanup_old_records' ) );
 		if ( ! wp_next_scheduled( 'wp_logify_cleanup' ) ) {
@@ -42,7 +58,7 @@ class WP_Logify_Cron {
 		$days = absint( ceil( $days ) );
 
 		// Delete old records.
-		$table_name = WP_Logify_Logger::get_table_name();
+		$table_name = Logger::get_table_name();
 		$wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE date_time < NOW() - INTERVAL %d DAY", $days ) );
 	}
 }

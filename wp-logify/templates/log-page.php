@@ -1,3 +1,14 @@
+<?php
+/**
+ * Log page template.
+ *
+ * @package WP_Logify
+ */
+
+namespace WP_Logify;
+
+?>
+
 <div class="wrap">
 	<h1>WP Logify - Log</h1>
 

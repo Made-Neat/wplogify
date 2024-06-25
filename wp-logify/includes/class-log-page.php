@@ -1,8 +1,20 @@
 <?php
 /**
- * Formats log entries for display in the admin area.
+ * Contains the Log_Page class.
+ *
+ * @package WP_Logify
  */
-class WP_Logify_Log_Page {
+
+namespace WP_Logify;
+
+use InvalidArgumentException;
+
+/**
+ * Class WP_Logify\Log_Page
+ *
+ * Contains methods for formatting event log entries for display in the admin area.
+ */
+class Log_Page {
 
 	/**
 	 * Display the log page.
@@ -14,12 +26,12 @@ class WP_Logify_Log_Page {
 	 */
 	public static function display_log_page() {
 		global $wpdb;
-		$table_name = WP_Logify_Logger::get_table_name();
+		$table_name = Logger::get_table_name();
 		$per_page   = (int) get_user_option( 'activities_per_page', get_current_user_id() );
 		if ( ! $per_page ) {
 			$per_page = 20;
 		}
-		$total_items = $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
+		$total_items = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) );
 		$paged       = isset( $_GET['paged'] ) ? max( 0, intval( $_GET['paged'] ) - 1 ) : 0;
 		$offset      = $paged * $per_page;
 
@@ -28,14 +40,12 @@ class WP_Logify_Log_Page {
 
 	/**
 	 * Fetches logs from the database based on the provided search criteria.
-	 *
-	 * @return void
 	 */
 	public static function fetch_logs() {
 		global $wpdb;
 
 		// Get table names.
-		$events_table_name = WP_Logify_Logger::get_table_name();
+		$events_table_name = Logger::get_table_name();
 		$user_table_name   = $wpdb->prefix . 'users';
 
 		// These should match the columns in admin.js.
@@ -69,11 +79,11 @@ class WP_Logify_Log_Page {
 		}
 
 		// Order by column. Default to date_time.
-		$order_col = isset( $columns[ $_POST['order'][0]['column'] ] ) ? $columns[ $_POST['order'][0]['column'] ] : 'date_time';
+		$order_col = isset( $columns[ $_POST['order'][0]['column'] ] ) ? wp_unslash( $columns[ $_POST['order'][0]['column'] ] ) : 'date_time';
 
 		// Order by direction.
 		if ( isset( $_POST['order'][0]['dir'] ) ) {
-			$order_dir = strtoupper( $_POST['order'][0]['dir'] );
+			$order_dir = strtoupper( wp_unslash( $_POST['order'][0]['dir'] ) );
 		}
 		// Default to DESC.
 		if ( ! isset( $order_dir ) || ! in_array( $order_dir, array( 'ASC', 'DESC' ), true ) ) {
@@ -141,13 +151,13 @@ class WP_Logify_Log_Page {
 		foreach ( $results as $row ) {
 			if ( ! empty( $row->ID ) ) {
 				// Date and time.
-				$date_time          = WP_Logify_DateTime::create_datetime( $row->date_time );
-				$formatted_datetime = WP_Logify_DateTime::format_datetime_site( $date_time );
+				$date_time          = DateTimes::create_datetime( $row->date_time );
+				$formatted_datetime = DateTimes::format_datetime_site( $date_time );
 				$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
 				$row->date_time     = "<div>$formatted_datetime ($time_ago)</div>";
 
 				// User details.
-				$user_profile_link = WP_Logify_Users::get_user_profile_link( $row->user_id );
+				$user_profile_link = Users::get_user_profile_link( $row->user_id );
 				$user_role         = esc_html( ucwords( $row->user_role ) );
 				$row->user         = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
@@ -187,12 +197,12 @@ class WP_Logify_Log_Page {
 		}
 
 		// Get the last login datetime.
-		$last_login_datetime        = WP_Logify_Users::get_last_login_datetime( $row->user_id );
-		$last_login_datetime_string = $last_login_datetime !== null ? WP_Logify_DateTime::format_datetime_site( $last_login_datetime, true ) : 'Unknown';
+		$last_login_datetime        = Users::get_last_login_datetime( $row->user_id );
+		$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime, true ) : 'Unknown';
 
 		// Get the last active datetime.
-		$last_active_datetime        = WP_Logify_Users::get_last_active_datetime( $row->user_id );
-		$last_active_datetime_string = $last_active_datetime !== null ? WP_Logify_DateTime::format_datetime_site( $last_active_datetime, true ) : 'Unknown';
+		$last_active_datetime        = Users::get_last_active_datetime( $row->user_id );
+		$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime, true ) : 'Unknown';
 
 		// User location.
 		$user_location = empty( $row->user_location ) ? 'Unknown' : esc_html( $row->user_location );
@@ -204,7 +214,7 @@ class WP_Logify_Log_Page {
 		$html  = "<div class='wp-logify-user-details wp-logify-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
 		$html .= "<table class='wp-logify-user-details-table'>\n";
-		$html .= '<tr><th>User</th><td>' . WP_Logify_Users::get_user_profile_link( $row->user_id ) . "</td></tr>\n";
+		$html .= '<tr><th>User</th><td>' . Users::get_user_profile_link( $row->user_id ) . "</td></tr>\n";
 		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>\n";
 		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . "</td></tr>\n";
 		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
@@ -353,6 +363,8 @@ class WP_Logify_Log_Page {
 	 * NB: The ID will be an integer (as a string) for posts and users, and a string for themes and plugins.
 	 *
 	 * @param object $event The event object from the database.
+	 * @return string The link to the object.
+	 * @throws InvalidArgumentException If the object type is invalid or the object ID is null.
 	 */
 	public static function get_object_link( object $event ) {
 		// Handle the null case.
@@ -361,7 +373,7 @@ class WP_Logify_Log_Page {
 		}
 
 		// Check for valid object type.
-		if ( ! in_array( $event->object_type, WP_Logify_Logger::VALID_OBJECT_TYPES, true ) ) {
+		if ( ! in_array( $event->object_type, Logger::VALID_OBJECT_TYPES, true ) ) {
 			throw new InvalidArgumentException( "Invalid object type: $event->object_type" );
 		}
 
@@ -414,7 +426,7 @@ class WP_Logify_Log_Page {
 				}
 
 				// Return the user profile link.
-				return WP_Logify_Users::get_user_profile_link( $event->object_id );
+				return Users::get_user_profile_link( $event->object_id );
 
 			case 'theme':
 				// Attempt to load the theme.

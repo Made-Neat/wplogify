@@ -1,11 +1,21 @@
 <?php
 /**
- * Class WP_Logify_Posts
+ * Contains the Posts class.
  *
- * This class provides basic tracking functionalities for WordPress.
- * It tracks changes to posts and user logins.
+ * @package WP_Logify
  */
-class WP_Logify_Posts {
+
+namespace WP_Logify;
+
+use DateTime;
+use WP_Post;
+
+/**
+ * Class WP_Logify\Posts
+ *
+ * Provides tracking of events related to posts.
+ */
+class Posts {
 	/**
 	 * Link the events we want to log to methods.
 	 */
@@ -50,7 +60,7 @@ class WP_Logify_Posts {
 			$post->ID
 		);
 		$created_datetime = $wpdb->get_var( $sql );
-		return WP_Logify_DateTime::create_datetime( $created_datetime );
+		return DateTimes::create_datetime( $created_datetime );
 	}
 
 	/**
@@ -69,7 +79,7 @@ class WP_Logify_Posts {
 			$post->ID
 		);
 		$last_modified_datetime = $wpdb->get_var( $sql );
-		return WP_Logify_DateTime::create_datetime( $last_modified_datetime );
+		return DateTimes::create_datetime( $last_modified_datetime );
 	}
 
 	/**
@@ -88,10 +98,10 @@ class WP_Logify_Posts {
 		return array(
 			'Post ID'       => $post->ID,
 			'Post type'     => $post->post_type,
-			'Author'        => WP_Logify_Users::get_user_profile_link( $post->post_author ),
+			'Author'        => Users::get_user_profile_link( $post->post_author ),
 			'Status'        => $post->post_status,
-			'Created'       => WP_Logify_DateTime::format_datetime_site( self::get_post_created_datetime( $post ), true ),
-			'Last modified' => WP_Logify_DateTime::format_datetime_site( self::get_post_last_modified_datetime( $post ), true ),
+			'Created'       => DateTimes::format_datetime_site( self::get_post_created_datetime( $post ), true ),
+			'Last modified' => DateTimes::format_datetime_site( self::get_post_last_modified_datetime( $post ), true ),
 		);
 	}
 
@@ -162,7 +172,7 @@ class WP_Logify_Posts {
 		}
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $parent->ID, $parent->post_title, $details );
+		Logger::log_event( $event_type, 'post', $parent->ID, $parent->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -193,10 +203,10 @@ class WP_Logify_Posts {
 
 		// Update a couple of details to show the changed status of the post.
 		$details['Status']        = 'delete';
-		$details['Last modified'] = WP_Logify_DateTime::format_datetime_site( 'now', true );
+		$details['Last modified'] = DateTimes::format_datetime_site( 'now', true );
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $details );
+		Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -230,7 +240,7 @@ class WP_Logify_Posts {
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Trashed';
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $details );
+		Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;
@@ -260,7 +270,7 @@ class WP_Logify_Posts {
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $publish ? ' Published' : ' Unpublished' );
 
 		// Log the event.
-		WP_Logify_Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, $details );
+		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, $details );
 
 		// Set a flag to prevent duplicate logging.
 		$_SESSION['post event logged'] = true;

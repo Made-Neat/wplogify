@@ -5,20 +5,22 @@
  * @package WP_Logify
  */
 
+namespace WP_Logify;
+
 global $wpdb;
 
 // Get the wp_logify_events table name.
-$table_name = WP_Logify_Logger::get_table_name();
+$table_name = Logger::get_table_name();
 
 // Create a DateTime object from the current local time.
-$current_datetime = WP_Logify_DateTime::current_datetime();
+$current_datetime = DateTimes::current_datetime();
 
 // Fetch the total activities for the last hour.
-$one_hour_ago         = WP_Logify_DateTime::format_datetime_mysql( WP_Logify_DateTime::subtract_hours( $current_datetime, 1 ) );
+$one_hour_ago         = DateTimes::format_datetime_mysql( DateTimes::subtract_hours( $current_datetime, 1 ) );
 $activities_last_hour = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE date_time > %s", $one_hour_ago ) );
 
 // Fetch the total activities for the last 24 hours.
-$twenty_four_hours_ago    = WP_Logify_DateTime::format_datetime_mysql( WP_Logify_DateTime::subtract_hours( $current_datetime, 24 ) );
+$twenty_four_hours_ago    = DateTimes::format_datetime_mysql( DateTimes::subtract_hours( $current_datetime, 24 ) );
 $activities_last_24_hours = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE date_time > %s", $twenty_four_hours_ago ) );
 
 // Fetch the last 10 activities.
@@ -53,10 +55,10 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 			<?php if ( $results ) : ?>
 				<?php foreach ( $results as $event ) : ?>
 					<tr>
-						<td><?php echo esc_html( WP_Logify_DateTime::format_datetime_site( $event->date_time ) ); ?></td>
-						<td><?php echo WP_Logify_Users::get_user_profile_link( $event->user_id ); ?></td>
+						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->date_time ) ); ?></td>
+						<td><?php echo Users::get_user_profile_link( $event->user_id ); ?></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
-						<td><?php echo WP_Logify_Log_Page::get_object_link( $event ); ?></td>
+						<td><?php echo Log_Page::get_object_link( $event ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			<?php else : ?>
@@ -80,6 +82,7 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 
 <?php
 function wp_logify_dashboard_widget() {
+	// Check current user has access.
 	$access_roles = get_option( 'wp_logify_view_roles', array( 'administrator' ) );
 	if ( ! current_user_has_access( $access_roles ) ) {
 		return;

@@ -64,5 +64,5 @@ www/
 .DS_Store
 Thumbs.db
 
-# Old stuff, keep just in case, local only.
-old/
+# Old stuff, keep just in case.
+# old/

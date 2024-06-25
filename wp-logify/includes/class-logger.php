@@ -1,18 +1,21 @@
 <?php
 /**
- * Logger class file.
- *
- * This file contains the Logger class, which is responsible for logging events to the database.
+ * Contains the Logger class.
  *
  * @package WP_Logify
  */
 
+namespace WP_Logify;
+
+use InvalidArgumentException;
+use RuntimeException;
+
 /**
- * Class WP_Logify_Logger
+ * Class WP_Logify\Logger
  *
  * This class is responsible for logging events to the database.
  */
-class WP_Logify_Logger {
+class Logger {
 
 	/**
 	 * The valid object types for which events can be logged.
@@ -93,7 +96,7 @@ class WP_Logify_Logger {
 		}
 
 		// Get the datetime.
-		$date_time = WP_Logify_DateTime::format_datetime_mysql( WP_Logify_DateTime::current_datetime() );
+		$date_time = DateTimes::format_datetime_mysql( DateTimes::current_datetime() );
 
 		// Get the current user.
 		$user = wp_get_current_user();
@@ -112,9 +115,9 @@ class WP_Logify_Logger {
 		// Collect other user info.
 		$user_id       = $user->ID;
 		$user_role     = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
-		$user_ip       = WP_Logify_Users::get_user_ip();
-		$user_location = WP_Logify_Users::get_user_location( $user_ip );
-		$user_agent    = WP_Logify_Users::get_user_agent();
+		$user_ip       = Users::get_user_ip();
+		$user_location = Users::get_user_location( $user_ip );
+		$user_agent    = Users::get_user_agent();
 
 		// Encode the event details as JSON.
 		if ( $details !== null ) {

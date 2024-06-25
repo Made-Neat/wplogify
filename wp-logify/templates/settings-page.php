@@ -1,3 +1,14 @@
+<?php
+/**
+ * Settings page template.
+ *
+ * @package WP_Logify
+ */
+
+namespace WP_Logify;
+
+?>
+
 <div class="wrap">
 	<h1>WP Logify Settings</h1>
 	<form method="post" action="options.php">
@@ -26,7 +37,7 @@
 					$roles          = wp_roles()->roles;
 					$selected_roles = get_option( 'wp_logify_view_roles', array( 'administrator' ) );
 					foreach ( $roles as $role_key => $role ) {
-						$checked = in_array( $role_key, $selected_roles ) ? 'checked' : '';
+						$checked = in_array( $role_key, $selected_roles, true ) ? 'checked' : '';
 						echo '<label><input type="checkbox" name="wp_logify_view_roles[]" value="' . esc_attr( $role_key ) . '" ' . $checked . '> ' . esc_html( $role['name'] ) . '</label><br>';
 					}
 					?>
@@ -67,7 +78,7 @@
 					<?php
 					$selected_roles_to_track = get_option( 'wp_logify_roles_to_track', array( 'administrator' ) );
 					foreach ( $roles as $role_key => $role ) {
-						$checked = in_array( $role_key, $selected_roles_to_track ) ? 'checked' : '';
+						$checked = in_array( $role_key, $selected_roles_to_track, true ) ? 'checked' : '';
 						echo '<label><input type="checkbox" name="wp_logify_roles_to_track[]" value="' . esc_attr( $role_key ) . '" ' . $checked . '> ' . esc_html( $role['name'] ) . '</label><br>';
 					}
 					?>
@@ -141,7 +152,7 @@ add_action(
 				$roles          = get_editable_roles();
 				$selected_roles = get_option( 'wp_logify_view_roles', array( 'administrator' ) );
 				foreach ( $roles as $role_key => $role ) {
-					$checked = in_array( $role_key, $selected_roles ) ? 'checked' : '';
+					$checked = in_array( $role_key, $selected_roles, true ) ? 'checked' : '';
 					echo '<label><input type="checkbox" name="wp_logify_view_roles[]" value="' . esc_attr( $role_key ) . '" ' . $checked . '> ' . esc_html( $role['name'] ) . '</label><br>';
 				}
 			},

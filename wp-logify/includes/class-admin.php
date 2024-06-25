@@ -1,10 +1,18 @@
 <?php
 /**
- * Class WP_Logify_Admin
+ * Contains the Admin class.
+ *
+ * @package WP_Logify
+ */
+
+namespace WP_Logify;
+
+/**
+ * Class WP_Logify\Admin
  *
  * This class handles the WP Logify admin functionality.
  */
-class WP_Logify_Admin {
+class Admin {
 
 	/**
 	 * Initializes the WP Logify admin functionality.
@@ -25,7 +33,7 @@ class WP_Logify_Admin {
 		add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widget' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_option' ), 10, 3 );
-		add_action( 'wp_ajax_wp_logify_fetch_logs', array( 'WP_Logify_Log_Page', 'fetch_logs' ) );
+		add_action( 'wp_ajax_wp_logify_fetch_logs', array( 'Log_Page', 'fetch_logs' ) );
 		add_action( 'admin_init', array( __CLASS__, 'restrict_access' ) );
 		add_action( 'admin_post_wp_logify_reset_logs', array( __CLASS__, 'reset_logs' ) );
 	}
@@ -45,8 +53,8 @@ class WP_Logify_Admin {
 			return;
 		}
 
-		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify_Log_Page', 'display_log_page' ), 'dashicons-list-view' );
-		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'WP_Logify_Log_Page', 'display_log_page' ) );
+		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'Log_Page', 'display_log_page' ), 'dashicons-list-view' );
+		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'Log_Page', 'display_log_page' ) );
 		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( __CLASS__, 'display_settings_page' ) );
 		add_action( "load-$hook", array( __CLASS__, 'add_screen_options' ) );
 	}
@@ -333,10 +341,10 @@ class WP_Logify_Admin {
 		if ( strpos( $screen->id, 'wp-logify' ) !== false ) {
 			$access_control = get_option( 'wp_logify_access_control', 'only_me' );
 			if ( $access_control === 'only_me' && ! self::is_plugin_installer() ) {
-				wp_redirect( admin_url() );
+				wp_safe_redirect( admin_url() );
 				exit;
 			} elseif ( $access_control === 'user_roles' && ! self::current_user_has_access( get_option( 'wp_logify_view_roles', array( 'administrator' ) ) ) ) {
-				wp_redirect( admin_url() );
+				wp_safe_redirect( admin_url() );
 				exit;
 			}
 		}
@@ -349,9 +357,9 @@ class WP_Logify_Admin {
 	 */
 	public static function reset_logs() {
 		global $wpdb;
-		$table_name = WP_Logify_Logger::get_table_name();
-		$wpdb->query( "TRUNCATE TABLE $table_name" );
-		wp_redirect( admin_url( 'admin.php?page=wp-logify-settings&reset=success' ) );
+		$table_name = Logger::get_table_name();
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table_name ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=wp-logify-settings&reset=success' ) );
 		exit;
 	}
 
@@ -365,16 +373,14 @@ class WP_Logify_Admin {
 		// Retrieve the access control setting from the options.
 		$access_control = get_option( 'wp_logify_access_control', 'only_me' );
 
-		// Check if the access control is set to 'only_me' and the current user is not the plugin
-		// installer.
 		if ( $access_control === 'only_me' && ! self::is_plugin_installer() ) {
-			// Remove the plugin from the list of installed plugins.
+			// If the access control is set to 'only_me' and the current user is not the plugin
+			// installer, remove the plugin from the list of installed plugins.
 			unset( $plugins[ plugin_basename( __FILE__ ) ] );
-		}
-		// Check if the access control is set to 'user_roles' and the current user does not have
-		// access based on the specified roles.
-		elseif ( $access_control === 'user_roles' && ! self::current_user_has_access( get_option( 'wp_logify_view_roles', array( 'administrator' ) ) ) ) {
-			// Remove the plugin from the list of installed plugins.
+		} elseif ( $access_control === 'user_roles' && ! self::current_user_has_access( get_option( 'wp_logify_view_roles', array( 'administrator' ) ) ) ) {
+			// If the access control is set to 'user_roles' and the current user does not have
+			// access based on the specified roles, rremove the plugin from the list of installed
+			// plugins.
 			unset( $plugins[ plugin_basename( __FILE__ ) ] );
 		}
 

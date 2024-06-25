@@ -1,15 +1,22 @@
 <?php
 /**
- * Class WP_Logify_DateTime
- *
- * Contains useful datetime functions.
+ * Contains the DateTimes class.
  *
  * @package WP_Logify
- * @since 1.0.0
- * @category Class
- * @author Shaun Moss <shaun@astromultimedia.com>
  */
-class WP_Logify_DateTime {
+
+namespace WP_Logify;
+
+use DateTime;
+use DateTimeZone;
+use DateInterval;
+
+/**
+ * Class WP_Logify\DateTimes
+ *
+ * Contains useful date and time-related functions.
+ */
+class DateTimes {
 
 	/**
 	 * The MySQL datetime format.
