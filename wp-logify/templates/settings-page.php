@@ -127,7 +127,9 @@ add_action(
 		add_settings_section(
 			'wp_logify_settings_section',
 			__( 'WP Logify Settings', 'wp-logify' ),
-			null,
+			function () {
+				echo "<h2>WP Logify Settings</h2>\n";
+			},
 			'wp_logify_settings_group'
 		);
 

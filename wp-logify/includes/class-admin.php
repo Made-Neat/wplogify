@@ -33,7 +33,7 @@ class Admin {
 		add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widget' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_option' ), 10, 3 );
-		add_action( 'wp_ajax_wp_logify_fetch_logs', array( 'Log_Page', 'fetch_logs' ) );
+		add_action( 'wp_ajax_wp_logify_fetch_logs', array( 'WP_Logify\Log_Page', 'fetch_logs' ) );
 		add_action( 'admin_init', array( __CLASS__, 'restrict_access' ) );
 		add_action( 'admin_post_wp_logify_reset_logs', array( __CLASS__, 'reset_logs' ) );
 	}
@@ -53,8 +53,8 @@ class Admin {
 			return;
 		}
 
-		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'Log_Page', 'display_log_page' ), 'dashicons-list-view' );
-		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'Log_Page', 'display_log_page' ) );
+		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ), 'dashicons-list-view' );
+		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ) );
 		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( __CLASS__, 'display_settings_page' ) );
 		add_action( "load-$hook", array( __CLASS__, 'add_screen_options' ) );
 	}

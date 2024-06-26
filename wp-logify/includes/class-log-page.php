@@ -94,15 +94,45 @@ class Log_Page {
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
 		// Start constructing the SQL statement to get records from the database.
-		$sql  = 'SELECT * FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
+		$sql  = '
+            SELECT
+                e.ID AS event_id,
+                e.date_time,
+                e.user_id,
+                e.user_role,
+                e.user_ip,
+                e.user_location,
+                e.user_agent,
+                e.event_type,
+                e.object_type,
+                e.object_id,
+                e.object_name,
+                e.details,
+                e.changes,
+                u.user_login,
+                u.user_nicename,
+                u.user_email,
+                u.user_status,
+                u.display_name
+            FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
 		$args = array( $events_table_name, $user_table_name );
 
 		// Filter by the search value, if provided.
 		if ( ! empty( $search_value ) ) {
 			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
-			$sql       .= ' WHERE date_time LIKE %s OR user_role LIKE %s OR user_ip LIKE %s OR event_type LIKE %s OR object_type LIKE %s OR details LIKE %s';
+			$sql       .= '
+                WHERE date_time LIKE %s
+                   OR user_role LIKE %s
+                   OR user_ip LIKE %s
+                   OR event_type LIKE %s
+                   OR object_type LIKE %s
+                   OR details LIKE %s
+                   OR changes LIKE %s
+                   OR display_name LIKE %s';
 			array_push(
 				$args,
+				$like_value,
+				$like_value,
 				$like_value,
 				$like_value,
 				$like_value,
@@ -115,11 +145,11 @@ class Log_Page {
 		// Add the order by parameters.
 		switch ( $order_col ) {
 			case 'ID':
-				$order_by = "e.ID $order_dir";
+				$order_by = "event_id $order_dir";
 				break;
 
 			case 'user':
-				$order_by = "u.display_name $order_dir";
+				$order_by = "display_name $order_dir";
 				break;
 
 			case 'object':
@@ -138,7 +168,6 @@ class Log_Page {
 
 		// Get the requested records.
 		$results = $wpdb->get_results( $sql );
-		// debug_log( $results );
 
 		// Get the number of results.
 		$num_filtered_records = count( $results );
@@ -149,28 +178,34 @@ class Log_Page {
 		// Construct the data array to return to the client.
 		$data = array();
 		foreach ( $results as $row ) {
-			if ( ! empty( $row->ID ) ) {
-				// Date and time.
+			if ( ! empty( $row->event_id ) ) {
+				// Create a new event.
+				$event = array( 'ID' => $row->event_id );
+
+				// Date and time of the event.
 				$date_time          = DateTimes::create_datetime( $row->date_time );
 				$formatted_datetime = DateTimes::format_datetime_site( $date_time );
 				$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
-				$row->date_time     = "<div>$formatted_datetime ($time_ago)</div>";
+				$event['date_time'] = "<div>$formatted_datetime ($time_ago)</div>";
 
 				// User details.
-				$user_profile_link = Users::get_user_profile_link( $row->user_id );
+				$user_profile_link = Users::get_user_profile_link( $row );
 				$user_role         = esc_html( ucwords( $row->user_role ) );
-				$row->user         = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
+				$event['user']     = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 				// Source IP.
-				$row->user_ip = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
+				$event['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
+
+				// Event type.
+				$event['event_type'] = $row->event_type;
 
 				// Get the object link.
-				$row->object = self::get_object_link( $row );
+				$event['object'] = self::get_object_link( $row );
 
-				// Format the data.
-				$row->details = self::format_details( $row );
+				// Format the details.
+				$event['details'] = self::format_details( $row );
 
-				$data[] = $row;
+				$data[] = $event;
 			}
 		}
 
@@ -372,18 +407,15 @@ class Log_Page {
 			return '';
 		}
 
-		// Check for valid object type.
-		if ( ! in_array( $event->object_type, Logger::VALID_OBJECT_TYPES, true ) ) {
-			throw new InvalidArgumentException( "Invalid object type: $event->object_type" );
-		}
-
-		// Check for valid object ID or name.
+		// Check for valid object ID.
 		if ( $event->object_id === null ) {
-			throw new InvalidArgumentException( 'Object ID or name cannot be null . ' );
+			throw new InvalidArgumentException( 'Object ID cannot be null . ' );
 		}
 
-		// Deleted string. Used in place of a link to the object if it's been deleted.
-		$deleted_string = ( empty( $event->object_name ) ? "{$event->object_type} {$event->object_id}" : $event->object_name ) . ' (deleted)';
+		// Construct string to use in place of a link to the object if it's been deleted.
+		$deleted_string = empty( $event->object_name )
+			? ( ucfirst( $event->object_type ) . ' ' . $event->object_id )
+			: $event->object_name;
 
 		// Generate the link based on the object type.
 		switch ( $event->object_type ) {
@@ -452,5 +484,8 @@ class Log_Page {
 				// Link to the plugins page.
 				return "<a href='/wp-admin/plugins.php'>{$plugins[$event->object_id]['Name']}</a>";
 		}
+
+		// If the object type is invalid, throw an exception.
+		throw new InvalidArgumentException( "Invalid object type: $event->object_type" );
 	}
 }

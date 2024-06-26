@@ -202,7 +202,7 @@ class Posts {
 		$details = self::get_post_details( $post );
 
 		// Update a couple of details to show the changed status of the post.
-		$details['Status']        = 'delete';
+		$details['Status']        = 'deleted';
 		$details['Last modified'] = DateTimes::format_datetime_site( 'now', true );
 
 		// Log the event.
