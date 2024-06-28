@@ -127,7 +127,7 @@ class Admin {
 	 * @param array $roles The array of roles to be sanitized.
 	 * @return array The sanitized array of roles.
 	 */
-	public static function wp_logify_sanitize_roles( $roles ) {
+	public static function sanitize_roles( $roles ) {
 		$valid_roles = array_keys( wp_roles()->roles );
 		return array_filter(
 			$roles,
@@ -303,19 +303,6 @@ class Admin {
 			self::enqueue_style( 'dataTables.2.0.8.css', array(), null );
 			self::enqueue_script( 'dataTables.2.0.8.js', array( 'jquery' ), null, true );
 		}
-
-		// Attach activity script to all pages.
-		$activity_script_handle = self::enqueue_script( 'activity.js', array( 'jquery' ), 'auto', true );
-
-		// Localise script to pass AJAX URL and nonce.
-		wp_localize_script(
-			$activity_script_handle,
-			'wpLogifyActivity',
-			array(
-				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce'    => wp_create_nonce( 'wp_logify_activity_nonce' ),
-			)
-		);
 	}
 
 	/**

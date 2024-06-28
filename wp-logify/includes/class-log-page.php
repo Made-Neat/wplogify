@@ -189,7 +189,7 @@ class Log_Page {
 				$event['date_time'] = "<div>$formatted_datetime ($time_ago)</div>";
 
 				// User details.
-				$user_profile_link = Users::get_user_profile_link( $row );
+				$user_profile_link = Users::get_user_profile_link( $row->user_id );
 				$user_role         = esc_html( ucwords( $row->user_role ) );
 				$event['user']     = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
@@ -316,7 +316,7 @@ class Log_Page {
 		$html  = "<div class='wp-logify-change-details wp-logify-details-section'>\n";
 		$html .= "<h4>Change Details</h4>\n";
 		$html .= "<table class='wp-logify-change-details-table'>\n";
-		$html .= "<tr><th></th><th>Old value</th><th>New value</th></tr>\n";
+		$html .= "<tr><th></th><th>Before</th><th>After</th></tr>\n";
 		foreach ( $changes as $key => $value ) {
 			$readable_key = self::make_key_readable( $key, array( 'wp', $row->object_type ) );
 
@@ -358,6 +358,21 @@ class Log_Page {
 
 			case 'show_admin_bar_front':
 				return 'Show toolbar';
+
+			case 'user registered':
+				return 'Registered (UTC)';
+
+			case 'post_date':
+				return 'Created';
+
+			case 'post_date_gmt':
+				return 'Created (UTC)';
+
+			case 'post_modified':
+				return 'Last modified';
+
+			case 'post_modified_gmt':
+				return 'Last modified (UTC)';
 		}
 
 		// Split the key into words.

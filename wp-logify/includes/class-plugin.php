@@ -19,11 +19,11 @@ class Plugin {
 	 */
 	public static function init() {
 		Admin::init();
-		// API::init();
 		Cron::init();
 		Logger::init();
 		Posts::init();
 		Users::init();
+		Widget::init();
 	}
 
 	/**
@@ -44,19 +44,15 @@ class Plugin {
 	 * Run on uninstallation.
 	 */
 	public static function uninstall() {
-		// Check if the user has opted to delete the database table on uninstallation of the plugin.
-		if ( get_option( 'wp_logify_delete_on_uninstall' ) === 'yes' ) {
-			global $wpdb;
-			$table_name = Logger::get_table_name();
-			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
-		}
-
-		// Delete the plugin options.
+		// Delete options.
+		delete_option( 'wp_logify_view_roles' );
 		delete_option( 'wp_logify_api_key' );
-		delete_option( 'wp_logify_delete_on_uninstall' );
 		delete_option( 'wp_logify_keep_forever' );
 		delete_option( 'wp_logify_keep_period_quantity' );
 		delete_option( 'wp_logify_keep_period_units' );
+
+		// Drop the events table.
+		Logger::drop_table();
 	}
 
 	/**
@@ -67,12 +63,12 @@ class Plugin {
 	 */
 	public static function add_action_links( array $links ) {
 		// Link to settings.
-		$settings_link = '<a href="' . admin_url( 'admin.php?page=wp-logify-settings' ) . '">' . __( 'Settings', 'wp-logify' ) . '</a>';
-		array_unshift( $links, $settings_link );
+		$settings_page_link = '<a href="' . admin_url( 'admin.php?page=wp-logify-settings' ) . '">' . __( 'Settings', 'wp-logify' ) . '</a>';
+		array_unshift( $links, $settings_page_link );
 
 		// Link to view the log.
-		$view_log_link = '<a href="' . admin_url( 'admin.php?page=wp-logify' ) . '">' . __( 'View log', 'wp-logify' ) . '</a>';
-		array_unshift( $links, $view_log_link );
+		$log_page_link = '<a href="' . admin_url( 'admin.php?page=wp-logify' ) . '">' . __( 'View log', 'wp-logify' ) . '</a>';
+		array_unshift( $links, $log_page_link );
 
 		return $links;
 	}

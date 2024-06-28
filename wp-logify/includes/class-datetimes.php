@@ -110,10 +110,20 @@ class DateTimes {
 	 * @return string The duration of the period as a string.
 	 */
 	public static function get_duration_string( DateTime $start, DateTime $end ): string {
-		$seconds         = $end->getTimestamp() - $start->getTimestamp();
-		$minutes         = ceil( $seconds / 60 );
-		$hours           = floor( $minutes / 60 );
-		$minutes         = $minutes % 60;
+		// Compute the duration in seconds.
+		$seconds = $end->getTimestamp() - $start->getTimestamp();
+
+		// Special handling for 0 seconds.
+		if ( $seconds === 0 ) {
+			return '0 minutes';
+		}
+
+		// Get the minutes and hours. Round up to the nearest minute.
+		$minutes  = (int) ceil( $seconds / 60 );
+		$hours    = (int) floor( $minutes / 60 );
+		$minutes %= 60;
+
+		// Construct the duration string.
 		$duration_string = '';
 		if ( $hours > 0 ) {
 			$duration_string .= "$hours hour" . ( $hours === 1 ? '' : 's' );

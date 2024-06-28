@@ -23,17 +23,19 @@ class Users {
 	public static function init() {
 		add_action( 'wp_login', array( __CLASS__, 'track_login' ), 10, 2 );
 		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
-		add_action( 'wp_ajax_track_user_activity', array( __CLASS__, 'track_user_activity' ), 10, 0 );
 		add_action( 'user_register', array( __CLASS__, 'track_user_registration' ), 10, 2 );
 		add_action( 'delete_user', array( __CLASS__, 'track_user_deletion' ), 10, 3 );
 		add_action( 'profile_update', array( __CLASS__, 'track_user_update' ), 10, 3 );
 		add_action( 'update_user_meta', array( __CLASS__, 'track_user_meta_update' ), 10, 4 );
+
+		// Track user activity on every HTTP request.
+		self::track_user_activity();
 	}
 
-	// #region Tracking functions
+	// =============================================================================================
+	// Tracking methods.
 
-	/**
-	 * Track user login.
+	/**  * Track user login.
 	 *
 	 * @param string  $user_login The username of the user that logged in.
 	 * @param WP_User $user The WP_User object of the user that logged in.
@@ -91,10 +93,6 @@ class Users {
 	 * @param array   $userdata      The data for the user after the update.
 	 */
 	public static function track_user_update( int $user_id, WP_User $old_user_data, array $userdata ) {
-		// debug_log( 'user_id', $user_id );
-		// debug_log( 'old_user_data', $old_user_data );
-		// debug_log( 'userdata', $userdata );
-
 		// Record changes.
 		global $user_changes;
 		if ( ! isset( $user_changes ) ) {
@@ -103,13 +101,10 @@ class Users {
 
 		// Compare values.
 		foreach ( $old_user_data->data as $key => $value ) {
-			// debug_log( 'old user data', $key, $value );
-
-			$old_value = (string) $value;
-			$new_value = (string) $userdata[ $key ];
+			$old_value = value_to_string( $value );
+			$new_value = value_to_string( $userdata[ $key ] );
 
 			if ( $old_value !== $new_value ) {
-				// debug_log( 'record change', $old_value, $new_value );
 				$user_changes[ $key ] = array( $old_value, $new_value );
 			}
 		}
@@ -120,13 +115,37 @@ class Users {
 	}
 
 	/**
+	 * Track user meta update.
+	 *
+	 * @param int    $meta_id    The ID of the meta data.
+	 * @param int    $user_id    The ID of the user.
+	 * @param string $meta_key   The key of the meta data.
+	 * @param mixed  $meta_value The new value of the meta data.
+	 */
+	public static function track_user_meta_update( int $meta_id, int $user_id, string $meta_key, mixed $meta_value ) {
+		// Get the current value.
+		$current_value = get_user_meta( $user_id, $meta_key, true );
+
+		// Get the old and new values as strings for comparison and display.
+		$old_value = value_to_string( $current_value );
+		$new_value = value_to_string( $meta_value );
+
+		// Track the change, if any.
+		if ( $old_value !== $new_value ) {
+			global $user_changes;
+			if ( ! isset( $user_changes ) ) {
+				$user_changes = array();
+			}
+			$user_changes[ $meta_key ] = array( $old_value, $new_value );
+		}
+	}
+
+	/**
 	 * Track user activity.
 	 *
 	 * This function is called via AJAX to track user activity.
 	 */
 	public static function track_user_activity() {
-		check_ajax_referer( 'wp_logify_activity_nonce', 'nonce' );
-
 		global $wpdb;
 		$user_id    = get_current_user_id();
 		$table_name = Logger::get_table_name();
@@ -145,17 +164,19 @@ class Users {
 			$event_type
 		);
 		$existing_record = $wpdb->get_row( $sql );
-		if ( $existing_record && $existing_record->details !== null ) {
+
+		if ( $existing_record && ! empty( $existing_record->details ) ) {
 
 			// Extract the current session end datetime from the event details.
 			$details                = json_decode( $existing_record->details, true );
 			$session_start_datetime = DateTimes::create_datetime( $details['Session start'] );
 			$session_end_datetime   = DateTimes::create_datetime( $details['Session end'] );
 
-			// If the current value for session end time is less than 5 minutes (300 seconds) before
-			// now, we'll say the session is continuing, and update the session end time to now.
+			// If the current value for session end time is less than an hour ago, we'll assume
+			// the current session is continuing, and update the session end time in the existing
+            // log entry to now.
 			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
-			if ( $seconds_diff <= 300 ) {
+			if ( $seconds_diff <= 86400 ) {
 				$continuing = true;
 
 				// Update the session end time and duration.
@@ -182,66 +203,25 @@ class Users {
 			);
 			Logger::log_event( $event_type, 'user', $user_id, self::get_user_name( $user_id ), $details );
 		}
-
-		wp_send_json_success();
 	}
 
-	/**
-	 * Track user meta update.
-	 *
-	 * @param int    $meta_id   The ID of the meta data.
-	 * @param int    $object_id The ID of the user.
-	 * @param string $meta_key  The key of the meta data.
-	 * @param mixed  $meta_value The new value of the meta data.
-	 */
-	public static function track_user_meta_update( int $meta_id, int $object_id, string $meta_key, mixed $meta_value ) {
-		// Get the current value.
-		$current_value = get_user_meta( $object_id, $meta_key, true );
-
-		// Get the old and new values as strings for comparison and display.
-		$old_value = self::value_to_string( $current_value );
-		$new_value = self::value_to_string( $meta_value );
-
-		// Track the change, if any.
-		if ( $old_value !== $new_value ) {
-			global $user_changes;
-			if ( ! isset( $user_changes ) ) {
-				$user_changes = array();
-			}
-			$user_changes[ $meta_key ] = array( $old_value, $new_value );
-		}
-	}
-
-	// #endregion Tracking functions
-
-	/**
-	 * Convert a value to a string for comparison and display.
-	 *
-	 * @param mixed $value The value to convert.
-	 * @return string The value as a string.
-	 */
-	private static function value_to_string( mixed $value ) {
-		return is_scalar( $value ) ? (string) $value : wp_json_encode( $value );
-	}
+	// =============================================================================================
 
 	/**
 	 * Get the details of a user to show in the log.
 	 *
-	 * @param int|WP_User $user The user ID or object.
+	 * @param WP_User|int $user The user object or ID.
 	 * @return array The details of the user.
 	 */
-	private static function get_user_details( int|WP_User $user ): array {
+	private static function get_user_details( WP_User|int $user ): array {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			$user_id = $user;
-			$user    = get_userdata( $user );
-		} else {
-			$user_id = $user->ID;
+			$user = get_userdata( $user );
 		}
 
 		// Create the details array.
 		$details = array(
-			'User ID' => $user_id,
+			'User ID' => $user->ID,
 			'Profile' => self::get_user_profile_link( $user ),
 			'Login'   => $user->user_login,
 			'Email'   => $user->user_email,
@@ -264,10 +244,10 @@ class Users {
 	 * First preference is the display_name, second preference is the user_login, third preference
 	 * is the user_nicename.
 	 *
-	 * @param int|WP_User $user The ID of the user, the user object, or a row from the users table.
+	 * @param WP_User|int $user The user object or ID.
 	 * @return string The username if found, otherwise 'Unknown'.
 	 */
-	public static function get_user_name( int|object $user ) {
+	public static function get_user_name( WP_User|int $user ) {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			$user = get_userdata( $user );
@@ -294,21 +274,13 @@ class Users {
 	/**
 	 * Retrieves a link to the user's profile.
 	 *
-	 * @param int|object $user The ID of the user, the user object, or a row from the users table.
+	 * @param WP_User|int $user The user object or ID.
 	 * @return ?string The link to the user's profile or null if the user wasn't found.
 	 */
-	public static function get_user_profile_link( int|object $user ): ?string {
-		// Check for a valid parameter.
-		if ( empty( $user ) ) {
-			return 'Unknown';
-		}
-
+	public static function get_user_profile_link( WP_User|int $user ): ?string {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			$user = get_userdata( $user );
-			if ( ! $user ) {
-				return 'Unknown';
-			}
 		}
 
 		// Construct the link.

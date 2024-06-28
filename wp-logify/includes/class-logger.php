@@ -31,6 +31,14 @@ class Logger {
 	}
 
 	/**
+	 * Get the name of the table used to store log events.
+	 */
+	public static function get_table_name() {
+		global $wpdb;
+		return $wpdb->prefix . 'wp_logify_events';
+	}
+
+	/**
 	 * Create the table used to store log events.
 	 */
 	public static function create_table() {
@@ -60,11 +68,12 @@ class Logger {
 	}
 
 	/**
-	 * Get the name of the table used to store log events.
+	 * Drop the table used to store log events.
 	 */
-	public static function get_table_name() {
+	public static function drop_table() {
 		global $wpdb;
-		return $wpdb->prefix . 'wp_logify_events';
+		$table_name = self::get_table_name();
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
 	}
 
 	/**
