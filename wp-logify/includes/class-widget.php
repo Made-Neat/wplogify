@@ -7,6 +7,8 @@
 
 namespace WP_Logify;
 
+use WP_User;
+
 /**
  * Contains methods relating to the dashboard widget.
  */
@@ -24,8 +26,7 @@ class Widget {
 	 */
 	public static function add_dashboard_widget() {
 		// Check current user has access.
-		$access_roles = get_option( 'wp_logify_view_roles', array( 'administrator' ) );
-		if ( ! self::current_user_has_access( $access_roles ) ) {
+		if ( ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
 			return;
 		}
 
@@ -41,18 +42,5 @@ class Widget {
 	 */
 	public static function display_dashboard_widget() {
 		include plugin_dir_path( __FILE__ ) . '../templates/dashboard-widget.php';
-	}
-
-	/**
-	 * Checks if the current user has access to the dashboard widget.
-	 */
-	private static function current_user_has_access( $roles ) {
-		$user = wp_get_current_user();
-		foreach ( $roles as $role ) {
-			if ( in_array( $role, $user->roles ) ) {
-				return true;
-			}
-		}
-		return false;
 	}
 }

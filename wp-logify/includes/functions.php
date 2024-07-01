@@ -12,25 +12,17 @@ namespace WP_Logify;
  *
  * @param mixed ...$args The variable(s) to dump.
  */
-function debug_log( ...$args ) {
-	// Ensure there is at least one argument.
+function debug( ...$args ) {
+	// If no arguments are provided, do nothing.
 	if ( empty( $args ) ) {
 		return;
 	}
 
 	// Convert each argument to a string representation.
-	$strings = array_map(
-		function ( $arg ) {
-			return is_string( $arg ) ? $arg : var_export( $arg, true );
-		},
-		$args
-	);
+	$strings = array_map( fn( $arg ) => var_export( $arg, true ), $args );
 
-	// Join the strings with ': ' separator.
-	$debug_string = implode( ', ', array_filter( $strings ) );
-
-	// Log the debug string.
-	error_log( $debug_string );
+	// Log the strings.
+	error_log( implode( ', ', $strings ) );
 }
 
 /**

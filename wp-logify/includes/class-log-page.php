@@ -21,8 +21,6 @@ class Log_Page {
 	 *
 	 * This function is responsible for displaying the log page in the WordPress admin area.
 	 * It retrieves the necessary data from the database and includes the log page template.
-	 *
-	 * @since 1.0.0
 	 */
 	public static function display_log_page() {
 		global $wpdb;

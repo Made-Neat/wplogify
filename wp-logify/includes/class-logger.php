@@ -8,7 +8,6 @@
 namespace WP_Logify;
 
 use InvalidArgumentException;
-use RuntimeException;
 
 /**
  * Class WP_Logify\Logger
@@ -111,25 +110,30 @@ class Logger {
 		$user = wp_get_current_user();
 
 		// If the current user could not be loaded, this may be a login or logout event.
+		// In such cases, we can get the user from the object information.
 		if ( $user->ID === 0 && $object_type === 'user' ) {
-			debug_log( 'User not found, trying to get user by ID', $object_id );
 			$user = get_userdata( $object_id );
 		}
 
-		// This shouldn't happen.
-		if ( empty( $user ) ) {
-			throw new RuntimeException( 'User not found' );
+		// If we don't have a valid user at this point, we don't need to log the event.
+		if ( ! $user || $user->ID === 0 ) {
+			return;
+		}
+
+		// Check if we're interested in tracking this user's actions.
+		if ( ! Users::user_has_role( $user, Settings::get_roles_to_track() ) ) {
+			return;
 		}
 
 		// Collect other user info.
 		$user_id       = $user->ID;
-		$user_role     = implode( ', ', array_map( 'sanitize_text_field', $user->roles ) );
+		$user_role     = implode( ', ', $user->roles );
 		$user_ip       = Users::get_user_ip();
 		$user_location = Users::get_user_location( $user_ip );
 		$user_agent    = Users::get_user_agent();
 
 		// Encode the event details as JSON.
-		if ( $details !== null ) {
+		if ( $details ) {
 			$details_json = wp_json_encode( $details );
 			if ( ! $details_json ) {
 				throw new InvalidArgumentException( 'Failed to encode details as JSON.' );
@@ -139,7 +143,7 @@ class Logger {
 		}
 
 		// Encode the object changes as JSON.
-		if ( $changes !== null ) {
+		if ( $changes ) {
 			$changes_json = wp_json_encode( $changes );
 			if ( ! $changes_json ) {
 				throw new InvalidArgumentException( 'Failed to encode changes as JSON.' );

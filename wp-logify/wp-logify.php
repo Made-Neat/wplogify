@@ -3,7 +3,7 @@
  * Plugin Name: WP Logify
  * Plugin URI: https://wplogify.com
  * Description: WP Logify features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
- * Version: 1.0
+ * Version: 1.9.0
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
  * License: GPL2
@@ -39,6 +39,7 @@ require_once "$plugin_path/includes/class-log-page.php";
 require_once "$plugin_path/includes/class-logger.php";
 require_once "$plugin_path/includes/class-plugin.php";
 require_once "$plugin_path/includes/class-posts.php";
+require_once "$plugin_path/includes/class-settings.php";
 require_once "$plugin_path/includes/class-users.php";
 require_once "$plugin_path/includes/class-widget.php";
 

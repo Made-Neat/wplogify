@@ -174,7 +174,7 @@ class Users {
 
 			// If the current value for session end time is less than an hour ago, we'll assume
 			// the current session is continuing, and update the session end time in the existing
-            // log entry to now.
+			// log entry to now.
 			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
 			if ( $seconds_diff <= 86400 ) {
 				$continuing = true;
@@ -407,5 +407,26 @@ class Users {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Checks if the user has access based on their roles.
+	 *
+	 * @param WP_User $user The user to check.
+	 * @param array   $roles An array of roles to check against.
+	 * @return bool Returns true if the user has any of the specified roles, false otherwise.
+	 */
+	public static function user_has_role( WP_User $user, array $roles ): bool {
+		return count( array_intersect( $user->roles, $roles ) ) === 0;
+	}
+
+	/**
+	 * Checks if the current user has access based on their roles.
+	 *
+	 * @param array $roles An array of roles to check against.
+	 * @return bool Returns true if the current user has any of the specified roles, false otherwise.
+	 */
+	public static function current_user_has_role( array $roles ) {
+		return self::user_has_role( wp_get_current_user(), $roles );
 	}
 }

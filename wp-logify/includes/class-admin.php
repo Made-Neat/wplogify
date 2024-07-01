@@ -29,7 +29,6 @@ class Admin {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
-		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widget' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_option' ), 10, 3 );
@@ -48,77 +47,14 @@ class Admin {
 	 * @return void
 	 */
 	public static function add_admin_menu() {
-		$access_roles = get_option( 'wp_logify_view_roles', array( 'administrator' ) );
-		if ( ! self::current_user_has_access( $access_roles ) ) {
+		if ( ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
 			return;
 		}
 
 		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ), 'dashicons-list-view' );
 		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ) );
-		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( __CLASS__, 'display_settings_page' ) );
+		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( 'WP_Logify\Settings', 'display_settings_page' ) );
 		add_action( "load-$hook", array( __CLASS__, 'add_screen_options' ) );
-	}
-
-	/**
-	 * Registers the settings for the WP Logify plugin.
-	 */
-	public static function register_settings() {
-		register_setting( 'wp_logify_settings_group', 'wp_logify_api_key' );
-		register_setting( 'wp_logify_settings_group', 'wp_logify_delete_on_uninstall' );
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_roles_to_track',
-			array(
-				'type'              => 'array',
-				'sanitize_callback' => array( __CLASS__, 'wp_logify_sanitize_roles' ),
-				'default'           => array( 'administrator' ),
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_view_roles',
-			array(
-				'type'              => 'array',
-				'sanitize_callback' => array( __CLASS__, 'wp_logify_sanitize_roles' ),
-				'default'           => array( 'administrator' ),
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_keep_forever',
-			array(
-				'type'              => 'boolean',
-				'sanitize_callback' => 'rest_sanitize_boolean',
-				'default'           => true,
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_keep_period_quantity',
-			array(
-				'type'              => 'integer',
-				'sanitize_callback' => 'absint',
-				'default'           => 1,
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_keep_period_units',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => 'year',
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_wp_cron_tracking',
-			array(
-				'type'              => 'boolean',
-				'sanitize_callback' => 'absint',
-				'default'           => 0,
-			)
-		);
 	}
 
 	/**
@@ -171,17 +107,6 @@ class Admin {
 	}
 
 	/**
-	 * Displays the settings page for the WP Logify plugin.
-	 *
-	 * This method includes the settings-page.php template file to render the settings page.
-	 *
-	 * @return void
-	 */
-	public static function display_settings_page() {
-		include plugin_dir_path( __FILE__ ) . '../templates/settings-page.php';
-	}
-
-	/**
 	 * Adds a dashboard widget for WP Logify plugin.
 	 *
 	 * This function checks the user's access roles and adds the dashboard widget only if the user
@@ -192,8 +117,7 @@ class Admin {
 	 * @return void
 	 */
 	public static function add_dashboard_widget() {
-		$access_roles = get_option( 'wp_logify_view_roles', array( 'administrator' ) );
-		if ( ! self::current_user_has_access( $access_roles ) ) {
+		if ( ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
 			return;
 		}
 
@@ -326,11 +250,11 @@ class Admin {
 		}
 
 		if ( strpos( $screen->id, 'wp-logify' ) !== false ) {
-			$access_control = get_option( 'wp_logify_access_control', 'only_me' );
+			$access_control = Settings::get_access_control();
 			if ( $access_control === 'only_me' && ! self::is_plugin_installer() ) {
 				wp_safe_redirect( admin_url() );
 				exit;
-			} elseif ( $access_control === 'user_roles' && ! self::current_user_has_access( get_option( 'wp_logify_view_roles', array( 'administrator' ) ) ) ) {
+			} elseif ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
 				wp_safe_redirect( admin_url() );
 				exit;
 			}
@@ -358,13 +282,12 @@ class Admin {
 	 */
 	public static function hide_plugin_from_list( $plugins ) {
 		// Retrieve the access control setting from the options.
-		$access_control = get_option( 'wp_logify_access_control', 'only_me' );
-
+		$access_control = Settings::get_access_control();
 		if ( $access_control === 'only_me' && ! self::is_plugin_installer() ) {
 			// If the access control is set to 'only_me' and the current user is not the plugin
 			// installer, remove the plugin from the list of installed plugins.
 			unset( $plugins[ plugin_basename( __FILE__ ) ] );
-		} elseif ( $access_control === 'user_roles' && ! self::current_user_has_access( get_option( 'wp_logify_view_roles', array( 'administrator' ) ) ) ) {
+		} elseif ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
 			// If the access control is set to 'user_roles' and the current user does not have
 			// access based on the specified roles, rremove the plugin from the list of installed
 			// plugins.
@@ -373,22 +296,6 @@ class Admin {
 
 		// Return the modified array of installed plugins.
 		return $plugins;
-	}
-
-	/**
-	 * Checks if the current user has access based on their roles.
-	 *
-	 * @param array $roles An array of roles to check against.
-	 * @return bool Returns true if the current user has any of the specified roles, false otherwise.
-	 */
-	private static function current_user_has_access( $roles ) {
-		$user = wp_get_current_user();
-		foreach ( $roles as $role ) {
-			if ( in_array( $role, $user->roles, true ) ) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**

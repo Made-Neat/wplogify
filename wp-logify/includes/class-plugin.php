@@ -22,6 +22,7 @@ class Plugin {
 		Cron::init();
 		Logger::init();
 		Posts::init();
+		Settings::init();
 		Users::init();
 		Widget::init();
 	}
@@ -44,15 +45,21 @@ class Plugin {
 	 * Run on uninstallation.
 	 */
 	public static function uninstall() {
+		// Drop the events table, if the option is set.
+		if ( Settings::get_delete_on_uninstall() ) {
+			Logger::drop_table();
+		}
+
 		// Delete options.
-		delete_option( 'wp_logify_view_roles' );
 		delete_option( 'wp_logify_api_key' );
+		delete_option( 'wp_logify_delete_on_uninstall' );
+		delete_option( 'wp_logify_access_control' );
+		delete_option( 'wp_logify_roles_to_track' );
+		delete_option( 'wp_logify_view_roles' );
 		delete_option( 'wp_logify_keep_forever' );
 		delete_option( 'wp_logify_keep_period_quantity' );
 		delete_option( 'wp_logify_keep_period_units' );
-
-		// Drop the events table.
-		Logger::drop_table();
+		delete_option( 'wp_logify_wp_cron_tracking' );
 	}
 
 	/**
