@@ -172,11 +172,11 @@ class Users {
 			$session_start_datetime = DateTimes::create_datetime( $details['Session start'] );
 			$session_end_datetime   = DateTimes::create_datetime( $details['Session end'] );
 
-			// If the current value for session end time is less than an hour ago, we'll assume
+			// If the current value for session end time is less than 10 minutes ago, we'll assume
 			// the current session is continuing, and update the session end time in the existing
 			// log entry to now.
 			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
-			if ( $seconds_diff <= 86400 ) {
+			if ( $seconds_diff <= 600 ) {
 				$continuing = true;
 
 				// Update the session end time and duration.
@@ -417,7 +417,7 @@ class Users {
 	 * @return bool Returns true if the user has any of the specified roles, false otherwise.
 	 */
 	public static function user_has_role( WP_User $user, array $roles ): bool {
-		return count( array_intersect( $user->roles, $roles ) ) === 0;
+		return count( array_intersect( $user->roles, $roles ) ) > 0;
 	}
 
 	/**

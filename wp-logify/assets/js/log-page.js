@@ -1,6 +1,4 @@
 jQuery(($) => {
-    // console.log('Admin.js loaded'); // Debug: Check if the script is loaded
-
     let table = $('#wp-logify-activity-log').DataTable({
         processing: true,
         language: {
@@ -12,7 +10,7 @@ jQuery(($) => {
             type: "POST",
             data: (d) => {
                 d.action = 'wp_logify_fetch_logs';
-                console.log('Sending AJAX request with data:', d); // Debug: Check data sent with the request
+                console.log('Sending AJAX request with data:', d);
             },
             error: (xhr, error, code) => {
                 console.log('AJAX error:', error);
@@ -39,8 +37,9 @@ jQuery(($) => {
         order: [[1, 'desc']],
         searching: true,
         paging: true,
-        pageLength: 20,
-        lengthMenu: [10, 20, 50, 100]
+        lengthChange: false,
+        // Get the page length from the per_page screen option.
+        pageLength: +$('#wp_logify_events_per_page').val()
     });
 
     // Custom search box

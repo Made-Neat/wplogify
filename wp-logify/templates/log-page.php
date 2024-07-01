@@ -33,24 +33,4 @@ namespace WP_Logify;
 			<!-- Data will be loaded via AJAX -->
 		</tbody>
 	</table>
-
-	<?php
-	// Pagination logic.
-	// $total_pages = ceil( intval( $total_items ) / intval( $per_page ) );
-	// if ( $total_pages > 1 ) {
-	// $current_page = max( 1, intval( $paged ) + 1 );
-	// $page_links   = paginate_links(
-	// array(
-	// 'base'      => esc_url( add_query_arg( 'paged', '%#%' ) ),
-	// 'format'    => '',
-	// 'prev_text' => __( '&laquo;' ),
-	// 'next_text' => __( '&raquo;' ),
-	// 'total'     => $total_pages,
-	// 'current'   => $current_page,
-	// )
-	// );
-
-	// echo '<div class="tablenav"><div class="tablenav-pages">' . $page_links . '</div></div>';
-	// }
-	?>
 </div>

@@ -29,7 +29,6 @@ class Admin {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
-		add_action( 'wp_dashboard_setup', array( __CLASS__, 'add_dashboard_widget' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_option' ), 10, 3 );
 		add_action( 'wp_ajax_wp_logify_fetch_logs', array( 'WP_Logify\Log_Page', 'fetch_logs' ) );
@@ -84,9 +83,9 @@ class Admin {
 	public static function add_screen_options() {
 		$option = 'per_page';
 		$args   = array(
-			'label'   => __( 'Activities per page', 'wp-logify' ),
+			'label'   => __( 'Log entries per page', 'wp-logify' ),
 			'default' => 20,
-			'option'  => 'activities_per_page',
+			'option'  => 'wp_logify_events_per_page',
 		);
 		add_screen_option( $option, $args );
 	}
@@ -100,39 +99,10 @@ class Admin {
 	 * @return mixed The updated status of the screen option.
 	 */
 	public static function set_screen_option( $status, $option, $value ) {
-		if ( 'activities_per_page' === $option ) {
+		if ( 'wp_logify_events_per_page' === $option ) {
 			return $value;
 		}
 		return $status;
-	}
-
-	/**
-	 * Adds a dashboard widget for WP Logify plugin.
-	 *
-	 * This function checks the user's access roles and adds the dashboard widget only if the user
-	 * has the required access.
-	 *
-	 * The dashboard widget displays recent site activities.
-	 *
-	 * @return void
-	 */
-	public static function add_dashboard_widget() {
-		if ( ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
-			return;
-		}
-
-		wp_add_dashboard_widget(
-			'wp_logify_dashboard_widget',
-			'WP Logify - Recent Site Activity',
-			array( __CLASS__, 'display_dashboard_widget' )
-		);
-	}
-
-	/**
-	 * Displays the dashboard widget for WP Logify plugin.
-	 */
-	public static function display_dashboard_widget() {
-		include plugin_dir_path( __FILE__ ) . '../templates/dashboard-widget.php';
 	}
 
 	/**
@@ -251,10 +221,8 @@ class Admin {
 
 		if ( strpos( $screen->id, 'wp-logify' ) !== false ) {
 			$access_control = Settings::get_access_control();
-			if ( $access_control === 'only_me' && ! self::is_plugin_installer() ) {
-				wp_safe_redirect( admin_url() );
-				exit;
-			} elseif ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
+			if ( ( $access_control === 'only_me' && ! self::is_plugin_installer() )
+				|| ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) ) {
 				wp_safe_redirect( admin_url() );
 				exit;
 			}
@@ -283,14 +251,12 @@ class Admin {
 	public static function hide_plugin_from_list( $plugins ) {
 		// Retrieve the access control setting from the options.
 		$access_control = Settings::get_access_control();
-		if ( $access_control === 'only_me' && ! self::is_plugin_installer() ) {
+		if ( ( $access_control === 'only_me' && ! self::is_plugin_installer() )
+			|| ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) ) {
 			// If the access control is set to 'only_me' and the current user is not the plugin
-			// installer, remove the plugin from the list of installed plugins.
-			unset( $plugins[ plugin_basename( __FILE__ ) ] );
-		} elseif ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
-			// If the access control is set to 'user_roles' and the current user does not have
-			// access based on the specified roles, rremove the plugin from the list of installed
-			// plugins.
+			// installer, or if the access control is set to 'user_roles' and the current user does
+			// not have access based on the specified roles, remove the plugin from the list of
+			// installed plugins.
 			unset( $plugins[ plugin_basename( __FILE__ ) ] );
 		}
 

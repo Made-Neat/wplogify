@@ -18,22 +18,19 @@ class Log_Page {
 
 	/**
 	 * Display the log page.
-	 *
-	 * This function is responsible for displaying the log page in the WordPress admin area.
-	 * It retrieves the necessary data from the database and includes the log page template.
 	 */
 	public static function display_log_page() {
-		global $wpdb;
-		$table_name = Logger::get_table_name();
-		$per_page   = (int) get_user_option( 'activities_per_page', get_current_user_id() );
-		if ( ! $per_page ) {
-			$per_page = 20;
-		}
-		$total_items = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) );
-		$paged       = isset( $_GET['paged'] ) ? max( 0, intval( $_GET['paged'] ) - 1 ) : 0;
-		$offset      = $paged * $per_page;
-
 		include plugin_dir_path( __FILE__ ) . '../templates/log-page.php';
+	}
+
+	/**
+	 * Get the user's preference for the number of items to show per page.
+	 *
+	 * @return int The number of items to show per page.
+	 */
+	public static function get_items_per_page(): int {
+		$page_length = (int) get_user_option( 'wp_logify_events_per_page', get_current_user_id() );
+		return $page_length ? $page_length : 20;
 	}
 
 	/**
@@ -58,41 +55,71 @@ class Log_Page {
 
 		// Extract parameters from the request.
 
-		// Number of results per page.
-		if ( isset( $_POST['length'] ) ) {
-			$limit = intval( $_POST['length'] );
-		}
-		// Default to 10.
-		if ( ! isset( $limit ) || $limit < 1 ) {
-			$limit = 10;
+		// Get the number of items per page. We're using the screen options rather than the length
+		// argument in the request.
+		$page_length = self::get_items_per_page();
+
+		// Get the start item index. Default to 0.
+		$start = isset( $_POST['start'] ) ? (int) $_POST['start'] : 0;
+		if ( $start < 0 ) {
+			$start = 0;
 		}
 
-		// Offset.
-		if ( isset( $_POST['start'] ) ) {
-			$offset = intval( $_POST['start'] );
-		}
-		// Default to 0.
-		if ( ! isset( $start ) || $start < 0 ) {
-			$offset = 0;
-		}
-
-		// Order by column. Default to date_time.
-		$order_col = isset( $columns[ $_POST['order'][0]['column'] ] ) ? wp_unslash( $columns[ $_POST['order'][0]['column'] ] ) : 'date_time';
-
-		// Order by direction.
-		if ( isset( $_POST['order'][0]['dir'] ) ) {
-			$order_dir = strtoupper( wp_unslash( $_POST['order'][0]['dir'] ) );
-		}
-		// Default to DESC.
-		if ( ! isset( $order_dir ) || ! in_array( $order_dir, array( 'ASC', 'DESC' ), true ) ) {
-			$order_dir = 'DESC';
+		// Get the order-by column. Default to date_time.
+		$order_by_column = 'date_time';
+		if ( isset( $_POST['order'][0]['column'] ) ) {
+			$column_number = (int) $_POST['order'][0]['column'];
+			if ( array_key_exists( $column_number, $columns ) ) {
+				$order_by_column = $columns[ $column_number ];
+			}
 		}
 
-		// Search value.
+		// Get the order-by direction. Default to DESC.
+		$order_by_direction = isset( $_POST['order'][0]['dir'] ) ? strtoupper( $_POST['order'][0]['dir'] ) : 'DESC';
+		if ( ! in_array( $order_by_direction, array( 'ASC', 'DESC' ), true ) ) {
+			$order_by_direction = 'DESC';
+		}
+
+		// Get the search value.
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
-		// Start constructing the SQL statement to get records from the database.
-		$sql  = '
+		// Get the total number of records in the table.
+		$select_count      = 'SELECT COUNT(*) FROM %i';
+		$select_args       = array( $events_table_name );
+		$total_sql         = $wpdb->prepare( $select_count, $select_args );
+		$num_total_records = $wpdb->get_var( $total_sql );
+
+		// Get the number of filtered records.
+		if ( $search_value === '' ) {
+			$where      = '';
+			$where_args = array();
+		} else {
+			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
+			$where      =
+				'WHERE date_time LIKE %s
+                    OR user_role LIKE %s
+                    OR user_ip LIKE %s
+                    OR event_type LIKE %s
+                    OR object_type LIKE %s
+                    OR details LIKE %s
+                    OR changes LIKE %s
+                    OR display_name LIKE %s';
+			$where_args = array(
+				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
+			);
+		}
+		$filtered_sql         = $wpdb->prepare( "$select_count $where", array_merge( $select_args, $where_args ) );
+		$num_filtered_records = $wpdb->get_var( $filtered_sql );
+
+		// Get the page of records.
+		$select_columns = '
             SELECT
                 e.ID AS event_id,
                 e.date_time,
@@ -113,105 +140,75 @@ class Log_Page {
                 u.user_status,
                 u.display_name
             FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
-		$args = array( $events_table_name, $user_table_name );
-
-		// Filter by the search value, if provided.
-		if ( ! empty( $search_value ) ) {
-			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
-			$sql       .= '
-                WHERE date_time LIKE %s
-                   OR user_role LIKE %s
-                   OR user_ip LIKE %s
-                   OR event_type LIKE %s
-                   OR object_type LIKE %s
-                   OR details LIKE %s
-                   OR changes LIKE %s
-                   OR display_name LIKE %s';
-			array_push(
-				$args,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-			);
-		}
+		$select_args    = array( $events_table_name, $user_table_name );
 
 		// Add the order by parameters.
-		switch ( $order_col ) {
+		$order_by = 'ORDER BY ';
+		switch ( $order_by_column ) {
 			case 'ID':
-				$order_by = "event_id $order_dir";
+				$order_by .= "event_id $order_by_direction";
 				break;
 
 			case 'user':
-				$order_by = "display_name $order_dir";
+				$order_by .= "display_name $order_by_direction";
 				break;
 
 			case 'object':
-				$order_by = "object_type $order_dir, object_id $order_dir";
+				$order_by .= "object_type $order_by_direction, object_id $order_by_direction";
 				break;
 
 			default:
-				$order_by = "$order_col $order_dir";
+				$order_by .= "$order_by_column $order_by_direction";
 				break;
 		}
-		$sql .= " ORDER BY $order_by LIMIT %d OFFSET %d";
-		array_push( $args, $limit, $offset );
+
+		// Add the limit and offset.
+		$limit      = 'LIMIT %d OFFSET %d';
+		$limit_args = array( $page_length, $start );
 
 		// Prepare the statement.
-		$sql = $wpdb->prepare( $sql, $args );
+		$results_sql = $wpdb->prepare( "$select_columns $where $order_by $limit", array_merge( $select_args, $where_args, $limit_args ) );
 
 		// Get the requested records.
-		$results = $wpdb->get_results( $sql );
-
-		// Get the number of results.
-		$num_filtered_records = count( $results );
-
-		// Get the total number of records in the table.
-		$num_total_records = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name ) );
+		$results = $wpdb->get_results( $results_sql );
 
 		// Construct the data array to return to the client.
 		$data = array();
 		foreach ( $results as $row ) {
-			if ( ! empty( $row->event_id ) ) {
-				// Create a new event.
-				$event = array( 'ID' => $row->event_id );
+			// Create a new event.
+			$event = array( 'ID' => $row->event_id );
 
-				// Date and time of the event.
-				$date_time          = DateTimes::create_datetime( $row->date_time );
-				$formatted_datetime = DateTimes::format_datetime_site( $date_time );
-				$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
-				$event['date_time'] = "<div>$formatted_datetime ($time_ago)</div>";
+			// Date and time of the event.
+			$date_time          = DateTimes::create_datetime( $row->date_time );
+			$formatted_datetime = DateTimes::format_datetime_site( $date_time );
+			$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
+			$event['date_time'] = "<div>$formatted_datetime ($time_ago)</div>";
 
-				// User details.
-				$user_profile_link = Users::get_user_profile_link( $row->user_id );
-				$user_role         = esc_html( ucwords( $row->user_role ) );
-				$event['user']     = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
+			// User details.
+			$user_profile_link = Users::get_user_profile_link( $row->user_id );
+			$user_role         = esc_html( ucwords( $row->user_role ) );
+			$event['user']     = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
-				// Source IP.
-				$event['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
+			// Source IP.
+			$event['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
 
-				// Event type.
-				$event['event_type'] = $row->event_type;
+			// Event type.
+			$event['event_type'] = $row->event_type;
 
-				// Get the object link.
-				$event['object'] = self::get_object_link( $row );
+			// Get the object link.
+			$event['object'] = self::get_object_link( $row );
 
-				// Format the details.
-				$event['details'] = self::format_details( $row );
+			// Format the details.
+			$event['details'] = self::format_details( $row );
 
-				$data[] = $event;
-			}
+			$data[] = $event;
 		}
 
 		wp_send_json(
 			array(
 				'draw'            => intval( $_POST['draw'] ),
-				'recordsTotal'    => intval( $num_total_records ),
-				'recordsFiltered' => intval( $num_filtered_records ),
+				'recordsTotal'    => $num_total_records,
+				'recordsFiltered' => $num_filtered_records,
 				'data'            => $data,
 			)
 		);
