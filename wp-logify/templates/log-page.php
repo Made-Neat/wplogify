@@ -14,9 +14,6 @@ namespace WP_Logify;
 
 	<h2>Site Activities</h2>
 
-	<!-- Search box placement -->
-	<input type="text" id="wp-logify-search-box" placeholder="Search activities..." style="margin-bottom: 1em; width: 100%; padding: 8px; box-sizing: border-box;">
-
 	<table id="wp-logify-activity-log" class="widefat fixed table-wp-logify" cellspacing="0">
 		<thead>
 			<tr>

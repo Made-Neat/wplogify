@@ -75,4 +75,17 @@ jQuery(($) => {
             tr.find('td.details-control span').text('Hide');
         }
     });
+
+    // Fix search box position.
+    $('.dt-search').parent().removeClass('dt-end');
+
+    // Custom search input handler
+    $('#dt-search-0').unbind().on('keyup', function (e) {
+        var searchTerm = this.value;
+
+        // Check if the length of the search term is at least 3 characters, or none.
+        if (searchTerm.length >= 3 || searchTerm.length === 0) {
+            table.search(searchTerm).draw();
+        }
+    });
 });

@@ -53,6 +53,7 @@ class Log_Page {
 			'object',
 		);
 
+		// -----------------------------------------------------------------------------------------
 		// Extract parameters from the request.
 
 		// Get the number of items per page. We're using the screen options rather than the length
@@ -83,13 +84,18 @@ class Log_Page {
 		// Get the search value.
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
-		// Get the total number of records in the table.
-		$select_count      = 'SELECT COUNT(*) FROM %i';
-		$select_args       = array( $events_table_name );
-		$total_sql         = $wpdb->prepare( $select_count, $select_args );
+		// -----------------------------------------------------------------------------------------
+		// Get the total number of events in the database.
+		$total_sql         = $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name );
 		$num_total_records = $wpdb->get_var( $total_sql );
 
+		// -----------------------------------------------------------------------------------------
 		// Get the number of filtered records.
+
+		// Select clause.
+		$select_count = 'SELECT COUNT(*) FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
+
+		// Where clause.
 		if ( $search_value === '' ) {
 			$where      = '';
 			$where_args = array();
@@ -99,10 +105,15 @@ class Log_Page {
 				'WHERE date_time LIKE %s
                     OR user_role LIKE %s
                     OR user_ip LIKE %s
+                    OR user_location LIKE %s
+                    OR user_agent LIKE %s
                     OR event_type LIKE %s
                     OR object_type LIKE %s
+                    OR object_name LIKE %s
                     OR details LIKE %s
                     OR changes LIKE %s
+                    OR user_login LIKE %s
+                    OR user_email LIKE %s
                     OR display_name LIKE %s';
 			$where_args = array(
 				$like_value,
@@ -113,36 +124,47 @@ class Log_Page {
 				$like_value,
 				$like_value,
 				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
+				$like_value,
 			);
 		}
-		$filtered_sql         = $wpdb->prepare( "$select_count $where", array_merge( $select_args, $where_args ) );
+
+		// Construct and run the SQL statement.
+		$select_args  = array( $events_table_name, $user_table_name );
+		$filtered_sql = $wpdb->prepare( "$select_count $where", ...$select_args, ...$where_args );
+		debug_sql( $filtered_sql );
 		$num_filtered_records = $wpdb->get_var( $filtered_sql );
 
-		// Get the page of records.
-		$select_columns = '
-            SELECT
-                e.ID AS event_id,
-                e.date_time,
-                e.user_id,
-                e.user_role,
-                e.user_ip,
-                e.user_location,
-                e.user_agent,
-                e.event_type,
-                e.object_type,
-                e.object_id,
-                e.object_name,
-                e.details,
-                e.changes,
-                u.user_login,
-                u.user_nicename,
-                u.user_email,
-                u.user_status,
-                u.display_name
-            FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
-		$select_args    = array( $events_table_name, $user_table_name );
+		// -----------------------------------------------------------------------------------------
+		// Get the requested records.
 
-		// Add the order by parameters.
+		// Select clause.
+		$select_columns = '
+        SELECT
+            e.ID AS event_id,
+            e.date_time,
+            e.user_id,
+            e.user_role,
+            e.user_ip,
+            e.user_location,
+            e.user_agent,
+            e.event_type,
+            e.object_type,
+            e.object_id,
+            e.object_name,
+            e.details,
+            e.changes,
+            u.user_login,
+            u.user_nicename,
+            u.user_email,
+            u.user_status,
+            u.display_name
+        FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
+
+		// Order-by clause.
 		$order_by = 'ORDER BY ';
 		switch ( $order_by_column ) {
 			case 'ID':
@@ -162,16 +184,15 @@ class Log_Page {
 				break;
 		}
 
-		// Add the limit and offset.
+		// Limit clause.
 		$limit      = 'LIMIT %d OFFSET %d';
 		$limit_args = array( $page_length, $start );
 
-		// Prepare the statement.
-		$results_sql = $wpdb->prepare( "$select_columns $where $order_by $limit", array_merge( $select_args, $where_args, $limit_args ) );
+		// Construct and run the SQL statement.
+		$results_sql = $wpdb->prepare( "$select_columns $where $order_by $limit", ...$select_args, ...$where_args, ...$limit_args );
+		$results     = $wpdb->get_results( $results_sql );
 
-		// Get the requested records.
-		$results = $wpdb->get_results( $results_sql );
-
+		// -----------------------------------------------------------------------------------------
 		// Construct the data array to return to the client.
 		$data = array();
 		foreach ( $results as $row ) {

@@ -60,9 +60,9 @@
   cursor: pointer;
 }
 
-#wp-logify-activity-log_wrapper select {
+#dt-search-0 {
   background-color: white;
-  width: 55px;
+  width: 20rem;
 }
 
 .wp-logify-details {

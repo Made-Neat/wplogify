@@ -26,6 +26,14 @@ function debug( ...$args ) {
 }
 
 /**
+ * Dump a SQL query into the error log.
+ */
+function debug_sql( string $sql ) {
+	global $wpdb;
+	debug( $wpdb->remove_placeholder_escape( $sql ) );
+}
+
+/**
  * Convert a value to a string for comparison and display.
  *
  * @param mixed $value The value to convert.
