@@ -272,7 +272,7 @@ class Users {
 	}
 
 	/**
-	 * Retrieves a link to the user's profile.
+	 * Retrieves a link to the user's edit profile page.
 	 *
 	 * @param WP_User|int $user The user object or ID.
 	 * @return ?string The link to the user's profile or null if the user wasn't found.
@@ -283,10 +283,17 @@ class Users {
 			$user = get_userdata( $user );
 		}
 
-		// Construct the link.
-		$user_profile_url  = site_url( "/?author={$user->ID}" );
+		// Get the user display name.
 		$user_display_name = self::get_user_name( $user );
-		return "<a href='$user_profile_url' class='wp-logify-user-link'>$user_display_name</a>";
+
+		// If the current user can edit user profiles, provide a link to the edit user page.
+		if ( current_user_can( 'edit_users' ) ) {
+			$user_profile_url = admin_url( "user-edit.php?user_id={$user->ID}" );
+			return "<a href='$user_profile_url' class='wp-logify-user-link'>$user_display_name</a>";
+		} else {
+			// Otherwise, just show the user's name.
+			return "<span class='wp-logify-user-name'>$user_display_name</span>";
+		}
 	}
 
 	/**
@@ -412,21 +419,27 @@ class Users {
 	/**
 	 * Checks if the user has access based on their roles.
 	 *
-	 * @param WP_User $user The user to check.
-	 * @param array   $roles An array of roles to check against.
+	 * @param WP_User      $user The user to check.
+	 * @param array|string $roles A role or array of roles to check against.
 	 * @return bool Returns true if the user has any of the specified roles, false otherwise.
 	 */
-	public static function user_has_role( WP_User $user, array $roles ): bool {
-		return count( array_intersect( $user->roles, $roles ) ) > 0;
+	public static function user_has_role( WP_User $user, array|string $roles ): bool {
+		if ( is_string( $roles ) ) {
+			// If only a single role is given, check if the user has it.
+			return in_array( $roles, $user->roles, true );
+		} else {
+			// If an array of roles is given, check for overlap.
+			return count( array_intersect( $user->roles, $roles ) ) > 0;
+		}
 	}
 
 	/**
 	 * Checks if the current user has access based on their roles.
 	 *
-	 * @param array $roles An array of roles to check against.
+	 * @param array|string $roles A role or array of roles to check against.
 	 * @return bool Returns true if the current user has any of the specified roles, false otherwise.
 	 */
-	public static function current_user_has_role( array $roles ) {
+	public static function current_user_has_role( array|string $roles ) {
 		return self::user_has_role( wp_get_current_user(), $roles );
 	}
 }

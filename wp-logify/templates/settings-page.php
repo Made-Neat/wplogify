@@ -20,30 +20,6 @@ namespace WP_Logify;
 				<td><input type="text" name="wp_logify_api_key" value="<?php echo esc_attr( Settings::get_api_key() ); ?>" /></td>
 			</tr>
 			<tr valign="top">
-				<th scope="row">Access control</th>
-				<td>
-					<label class="wp-logify-settings-radio">
-						<input type="radio" name="wp_logify_access_control" value="only_me" <?php checked( Settings::get_access_control(), 'only_me' ); ?>> Only me
-					</label>
-					<label class="wp-logify-settings-radio">
-						<input type="radio" name="wp_logify_access_control" value="user_roles" <?php checked( Settings::get_access_control(), 'user_roles' ); ?>> Other user roles
-					</label>
-				</td>
-			</tr>
-			<tr valign="top" id="wp_logify_roles_row" style="display: none;">
-				<th scope="row">Roles that can view the plugin</th>
-				<td>
-					<?php
-					$roles          = wp_roles()->roles;
-					$selected_roles = Settings::get_view_roles();
-					foreach ( $roles as $role_key => $role ) {
-						$checked = in_array( $role_key, $selected_roles, true ) ? 'checked' : '';
-						echo '<label><input type="checkbox" name="wp_logify_view_roles[]" value="' . esc_attr( $role_key ) . '" ' . $checked . '> ' . esc_html( $role['name'] ) . '</label><br>';
-					}
-					?>
-				</td>
-			</tr>
-			<tr valign="top">
 				<th scope="row">How long to keep records</th>
 				<td>
 					<?php
@@ -76,6 +52,7 @@ namespace WP_Logify;
 				<th scope="row">Roles to track</th>
 				<td>
 					<?php
+					$roles                   = wp_roles()->roles;
 					$selected_roles_to_track = Settings::get_roles_to_track();
 					foreach ( $roles as $role_key => $role ) {
 						$checked = in_array( $role_key, $selected_roles_to_track, true ) ? 'checked' : '';
@@ -100,66 +77,3 @@ namespace WP_Logify;
 		<?php submit_button(); ?>
 	</form>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-	const accessControlRadios = document.querySelectorAll('input[name="wp_logify_access_control"]');
-	const rolesRow = document.getElementById('wp_logify_roles_row');
-
-	function toggleRolesRow() {
-		const selectedValue = document.querySelector('input[name="wp_logify_access_control"]:checked').value;
-		rolesRow.style.display = selectedValue === 'user_roles' ? 'table-row' : 'none';
-	}
-
-	accessControlRadios.forEach(radio => {
-		radio.addEventListener('change', toggleRolesRow);
-	});
-
-	toggleRolesRow(); // Initial call to set the correct state on page load
-});
-</script>
-
-<?php
-// Add a settings section and field for role-based access
-add_action(
-	'admin_init',
-	function () {
-		add_settings_section(
-			'wp_logify_settings_section',
-			__( 'WP Logify Settings', 'wp-logify' ),
-			function () {
-				echo "<h2>WP Logify Settings</h2>\n";
-			},
-			'wp_logify_settings_group'
-		);
-
-		add_settings_field(
-			'wp_logify_access_control',
-			__( 'Access Control', 'wp-logify' ),
-			function () {
-				$access_control = Settings::get_access_control();
-				?>
-				<label><input type="radio" name="wp_logify_access_control" value="only_me" <?php checked( $access_control, 'only_me' ); ?>> Only Me</label><br>
-				<label><input type="radio" name="wp_logify_access_control" value="user_roles" <?php checked( $access_control, 'user_roles' ); ?>> Other user roles</label><br>
-				<?php
-			},
-			'wp_logify_settings_group',
-			'wp_logify_settings_section'
-		);
-
-		add_settings_field(
-			'wp_logify_view_roles',
-			__( 'Roles that can view the plugin', 'wp-logify' ),
-			function () {
-				$roles          = get_editable_roles();
-				$selected_roles = Settings::get_view_roles();
-				foreach ( $roles as $role_key => $role ) {
-					$checked = in_array( $role_key, $selected_roles, true ) ? 'checked' : '';
-					echo '<label><input type="checkbox" name="wp_logify_view_roles[]" value="' . esc_attr( $role_key ) . '" ' . $checked . '> ' . esc_html( $role['name'] ) . '</label><br>';
-				}
-			},
-			'wp_logify_settings_group',
-			'wp_logify_settings_section'
-		);
-	}
-);

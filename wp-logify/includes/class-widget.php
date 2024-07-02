@@ -26,10 +26,11 @@ class Widget {
 	 */
 	public static function add_dashboard_widget() {
 		// Check current user has access.
-		if ( ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
+		if ( ! Users::current_user_has_role( 'administrator' ) ) {
 			return;
 		}
 
+		// Add the widget.
 		wp_add_dashboard_widget(
 			'wp_logify_dashboard_widget',
 			'WP Logify - Recent Site Activity',

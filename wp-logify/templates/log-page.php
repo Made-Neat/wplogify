@@ -10,9 +10,7 @@ namespace WP_Logify;
 ?>
 
 <div class="wrap">
-	<h1>WP Logify - Log</h1>
-
-	<h2>Site Activities</h2>
+	<h1>WP Logify Events Log</h1>
 
 	<table id="wp-logify-activity-log" class="widefat fixed table-wp-logify" cellspacing="0">
 		<thead>

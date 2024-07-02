@@ -31,8 +31,6 @@ class Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_option' ), 10, 3 );
-		add_action( 'wp_ajax_wp_logify_fetch_logs', array( 'WP_Logify\Log_Page', 'fetch_logs' ) );
-		add_action( 'admin_init', array( __CLASS__, 'restrict_access' ) );
 		add_action( 'admin_post_wp_logify_reset_logs', array( __CLASS__, 'reset_logs' ) );
 	}
 
@@ -40,36 +38,19 @@ class Admin {
 	 * Adds the admin menu for the WP Logify plugin.
 	 *
 	 * This method adds the main menu page and submenu pages for the WP Logify plugin
-	 * in the WordPress admin dashboard. It also checks the user's access roles and
-	 * only displays the menu if the current user has the required access.
+	 * in the WordPress admin dashboard.
 	 *
-	 * @return void
+	 * It also ensures the user is an administrator.
 	 */
 	public static function add_admin_menu() {
-		if ( ! Users::current_user_has_role( Settings::get_view_roles() ) ) {
+		if ( ! Users::current_user_has_role( 'administrator' ) ) {
 			return;
 		}
 
-		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ), 'dashicons-list-view' );
-		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ) );
+		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\LogPage', 'display_log_page' ), 'dashicons-list-view' );
+		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'WP_Logify\LogPage', 'display_log_page' ) );
 		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( 'WP_Logify\Settings', 'display_settings_page' ) );
 		add_action( "load-$hook", array( __CLASS__, 'add_screen_options' ) );
-	}
-
-	/**
-	 * Sanitizes the given array of roles by filtering out any invalid roles.
-	 *
-	 * @param array $roles The array of roles to be sanitized.
-	 * @return array The sanitized array of roles.
-	 */
-	public static function sanitize_roles( $roles ) {
-		$valid_roles = array_keys( wp_roles()->roles );
-		return array_filter(
-			$roles,
-			function ( $role ) use ( $valid_roles ) {
-				return in_array( $role, $valid_roles, true );
-			}
-		);
 	}
 
 	/**
@@ -200,36 +181,6 @@ class Admin {
 	}
 
 	/**
-	 * Restricts access to the WP Logify plugin based on user roles or plugin installer status.
-	 *
-	 * This method checks the current screen and redirects the user to the admin dashboard if access
-	 * is restricted.
-	 *
-	 * The access control can be set to either 'only_me' or 'user_roles' in the plugin settings.
-	 * If 'only_me' is selected, only the plugin installer has access.
-	 * If 'user_roles' is selected, only users with specific roles defined in the plugin settings
-	 * have access.
-	 *
-	 * @return void
-	 */
-	public static function restrict_access() {
-		$screen = get_current_screen();
-
-		if ( $screen === null ) {
-			return;
-		}
-
-		if ( strpos( $screen->id, 'wp-logify' ) !== false ) {
-			$access_control = Settings::get_access_control();
-			if ( ( $access_control === 'only_me' && ! self::is_plugin_installer() )
-				|| ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) ) {
-				wp_safe_redirect( admin_url() );
-				exit;
-			}
-		}
-	}
-
-	/**
 	 * Resets logs by truncating the wp_logify_events table and redirects to the settings page.
 	 *
 	 * @return void
@@ -240,37 +191,5 @@ class Admin {
 		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table_name ) );
 		wp_safe_redirect( admin_url( 'admin.php?page=wp-logify-settings&reset=success' ) );
 		exit;
-	}
-
-	/**
-	 * Hides the plugin from the list of installed plugins based on access control settings.
-	 *
-	 * @param array $plugins The array of installed plugins.
-	 * @return array The modified array of installed plugins.
-	 */
-	public static function hide_plugin_from_list( $plugins ) {
-		// Retrieve the access control setting from the options.
-		$access_control = Settings::get_access_control();
-		if ( ( $access_control === 'only_me' && ! self::is_plugin_installer() )
-			|| ( $access_control === 'user_roles' && ! Users::current_user_has_role( Settings::get_view_roles() ) ) ) {
-			// If the access control is set to 'only_me' and the current user is not the plugin
-			// installer, or if the access control is set to 'user_roles' and the current user does
-			// not have access based on the specified roles, remove the plugin from the list of
-			// installed plugins.
-			unset( $plugins[ plugin_basename( __FILE__ ) ] );
-		}
-
-		// Return the modified array of installed plugins.
-		return $plugins;
-	}
-
-	/**
-	 * Checks if the current user is the plugin installer.
-	 *
-	 * @return bool Returns true if the current user is the plugin installer, false otherwise.
-	 */
-	private static function is_plugin_installer() {
-		$plugin_installer = get_option( 'wp_logify_plugin_installer' );
-		return $plugin_installer && get_current_user_id() === $plugin_installer;
 	}
 }

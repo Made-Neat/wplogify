@@ -20,6 +20,7 @@ class Plugin {
 	public static function init() {
 		Admin::init();
 		Cron::init();
+		LogPage::init();
 		Logger::init();
 		Posts::init();
 		Settings::init();
@@ -50,16 +51,8 @@ class Plugin {
 			Logger::drop_table();
 		}
 
-		// Delete options.
-		delete_option( 'wp_logify_api_key' );
-		delete_option( 'wp_logify_delete_on_uninstall' );
-		delete_option( 'wp_logify_access_control' );
-		delete_option( 'wp_logify_roles_to_track' );
-		delete_option( 'wp_logify_view_roles' );
-		delete_option( 'wp_logify_keep_forever' );
-		delete_option( 'wp_logify_keep_period_quantity' );
-		delete_option( 'wp_logify_keep_period_units' );
-		delete_option( 'wp_logify_wp_cron_tracking' );
+		// Delete settings.
+		Settings::delete_all();
 	}
 
 	/**

@@ -29,25 +29,11 @@ class Settings {
 	private const DEFAULT_DELETE_ON_UNINSTALL = false;
 
 	/**
-	 * The default value for the access control setting.
-	 *
-	 * @var string
-	 */
-	private const DEFAULT_ACCESS_CONTROL = 'only_me';
-
-	/**
 	 * The default value for the roles to track setting.
 	 *
 	 * @var array
 	 */
-	private const DEFAULT_ROLES_TO_TRACK = array( 'administrator' );
-
-	/**
-	 * The default value for the view roles setting.
-	 *
-	 * @var array
-	 */
-	private const DEFAULT_VIEW_ROLES = array( 'administrator' );
+	private const DEFAULT_ROLES_TO_TRACK = array( 'administrator', 'editor', 'author', 'contributor', 'subscriber' );
 
 	/**
 	 * The default value for the keep forever setting.
@@ -76,6 +62,13 @@ class Settings {
 	 * @var bool
 	 */
 	private const DEFAULT_WP_CRON_TRACKING = false;
+
+	/**
+	 * The default value for the plugin installer's user ID.
+	 *
+	 * @var bool
+	 */
+	private const DEFAULT_PLUGIN_INSTALLER = 0;
 
 	/**
 	 * Initializes the class by adding WordPress actions.
@@ -108,29 +101,11 @@ class Settings {
 		);
 		register_setting(
 			'wp_logify_settings_group',
-			'wp_logify_access_control',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => self::DEFAULT_ACCESS_CONTROL,
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
 			'wp_logify_roles_to_track',
 			array(
 				'type'              => 'array',
-				'sanitize_callback' => array( 'WP_Logify\Admin', 'sanitize_roles' ),
+				'sanitize_callback' => array( __CLASS__, 'sanitize_roles' ),
 				'default'           => self::DEFAULT_ROLES_TO_TRACK,
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_view_roles',
-			array(
-				'type'              => 'array',
-				'sanitize_callback' => array( 'WP_Logify\Admin', 'sanitize_roles' ),
-				'default'           => self::DEFAULT_VIEW_ROLES,
 			)
 		);
 		register_setting(
@@ -172,6 +147,41 @@ class Settings {
 	}
 
 	/**
+	 * Deletes all settings options for the WP Logify plugin.
+	 */
+	public static function delete_all() {
+		delete_option( 'wp_logify_api_key' );
+		delete_option( 'wp_logify_delete_on_uninstall' );
+		delete_option( 'wp_logify_roles_to_track' );
+		delete_option( 'wp_logify_keep_forever' );
+		delete_option( 'wp_logify_keep_period_quantity' );
+		delete_option( 'wp_logify_keep_period_units' );
+		delete_option( 'wp_logify_wp_cron_tracking' );
+	}
+
+	/**
+	 * Sanitizes the given array of roles by filtering out any invalid roles.
+	 *
+	 * @param array $roles The array of roles to be sanitized.
+	 * @return array The sanitized array of roles.
+	 */
+	public static function sanitize_roles( array $roles ): array {
+		$valid_roles = array_keys( wp_roles()->roles );
+		return array_intersect( $roles, $valid_roles );
+	}
+
+	/**
+	 * Sanitizes the given array of user IDs by filtering out any invalid user IDs.
+	 *
+	 * @param array $user_ids The array of user IDs to be sanitized.
+	 * @return array The sanitized array of user IDs.
+	 */
+	public static function sanitize_users( array $user_ids ) {
+		$valid_user_ids = get_users( array( 'fields' => 'ID' ) );
+		return array_intersect( $user_ids, $valid_user_ids );
+	}
+
+	/**
 	 * Retrieves the API key for the WP Logify plugin.
 	 *
 	 * @return string The API key.
@@ -190,30 +200,12 @@ class Settings {
 	}
 
 	/**
-	 * Retrieves the access control setting for the WP Logify plugin.
-	 *
-	 * @return string The access control setting.
-	 */
-	public static function get_access_control(): string {
-		return get_option( 'wp_logify_access_control', self::DEFAULT_ACCESS_CONTROL );
-	}
-
-	/**
 	 * Retrieves the roles to track for the WP Logify plugin.
 	 *
 	 * @return array The roles to track.
 	 */
 	public static function get_roles_to_track(): array {
 		return get_option( 'wp_logify_roles_to_track', self::DEFAULT_ROLES_TO_TRACK );
-	}
-
-	/**
-	 * Retrieves the view roles setting for the WP Logify plugin.
-	 *
-	 * @return array The view roles setting.
-	 */
-	public static function get_view_roles(): array {
-		return get_option( 'wp_logify_view_roles', self::DEFAULT_VIEW_ROLES );
 	}
 
 	/**

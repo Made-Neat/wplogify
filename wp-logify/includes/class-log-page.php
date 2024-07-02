@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Log_Page class.
+ * Contains the LogPage class.
  *
  * @package WP_Logify
  */
@@ -10,11 +10,18 @@ namespace WP_Logify;
 use InvalidArgumentException;
 
 /**
- * Class WP_Logify\Log_Page
+ * Class WP_Logify\LogPage
  *
  * Contains methods for formatting event log entries for display in the admin area.
  */
-class Log_Page {
+class LogPage {
+
+	/**
+	 * Initialise the log page.
+	 */
+	public static function init() {
+		add_action( 'wp_ajax_wp_logify_fetch_logs', array( __CLASS__, 'fetch_logs' ) );
+	}
 
 	/**
 	 * Display the log page.
@@ -133,9 +140,8 @@ class Log_Page {
 		}
 
 		// Construct and run the SQL statement.
-		$select_args  = array( $events_table_name, $user_table_name );
-		$filtered_sql = $wpdb->prepare( "$select_count $where", ...$select_args, ...$where_args );
-		debug_sql( $filtered_sql );
+		$select_args          = array( $events_table_name, $user_table_name );
+		$filtered_sql         = $wpdb->prepare( "$select_count $where", ...$select_args, ...$where_args );
 		$num_filtered_records = $wpdb->get_var( $filtered_sql );
 
 		// -----------------------------------------------------------------------------------------
