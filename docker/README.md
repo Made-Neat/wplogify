@@ -40,7 +40,7 @@ docker-compose build
 4. **Start the Containers**
 
 ```
-docker-compose -p madeneat-wplogify up -d
+docker-compose up -d
 ```
 
 5. **Install WordPress**

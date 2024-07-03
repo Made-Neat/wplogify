@@ -1,3 +1,18 @@
-FROM wordpress:latest
+FROM wordpress:6.5.5
 
+# Switch to the root user. We should be already, but just in case.
+USER root
+
+# Install MySQL as root.
 RUN docker-php-ext-install mysqli
+
+# Add a non-root user and group.
+RUN groupadd -g 1000 www-data && \
+    useradd -u 1000 -g www-data -s /bin/bash -m www-data
+
+# Set the working directory and change ownership to the non-root user.
+WORKDIR /var/www/html
+RUN chown -R www-data:www-data /var/www/html
+
+# Switch to the non-root user.
+USER www-data

@@ -1,21 +1,21 @@
-version: '3.8'
+name: wplogify
 
 services:
   wordpress:
     build:
       context: .
       dockerfile: Dockerfile.wordpress
-    container_name: madeneat-wplogify-wordpress
+    container_name: wplogify-wordpress
     depends_on:
       - mysql
     networks:
-      - wordpress-network
+      - wplogify-network
     environment:
-      WORDPRESS_DB_HOST: madeneat-wplogify-mysql:3306
+      WORDPRESS_DB_HOST: wplogify-mysql:3306
       WORDPRESS_DB_USER: wplogifyuser
       WORDPRESS_DB_PASSWORD: freedom
       WORDPRESS_DB_NAME: wplogifydev
-      WORDPRESS_VERSION: 6.5.3
+      WORDPRESS_VERSION: 6.5.5
       WORDPRESS_SITE_LANGUAGE: en_US
       WORDPRESS_USER_LANGUAGE: en_US
       TZ: Australia/Brisbane
@@ -24,7 +24,7 @@ services:
         define('WP_SITEURL', 'http://wplogify.localhost:8080');
     volumes:
       - wordpress-volume:/var/www/html
-      - /Users/shaun/Documents/Business/Clients/2024/Made Neat/Projects/WP Logify/www:/var/www/html
+      - ../www:/var/www/html
     ports:
       - "8080:80"
 
@@ -32,9 +32,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.mysql
-    container_name: madeneat-wplogify-mysql
+    container_name: wplogify-mysql
     networks:
-      - wordpress-network
+      - wplogify-network
     environment:
       MYSQL_ROOT_PASSWORD: freedom
       MYSQL_DATABASE: wplogifydev
@@ -47,29 +47,33 @@ services:
 
   nginx:
     image: nginx:1.22.1
-    container_name: nginx-1.22
+    container_name: wplogify-nginx
     depends_on:
       - wordpress
     networks:
-      - wordpress-network
+      - wplogify-network
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+      - ../logs/nginx:/var/log/nginx
       - wordpress-volume:/var/www/html
     ports:
       - "80:80"
 
   php-fpm:
     image: php:8.3-fpm
-    container_name: php-fpm-8.3
+    container_name: wplogify-php
     networks:
-      - wordpress-network
+      - wplogify-network
     volumes:
       - wordpress-volume:/var/www/html
 
 networks:
-  wordpress-network:
+  wplogify-network:
+    name: wplogify-network
     driver: bridge
 
 volumes:
   wordpress-volume:
+    name: wplogify-wordpress-volume
   mysql-volume:
+    name: wplogify-mysql-volume

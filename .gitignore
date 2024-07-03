@@ -64,8 +64,11 @@ www/
 .DS_Store
 Thumbs.db
 
-# Old stuff, keep for now, delete later.
+# Old stuff, keep for now, probably delete later.
 # old/
 
 # Backups
 backup/
+
+# Log files
+logs/
