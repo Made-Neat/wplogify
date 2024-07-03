@@ -162,11 +162,11 @@ class Posts {
 			$new_status = $post->post_status;
 		}
 
-		// Collect details.
+		// Get the details.
 		$details           = self::get_post_details( $post );
 		$details['Status'] = $new_status;
 
-		// Get the object changes.
+		// Get the changes.
 		$changes['post_status'] = array( $old_status, $new_status );
 
 		// Log the event.

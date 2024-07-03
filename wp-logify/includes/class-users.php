@@ -18,6 +18,13 @@ use WP_User;
 class Users {
 
 	/**
+	 * Changes to a user.
+	 *
+	 * @var array
+	 */
+	private static $user_changes = array();
+
+	/**
 	 * Initializes the class by adding WordPress actions.
 	 */
 	public static function init() {
@@ -75,7 +82,7 @@ class Users {
 	 */
 	public static function track_user_deletion( int $user_id, ?int $reassign, WP_User $user ) {
 		// Get the user's details.
-		$details = self::get_user_details( $user );
+		$details = self::get_user_details( $user, true );
 
 		// If the user is being reassigned, log that information.
 		if ( $reassign ) {
@@ -93,24 +100,18 @@ class Users {
 	 * @param array   $userdata      The data for the user after the update.
 	 */
 	public static function track_user_update( int $user_id, WP_User $old_user_data, array $userdata ) {
-		// Record changes.
-		global $user_changes;
-		if ( ! isset( $user_changes ) ) {
-			$user_changes = array();
-		}
-
 		// Compare values.
 		foreach ( $old_user_data->data as $key => $value ) {
 			$old_value = value_to_string( $value );
 			$new_value = value_to_string( $userdata[ $key ] );
 
 			if ( $old_value !== $new_value ) {
-				$user_changes[ $key ] = array( $old_value, $new_value );
+				self::$user_changes[ $key ] = array( $old_value, $new_value );
 			}
 		}
 
-		if ( ! empty( $user_changes ) ) {
-			Logger::log_event( 'User Updated', 'user', $user_id, self::get_user_name( $user_id ), null, $user_changes );
+		if ( ! empty( self::$user_changes ) ) {
+			Logger::log_event( 'User Updated', 'user', $user_id, self::get_user_name( $user_id ), null, self::$user_changes );
 		}
 	}
 
@@ -132,11 +133,7 @@ class Users {
 
 		// Track the change, if any.
 		if ( $old_value !== $new_value ) {
-			global $user_changes;
-			if ( ! isset( $user_changes ) ) {
-				$user_changes = array();
-			}
-			$user_changes[ $meta_key ] = array( $old_value, $new_value );
+			self::$user_changes[ $meta_key ] = array( $old_value, $new_value );
 		}
 	}
 
@@ -222,7 +219,6 @@ class Users {
 		// Create the details array.
 		$details = array(
 			'User ID' => $user->ID,
-			'Profile' => self::get_user_profile_link( $user ),
 			'Login'   => $user->user_login,
 			'Email'   => $user->user_email,
 			'Roles'   => is_array( $user->roles ) ? implode( ', ', $user->roles ) : $user->roles,
@@ -286,8 +282,8 @@ class Users {
 		// Get the user display name.
 		$user_display_name = self::get_user_name( $user );
 
-		// If the current user can edit user profiles, provide a link to the edit user page.
 		if ( current_user_can( 'edit_users' ) ) {
+			// Provide a link to the edit user page, if the current user can access it.
 			$user_profile_url = admin_url( "user-edit.php?user_id={$user->ID}" );
 			return "<a href='$user_profile_url' class='wp-logify-user-link'>$user_display_name</a>";
 		} else {

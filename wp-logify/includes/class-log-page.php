@@ -451,9 +451,9 @@ class LogPage {
 		}
 
 		// Construct string to use in place of a link to the object if it's been deleted.
-		$deleted_string = empty( $event->object_name )
+		$deleted_string = ( empty( $event->object_name )
 			? ( ucfirst( $event->object_type ) . ' ' . $event->object_id )
-			: $event->object_name;
+			: $event->object_name ) . ' (deleted)';
 
 		// Generate the link based on the object type.
 		switch ( $event->object_type ) {

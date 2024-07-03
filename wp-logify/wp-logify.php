@@ -29,21 +29,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Include files.
-$plugin_path = plugin_dir_path( __FILE__ );
-require_once "$plugin_path/includes/functions.php";
-require_once "$plugin_path/includes/class-admin.php";
-require_once "$plugin_path/includes/class-cron.php";
-require_once "$plugin_path/includes/class-datetimes.php";
-require_once "$plugin_path/includes/class-event-repository.php";
-require_once "$plugin_path/includes/class-event.php";
-require_once "$plugin_path/includes/class-log-page.php";
-require_once "$plugin_path/includes/class-logger.php";
-require_once "$plugin_path/includes/class-plugin.php";
-require_once "$plugin_path/includes/class-posts.php";
-require_once "$plugin_path/includes/class-settings.php";
-require_once "$plugin_path/includes/class-users.php";
-require_once "$plugin_path/includes/class-widget.php";
+// Include all include files.
+foreach ( glob( plugin_dir_path( __FILE__ ) . '/includes/*.php' ) as $filename ) {
+	include $filename;
+}
 
 // Register plugin hooks.
 add_action( 'plugins_loaded', array( 'WP_Logify\Plugin', 'init' ) );
