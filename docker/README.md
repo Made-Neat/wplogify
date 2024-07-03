@@ -1,7 +1,7 @@
 # How to set up the local containers for WP Logify development.
 
-
 ## Prerequisites
+
 - Docker
 - Docker Compose
 
@@ -18,6 +18,7 @@ Add this line to your `/etc/hosts` file to map `wplogify.localhost` to `127.0.0.
 ```
 127.0.0.1   wplogify.localhost
 ```
+
 2. **Update Docker Compose File**
 
 Update the path to the code in `docker-compose.yml` to suit your local setup. Specifically, update the first part of the second volume specification under `services > wordpress > volumes`.
@@ -27,7 +28,7 @@ services:
   wordpress:
     volumes:
       - wordpress_data:/var/www/html
-      - /path/to/your/local/code:/var/www/html      
+      - /path/to/your/local/code:/var/www/html
 ```
 
 3. **Build the Containers**
@@ -45,7 +46,6 @@ docker-compose -p madeneat-wplogify up -d
 5. **Install WordPress**
 
 Open your browser and go to http://wplogify.localhost to complete the WordPress installation.
-
 
 6. **Copy Plugin Code**
 
@@ -72,6 +72,14 @@ As specified in docker-compose.yml, docker will port forward from `3307` on loca
 
 Database: `wplogifydev`
 
-Username: `wplogifyuser`
+Username: `root`
 
 Password: `freedom`
+
+## How to backup the database
+
+Make a backup folder. From that folder, run the following command. Be sure to update the path to mysqldump and the timestamp in the output filename. If you didn't change the passwords in `docker-compose.yml` then the password should be `freedom`.
+
+```
+/path/to/mysqldump --skip-lock-tables --routines --add-drop-table --disable-keys --extended-insert -u root --host=127.0.0.1 --port=3307 wplogifydev -p > database-backup-wplogifydev-<YYYY-MM-DD-HH-MM>.sql
+```
