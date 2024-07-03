@@ -186,9 +186,7 @@ class Admin {
 	 * @return void
 	 */
 	public static function reset_logs() {
-		global $wpdb;
-		$table_name = Logger::get_table_name();
-		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table_name ) );
+		EventRepository::truncate_table();
 		wp_safe_redirect( admin_url( 'admin.php?page=wp-logify-settings&reset=success' ) );
 		exit;
 	}

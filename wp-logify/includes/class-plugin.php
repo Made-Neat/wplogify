@@ -20,8 +20,8 @@ class Plugin {
 	public static function init() {
 		Admin::init();
 		Cron::init();
+		EventRepository::init();
 		LogPage::init();
-		Logger::init();
 		Posts::init();
 		Settings::init();
 		Users::init();
@@ -32,7 +32,7 @@ class Plugin {
 	 * Run on activation.
 	 */
 	public static function activate() {
-		Logger::create_table();
+		EventRepository::create_table();
 	}
 
 	/**
@@ -48,7 +48,7 @@ class Plugin {
 	public static function uninstall() {
 		// Drop the events table, if the option is set.
 		if ( Settings::get_delete_on_uninstall() ) {
-			Logger::drop_table();
+			EventRepository::drop_table();
 		}
 
 		// Delete settings.

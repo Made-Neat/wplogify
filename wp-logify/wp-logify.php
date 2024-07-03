@@ -35,6 +35,8 @@ require_once "$plugin_path/includes/functions.php";
 require_once "$plugin_path/includes/class-admin.php";
 require_once "$plugin_path/includes/class-cron.php";
 require_once "$plugin_path/includes/class-datetimes.php";
+require_once "$plugin_path/includes/class-event-repository.php";
+require_once "$plugin_path/includes/class-event.php";
 require_once "$plugin_path/includes/class-log-page.php";
 require_once "$plugin_path/includes/class-logger.php";
 require_once "$plugin_path/includes/class-plugin.php";

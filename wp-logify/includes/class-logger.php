@@ -22,60 +22,6 @@ class Logger {
 	public const VALID_OBJECT_TYPES = array( 'post', 'user', 'category', 'plugin', 'theme' );
 
 	/**
-	 * Initializes the class by adding WordPress actions.
-	 */
-	public static function init() {
-		// Ensure table is created on plugin activation.
-		self::create_table();
-	}
-
-	/**
-	 * Get the name of the table used to store log events.
-	 */
-	public static function get_table_name() {
-		global $wpdb;
-		return $wpdb->prefix . 'wp_logify_events';
-	}
-
-	/**
-	 * Create the table used to store log events.
-	 */
-	public static function create_table() {
-		global $wpdb;
-		$table_name      = self::get_table_name();
-		$charset_collate = $wpdb->get_charset_collate();
-
-		$sql = "CREATE TABLE $table_name (
-            ID mediumint(9) NOT NULL AUTO_INCREMENT,
-            date_time datetime NOT NULL,
-            user_id bigint(20) unsigned NOT NULL,
-            user_role varchar(255) NOT NULL,
-            user_ip varchar(100) NOT NULL,
-            user_location varchar(255) NULL,
-            user_agent varchar(255) NULL,
-            event_type varchar(255) NOT NULL,
-            object_type varchar(20) NULL,
-            object_id varchar(20) NULL,
-            object_name varchar(255) NULL,
-            details text NULL,
-            changes text NULL,
-            PRIMARY KEY (ID)
-        ) $charset_collate;";
-
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( $sql );
-	}
-
-	/**
-	 * Drop the table used to store log events.
-	 */
-	public static function drop_table() {
-		global $wpdb;
-		$table_name = self::get_table_name();
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
-	}
-
-	/**
 	 * Logs an event to the database.
 	 *
 	 * @param string          $event_type  The type of event.
@@ -103,19 +49,17 @@ class Logger {
 			throw new InvalidArgumentException( 'Invalid object type.' );
 		}
 
-		// Get the datetime.
-		$date_time = DateTimes::format_datetime_mysql( DateTimes::current_datetime() );
-
 		// Get the current user.
 		$user = wp_get_current_user();
 
 		// If the current user could not be loaded, this may be a login or logout event.
-		// In such cases, we can get the user from the object information.
+		// In such cases, we should be able to get the user from the object information.
 		if ( $user->ID === 0 && $object_type === 'user' ) {
 			$user = get_userdata( $object_id );
 		}
 
-		// If we don't have a valid user at this point, we don't need to log the event.
+		// If we still don't have a known user (i.e. it's an anonymous user), we don't need to log
+		// the event.
 		if ( ! $user || $user->ID === 0 ) {
 			return;
 		}
@@ -125,50 +69,22 @@ class Logger {
 			return;
 		}
 
-		// Collect other user info.
-		$user_id       = $user->ID;
-		$user_role     = implode( ', ', $user->roles );
-		$user_ip       = Users::get_user_ip();
-		$user_location = Users::get_user_location( $user_ip );
-		$user_agent    = Users::get_user_agent();
-
-		// Encode the event details as JSON.
-		if ( $details ) {
-			$details_json = wp_json_encode( $details );
-			if ( ! $details_json ) {
-				throw new InvalidArgumentException( 'Failed to encode details as JSON.' );
-			}
-		} else {
-			$details_json = null;
-		}
-
-		// Encode the object changes as JSON.
-		if ( $changes ) {
-			$changes_json = wp_json_encode( $changes );
-			if ( ! $changes_json ) {
-				throw new InvalidArgumentException( 'Failed to encode changes as JSON.' );
-			}
-		} else {
-			$changes_json = null;
-		}
+		// Construct the Event object.
+		$event                = new Event();
+		$event->date_time     = DateTimes::current_datetime();
+		$event->user_id       = $user->ID;
+		$event->user_role     = implode( ', ', $user->roles );
+		$event->user_ip       = Users::get_user_ip();
+		$event->user_location = Users::get_user_location( $event->user_ip );
+		$event->user_agent    = Users::get_user_agent();
+		$event->event_type    = $event_type;
+		$event->object_type   = $object_type;
+		$event->object_id     = $object_id;
+		$event->object_name   = $object_name;
+		$event->details       = $details;
+		$event->changes       = $changes;
 
 		// Insert the new record.
-		$wpdb->insert(
-			self::get_table_name(),
-			array(
-				'date_time'     => $date_time,
-				'user_id'       => $user_id,
-				'user_role'     => $user_role,
-				'user_ip'       => $user_ip,
-				'user_location' => $user_location,
-				'user_agent'    => $user_agent,
-				'event_type'    => $event_type,
-				'object_type'   => $object_type,
-				'object_id'     => $object_id,
-				'object_name'   => $object_name,
-				'details'       => $details_json,
-				'changes'       => $changes_json,
-			)
-		);
+		EventRepository::save( $event );
 	}
 }

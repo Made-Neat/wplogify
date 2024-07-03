@@ -148,7 +148,7 @@ class Users {
 	public static function track_user_activity() {
 		global $wpdb;
 		$user_id    = get_current_user_id();
-		$table_name = Logger::get_table_name();
+		$table_name = EventRepository::get_table_name();
 		$event_type = 'User Session';
 
 		// Get the current datetime.
@@ -376,7 +376,7 @@ class Users {
 		}
 
 		// Get the last login datetime from the wp_logify_events table.
-		$table_name       = Logger::get_table_name();
+		$table_name       = EventRepository::get_table_name();
 		$sql              = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1",
 			$table_name,
@@ -401,7 +401,7 @@ class Users {
 		}
 
 		// Get the most recent session end datetime from the wp_logify_events table.
-		$table_name         = Logger::get_table_name();
+		$table_name         = EventRepository::get_table_name();
 		$sql                = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY date_time DESC LIMIT 1",
 			$table_name,

@@ -47,7 +47,7 @@ class LogPage {
 		global $wpdb;
 
 		// Get table names.
-		$events_table_name = Logger::get_table_name();
+		$events_table_name = EventRepository::get_table_name();
 		$user_table_name   = $wpdb->prefix . 'users';
 
 		// These should match the columns in admin.js.
@@ -432,7 +432,8 @@ class LogPage {
 	/**
 	 * Retrieves the link to an object based on its type and ID.
 	 *
-	 * NB: The ID will be an integer (as a string) for posts and users, and a string for themes and plugins.
+	 * NB: The ID will be an integer (as a string) for posts and users, and a string for themes and
+	 * plugins.
 	 *
 	 * @param object $event The event object from the database.
 	 * @return string The link to the object.

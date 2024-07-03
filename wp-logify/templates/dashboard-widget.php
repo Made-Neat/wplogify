@@ -10,7 +10,7 @@ namespace WP_Logify;
 global $wpdb;
 
 // Get the wp_logify_events table name.
-$table_name = Logger::get_table_name();
+$table_name = EventRepository::get_table_name();
 
 // Create a DateTime object from the current local time.
 $current_datetime = DateTimes::current_datetime();
