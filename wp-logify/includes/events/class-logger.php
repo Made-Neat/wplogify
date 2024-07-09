@@ -78,7 +78,7 @@ class Logger {
 		$event->properties    = $properties;
 
 		// Insert the new record.
-		$ok = Event_Repository::insert( $event );
+		$ok = Event_Repository::upsert( $event );
 
 		if ( $ok ) {
 			debug( 'Event insert failed.', func_get_args() );

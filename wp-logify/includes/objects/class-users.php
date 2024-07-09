@@ -19,11 +19,11 @@ use WP_User;
 class Users {
 
 	/**
-	 * Changes to a user.
+	 * Array of changed properties.
 	 *
 	 * @var array
 	 */
-	private static $user_changes = array();
+	private static $changes = array();
 
 	/**
 	 * Initializes the class by adding WordPress actions.
@@ -49,8 +49,7 @@ class Users {
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
 	public static function track_login( string $user_login, WP_User $user ) {
-		// Logger::log_event( 'User Login', 'user', $user->ID, self::get_name( $user ) );
-		Logger::log_event( 'User Login' );
+		Logger::log_event( 'User Login', 'user', $user->ID, self::get_name( $user ) );
 	}
 
 	/**
@@ -59,8 +58,7 @@ class Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function track_logout( int $user_id ) {
-		// Logger::log_event( 'User Logout', 'user', $user_id, self::get_name( $user_id ) );
-		Logger::log_event( 'User Logout' );
+		Logger::log_event( 'User Logout', 'user', $user_id, self::get_name( $user_id ) );
 	}
 
 	/**
@@ -70,11 +68,11 @@ class Users {
 	 * @param array $userdata The data for the user that was registered.
 	 */
 	public static function track_register( int $user_id, array $userdata ) {
-		// Get the user's details.
-		$user_details = self::get_properties( $user_id );
+		// Get the user's properties.
+		$properties = self::get_properties( $user_id );
 
-		// Logger::log_event( 'User Registered', 'user', $user_id, self::get_name( $user_id ), $details );
-		Logger::log_event( 'User Registered', null, $user_details );
+		// Log the event.
+		Logger::log_event( 'User Registered', 'user', $user_id, self::get_name( $user_id ), null, $properties );
 	}
 
 	/**
@@ -85,18 +83,18 @@ class Users {
 	 * @param WP_User $user     The WP_User object of the user that was deleted.
 	 */
 	public static function track_delete( int $user_id, ?int $reassign, WP_User $user ) {
-		// Get the user's details.
-		$user_details = self::get_properties( $user );
+		// Get the user's properties.
+		$properties = self::get_properties( $user );
 
-		// If the user is being reassigned, log that information.
-		$event_details = array();
+		// If the user's data is being reassigned, record that information in the event details.
+		$details = array();
 		if ( $reassign ) {
-			$reassign_ref                        = new Entity( Object_Type::User, $reassign, true );
-			$event_details['Data reassigned to'] = $reassign_ref->to_json();
+			$reassign_ref                  = new Entity( 'user', $reassign, true );
+			$details['Data reassigned to'] = $reassign_ref->to_array();
 		}
 
-		// Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $details );
-		Logger::log_event( 'User Deleted', $event_details, $user_details );
+		// Log the event.
+		Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $details, $properties );
 	}
 
 	/**
@@ -107,24 +105,20 @@ class Users {
 	 * @param array   $userdata      The data for the user after the update.
 	 */
 	public static function track_update( int $user_id, WP_User $old_user_data, array $userdata ) {
-		// Get the user's details.
-		$user_details = self::get_properties( $old_user_data );
+		// Get the user's properties.
+		$properties = self::get_properties( $old_user_data );
 
-		// Compare values.
+		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
-			$old_value = value_to_string( $value );
-			$new_value = value_to_string( $userdata[ $key ] );
-
-			if ( $old_value !== $new_value ) {
-				// self::$user_changes[ $key ] = array( $old_value, $new_value );
-				$user_details[ $key ]->new_value = $userdata[ $key ];
+			// Not sure if we need these conversions to strings, keep an eye on it.
+			if ( value_to_string( $value ) !== value_to_string( $userdata[ $key ] ) ) {
+				$properties[ $key ]->old_value = $value;
+				$properties[ $key ]->new_value = $userdata[ $key ];
 			}
 		}
 
-		// if ( ! empty( self::$user_changes ) ) {
-			// Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, self::$user_changes );
-			Logger::log_event( 'User Updated', null, $user_details );
-		// }
+		// Log the event.
+		Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, $properties );
 	}
 
 	/**
@@ -139,13 +133,9 @@ class Users {
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
-		// Get the old and new values as strings for comparison and display.
-		$old_value = value_to_string( $current_value );
-		$new_value = value_to_string( $meta_value );
-
 		// Track the change, if any.
-		if ( $old_value !== $new_value ) {
-			self::$user_changes[ $meta_key ] = array( $current_value, $meta_value );
+		if ( value_to_string( $current_value ) !== value_to_string( $meta_value ) ) {
+			self::$changes[ $meta_key ] = Property::create( null, $meta_key, 'meta', $current_value, $meta_value );
 		}
 	}
 
@@ -157,7 +147,7 @@ class Users {
 	public static function track_activity() {
 		global $wpdb;
 		$user_id    = get_current_user_id();
-		$table_name = Event_Repository::get_table_name();
+		$table_name = Event_Repository::$table_name;
 		$event_type = 'User Session';
 
 		// Get the current datetime.
@@ -177,9 +167,9 @@ class Users {
 		if ( $existing_record && ! empty( $existing_record->details ) ) {
 
 			// Extract the current session end datetime from the event details.
-			$event_details          = json_decode( $existing_record->details, true );
-			$session_start_datetime = DateTimes::create_datetime( $event_details['Session start'] );
-			$session_end_datetime   = DateTimes::create_datetime( $event_details['Session end'] );
+			$details                = Json::decode( $existing_record->details );
+			$session_start_datetime = $details['Session start'];
+			$session_end_datetime   = $details['Session end'];
 
 			// If the current value for session end time is less than 10 minutes ago, we'll assume
 			// the current session is continuing, and update the session end time in the existing
@@ -189,13 +179,13 @@ class Users {
 				$continuing = true;
 
 				// Update the session end time and duration.
-				$event_details['Session end']      = $formatted_now;
-				$event_details['Session duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
+				$details['Session end']      = $formatted_now;
+				$details['Session duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
 
 				// Update the record.
 				$wpdb->update(
 					$table_name,
-					array( 'details' => wp_json_encode( $event_details ) ),
+					array( 'details' => Json::encode( $details ) ),
 					array( 'ID' => $existing_record->ID ),
 					array( '%s' ),
 					array( '%d' )
@@ -205,13 +195,12 @@ class Users {
 
 		// If we're not continuing an existing session, record the start of a new one.
 		if ( ! $continuing ) {
-			$event_details = array(
-				'Session start'    => $formatted_now,
-				'Session end'      => $formatted_now,
+			$details = array(
+				'Session start'    => $now,
+				'Session end'      => $now,
 				'Session duration' => '0 minutes',
 			);
-			// Logger::log_event( $event_type, 'user', $user_id, self::get_name( $user_id ), $details );
-			Logger::log_event( $event_type, $event_details );
+			Logger::log_event( $event_type, 'user', $user_id, self::get_name( $user_id ), $details );
 		}
 	}
 
@@ -240,9 +229,11 @@ class Users {
 	 */
 	public static function get_user( int $user_id ): WP_User {
 		$user = get_userdata( $user_id );
+
 		if ( ! $user ) {
 			throw new Exception( "User {$user_id} could not be loaded." );
 		}
+
 		return $user;
 	}
 
@@ -263,13 +254,13 @@ class Users {
 
 		// Add the base properties.
 		foreach ( $user as $key => $value ) {
-			$properties[ $key ] = new Property( $key, 'base', $value );
+			$properties[ $key ] = Property::create( null, $key, 'base', $value );
 		}
 
 		// Add the meta properties.
 		$usermeta = get_user_meta( $user->ID );
 		foreach ( $usermeta as $key => $value ) {
-			$properties[ $key ] = new Property( $key, 'meta', $value );
+			$properties[ $key ] = Property::create( null, $key, 'meta', $value );
 		}
 
 		return $properties;
@@ -350,7 +341,7 @@ class Users {
 		}
 
 		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
+		$data = Json::decode( $body );
 
 		// Construct the location string.
 		if ( $data['status'] === 'success' ) {
@@ -392,7 +383,7 @@ class Users {
 		}
 
 		// Get the last login datetime from the wp_logify_events table.
-		$table_name       = Event_Repository::get_table_name();
+		$table_name       = Event_Repository::$table_name;
 		$sql              = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1",
 			$table_name,
@@ -417,7 +408,7 @@ class Users {
 		}
 
 		// Get the most recent session end datetime from the wp_logify_events table.
-		$table_name         = Event_Repository::get_table_name();
+		$table_name         = Event_Repository::$table_name;
 		$sql                = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY date_time DESC LIMIT 1",
 			$table_name,
@@ -425,7 +416,7 @@ class Users {
 		);
 		$last_session_event = $wpdb->get_row( $sql );
 		if ( $last_session_event !== null && $last_session_event->details !== null ) {
-			$details = json_decode( $last_session_event->details, true );
+			$details = Json::decode( $last_session_event->details );
 			return DateTimes::create_datetime( $details['Session end'] );
 		}
 

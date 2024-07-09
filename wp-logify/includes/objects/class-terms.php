@@ -50,12 +50,11 @@ class Terms {
 		// Get the event type.
 		$event_type = ucwords( $taxonomy ) . ' Created';
 
-		// Get the term details.
-		$term_details = self::get_properties( $term );
+		// Get the term properties.
+		$properties = self::get_properties( $term );
 
 		// Log the event.
-		// Logger::log_event( $event_type, 'term', $term_id, $term->name, $details );
-		Logger::log_event( $event_type, null, $term_details );
+		Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
 	}
 
 	/**
@@ -71,30 +70,28 @@ class Terms {
 		// Load the term.
 		$term = self::get_term( $term_id );
 
-		// Get the term details.
-		$term_details = self::get_properties( $term );
+		// Get the term properties.
+		$properties = self::get_properties( $term );
 
 		// Compare values.
 		$changed = false;
 		foreach ( $term->data as $key => $value ) {
-			$old_value = value_to_string( $value );
-			$new_value = value_to_string( $args[ $key ] );
+			if ( value_to_string( $value ) !== value_to_string( $args[ $key ] ) ) {
+				// Update the property's before and after values.
+				$properties[ $key ]->old_value = $value;
+				$properties[ $key ]->new_value = $args[ $key ];
 
-			if ( $old_value !== $new_value ) {
-				// self::$term_changes[ $key ] = array( $old_value, $new_value );
-				$term_details[ $key ]->new_value = $args[ $key ];
-				$changed                         = true;
+				// Note there were changes.
+				$changed = true;
 			}
 		}
 
-		// if ( ! empty( self::$term_changes ) ) {
 		if ( $changed ) {
 			// Get the event type.
 			$event_type = ucwords( $taxonomy ) . ' Updated';
 
 			// Log the event.
-			// Logger::log_event( $event_type, 'term', $term_id, $term->name, $details, self::$term_changes );
-			Logger::log_event( $event_type, null, $term_details );
+			Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
 		}
 	}
 
@@ -117,10 +114,10 @@ class Terms {
 		// Get the event type.
 		$event_type = ucwords( $taxonomy ) . ' Deleted';
 
-		// Get the term's details.
-		$term_details = self::get_properties( $term );
+		// Get the term's properties.
+		$properties = self::get_properties( $term );
 
-		// Get all posts tagged with this term.
+		// Record all posts tagged with this term, in case we need to restore the term.
 		$post_ids = get_objects_in_term( $term_id, $taxonomy );
 
 		// Handle error if the posts could not be retrieved.
@@ -128,15 +125,14 @@ class Terms {
 			throw new Exception( "Failed to retrieve posts with term ID $term_id in taxonomy $taxonomy." );
 		}
 
-		// Cast post ids to ints.
+		// The function returns an array of strings for some reason, so let's convert them to ints.
 		$post_ids = array_map( fn( $post_id ) => (int) $post_id, $post_ids );
 
-		// Add to details.
-		$term_details['Posts'] = wp_json_encode( $post_ids );
+		// Add to the term's properties.
+		$properties['posts'] = Property::create( null, 'posts', null, $post_ids );
 
 		// Log the event.
-		// Logger::log_event( $event_type, 'term', $term_id, $term->name, $term_details );
-		Logger::log_event( $event_type, null, $term_details );
+		Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
 	}
 
 	/**
@@ -150,6 +146,19 @@ class Terms {
 
 	// ---------------------------------------------------------------------------------------------
 	// Methods for getting term information.
+
+	/**
+	 * Check if a term exists.
+	 *
+	 * @param int $term_id The ID of the term.
+	 * @return bool True if the term exists, false otherwise.
+	 */
+	public static function term_exists( int $term_id ): bool {
+		global $wpdb;
+		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->terms, $term_id );
+		$count = (int) $wpdb->get_var( $sql );
+		return $count > 0;
+	}
 
 	/**
 	 * Get a term by ID.
@@ -183,13 +192,13 @@ class Terms {
 
 		// Add the base properties.
 		foreach ( $term as $key => $value ) {
-			$properties[ $key ] = new Property( $key, 'base', $value );
+			$properties[ $key ] = Property::create( null, $key, 'base', $value );
 		}
 
 		// Add the meta properties.
-		$termmeta = get_term_meta( $term->ID );
+		$termmeta = get_term_meta( $term->term_id );
 		foreach ( $termmeta as $key => $value ) {
-			$properties[ $key ] = new Property( $key, 'meta', $value );
+			$properties[ $key ] = Property::create( null, $key, 'meta', $value );
 		}
 
 		return $properties;

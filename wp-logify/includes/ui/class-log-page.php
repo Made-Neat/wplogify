@@ -49,7 +49,7 @@ class Log_Page {
 		global $wpdb;
 
 		// Get table names.
-		$events_table_name = Event_Repository::get_table_name();
+		$events_table_name = Event_Repository::$table_name;
 		$user_table_name   = $wpdb->prefix . 'users';
 
 		// These should match the columns in admin.js.
@@ -152,7 +152,7 @@ class Log_Page {
 		// Select clause.
 		$select_columns = '
         SELECT
-            e.ID AS event_id,
+            e.ID,
             e.date_time,
             e.user_id,
             e.user_name,
@@ -176,10 +176,6 @@ class Log_Page {
 		// Order-by clause.
 		$order_by = 'ORDER BY ';
 		switch ( $order_by_column ) {
-			case 'ID':
-				$order_by .= "event_id $order_by_direction";
-				break;
-
 			case 'user':
 				$order_by .= "display_name $order_by_direction";
 				break;
@@ -205,33 +201,39 @@ class Log_Page {
 		// Construct the data array to return to the client.
 		$data = array();
 		foreach ( $results as $row ) {
-			// Create a new event.
-			$event = array( 'ID' => $row->event_id );
+			// Construct the Event object.
+			$event = Event_Repository::record_to_object( $row );
+
+			// Create a new data item.
+			$item       = array();
+			$item['ID'] = $event->id;
 
 			// Date and time of the event.
-			$date_time          = DateTimes::create_datetime( $row->date_time );
-			$formatted_datetime = DateTimes::format_datetime_site( $date_time );
-			$time_ago           = human_time_diff( $date_time->getTimestamp() ) . ' ago';
-			$event['date_time'] = "<div>$formatted_datetime ($time_ago)</div>";
+			$formatted_datetime = DateTimes::format_datetime_site( $event->date_time );
+			$time_ago           = human_time_diff( ( $event->date_time )->getTimestamp() ) . ' ago';
+			$item['date_time']  = "<div>$formatted_datetime ($time_ago)</div>";
 
 			// User details.
-			$user_tag      = Users::get_tag( $row->user_id, $row->user_name );
-			$user_role     = esc_html( ucwords( $row->user_role ) );
-			$event['user'] = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
+			$user_ref     = new Object_Reference( 'user', $row->user_id, $row->user_name );
+			$user_tag     = $user_ref->get_element();
+			$user_role    = esc_html( ucwords( $event->user_role ) );
+			$item['user'] = get_avatar( $event->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 			// Source IP.
-			$event['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
+			$item['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
 
 			// Event type.
-			$event['event_type'] = $row->event_type;
+			$item['event_type'] = $row->event_type;
 
-			// Get the object link.
-			$event['object'] = self::get_object_link( $row );
+			// Get the HTML for the object name element.
+			$object_ref     = new Object_Reference( $event->object_type, $event->object_id, $event->object_name );
+			$item['object'] = $object_ref->get_element();
 
 			// Format the details.
-			$event['details'] = self::format_details( $row );
+			$item['details'] = self::format_details( $event );
 
-			$data[] = $event;
+			// Add the item to the data array.
+			$data[] = $item;
 		}
 
 		wp_send_json(
@@ -247,38 +249,50 @@ class Log_Page {
 	/**
 	 * Formats user details for a log entry.
 	 *
-	 * @param object $row The data object selected from the database, which includes event details and user details.
+	 * @param Event $event The event.
 	 * @return string The formatted user details as an HTML table.
 	 */
-	public static function format_user_details( object $row ): string {
+	public static function format_user_details( Event $event ): string {
 		// Handle the case where the user ID is empty. Should never happen.
-		if ( empty( $row->user_id ) ) {
+		if ( empty( $event->user_id ) ) {
 			return '';
 		}
 
+		// User tag.
+		// TODO replace with Users::get_tag() method so we don't need to create an Object_Reference, which we probably don't want or need.
+		$user_ref = new Object_Reference( 'user', $event->user_id, $event->user_name );
+		$user_tag = $user_ref->get_element();
+
+		// User email.
+		$user       = Users::get_user( $event->user_id );
+		$user_email = empty( $user->user_email ) ? 'Unknown' : esc_html( $user->user_email );
+
+		// Role.
+		$user_role = esc_html( ucwords( $event->user_role ) );
+
 		// Get the last login datetime.
-		$last_login_datetime        = Users::get_last_login_datetime( $row->user_id );
+		$last_login_datetime        = Users::get_last_login_datetime( $event->user_id );
 		$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime, true ) : 'Unknown';
 
 		// Get the last active datetime.
-		$last_active_datetime        = Users::get_last_active_datetime( $row->user_id );
+		$last_active_datetime        = Users::get_last_active_datetime( $event->user_id );
 		$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime, true ) : 'Unknown';
 
 		// User location.
-		$user_location = empty( $row->user_location ) ? 'Unknown' : esc_html( $row->user_location );
+		$user_location = empty( $event->user_location ) ? 'Unknown' : esc_html( $event->user_location );
 
 		// User agent.
-		$user_agent = empty( $row->user_agent ) ? 'Unknown' : esc_html( $row->user_agent );
+		$user_agent = empty( $event->user_agent ) ? 'Unknown' : esc_html( $event->user_agent );
 
 		// Construct the HTML.
 		$html  = "<div class='wp-logify-user-details wp-logify-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
 		$html .= "<table class='wp-logify-user-details-table'>\n";
-		$html .= '<tr><th>User</th><td>' . Users::get_tag( $row->user_id, $row->user_name ) . "</td></tr>\n";
-		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>\n";
-		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . "</td></tr>\n";
-		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
-		$html .= '<tr><th>IP address</th><td>' . ( $row->user_ip ?? 'Unknown' ) . "</td></tr>\n";
+		$html .= "<tr><th>User</th><td>$user_tag</td></tr>\n";
+		$html .= "<tr><th>Email</th><td><a href='mailto:$user_email'>$user_email</a></td></tr>\n";
+		$html .= "<tr><th>Role</th><td>$user_role</td></tr>\n";
+		$html .= "<tr><th>ID</th><td>$event->user_id</td></tr>";
+		$html .= '<tr><th>IP address</th><td>' . ( $event->user_ip ?? 'Unknown' ) . "</td></tr>\n";
 		$html .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>\n";
 		$html .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>\n";
 		$html .= "<tr><th>Location</th><td>$user_location</td></tr>\n";
@@ -292,26 +306,20 @@ class Log_Page {
 	/**
 	 * Formats the event details of a log entry.
 	 *
-	 * @param object $row The data object selected from the database, which includes event details and user details.
+	 * @param Event $event The event.
 	 * @return string The formatted event details as an HTML table.
 	 */
-	public static function format_event_details( object $row ): string {
+	public static function format_event_details( Event $event ): string {
 		// Handle the null case.
-		if ( empty( $row->details ) ) {
+		if ( empty( $event->details ) ) {
 			return '';
 		}
 
-		// Decode JSON.
-		$event_details = json_decode( $row->details, true );
-		if ( empty( $event_details ) ) {
-			return '';
-		}
-
-		// Convert JSON string to a small table of key-value pairs.
+		// Convert event details to a table of key-value pairs.
 		$html  = "<div class='wp-logify-event-details wp-logify-details-section'>\n";
 		$html .= "<h4>Event Details</h4>\n";
 		$html .= "<table class='wp-logify-event-details-table'>\n";
-		foreach ( $event_details as $key => $value ) {
+		foreach ( $event->details as $key => $value ) {
 			$html .= "<tr><th>$key</th><td>$value</td></tr>";
 		}
 		$html .= "</table>\n";
@@ -320,51 +328,64 @@ class Log_Page {
 	}
 
 	/**
-	 * Format object details.
+	 * Format object properties.
 	 *
-	 * @param object $row The data object selected from the database.
-	 * @return string The formatted object details as an HTML table.
+	 * @param Event $event The event.
+	 * @return string The object properties formatted as an HTML table.
 	 */
-	public static function format_object_details( object $row ): string {
+	public static function format_object_properties( Event $event ): string {
 		// Handle the null case.
-		if ( empty( $row->changes ) ) {
-			return '';
-		}
-
-		// Decode JSON.
-		$object_details = json_decode( $row->object_details, true );
-		if ( empty( $object_details ) ) {
+		if ( empty( $event->properties ) ) {
 			return '';
 		}
 
 		// Check if we need 2 columns or 3.
-		foreach ( $object_details as $key => $value ) {
-			$property = new Property( $value );
+		$n_cols = 2;
+		foreach ( $event->properties as $property ) {
+			if ( $property->new_value !== null && $property->new_value !== '' ) {
+				$n_cols = 3;
+				break;
+			}
 		}
 
 		// Convert JSON string to a table showing the changes.
 		$html  = "<div class='wp-logify-change-details wp-logify-details-section'>\n";
-		$html .= "<h4>Change Details</h4>\n";
+		$html .= "<h4>Object Details</h4>\n";
+
+		// Start table.
 		$html .= "<table class='wp-logify-change-details-table'>\n";
-		$html .= "<tr><th></th><th>Before</th><th>After</th></tr>\n";
-		foreach ( $object_details as $key => $value ) {
-			$readable_key = self::make_key_readable( $key, array( 'wp', $row->object_type ) );
 
+		// Header row.
+		$html .= '<tr><th>Property</th>';
+		$html .= $n_cols == 2 ? '<th>Value</th>' : '<th>Before</th><th>After</th>';
+		$html .= "</tr>\n";
+
+		// Property rows.
+		foreach ( $event->properties as $property ) {
+			// Start row.
 			$html .= '<tr>';
-			$html .= "<th>$readable_key</th>";
 
-			if ( $key === 'user_pass' ) {
-				// Special handling for passwords.
-				$html .= '<td>(hidden)</td><td>(hidden)</td>';
-			} elseif ( is_scalar( $value ) ) {
-				$html .= "<td colspan='2'>$value</td>";
-			} elseif ( is_array( $value ) && count( $value ) === 2 ) {
-				$html .= "<td>{$value[0]}</td><td>{$value[1]}</td>";
+			// Property name.
+			$readable_prop_name = self::make_key_readable( $property->prop_name, array( 'wp', $event->object_type ) );
+			$html              .= "<th>$readable_prop_name</th>";
+
+			// Old value.
+			$old_value_string = $property->prop_name === 'user_pass' ? '(hidden)' : value_to_string( $property->old_value );
+			$html            .= "<td>$old_value_string</td>";
+
+			// New value.
+			if ( $n_cols == 3 ) {
+				$new_value_string = $property->prop_name === 'user_pass' && ! empty( $property->new_value ) ? '(hidden)' : value_to_string( $property->new_value );
+				$html            .= "<td>$new_value_string</td>";
 			}
 
+			// End row.
 			$html .= "</tr>\n";
 		}
+
+		// End table.
 		$html .= "</table>\n";
+
 		$html .= "</div>\n";
 
 		return $html;
@@ -425,109 +446,109 @@ class Log_Page {
 	/**
 	 * Formats the details of a log entry.
 	 *
-	 * @param object $row The data object selected from the database, which includes event details and user details.
+	 * @param Event $event
 	 * @return string The formatted details as HTML.
 	 */
-	public static function format_details( object $row ) {
+	public static function format_details( Event $event ): string {
 		$html  = "<div class='wp-logify-details'>\n";
-		$html .= self::format_user_details( $row );
-		$html .= self::format_event_details( $row );
-		$html .= self::format_object_details( $row );
+		$html .= self::format_user_details( $event );
+		$html .= self::format_event_details( $event );
+		$html .= self::format_object_properties( $event );
 		$html .= "</div>\n";
 		return $html;
 	}
 
-	/**
-	 * Retrieves the link to an object based on its type and ID.
-	 *
-	 * NB: The ID will be an integer (as a string) for posts and users, and a string for themes and
-	 * plugins.
-	 *
-	 * @param object $event The event object from the database.
-	 * @return string The link to the object.
-	 * @throws InvalidArgumentException If the object type is invalid or the object ID is null.
-	 */
-	public static function get_object_link( object $event ) {
-		// Handle the null case.
-		if ( empty( $event->object_type ) || empty( $event->object_id ) ) {
-			return '';
-		}
+	// /**
+	// * Retrieves the link to an object based on its type and ID.
+	// *
+	// * NB: The ID will be an integer (as a string) for posts and users, and a string for themes and
+	// * plugins.
+	// *
+	// * @param object $event The event object from the database.
+	// * @return string The link to the object.
+	// * @throws InvalidArgumentException If the object type is invalid or the object ID is null.
+	// */
+	// public static function get_object_link( object $event ) {
+	// Handle the null case.
+	// if ( empty( $event->object_type ) || empty( $event->object_id ) ) {
+	// return '';
+	// }
 
-		// Check for valid object ID.
-		if ( $event->object_id === null ) {
-			throw new InvalidArgumentException( 'Object ID cannot be null . ' );
-		}
+	// Check for valid object ID.
+	// if ( $event->object_id === null ) {
+	// throw new InvalidArgumentException( 'Object ID cannot be null . ' );
+	// }
 
-		// Construct string to use in place of a link to the object if it's been deleted.
-		$deleted_string = ( empty( $event->object_name )
-			? ( ucfirst( $event->object_type ) . ' ' . $event->object_id )
-			: $event->object_name ) . ' (deleted)';
+	// Construct string to use in place of a link to the object if it's been deleted.
+	// $deleted_string = ( empty( $event->object_name )
+	// ? ( ucfirst( $event->object_type ) . ' ' . $event->object_id )
+	// : $event->object_name ) . ' (deleted)';
 
-		// Generate the link based on the object type.
-		switch ( $event->object_type ) {
-			case 'post':
-				// Attempt to load the post.
-				try {
-					$post = Posts::get_post( $event->object_id );
-				} catch ( Exception ) {
-					// If we didn't get a post then we'll assume it was deleted.
-					return $deleted_string;
-				}
+	// Generate the link based on the object type.
+	// switch ( $event->object_type ) {
+	// case 'post':
+	// Attempt to load the post.
+	// try {
+	// $post = Posts::get_post( $event->object_id );
+	// } catch ( Exception ) {
+	// If we didn't get a post then we'll assume it was deleted.
+	// return $deleted_string;
+	// }
 
-				// The desired URL will vary according to the post status.
-				if ( $post->post_status === 'trash' ) {
-					// Go to the list of trashed posts.
-					$url = admin_url( 'edit.php?post_status=trash&post_type=post' );
-				} else {
-					// Go to the post's edit page.
-					$url = Posts::get_edit_url( $event->object_id );
-				}
+	// The desired URL will vary according to the post status.
+	// if ( $post->post_status === 'trash' ) {
+	// Go to the list of trashed posts.
+	// $url = admin_url( 'edit.php?post_status=trash&post_type=post' );
+	// } else {
+	// Go to the post's edit page.
+	// $url = Posts::get_edit_url( $event->object_id );
+	// }
 
-				// Construct the HTML for the tag.
-				return "<a href='$url'>{$post->post_title}</a>";
+	// Construct the HTML for the tag.
+	// return "<a href='$url'>{$post->post_title}</a>";
 
-			case 'user':
-				// Return the user tag.
-				return Users::get_tag( $event->object_id, $event->object_name );
+	// case 'user':
+	// Return the user tag.
+	// return Users::get_tag( $event->object_id, $event->object_name );
 
-			case 'term':
-				// Attempt to load the term.
-				$term = get_term( $event->object_id );
+	// case 'term':
+	// Attempt to load the term.
+	// $term = get_term( $event->object_id );
 
-				// Check if the term was deleted (although there could be some other issue).
-				if ( ! $term instanceof WP_Term ) {
-					return $deleted_string;
-				}
+	// Check if the term was deleted (although there could be some other issue).
+	// if ( ! $term instanceof WP_Term ) {
+	// return $deleted_string;
+	// }
 
-				// Return a link to the edit page for the term.
-				return Terms::get_edit_tag( $term );
+	// Return a link to the edit page for the term.
+	// return Terms::get_edit_tag( $term );
 
-			case 'theme':
-				// Attempt to load the theme.
-				$theme = wp_get_theme( $event->object_id );
+	// case 'theme':
+	// Attempt to load the theme.
+	// $theme = wp_get_theme( $event->object_id );
 
-				// Check if the theme was deleted.
-				if ( ! $theme->exists() ) {
-					return $deleted_string;
-				}
+	// Check if the theme was deleted.
+	// if ( ! $theme->exists() ) {
+	// return $deleted_string;
+	// }
 
-				// Return a link to the theme.
-				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
+	// Return a link to the theme.
+	// return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
 
-			case 'plugin':
-				// Attempt to load the plugin.
-				$plugins = get_plugins();
+	// case 'plugin':
+	// Attempt to load the plugin.
+	// $plugins = get_plugins();
 
-				// Check if the plugin was deleted.
-				if ( ! array_key_exists( $event->object_id, $plugins ) ) {
-					return $deleted_string;
-				}
+	// Check if the plugin was deleted.
+	// if ( ! array_key_exists( $event->object_id, $plugins ) ) {
+	// return $deleted_string;
+	// }
 
-				// Link to the plugins page.
-				return "<a href='/wp-admin/plugins.php'>{$plugins[$event->object_id]['Name']}</a>";
-		}
+	// Link to the plugins page.
+	// return "<a href='/wp-admin/plugins.php'>{$plugins[$event->object_id]['Name']}</a>";
+	// }
 
-		// If the object type is invalid, throw an exception.
-		throw new InvalidArgumentException( "Invalid object type: $event->object_type" );
-	}
+	// If the object type is invalid, throw an exception.
+	// throw new InvalidArgumentException( "Invalid object type: $event->object_type" );
+	// }
 }

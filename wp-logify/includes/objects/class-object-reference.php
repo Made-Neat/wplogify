@@ -86,7 +86,25 @@ class Object_Reference {
 			throw new Exception( 'Cannot load an object without knowing its type and ID.' );
 		}
 
+		// Call the appropriate get method.
 		$method = array( self::get_class(), 'get_' . $this->type );
+		return call_user_func( $method, $this->id );
+	}
+
+	/**
+	 * Check if the object exists.
+	 *
+	 * @return bool True if the object of the given type and ID exists in the database, false otherwise.
+	 * @throws Exception If the object type is unknown.
+	 */
+	public function object_exists(): bool {
+		// Check we know which object to load.
+		if ( empty( $this->type ) || empty( $this->id ) ) {
+			throw new Exception( 'Cannot check for existence of an object without knowing its type and ID.' );
+		}
+
+		// Call the appropriate exists method.
+		$method = array( self::get_class(), "{$this->type}_exists" );
 		return call_user_func( $method, $this->id );
 	}
 
@@ -107,16 +125,17 @@ class Object_Reference {
 	 * Get the name or title of the object.
 	 *
 	 * @return string The name or title of the object.
+	 * @throws Exception If the object type is unknown.
 	 */
 	public function get_name() {
 		switch ( $this->type ) {
-			case Object_Type::Post:
+			case 'post':
 				return $this->get_object()->title;
 
-			case Object_Type::User:
+			case 'user':
 				return Users::get_name( $this->id );
 
-			case Object_Type::Term:
+			case 'term':
 				return $this->get_object()->name;
 
 			default:
@@ -147,14 +166,13 @@ class Object_Reference {
 	}
 
 	/**
-	 * If the object hasn't been deleted, get a link to its edit page; otherwise, get a deleted label.
+	 * If the object hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old name.
 	 */
 	public function get_element() {
-		try {
-			$this->get_object();
+		if ( $this->object_exists() ) {
 			return $this->get_edit_link();
-		} catch ( Exception $e ) {
-			// Make a 'deleted' span.
+		} else {
 			$name = empty( $this->name ) ? 'Unknown' : $this->name;
 			return "<span class='wp-logify-deleted-label'>$name (deleted)</span>";
 		}
@@ -177,7 +195,7 @@ class Object_Reference {
 	 * Convert the Object_Reference to a JSON string.
 	 */
 	public function to_json(): string {
-		return wp_json_encode( $this->to_array() );
+		return Json::encode( $this->to_array() );
 	}
 
 	/**
@@ -187,7 +205,7 @@ class Object_Reference {
 	 * @return Object_Reference The new Object_Reference object.
 	 */
 	public static function from_json( string $json ): self {
-		$fields = json_decode( $json );
+		$fields = Json::decode( $json );
 		return new self( $fields['type'], $fields['id'], $fields['name'] );
 	}
 }

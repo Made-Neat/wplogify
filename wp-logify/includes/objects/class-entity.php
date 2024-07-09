@@ -178,7 +178,7 @@ class Entity {
 	 * Convert the Object_Reference to a JSON string.
 	 */
 	public function to_json(): string {
-		return wp_json_encode( $this->to_array() );
+		return Json::encode( $this->to_array() );
 	}
 
 	/**
@@ -188,7 +188,7 @@ class Entity {
 	 * @return Entity The new Object_Reference object.
 	 */
 	public static function from_json( string $json ): self {
-		$fields = json_decode( $json );
+		$fields = Json::decode( $json );
 		return new self( $fields['type'], $fields['id'], $fields['name'] );
 	}
 }

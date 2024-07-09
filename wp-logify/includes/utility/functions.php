@@ -41,5 +41,5 @@ function debug_sql( string $sql ) {
  */
 function value_to_string( mixed $value ) {
 	return is_string( $value ) ? $value
-		: ( is_scalar( $value ) ? (string) $value : wp_json_encode( $value ) );
+		: ( is_scalar( $value ) ? (string) $value : Json::encode( $value ) );
 }

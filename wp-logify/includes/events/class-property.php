@@ -63,14 +63,14 @@ class Property {
 	/**
 	 * Creates a new property object.
 	 *
-	 * @param int    $event_id The event ID.
-	 * @param string $prop_name The property name.
-	 * @param string $prop_type The type of database table the property belongs to: 'base', 'meta', or 'none'.
-	 * @param mixed  $old_value The old or current value of the property.
-	 * @param mixed  $new_value Optional. The new value of the property, if changed.
+	 * @param ?int    $event_id The event ID if known.
+	 * @param string  $prop_name The property name.
+	 * @param ?string $prop_type The type of database table the property belongs to: 'base', 'meta', or null for none.
+	 * @param mixed   $old_value The old or current value of the property.
+	 * @param mixed   $new_value Optional. The new value of the property, if changed.
 	 * @return Property The new property object.
 	 */
-	public static function create( int $event_id, string $prop_name, string $prop_type, mixed $old_value = null, mixed $new_value = null ): self {
+	public static function create( ?int $event_id, string $prop_name, ?string $prop_type, mixed $old_value = null, mixed $new_value = null ): self {
 		$prop            = new self();
 		$prop->event_id  = $event_id;
 		$prop->prop_name = $prop_name;

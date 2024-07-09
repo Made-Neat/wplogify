@@ -230,6 +230,19 @@ class Posts {
 	// Get post information.
 
 	/**
+	 * Check if a post exists.
+	 *
+	 * @param int $post_id The ID of the post.
+	 * @return bool True if the post exists, false otherwise.
+	 */
+	public static function post_exists( int $post_id ): bool {
+		global $wpdb;
+		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->posts, $post_id );
+		$count = (int) $wpdb->get_var( $sql );
+		return $count > 0;
+	}
+
+	/**
 	 * Get a post by ID.
 	 *
 	 * @param int $post_id The ID of the post.
