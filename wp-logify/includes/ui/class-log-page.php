@@ -1,20 +1,22 @@
 <?php
 /**
- * Contains the LogPage class.
+ * Contains the Log_Page class.
  *
  * @package WP_Logify
  */
 
 namespace WP_Logify;
 
+use Exception;
 use InvalidArgumentException;
+use WP_Term;
 
 /**
- * Class WP_Logify\LogPage
+ * Class WP_Logify\Log_Page
  *
  * Contains methods for formatting event log entries for display in the admin area.
  */
-class LogPage {
+class Log_Page {
 
 	/**
 	 * Initialise the log page.
@@ -47,7 +49,7 @@ class LogPage {
 		global $wpdb;
 
 		// Get table names.
-		$events_table_name = EventRepository::get_table_name();
+		$events_table_name = Event_Repository::get_table_name();
 		$user_table_name   = $wpdb->prefix . 'users';
 
 		// These should match the columns in admin.js.
@@ -82,7 +84,7 @@ class LogPage {
 			}
 		}
 
-		// Get the order-by direction. Default to DESC.
+		// Get the order-by direction. Check it's valid. Default to DESC.
 		$order_by_direction = isset( $_POST['order'][0]['dir'] ) ? strtoupper( $_POST['order'][0]['dir'] ) : 'DESC';
 		if ( ! in_array( $order_by_direction, array( 'ASC', 'DESC' ), true ) ) {
 			$order_by_direction = 'DESC';
@@ -115,10 +117,10 @@ class LogPage {
                     OR user_location LIKE %s
                     OR user_agent LIKE %s
                     OR event_type LIKE %s
+                    OR event_details LIKE %s
                     OR object_type LIKE %s
                     OR object_name LIKE %s
-                    OR details LIKE %s
-                    OR changes LIKE %s
+                    OR object_details LIKE %s
                     OR user_login LIKE %s
                     OR user_email LIKE %s
                     OR display_name LIKE %s';
@@ -153,16 +155,17 @@ class LogPage {
             e.ID AS event_id,
             e.date_time,
             e.user_id,
+            e.user_name,
             e.user_role,
             e.user_ip,
             e.user_location,
             e.user_agent,
             e.event_type,
+            e.event_details,
             e.object_type,
             e.object_id,
             e.object_name,
-            e.details,
-            e.changes,
+            e.object_details,
             u.user_login,
             u.user_nicename,
             u.user_email,
@@ -182,7 +185,7 @@ class LogPage {
 				break;
 
 			case 'object':
-				$order_by .= "object_type $order_by_direction, object_id $order_by_direction";
+				$order_by .= "object_name $order_by_direction";
 				break;
 
 			default:
@@ -212,9 +215,9 @@ class LogPage {
 			$event['date_time'] = "<div>$formatted_datetime ($time_ago)</div>";
 
 			// User details.
-			$user_profile_link = Users::get_user_profile_link( $row->user_id );
-			$user_role         = esc_html( ucwords( $row->user_role ) );
-			$event['user']     = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_profile_link<br><span class='wp-logify-user-role'>$user_role</span></div>";
+			$user_tag      = Users::get_tag( $row->user_id, $row->user_name );
+			$user_role     = esc_html( ucwords( $row->user_role ) );
+			$event['user'] = get_avatar( $row->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 			// Source IP.
 			$event['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
@@ -271,7 +274,7 @@ class LogPage {
 		$html  = "<div class='wp-logify-user-details wp-logify-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
 		$html .= "<table class='wp-logify-user-details-table'>\n";
-		$html .= '<tr><th>User</th><td>' . Users::get_user_profile_link( $row->user_id ) . "</td></tr>\n";
+		$html .= '<tr><th>User</th><td>' . Users::get_tag( $row->user_id, $row->user_name ) . "</td></tr>\n";
 		$html .= "<tr><th>Email</th><td><a href='mailto:{$row->user_email}'>{$row->user_email}</a></td></tr>\n";
 		$html .= '<tr><th>Role</th><td>' . esc_html( ucwords( $row->user_role ) ) . "</td></tr>\n";
 		$html .= "<tr><th>ID</th><td>$row->user_id</td></tr>";
@@ -299,8 +302,8 @@ class LogPage {
 		}
 
 		// Decode JSON.
-		$details = json_decode( $row->details, true );
-		if ( empty( $details ) ) {
+		$event_details = json_decode( $row->details, true );
+		if ( empty( $event_details ) ) {
 			return '';
 		}
 
@@ -308,7 +311,7 @@ class LogPage {
 		$html  = "<div class='wp-logify-event-details wp-logify-details-section'>\n";
 		$html .= "<h4>Event Details</h4>\n";
 		$html .= "<table class='wp-logify-event-details-table'>\n";
-		foreach ( $details as $key => $value ) {
+		foreach ( $event_details as $key => $value ) {
 			$html .= "<tr><th>$key</th><td>$value</td></tr>";
 		}
 		$html .= "</table>\n";
@@ -317,21 +320,26 @@ class LogPage {
 	}
 
 	/**
-	 * Format change details.
+	 * Format object details.
 	 *
 	 * @param object $row The data object selected from the database.
-	 * @return string The formatted change details as an HTML table.
+	 * @return string The formatted object details as an HTML table.
 	 */
-	public static function format_change_details( object $row ): string {
+	public static function format_object_details( object $row ): string {
 		// Handle the null case.
 		if ( empty( $row->changes ) ) {
 			return '';
 		}
 
 		// Decode JSON.
-		$changes = json_decode( $row->changes, true );
-		if ( empty( $changes ) ) {
+		$object_details = json_decode( $row->object_details, true );
+		if ( empty( $object_details ) ) {
 			return '';
+		}
+
+		// Check if we need 2 columns or 3.
+		foreach ( $object_details as $key => $value ) {
+			$property = new Property( $value );
 		}
 
 		// Convert JSON string to a table showing the changes.
@@ -339,7 +347,7 @@ class LogPage {
 		$html .= "<h4>Change Details</h4>\n";
 		$html .= "<table class='wp-logify-change-details-table'>\n";
 		$html .= "<tr><th></th><th>Before</th><th>After</th></tr>\n";
-		foreach ( $changes as $key => $value ) {
+		foreach ( $object_details as $key => $value ) {
 			$readable_key = self::make_key_readable( $key, array( 'wp', $row->object_type ) );
 
 			$html .= '<tr>';
@@ -424,7 +432,7 @@ class LogPage {
 		$html  = "<div class='wp-logify-details'>\n";
 		$html .= self::format_user_details( $row );
 		$html .= self::format_event_details( $row );
-		$html .= self::format_change_details( $row );
+		$html .= self::format_object_details( $row );
 		$html .= "</div>\n";
 		return $html;
 	}
@@ -459,44 +467,40 @@ class LogPage {
 		switch ( $event->object_type ) {
 			case 'post':
 				// Attempt to load the post.
-				$post = get_post( $event->object_id );
-
-				// Check if it was deleted.
-				if ( ! $post ) {
+				try {
+					$post = Posts::get_post( $event->object_id );
+				} catch ( Exception ) {
+					// If we didn't get a post then we'll assume it was deleted.
 					return $deleted_string;
 				}
 
 				// The desired URL will vary according to the post status.
-				switch ( $post->post_status ) {
-					case 'publish':
-						// View the post.
-						$url = "/?p={$post->ID}";
-						break;
-
-					case 'trash':
-						// List trashed posts.
-						$url = '/wp-admin/edit.php?post_status=trash&post_type=post';
-						break;
-
-					default:
-						// post_status should be draft or auto-draft. Go to the edit page.
-						$url = "/wp-admin/post.php?post={$post->ID}&action=edit";
-						break;
+				if ( $post->post_status === 'trash' ) {
+					// Go to the list of trashed posts.
+					$url = admin_url( 'edit.php?post_status=trash&post_type=post' );
+				} else {
+					// Go to the post's edit page.
+					$url = Posts::get_edit_url( $event->object_id );
 				}
 
+				// Construct the HTML for the tag.
 				return "<a href='$url'>{$post->post_title}</a>";
 
 			case 'user':
-				// Attempt to load the user.
-				$user = get_userdata( $event->object_id );
+				// Return the user tag.
+				return Users::get_tag( $event->object_id, $event->object_name );
 
-				// Check if the user was deleted.
-				if ( ! $user ) {
+			case 'term':
+				// Attempt to load the term.
+				$term = get_term( $event->object_id );
+
+				// Check if the term was deleted (although there could be some other issue).
+				if ( ! $term instanceof WP_Term ) {
 					return $deleted_string;
 				}
 
-				// Return the user profile link.
-				return Users::get_user_profile_link( $event->object_id );
+				// Return a link to the edit page for the term.
+				return Terms::get_edit_tag( $term );
 
 			case 'theme':
 				// Attempt to load the theme.

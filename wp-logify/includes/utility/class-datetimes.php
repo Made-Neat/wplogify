@@ -10,6 +10,7 @@ namespace WP_Logify;
 use DateTime;
 use DateTimeZone;
 use DateInterval;
+use DateMalformedStringException;
 
 /**
  * Class WP_Logify\DateTimes
@@ -29,22 +30,24 @@ class DateTimes {
 	 * Constructs a DateTime object from a given datetime string.
 	 * This can throw a DateMalformedStringException if the string is not a valid datetime.
 	 *
-	 * @param string $datetime_string The datetime string to create a DateTime object from.
-	 * @param string $tz_string The timezone string to use. Defaults to 'site'.
+	 * @param string  $datetime_string The datetime string to create a DateTime object from.
+	 * @param ?string $tz_string       The timezone string to use. Defaults to the site time zone.
 	 * @return DateTime The created DateTime object.
 	 */
-	public static function create_datetime( string $datetime_string, string $tz_string = 'site' ): DateTime {
-		$tz = $tz_string === 'site' ? wp_timezone() : new DateTimeZone( $tz_string );
+	public static function create_datetime( string $datetime_string, ?string $tz_string = null ): DateTime {
+		// Convert the provided time zone argument to a suitable DateTimeZone.
+		$tz = $tz_string === null ? wp_timezone() : new DateTimeZone( $tz_string );
+
 		return new DateTime( $datetime_string, $tz );
 	}
 
 	/**
 	 * Returns the current datetime as a DateTime object.
 	 *
-	 * @param string $tz_string The timezone string to use. Defaults to 'site'.
+	 * @param ?string $tz_string The timezone string to use. Defaults to the site time zone.
 	 * @return DateTime The created DateTime object.
 	 */
-	public static function current_datetime( string $tz_string = 'site' ): DateTime {
+	public static function current_datetime( ?string $tz_string = null ): DateTime {
 		return self::create_datetime( 'now', $tz_string );
 	}
 
@@ -80,6 +83,21 @@ class DateTimes {
 	 * @return string The formatted datetime string.
 	 */
 	public static function format_datetime_mysql( DateTime|string $datetime ): string {
+		// Convert string to DateTime if necessary.
+		if ( is_string( $datetime ) ) {
+			$datetime = self::create_datetime( $datetime );
+		}
+
+		return $datetime->format( self::MYSQL_DATETIME_FORMAT );
+	}
+
+	/**
+	 * Formats a given DateTime using the MySQL datetime format.
+	 *
+	 * @param DateTime|string $datetime The DateTime object to format or the datetime as a string (presumably in some other format).
+	 * @return string The formatted datetime string.
+	 */
+	public static function format_datetime_database( DateTime|string $datetime ): string {
 		// Convert string to DateTime if necessary.
 		if ( is_string( $datetime ) ) {
 			$datetime = self::create_datetime( $datetime );
@@ -135,5 +153,52 @@ class DateTimes {
 			$duration_string .= "$minutes minute" . ( $minutes === 1 ? '' : 's' );
 		}
 		return $duration_string;
+	}
+
+	/**
+	 * Convert the datetime to a array suitable for encoding as JSON.
+	 *
+	 * @param DateTime $datetime The DateTime to convert.
+	 */
+	public static function to_array( DateTime $datetime ): array {
+		// Store DateTimes in ATOM/W3C format.
+		return array( 'DateTime' => $datetime->format( DateTime::ATOM ) );
+	}
+
+	/**
+	 * Convert the datetime to a JSON string.
+	 *
+	 * @param DateTime $datetime The DateTime to convert.
+	 */
+	public static function to_json( DateTime $datetime ) {
+		return wp_json_encode( self::to_array( $datetime ) );
+	}
+
+	/**
+	 * Check if the string contains JSON expressing a valid DateTime matching our custom encoding
+	 * method.
+	 *
+	 * @param string   $json     The JSON string to check.
+	 * @param DateTime $datetime The DateTime object to populate if valid.
+	 * @return bool    If the JSON contains a valid date-time string.
+	 */
+	public static function json_is_datetime( string $json, DateTime &$datetime ): bool {
+		$result = false;
+
+		// Decode the JSON. Returns null on invalid JSON.
+		$value = json_decode( $json );
+
+		// Check it looks right.
+		if ( is_array( $value ) && count( $value ) === 1 && key_exists( 'DateTime', $value ) ) {
+			// Try to convert the string to a DateTime.
+			try {
+				$datetime = self::create_datetime( $value['DateTime'] );
+				$result   = true;
+			} catch ( DateMalformedStringException $ex ) {
+				debug( 'Invalid JSON-encoded DateTime', $json, $ex->getMessage() );
+			}
+		}
+
+		return $result;
 	}
 }

@@ -7,6 +7,8 @@
 
 namespace WP_Logify;
 
+use WP_Admin_Bar;
+
 /**
  * Class WP_Logify\Admin
  *
@@ -29,6 +31,7 @@ class Admin {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
+		add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_menu' ), 100 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_option' ), 10, 3 );
 		add_action( 'admin_post_wp_logify_reset_logs', array( __CLASS__, 'reset_logs' ) );
@@ -47,10 +50,48 @@ class Admin {
 			return;
 		}
 
-		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\LogPage', 'display_log_page' ), 'dashicons-list-view' );
-		add_submenu_page( 'wp-logify', 'Log', 'Log', 'manage_options', 'wp-logify', array( 'WP_Logify\LogPage', 'display_log_page' ) );
+		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ), 'dashicons-list-view' );
+		add_submenu_page( 'wp-logify', 'View Log', 'View Log', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ) );
 		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( 'WP_Logify\Settings', 'display_settings_page' ) );
 		add_action( "load-$hook", array( __CLASS__, 'add_screen_options' ) );
+	}
+
+	/**
+	 * Adds WP Logify menu to the Admin bar.
+	 *
+	 * @param WP_Admin_Bar $wp_admin_bar The Admin bar object.
+	 */
+	public static function add_admin_bar_menu( WP_Admin_Bar $wp_admin_bar ) {
+		// Don't show if the user isn't an admin or if they don't want to see it in the admin bar.
+		if ( ! Users::current_user_has_role( 'administrator' ) || ! Settings::get_show_in_admin_bar() ) {
+			return;
+		}
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'    => 'wp-logify',
+				'title' => 'WP Logify',
+				'href'  => admin_url( 'admin.php?page=wp-logify' ),
+			)
+		);
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'     => 'wp-logify-view-log',
+				'parent' => 'wp-logify',
+				'title'  => 'View Log',
+				'href'   => admin_url( 'admin.php?page=wp-logify' ),
+			)
+		);
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'     => 'wp-logify-settings',
+				'parent' => 'wp-logify',
+				'title'  => 'Settings',
+				'href'   => admin_url( 'admin.php?page=wp-logify-settings' ),
+			)
+		);
 	}
 
 	/**
@@ -186,7 +227,7 @@ class Admin {
 	 * @return void
 	 */
 	public static function reset_logs() {
-		EventRepository::truncate_table();
+		Event_Repository::truncate_table();
 		wp_safe_redirect( admin_url( 'admin.php?page=wp-logify-settings&reset=success' ) );
 		exit;
 	}

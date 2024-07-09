@@ -57,7 +57,7 @@ class Cron {
 		$days = absint( ceil( $days ) );
 
 		// Delete old records.
-		$table_name = EventRepository::get_table_name();
+		$table_name = Event_Repository::get_table_name();
 		$wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE date_time < NOW() - INTERVAL %d DAY", $days ) );
 	}
 }

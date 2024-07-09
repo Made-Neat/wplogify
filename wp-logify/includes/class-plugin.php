@@ -7,6 +7,8 @@
 
 namespace WP_Logify;
 
+use ReflectionClass;
+
 /**
  * Class WP_Logify\Plugin
  *
@@ -18,21 +20,36 @@ class Plugin {
 	 * Initialize the plugin.
 	 */
 	public static function init() {
-		Admin::init();
-		Cron::init();
-		EventRepository::init();
-		LogPage::init();
-		Posts::init();
-		Settings::init();
-		Users::init();
-		Widget::init();
+		// Get all declared classes.
+		$classes = get_declared_classes();
+
+		// Iterate over each class.
+		foreach ( $classes as $class ) {
+
+			// Check if the class is in the WP_Logify namespace. Ignore the Plugin class (this class).
+			if ( $class !== 'WP_Logify\\Plugin' && strpos( $class, 'WP_Logify\\' ) === 0 ) {
+
+				// Use reflection to check for the init method.
+				$reflection = new ReflectionClass( $class );
+
+				if ( $reflection->hasMethod( 'init' ) ) {
+					$method = $reflection->getMethod( 'init' );
+
+					// Check if the init method is static.
+					if ( $method->isStatic() ) {
+						// Call the init method.
+						$method->invoke( null );
+					}
+				}
+			}
+		}
 	}
 
 	/**
 	 * Run on activation.
 	 */
 	public static function activate() {
-		EventRepository::create_table();
+		Event_Repository::create_table();
 	}
 
 	/**
@@ -48,7 +65,7 @@ class Plugin {
 	public static function uninstall() {
 		// Drop the events table, if the option is set.
 		if ( Settings::get_delete_on_uninstall() ) {
-			EventRepository::drop_table();
+			Event_Repository::drop_table();
 		}
 
 		// Delete settings.

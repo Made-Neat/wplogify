@@ -11,22 +11,26 @@ services:
     networks:
       - wplogify-network
     environment:
-      WORDPRESS_DB_HOST: wplogify-mysql:3306
+      WORDPRESS_DB_NAME: wplogifydev
       WORDPRESS_DB_USER: wplogifyuser
       WORDPRESS_DB_PASSWORD: freedom
-      WORDPRESS_DB_NAME: wplogifydev
-      WORDPRESS_VERSION: 6.5.5
-      WORDPRESS_SITE_LANGUAGE: en_US
-      WORDPRESS_USER_LANGUAGE: en_US
+      WORDPRESS_DB_HOST: wplogify-mysql:3306
+      WORDPRESS_DB_CHARSET: utf8mb4
+      WORDPRESS_DB_COLLATE: utf8mb4_unicode_ci
+      WORDPRESS_DEBUG: 1
       TZ: Australia/Brisbane
       WORDPRESS_CONFIG_EXTRA: |
-        define('WP_HOME', 'http://wplogify.localhost:8080');
-        define('WP_SITEURL', 'http://wplogify.localhost:8080');
+        define( 'WP_HOME', 'http://wplogify.localhost:8080' );
+        define( 'WP_SITEURL', 'http://wplogify.localhost:8080' );
+        define( 'WP_DEBUG_DISPLAY', false );
+        define( 'WP_DEBUG_LOG', true );
     volumes:
       - wordpress-volume:/var/www/html
       - ../www:/var/www/html
     ports:
       - "8080:80"
+    # extra_hosts:
+    #   wplogify.localhost: fdc4:f303:9324::254
 
   mysql:
     build:

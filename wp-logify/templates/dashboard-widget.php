@@ -10,7 +10,7 @@ namespace WP_Logify;
 global $wpdb;
 
 // Get the wp_logify_events table name.
-$table_name = EventRepository::get_table_name();
+$table_name = Event_Repository::get_table_name();
 
 // Create a DateTime object from the current local time.
 $current_datetime = DateTimes::current_datetime();
@@ -56,9 +56,9 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 				<?php foreach ( $results as $event ) : ?>
 					<tr>
 						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->date_time ) ); ?></td>
-						<td><?php echo Users::get_user_profile_link( $event->user_id ); ?></td>
+						<td><?php echo Users::get_edit_tag( $event->user_id ); ?></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
-						<td><?php echo LogPage::get_object_link( $event ); ?></td>
+						<td><?php echo Log_Page::get_object_link( $event ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			<?php else : ?>

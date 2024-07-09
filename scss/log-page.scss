@@ -27,6 +27,10 @@ $very-pale-grey: #f7f7f7;
     th.dt-type-numeric.column-id {
         text-align: left;
     }
+
+    td {
+        cursor: pointer;
+    }
 }
 
 .dataTables_wrapper {

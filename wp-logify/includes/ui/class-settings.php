@@ -14,61 +14,67 @@ namespace WP_Logify;
  */
 class Settings {
 
+	// ---------------------------------------------------------------------------------------------
+	// Default values for settings.
+
 	/**
-	 * The default value for the API key.
+	 * The default value for the 'API key' setting.
 	 *
 	 * @var array
 	 */
 	private const DEFAULT_API_KEY = '';
 
 	/**
-	 * The default value for the delete on uninstall setting.
+	 * The default value for the 'delete on uninstall' setting.
 	 *
 	 * @var array
 	 */
 	private const DEFAULT_DELETE_ON_UNINSTALL = false;
 
 	/**
-	 * The default value for the roles to track setting.
+	 * The default value for the 'roles to track' setting.
 	 *
 	 * @var array
 	 */
 	private const DEFAULT_ROLES_TO_TRACK = array( 'administrator', 'editor', 'author', 'contributor', 'subscriber' );
 
 	/**
-	 * The default value for the keep forever setting.
+	 * The default value for the 'show in admin bar' setting.
+	 *
+	 * @var array
+	 */
+	private const DEFAULT_SHOW_IN_ADMIN_BAR = true;
+
+	/**
+	 * The default value for the 'keep forever' setting.
 	 *
 	 * @var bool
 	 */
 	private const DEFAULT_KEEP_FOREVER = true;
 
 	/**
-	 * The default value for the keep period quantity setting.
+	 * The default value for the 'keep period quantity' setting.
 	 *
 	 * @var int
 	 */
 	private const DEFAULT_KEEP_PERIOD_QUANTITY = 1;
 
 	/**
-	 * The default value for the keep period units setting.
+	 * The default value for the 'keep period units' setting.
 	 *
 	 * @var string
 	 */
 	private const DEFAULT_KEEP_PERIOD_UNITS = 'year';
 
 	/**
-	 * The default value for the WP-Cron tracking setting.
+	 * The default value for the 'WP-Cron tracking' setting.
 	 *
 	 * @var bool
 	 */
 	private const DEFAULT_WP_CRON_TRACKING = false;
 
-	/**
-	 * The default value for the plugin installer's user ID.
-	 *
-	 * @var bool
-	 */
-	private const DEFAULT_PLUGIN_INSTALLER = 0;
+	// ---------------------------------------------------------------------------------------------
+	// Functions associated with action hooks.
 
 	/**
 	 * Initializes the class by adding WordPress actions.
@@ -106,6 +112,15 @@ class Settings {
 				'type'              => 'array',
 				'sanitize_callback' => array( __CLASS__, 'sanitize_roles' ),
 				'default'           => self::DEFAULT_ROLES_TO_TRACK,
+			)
+		);
+		register_setting(
+			'wp_logify_settings_group',
+			'wp_logify_show_in_admin_bar',
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'default'           => self::DEFAULT_SHOW_IN_ADMIN_BAR,
 			)
 		);
 		register_setting(
@@ -160,6 +175,17 @@ class Settings {
 	}
 
 	/**
+	 * Displays the settings page for the WP Logify plugin.
+	 */
+	public static function display_settings_page() {
+		// Include the settings-page.php template file to render the settings page.
+		include plugin_dir_path( __FILE__ ) . '../templates/settings-page.php';
+	}
+
+	// ---------------------------------------------------------------------------------------------
+	// Sanitize functions.
+
+	/**
 	 * Sanitizes the given array of roles by filtering out any invalid roles.
 	 *
 	 * @param array $roles The array of roles to be sanitized.
@@ -181,8 +207,11 @@ class Settings {
 		return array_intersect( $user_ids, $valid_user_ids );
 	}
 
+	// ---------------------------------------------------------------------------------------------
+	// Functions to get the current values of settings.
+
 	/**
-	 * Retrieves the API key for the WP Logify plugin.
+	 * Retrieves the value of the 'API key' setting.
 	 *
 	 * @return string The API key.
 	 */
@@ -191,7 +220,7 @@ class Settings {
 	}
 
 	/**
-	 * Retrieves the delete on uninstall setting for the WP Logify plugin.
+	 * Retrieves the value of the 'delete on uninstall' setting.
 	 *
 	 * @return bool The delete on uninstall setting.
 	 */
@@ -200,7 +229,7 @@ class Settings {
 	}
 
 	/**
-	 * Retrieves the roles to track for the WP Logify plugin.
+	 * Retrieves the value of the 'roles to track' setting.
 	 *
 	 * @return array The roles to track.
 	 */
@@ -209,7 +238,16 @@ class Settings {
 	}
 
 	/**
-	 * Retrieves the keep forever setting for the WP Logify plugin.
+	 * Retrieves the value of the 'show in admin bar' setting.
+	 *
+	 * @return array If the WP Logify submenu should be shown in the admin bar.
+	 */
+	public static function get_show_in_admin_bar(): bool {
+		return get_option( 'wp_logify_show_in_admin_bar', self::DEFAULT_SHOW_IN_ADMIN_BAR );
+	}
+
+	/**
+	 * Retrieves the value of the 'keep forever' setting.
 	 *
 	 * @return bool The keep forever setting.
 	 */
@@ -218,7 +256,7 @@ class Settings {
 	}
 
 	/**
-	 * Retrieves the keep period quantity setting for the WP Logify plugin.
+	 * Retrieves the value of the 'keep period quantity' setting.
 	 *
 	 * @return int The keep period quantity setting.
 	 */
@@ -236,19 +274,11 @@ class Settings {
 	}
 
 	/**
-	 * Retrieves the WP-Cron tracking setting for the WP Logify plugin.
+	 * Retrieves the value of the 'WP-Cron tracking' setting.
 	 *
 	 * @return bool The WP-Cron tracking setting.
 	 */
 	public static function get_wp_cron_tracking(): bool {
 		return get_option( 'wp_logify_wp_cron_tracking', self::DEFAULT_WP_CRON_TRACKING );
-	}
-
-	/**
-	 * Displays the settings page for the WP Logify plugin.
-	 */
-	public static function display_settings_page() {
-		// Include the settings-page.php template file to render the settings page.
-		include plugin_dir_path( __FILE__ ) . '../templates/settings-page.php';
 	}
 }

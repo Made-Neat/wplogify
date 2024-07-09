@@ -62,6 +62,10 @@ namespace WP_Logify;
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row">Show submenu in admin bar</th>
+				<td><input type="checkbox" name="wp_logify_show_in_admin_bar" value="1" <?php checked( Settings::get_show_in_admin_bar(), 1 ); ?> /></td>
+			</tr>
+			<tr valign="top">
 				<th scope="row">WP-Cron Tracking</th>
 				<td><input type="checkbox" name="wp_logify_wp_cron_tracking" value="1" <?php checked( Settings::get_wp_cron_tracking(), 1 ); ?> /></td>
 			</tr>
