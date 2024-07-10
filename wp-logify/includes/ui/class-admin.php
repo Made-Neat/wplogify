@@ -153,11 +153,18 @@ class Admin {
 	 * @return string The handle of the enqueued stylesheet.
 	 */
 	public static function enqueue_style( $src, $deps = array(), $ver = 'auto', $media = 'all' ): string {
-		$handle   = self::filename_to_handle( $src );
-		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/css/' . $src;
-		$src_path = plugin_dir_path( __FILE__ ) . '../assets/css/' . $src;
-		$ver      = 'auto' === $ver ? filemtime( $src_path ) : $ver;
+		global $wp_logify_plugin_url;
+		global $wp_logify_plugin_dir;
+
+		// If auto is specified, use the file modified time as the version number.
+		$ver = 'auto' === $ver ? filemtime( "$wp_logify_plugin_dir/assets/css/$src" ) : $ver;
+
+		// Enqueue the script.
+		$handle  = self::filename_to_handle( $src );
+		$src_url = "$wp_logify_plugin_url/assets/css/$src";
 		wp_enqueue_style( $handle, $src_url, $deps, $ver, $media );
+
+		// Return the handle.
 		return $handle;
 	}
 
@@ -174,11 +181,18 @@ class Admin {
 	 * @return string The handle of the enqueued script.
 	 */
 	public static function enqueue_script( $src, $deps = array(), $ver = 'auto', $args = array() ): string {
-		$handle   = self::filename_to_handle( $src );
-		$src_url  = plugin_dir_url( __FILE__ ) . '../assets/js/' . $src;
-		$src_path = plugin_dir_path( __FILE__ ) . '../assets/js/' . $src;
-		$ver      = 'auto' === $ver ? filemtime( $src_path ) : $ver;
+		global $wp_logify_plugin_url;
+		global $wp_logify_plugin_dir;
+
+		// If auto is specified, use the file modified time as the version number.
+		$ver = 'auto' === $ver ? filemtime( "$wp_logify_plugin_dir/assets/js/$src" ) : $ver;
+
+		// Enqueue the script.
+		$handle  = self::filename_to_handle( $src );
+		$src_url = "$wp_logify_plugin_url/assets/js/$src";
 		wp_enqueue_script( $handle, $src_url, $deps, $ver, $args );
+
+		// Return the handle.
 		return $handle;
 	}
 

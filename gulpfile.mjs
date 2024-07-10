@@ -1,7 +1,7 @@
 import gulp from 'gulp';
 import { deleteAsync } from 'del';
 import gulpSass from 'gulp-sass';
-import sass from 'sass';
+import * as sass from 'sass'
 import clean from 'gulp-clean';
 import path from 'path';
 import { fileURLToPath } from 'url';

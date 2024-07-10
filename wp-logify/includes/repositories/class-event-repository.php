@@ -14,19 +14,7 @@ use InvalidArgumentException;
  */
 class Event_Repository extends Repository {
 
-	// ---------------------------------------------------------------------------------------------
-	// Initialization method.
-
-	/**
-	 * Initialize the repository.
-	 */
-	public static function init() {
-		// Set the table name.
-		global $wpdb;
-		self::$table_name = $wpdb->prefix . 'wp_logify_events';
-	}
-
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// CRUD methods.
 
 	/**
@@ -38,7 +26,7 @@ class Event_Repository extends Repository {
 	public static function select( int $event_id ): ?object {
 		global $wpdb;
 
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::$table_name, $event_id );
+		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
 		$data = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
@@ -91,7 +79,7 @@ class Event_Repository extends Repository {
 		$formats = array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( self::$table_name, $data, $formats );
+			$ok = $wpdb->insert( self::get_table_name(), $data, $formats );
 
 			// If the new record was inserted ok, update the Event object with the new ID.
 			if ( $ok ) {
@@ -99,7 +87,7 @@ class Event_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::$table_name, $data, array( 'event_id' => $event->event_id ), $formats, array( '%d' ) );
+			$ok = $wpdb->update( self::get_table_name(), $data, array( 'event_id' => $event->event_id ), $formats, array( '%d' ) );
 		}
 
 		// Rollback and return on error.
@@ -210,11 +198,21 @@ class Event_Repository extends Repository {
 	 */
 	public static function delete( int $event_id ): bool {
 		global $wpdb;
-		return (bool) $wpdb->delete( self::$table_name, array( 'event_id' => $event_id ), array( '%d' ) );
+		return (bool) $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
 	}
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Table-related methods.
+
+	/**
+	 * Get the table name.
+	 *
+	 * @return string The table name.
+	 */
+	public static function get_table_name(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'wp_logify_events';
+	}
 
 	/**
 	 * Create the table used to store log events.
@@ -222,7 +220,7 @@ class Event_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
-		$table_name      = self::$table_name;
+		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
@@ -238,13 +236,14 @@ class Event_Repository extends Repository {
             object_type   VARCHAR(10)     NULL,
             object_id     BIGINT UNSIGNED NULL,
             object_name   VARCHAR(255)    NULL,
-            PRIMARY KEY (event_id)
+            PRIMARY KEY (event_id),
+            KEY user_id (user_id)
         ) $charset_collate;";
 
 		dbDelta( $sql );
 	}
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Methods to convert between database records and entity objects.
 
 	/**

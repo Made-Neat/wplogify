@@ -7,10 +7,10 @@
 
 namespace WP_Logify;
 
+use DateInterval;
 use DateTime;
 use DateTimeZone;
-use DateInterval;
-use DateMalformedStringException;
+use Exception;
 
 /**
  * Class WP_Logify\DateTimes
@@ -156,48 +156,40 @@ class DateTimes {
 	}
 
 	/**
-	 * Convert the datetime to a array suitable for encoding as JSON.
+	 * Convert the datetime to a form suitable for encoding as JSON.
 	 *
 	 * @param DateTime $datetime The DateTime to convert.
+	 * @return array The array representation of the DateTime.
 	 */
 	public static function encode( DateTime $datetime ): array {
-		// Store DateTimes in ATOM/W3C format.
-		return array( 'DateTime' => $datetime->format( DateTime::ATOM ) );
+		return array( 'DateTime' => (array) $datetime );
 	}
 
 	/**
-	 * Check if the value expresses a valid DateTime.
+	 * Check if the provided object is an encoded DateTime.
 	 *
-	 * @param mixed    $value    The value to check.
-	 * @param DateTime $datetime The DateTime object to populate if valid.
+	 * @param object    $simple_object The value to check.
+	 * @param ?DateTime $datetime The DateTime object to populate if valid.
 	 * @return bool    If the JSON contains a valid date-time string.
 	 */
-	public static function is_encoded_datetime( mixed $value, DateTime &$datetime ): bool {
-		$result = false;
-
-		// Check if the value is an object or an array.
-		if ( ! is_object( $value ) && ! is_array( $value ) ) {
-			return false;
-		}
-
-		// Convert to an array if necessary.
-		if ( is_object( $value ) ) {
-			$value = (array) $value;
-		}
+	public static function is_encoded_object( object $simple_object, ?DateTime &$datetime ): bool {
+		// Convert the object to an array.
+		$ary = (array) $simple_object;
 
 		// Check it looks right.
-		if ( count( $value ) !== 1 || empty( $value['DateTime'] ) ) {
+		if ( count( $ary ) !== 1 || empty( $ary['DateTime'] ) || ! is_object( $ary['DateTime'] ) ) {
 			return false;
 		}
 
-		// Try to convert the string to a DateTime.
+		// Try to convert the inner object to a DateTime.
 		try {
-			$datetime = new DateTime( $value['DateTime'] );
-			$result   = true;
-		} catch ( DateMalformedStringException $ex ) {
-			debug( 'Invalid datetime string', $value['DateTime'], $ex->getMessage() );
+			// The DateTime constructor will throw if the string does not represent a valid DateTime.
+			$datetime = DateTime::__set_state( (array) $ary['DateTime'] );
+			return true;
+		} catch ( Exception $ex ) {
+			debug( 'Invalid DateTime', $ary['DateTime'], $ex->getMessage() );
 		}
 
-		return $result;
+		return false;
 	}
 }

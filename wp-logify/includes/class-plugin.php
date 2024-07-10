@@ -69,9 +69,11 @@ class Plugin {
 	 * Run on uninstallation.
 	 */
 	public static function uninstall() {
-		// Drop the events table, if the option is set.
+		// Drop the tables if the option is set to do so.
 		if ( Settings::get_delete_on_uninstall() ) {
 			Event_Repository::drop_table();
+			Event_Meta_Repository::drop_table();
+			Property_Repository::drop_table();
 		}
 
 		// Delete settings.

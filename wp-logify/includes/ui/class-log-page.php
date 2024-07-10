@@ -28,7 +28,8 @@ class Log_Page {
 	 * Display the log page.
 	 */
 	public static function display_log_page() {
-		include plugin_dir_path( __FILE__ ) . '../templates/log-page.php';
+		global $wp_logify_plugin_dir;
+		include "$wp_logify_plugin_dir/templates/log-page.php";
 	}
 
 	/**
@@ -48,7 +49,7 @@ class Log_Page {
 		global $wpdb;
 
 		// Get table names.
-		$events_table_name = Event_Repository::$table_name;
+		$events_table_name = Event_Repository::get_table_name();
 		$user_table_name   = $wpdb->prefix . 'users';
 
 		// These should match the columns in admin.js.
@@ -116,16 +117,12 @@ class Log_Page {
                     OR user_location LIKE %s
                     OR user_agent LIKE %s
                     OR event_type LIKE %s
-                    OR event_details LIKE %s
                     OR object_type LIKE %s
                     OR object_name LIKE %s
-                    OR object_details LIKE %s
                     OR user_login LIKE %s
                     OR user_email LIKE %s
                     OR display_name LIKE %s';
 			$where_args = array(
-				$like_value,
-				$like_value,
 				$like_value,
 				$like_value,
 				$like_value,
@@ -149,28 +146,7 @@ class Log_Page {
 		// Get the requested records.
 
 		// Select clause.
-		$select_columns = '
-        SELECT
-            e.event_id,
-            e.date_time,
-            e.user_id,
-            e.user_name,
-            e.user_role,
-            e.user_ip,
-            e.user_location,
-            e.user_agent,
-            e.event_type,
-            e.event_details,
-            e.object_type,
-            e.object_id,
-            e.object_name,
-            e.object_details,
-            u.user_login,
-            u.user_nicename,
-            u.user_email,
-            u.user_status,
-            u.display_name
-        FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
+		$select = 'SELECT event_id FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
 
 		// Order-by clause.
 		$order_by      = "ORDER BY %i $order_by_direction";
@@ -182,15 +158,15 @@ class Log_Page {
 
 		// Construct and run the SQL statement.
 		$args        = array_merge( $select_args, $where_args, $order_by_args, $limit_args );
-		$results_sql = $wpdb->prepare( "$select_columns $where $order_by $limit", $args );
-		$results     = $wpdb->get_results( $results_sql );
+		$results_sql = $wpdb->prepare( "$select $where $order_by $limit", $args );
+		$rows        = $wpdb->get_results( $results_sql, ARRAY_A );
 
 		// -----------------------------------------------------------------------------------------
 		// Construct the data array to return to the client.
 		$data = array();
-		foreach ( $results as $row ) {
+		foreach ( $rows as $row ) {
 			// Construct the Event object.
-			$event = Event_Repository::record_to_object( $row );
+			$event = Event_Repository::select( $row['event_id'] );
 
 			// Create a new data item.
 			$item             = array();
@@ -202,15 +178,15 @@ class Log_Page {
 			$item['date_time']  = "<div>$formatted_datetime ($time_ago)</div>";
 
 			// User details.
-			$user_tag             = Users::get_tag( $row->user_id, $row->user_name );
+			$user_tag             = Users::get_tag( $event->user_id, $event->user_name );
 			$user_role            = esc_html( ucwords( $event->user_role ) );
 			$item['display_name'] = get_avatar( $event->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 			// Source IP.
-			$item['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $row->user_ip ) . '" target="_blank">' . esc_html( $row->user_ip ) . '</a>';
+			$item['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $event->user_ip ) . '" target="_blank">' . esc_html( $event->user_ip ) . '</a>';
 
 			// Event type.
-			$item['event_type'] = $row->event_type;
+			$item['event_type'] = $event->event_type;
 
 			// Get the HTML for the object name tag.
 			$item['object_name'] = self::get_object_tag( $event );

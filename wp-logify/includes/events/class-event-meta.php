@@ -24,7 +24,7 @@ class Event_Meta {
 	 *
 	 * @var int
 	 */
-	public int $event_id;
+	public ?int $event_id;
 
 	/**
 	 * The meta key.

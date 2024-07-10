@@ -14,20 +14,8 @@ use InvalidArgumentException;
  */
 class Property_Repository extends Repository {
 
-	// ---------------------------------------------------------------------------------------------
-	// Initialisation method.
-
-	/**
-	 * Initialize the repository.
-	 */
-	public static function init() {
-		// Set the table name.
-		global $wpdb;
-		self::$table_name = $wpdb->prefix . 'wp_logify_properties';
-	}
-
-	// ---------------------------------------------------------------------------------------------
-	// Implementations of base class CRUD methods.
+	// =============================================================================================
+	// CRUD methods.
 
 	/**
 	 * Select a property by ID.
@@ -39,7 +27,7 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get the property record.
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE property_id = %d', self::$table_name, $property_id );
+		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE property_id = %d', self::get_table_name(), $property_id );
 		$data = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
@@ -80,7 +68,7 @@ class Property_Repository extends Repository {
 		$formats = array( '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( self::$table_name, $data, $formats );
+			$ok = $wpdb->insert( self::get_table_name(), $data, $formats );
 
 			// If the new record was inserted ok, update the Property object with the new ID.
 			if ( $ok ) {
@@ -88,7 +76,7 @@ class Property_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::$table_name, $data, array( 'property_id' => $property->property_id ), $formats, array( '%d' ) );
+			$ok = $wpdb->update( self::get_table_name(), $data, array( 'property_id' => $property->property_id ), $formats, array( '%d' ) );
 		}
 
 		// Return on error.
@@ -107,11 +95,21 @@ class Property_Repository extends Repository {
 	 */
 	public static function delete( int $property_id ): bool {
 		global $wpdb;
-		return (bool) $wpdb->delete( self::$table_name, array( 'property_id' => $property_id ), array( '%d' ) );
+		return (bool) $wpdb->delete( self::get_table_name(), array( 'property_id' => $property_id ), array( '%d' ) );
 	}
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Table-related methods.
+
+	/**
+	 * Get the table name.
+	 *
+	 * @return string The table name.
+	 */
+	public static function get_table_name(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'wp_logify_properties';
+	}
 
 	/**
 	 * Create the table used to store log events.
@@ -119,13 +117,13 @@ class Property_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
-		$table_name      = self::$table_name;
+		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
             property_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             event_id      BIGINT UNSIGNED NOT NULL,
-            property_key  VARCHAR(100)    NOT NULL,
+            property_key  VARCHAR(255)    NOT NULL,
             property_type VARCHAR(4)      NOT NULL,
             old_value     LONGTEXT        NOT NULL,
             new_value     LONGTEXT        NULL,
@@ -137,7 +135,7 @@ class Property_Repository extends Repository {
 		dbDelta( $sql );
 	}
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Methods to convert between database records and entity objects.
 
 	/**
@@ -175,7 +173,7 @@ class Property_Repository extends Repository {
 		);
 	}
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Methods relating to events.
 
 	/**
@@ -188,7 +186,7 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get all the properties connectted to the event.
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::$table_name, $event_id );
+		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
 		$data = $wpdb->get_results( $sql, ARRAY_A );
 
 		// If none found, return null.
@@ -212,7 +210,7 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Do the delete.
-		$ok = $wpdb->delete( self::$table_name, array( 'event_id' => $event_id ), array( '%d' ) );
+		$ok = $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
 
 		return $ok !== false;
 	}

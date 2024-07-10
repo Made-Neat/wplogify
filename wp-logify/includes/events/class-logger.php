@@ -90,7 +90,7 @@ class Logger {
 		// Insert the new record.
 		$ok = Event_Repository::upsert( $event );
 
-		if ( $ok ) {
+		if ( ! $ok ) {
 			debug( 'Event insert failed.', func_get_args() );
 		}
 

@@ -145,12 +145,11 @@ class Users {
 	public static function track_activity() {
 		global $wpdb;
 		$user_id    = get_current_user_id();
-		$table_name = Event_Repository::$table_name;
+		$table_name = Event_Repository::get_table_name();
 		$event_type = 'User Session';
 
 		// Get the current datetime.
-		$now           = DateTimes::current_datetime();
-		$formatted_now = DateTimes::format_datetime_mysql( $now );
+		$now = DateTimes::current_datetime();
 
 		// Check if this is a continuing session.
 		$continuing      = false;
@@ -347,13 +346,13 @@ class Users {
 		$data = Json::decode( $body );
 
 		// Construct the location string.
-		if ( $data['status'] === 'success' ) {
+		if ( $data->status === 'success' ) {
 			$location = array(
-				$data['city'],
-				$data['regionName'],
-				$data['country'],
+				$data->city,
+				$data->regionName,
+				$data->country,
 			);
-			return implode( ', ', array_filter( $location ) );
+			return implode( ', ', array_filter( (array) $location ) );
 		}
 
 		// Return null if the location could not be determined.
@@ -386,7 +385,7 @@ class Users {
 		}
 
 		// Get the last login datetime from the wp_logify_events table.
-		$table_name       = Event_Repository::$table_name;
+		$table_name       = Event_Repository::get_table_name();
 		$sql              = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1",
 			$table_name,
@@ -411,7 +410,7 @@ class Users {
 		}
 
 		// Get the most recent session end datetime from the wp_logify_events table.
-		$table_name = Event_Repository::$table_name;
+		$table_name = Event_Repository::get_table_name();
 		$sql        = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY date_time DESC LIMIT 1",
 			$table_name,

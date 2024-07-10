@@ -14,22 +14,7 @@ namespace WP_Logify;
  */
 abstract class Repository {
 
-	/**
-	 * The name of the table in the database.
-	 *
-	 * @var string
-	 */
-	public static string $table_name = '';
-
-	// ---------------------------------------------------------------------------------------------
-	// Initialisation method.
-
-	/**
-	 * Initialize the repository.
-	 */
-	abstract public static function init();
-
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// CRUD methods.
 
 	/**
@@ -60,8 +45,15 @@ abstract class Repository {
 	 */
 	abstract public static function delete( int $id ): bool;
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Table-related methods.
+
+	/**
+	 * Get the table name.
+	 *
+	 * @return string The table name.
+	 */
+	abstract public static function get_table_name(): string;
 
 	/**
 	 * Create the table used to store log events.
@@ -73,7 +65,7 @@ abstract class Repository {
 	 */
 	public static function drop_table() {
 		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::$table_name ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
 	}
 
 	/**
@@ -81,6 +73,6 @@ abstract class Repository {
 	 */
 	public static function truncate_table() {
 		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::$table_name ) );
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::get_table_name() ) );
 	}
 }

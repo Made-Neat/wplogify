@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use InvalidArgumentException;
 use Exception;
 
 /**
@@ -127,58 +128,53 @@ class Object_Reference {
 	}
 
 	/**
-	 * Get the string representation of the Object_Reference.
-	 *
-	 * @return string The string representation of the Object_Reference.
-	 */
-	public function __toString() {
-		return $this->type . '|' . $this->id . '|' . $this->name;
-	}
-
-	/**
 	 * Convert the object reference to a array suitable for encoding as JSON.
 	 *
 	 * @param Object_Reference $object_ref The Object_Reference to convert.
+	 * @return array The array representation of the Object_Reference.
 	 */
 	public static function encode( Object_Reference $object_ref ): array {
-		// Store DateTimes in ATOM/W3C format.
-		return array( 'Object_Reference' => (string) $object_ref );
+		return array( 'Object_Reference' => (array) $object_ref );
 	}
 
 	/**
 	 * Check if the value expresses a valid Object_Reference.
 	 *
-	 * @param mixed            $value    The value to check.
-	 * @param Object_Reference $object_ref The Object_Reference object to populate if valid.
-	 * @return bool    If the JSON contains a valid date-time string.
+	 * @param object            $simple_object The value to check.
+	 * @param ?Object_Reference $object_ref The Object_Reference object to populate if valid.
+	 * @return bool If the JSON contains a valid date-time string.
+	 * @throws InvalidArgumentException If the provided array does not represent an Object_Reference.
 	 */
-	public static function is_encoded_object_reference( mixed $value, Object_Reference &$object_ref ): bool {
-		$result = false;
-
-		// Check if the value is an object or an array.
-		if ( ! is_object( $value ) && ! is_array( $value ) ) {
-			return false;
-		}
-
-		// Convert to an array if necessary.
-		if ( is_object( $value ) ) {
-			$value = (array) $value;
-		}
+	public static function is_encoded_object( object $simple_object, ?Object_Reference &$object_ref ): bool {
+		// Convert to an array.
+		$ary = (array) $simple_object;
 
 		// Check it looks right.
-		if ( count( $value ) !== 1 || empty( $value['Object_Reference'] ) ) {
+		if ( count( $ary ) !== 1 || empty( $ary['Object_Reference'] ) || ! is_object( $ary['Object_Reference'] ) ) {
 			return false;
 		}
 
-		// Try to convert the string to a Object_Reference.
-		try {
-			list( $type, $id, $name ) = explode( '|', $value['Object_Reference'] );
-			$object_ref               = new self( $type, (int) $id, $name );
-			$result                   = true;
-		} catch ( Exception $ex ) {
-			debug( 'Invalid Object_Reference encoding', $value['Object_Reference'], $ex->getMessage() );
+		// Convert the simple object to a Object_Reference.
+		$object_ref = self::__set_state( (array) $ary['Object_Reference'] );
+
+		return true;
+	}
+
+	/**
+	 * Create a new Object_Reference from an array.
+	 *
+	 * @param array $fields The array representation of the Object_Reference.
+	 * @return Object_Reference The Object_Reference object.
+	 * @throws InvalidArgumentException If the provided array does not represent an Object_Reference.
+	 */
+	public static function __set_state( array $fields ) {
+		// Check the provided array has the right number and type of properties.
+		if ( count( $fields ) !== 3 || ! key_exists( 'type', $fields ) || ! key_exists( 'id', $fields ) || ! key_exists( 'name', $fields )
+			|| ! is_string( $fields['type'] ) || ! is_int( $fields['id'] ) || ! is_string( $fields['name'] ) ) {
+			throw new InvalidArgumentException( 'The provided array does not represent an Object_Reference.' );
 		}
 
-		return $result;
+		// Create the new object.
+		return new self( $fields['type'], $fields['id'], $fields['name'] );
 	}
 }

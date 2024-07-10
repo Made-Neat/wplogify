@@ -29,10 +29,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Some useful globals.
+$wp_logify_plugin_url   = rtrim( plugin_dir_url( __FILE__ ), '/' );
+$wp_logify_plugin_dir   = rtrim( plugin_dir_path( __FILE__ ), '/' );
+$wp_logify_includes_dir = "$wp_logify_plugin_dir/includes";
+
 // Include all include files.
-foreach ( glob( plugin_dir_path( __FILE__ ) . '/includes/**.php' ) as $filename ) {
-	include $filename;
-}
+require_once "$wp_logify_includes_dir/events/class-event-meta.php";
+require_once "$wp_logify_includes_dir/events/class-event.php";
+require_once "$wp_logify_includes_dir/events/class-logger.php";
+require_once "$wp_logify_includes_dir/events/class-property.php";
+
+require_once "$wp_logify_includes_dir/objects/class-object-reference.php";
+require_once "$wp_logify_includes_dir/objects/class-posts.php";
+require_once "$wp_logify_includes_dir/objects/class-terms.php";
+require_once "$wp_logify_includes_dir/objects/class-users.php";
+
+require_once "$wp_logify_includes_dir/repositories/class-repository.php";
+require_once "$wp_logify_includes_dir/repositories/class-event-meta-repository.php";
+require_once "$wp_logify_includes_dir/repositories/class-event-repository.php";
+require_once "$wp_logify_includes_dir/repositories/class-property-repository.php";
+
+require_once "$wp_logify_includes_dir/ui/class-admin.php";
+require_once "$wp_logify_includes_dir/ui/class-log-page.php";
+require_once "$wp_logify_includes_dir/ui/class-settings.php";
+require_once "$wp_logify_includes_dir/ui/class-widget.php";
+
+require_once "$wp_logify_includes_dir/utility/class-datetimes.php";
+require_once "$wp_logify_includes_dir/utility/class-json.php";
+
+require_once "$wp_logify_includes_dir/class-cron.php";
+require_once "$wp_logify_includes_dir/class-plugin.php";
+require_once "$wp_logify_includes_dir/debug.php";
+// require_once "$wp_logify_includes_dir/test.php";
 
 // Register plugin hooks.
 add_action( 'plugins_loaded', array( 'WP_Logify\Plugin', 'init' ) );

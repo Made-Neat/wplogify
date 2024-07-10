@@ -45,12 +45,12 @@ class Json {
 		// If the value is an object, check if it requires special handling.
 		if ( is_object( $value ) ) {
 			// Special handling of DateTime objects.
-			if ( DateTimes::is_encoded_datetime( $value, $datetime ) ) {
+			if ( DateTimes::is_encoded_object( $value, $datetime ) ) {
 				return $datetime;
 			}
 
 			// Special handling of Object_Reference objects.
-			if ( Object_Reference::is_encoded_object_reference( $value, $object_ref ) ) {
+			if ( Object_Reference::is_encoded_object( $value, $object_ref ) ) {
 				return $object_ref;
 			}
 		}
