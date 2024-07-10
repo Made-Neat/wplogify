@@ -202,7 +202,7 @@ class Log_Page {
 			$item['date_time']  = "<div>$formatted_datetime ($time_ago)</div>";
 
 			// User details.
-			$user_tag             = $user_tag = Users::get_tag( $row->user_id, $row->user_name );
+			$user_tag             = Users::get_tag( $row->user_id, $row->user_name );
 			$user_role            = esc_html( ucwords( $event->user_role ) );
 			$item['display_name'] = get_avatar( $event->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
@@ -212,9 +212,8 @@ class Log_Page {
 			// Event type.
 			$item['event_type'] = $row->event_type;
 
-			// Get the HTML for the object name element.
-			$object_ref          = new Object_Reference( $event->object_type, $event->object_id, $event->object_name );
-			$item['object_name'] = $object_ref->get_tag();
+			// Get the HTML for the object name tag.
+			$item['object_name'] = self::get_object_tag( $event );
 
 			// Format the details.
 			$item['details'] = self::format_details( $event );
