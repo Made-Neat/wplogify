@@ -76,7 +76,7 @@ class Terms {
 		// Compare values.
 		$changed = false;
 		foreach ( $term->data as $key => $value ) {
-			if ( value_to_string( $value ) !== value_to_string( $args[ $key ] ) ) {
+			if ( $value !== $args[ $key ] ) {
 				// Update the property's before and after values.
 				$properties[ $key ]->old_value = $value;
 				$properties[ $key ]->new_value = $args[ $key ];
@@ -217,5 +217,44 @@ class Terms {
 		}
 
 		return admin_url( "term.php?taxonomy={$term->taxonomy}&tag_ID={$term->term_id}" );
+	}
+
+	/**
+	 * Get the HTML for the link to the term's edit page.
+	 *
+	 * @param WP_Term|int $term The term object or ID.
+	 * @return string The link HTML tag.
+	 */
+	public static function get_edit_link( WP_Term|int $term ) {
+		// Load the term if necessary.
+		if ( is_int( $term ) ) {
+			$term = self::get_term( $term );
+		}
+
+		// Get the URL for the term's edit page.
+		$url = self::get_edit_url( $term );
+
+		// Return the link.
+		return "<a href='$url' class='wp-logify-term-link'>$term->name</a>";
+	}
+
+	/**
+	 * If the term hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param WP_Term|int $term The term object or ID.
+	 * @param string      $old_name The old name of the term.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( WP_Term|int $term, string $old_name ) {
+		// If the term exists, return a link to its edit page.
+		if ( self::term_exists( $term ) ) {
+			return self::get_edit_link( $term );
+		}
+
+		// The term no longer exists. Construct the 'deleted' span element.
+		$term_id = is_int( $term ) ? $term : $term->term_id;
+		$name    = empty( $old_name ) ? "Term $term_id" : $old_name;
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 }

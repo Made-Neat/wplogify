@@ -86,15 +86,14 @@ class Users {
 		// Get the user's properties.
 		$properties = self::get_properties( $user );
 
-		// If the user's data is being reassigned, record that information in the event details.
-		$details = array();
+		// If the user's data is being reassigned, record that information in the event metadata.
+		$event_meta = array();
 		if ( $reassign ) {
-			$reassign_ref                  = new Entity( 'user', $reassign, true );
-			$details['Data reassigned to'] = $reassign_ref->to_array();
+			$event_meta['Data reassigned to'] = new Object_Reference( 'user', $reassign );
 		}
 
 		// Log the event.
-		Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $details, $properties );
+		Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $event_meta, $properties );
 	}
 
 	/**
@@ -110,8 +109,7 @@ class Users {
 
 		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
-			// Not sure if we need these conversions to strings, keep an eye on it.
-			if ( value_to_string( $value ) !== value_to_string( $userdata[ $key ] ) ) {
+			if ( $value !== $userdata[ $key ] ) {
 				$properties[ $key ]->old_value = $value;
 				$properties[ $key ]->new_value = $userdata[ $key ];
 			}
@@ -134,7 +132,7 @@ class Users {
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
 		// Track the change, if any.
-		if ( value_to_string( $current_value ) !== value_to_string( $meta_value ) ) {
+		if ( $current_value !== $meta_value ) {
 			self::$changes[ $meta_key ] = Property::create( null, $meta_key, 'meta', $current_value, $meta_value );
 		}
 	}
@@ -157,50 +155,55 @@ class Users {
 		// Check if this is a continuing session.
 		$continuing      = false;
 		$sql             = $wpdb->prepare(
-			'SELECT ID, details FROM %i WHERE user_id = %d AND event_type = %s ORDER BY date_time DESC',
+			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY date_time DESC',
 			$table_name,
 			$user_id,
 			$event_type
 		);
 		$existing_record = $wpdb->get_row( $sql );
 
-		if ( $existing_record && ! empty( $existing_record->details ) ) {
+		if ( $existing_record ) {
 
-			// Extract the current session end datetime from the event details.
-			$details                = Json::decode( $existing_record->details );
-			$session_start_datetime = $details['Session start'];
-			$session_end_datetime   = $details['Session end'];
+			// Construct the Event object.
+			$event = Event_Repository::select( $existing_record->event_id );
 
-			// If the current value for session end time is less than 10 minutes ago, we'll assume
-			// the current session is continuing, and update the session end time in the existing
-			// log entry to now.
-			$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
-			if ( $seconds_diff <= 600 ) {
-				$continuing = true;
+			// Check we have the info we need.
+			if ( ! empty( $event->event_meta['Session start'] ) && ! empty( $event->event_meta['Session end'] ) ) {
 
-				// Update the session end time and duration.
-				$details['Session end']      = $formatted_now;
-				$details['Session duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
+				// Extract the current session end datetime from the event details.
+				$session_start_datetime = $event->event_meta['Session start'];
+				$session_end_datetime   = $event->event_meta['Session end'];
 
-				// Update the record.
-				$wpdb->update(
-					$table_name,
-					array( 'details' => Json::encode( $details ) ),
-					array( 'ID' => $existing_record->ID ),
-					array( '%s' ),
-					array( '%d' )
-				);
+				// Get the duration in seconds.
+				$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
+
+				// If the current value for session end time is less than 10 minutes ago, we'll
+				// assume the current session is continuing, and update the session end time in the
+				// existing log entry to now.
+				if ( $seconds_diff <= 600 ) {
+					$continuing = true;
+
+					// Update the session end time and duration.
+					$event->event_meta['Session end']      = $now;
+					$event->event_meta['Session duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
+
+					// Update the event meta data.
+					Event_Repository::upsert_meta( $event );
+				}
 			}
 		}
 
 		// If we're not continuing an existing session, record the start of a new one.
 		if ( ! $continuing ) {
-			$details = array(
+			// Create the array of metadata.
+			$event_meta = array(
 				'Session start'    => $now,
 				'Session end'      => $now,
 				'Session duration' => '0 minutes',
 			);
-			Logger::log_event( $event_type, 'user', $user_id, self::get_name( $user_id ), $details );
+
+			// Log the event.
+			Logger::log_event( $event_type, 'user', $user_id, self::get_name( $user_id ), $event_meta );
 		}
 	}
 
@@ -408,16 +411,23 @@ class Users {
 		}
 
 		// Get the most recent session end datetime from the wp_logify_events table.
-		$table_name         = Event_Repository::$table_name;
-		$sql                = $wpdb->prepare(
+		$table_name = Event_Repository::$table_name;
+		$sql        = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY date_time DESC LIMIT 1",
 			$table_name,
 			$user->ID
 		);
-		$last_session_event = $wpdb->get_row( $sql );
-		if ( $last_session_event !== null && $last_session_event->details !== null ) {
-			$details = Json::decode( $last_session_event->details );
-			return DateTimes::create_datetime( $details['Session end'] );
+		$record     = $wpdb->get_row( $sql );
+
+		// If we got a record.
+		if ( $record !== null ) {
+			// Create the Event.
+			$event = Event_Repository::select( $record->event_id );
+
+			// Return the session end datetime if set.
+			if ( ! empty( $event->event_meta['Session end'] ) ) {
+				return $event->event_meta['Session end'];
+			}
 		}
 
 		return null;
@@ -432,6 +442,46 @@ class Users {
 	public static function get_edit_url( WP_User|int $user ) {
 		$user_id = is_int( $user ) ? $user : $user->ID;
 		return admin_url( "user-edit.php?user_id=$user_id" );
+	}
+
+	/**
+	 * Get the HTML for the link to the user's edit page.
+	 *
+	 * @param WP_User|int $user The user object or ID.
+	 * @return string The link HTML tag.
+	 */
+	public static function get_edit_link( WP_User|int $user ) {
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user = self::get_user( $user );
+		}
+
+		// Get the URL for the user's edit page.
+		$url = self::get_edit_url( $user );
+
+		// Return the link.
+		$name = self::get_name( $user );
+		return "<a href='$url' class='wp-logify-user-link'>$name</a>";
+	}
+
+	/**
+	 * If the user hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param WP_User|int $user The user object or ID.
+	 * @param string      $old_name The old name of the user.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( WP_User|int $user, string $old_name ) {
+		// If the user exists, return a link to their edit page.
+		if ( self::user_exists( $user ) ) {
+			return self::get_edit_link( $user );
+		}
+
+		// The user no longer exists. Construct the 'deleted' span element.
+		$user_id = is_int( $user ) ? $user : $user->ID;
+		$name    = empty( $old_name ) ? "User $user_id" : $old_name;
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	// ---------------------------------------------------------------------------------------------

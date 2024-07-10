@@ -28,7 +28,7 @@ class Logger {
 	 * @param ?string $object_type The type of obejct, e.g. 'post', 'user', 'term'.
 	 * @param ?int    $object_id   The ID of the object.
 	 * @param ?string $object_name The name of the object (in case it gets deleted).
-	 * @param ?array  $details     Additional details about the event.
+	 * @param ?array  $event_meta  Metadata relating to the event.
 	 * @param ?array  $properties  Properties of the relevant object.
 	 *
 	 * @throws InvalidArgumentException If the object type is invalid.
@@ -38,7 +38,7 @@ class Logger {
 		?string $object_type = null,
 		?int $object_id = null,
 		?string $object_name = null,
-		?array $details = null,
+		?array $event_meta = null,
 		?array $properties = null,
 	) {
 		// Get the current user.
@@ -61,6 +61,16 @@ class Logger {
 			return;
 		}
 
+		// Construct the Event_Meta objects.
+		if ( $event_meta === null ) {
+			$event_meta_objects = null;
+		} else {
+			$event_meta_objects = array();
+			foreach ( $event_meta as $key => $value ) {
+				$event_meta_objects[] = Event_Meta::create( null, $key, $value );
+			}
+		}
+
 		// Construct the new Event object.
 		$event                = new Event();
 		$event->date_time     = DateTimes::current_datetime( 'UTC' );
@@ -74,7 +84,7 @@ class Logger {
 		$event->object_type   = $object_type;
 		$event->object_id     = $object_id;
 		$event->object_name   = $object_name;
-		$event->details       = $details;
+		$event->event_meta    = $event_meta_objects;
 		$event->properties    = $properties;
 
 		// Insert the new record.

@@ -19,14 +19,14 @@ jQuery(($) => {
         },
         columns: [
             {
-                data: "ID",
+                data: "event_id",
                 width: '70px'
             },
             { data: "date_time" },
-            { data: "user" },
+            { data: "display_name" },
             { data: "user_ip" },
             { data: "event_type" },
-            { data: "object" },
+            { data: "object_name" },
             {
                 className: 'details-control',
                 orderable: false,

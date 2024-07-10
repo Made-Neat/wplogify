@@ -17,7 +17,7 @@ class Property {
 	 *
 	 * @var int
 	 */
-	public int $id;
+	public int $property_id;
 
 	/**
 	 * The event ID.
@@ -31,14 +31,14 @@ class Property {
 	 *
 	 * @var string
 	 */
-	public string $prop_name;
+	public string $property_key;
 
 	/**
 	 * The type of database table the property belongs to: 'base', 'meta', or 'none'.
 	 *
 	 * @var string
 	 */
-	public string $prop_type;
+	public string $property_type;
 
 	/**
 	 * The old or current value of the property.
@@ -55,28 +55,31 @@ class Property {
 	public mixed $new_value = null;
 
 	/**
-	 * Constructor.
+	 * Property constructor.
+	 *
+	 * Initializes an empty Property object.
 	 */
 	public function __construct() {
+		// Empty constructor.
 	}
 
 	/**
 	 * Creates a new property object.
 	 *
 	 * @param ?int    $event_id The event ID if known.
-	 * @param string  $prop_name The property name.
-	 * @param ?string $prop_type The type of database table the property belongs to: 'base', 'meta', or null for none.
+	 * @param string  $property_key The property name.
+	 * @param ?string $property_type The type of database table the property belongs to: 'base', 'meta', or null for none.
 	 * @param mixed   $old_value The old or current value of the property.
 	 * @param mixed   $new_value Optional. The new value of the property, if changed.
 	 * @return Property The new property object.
 	 */
-	public static function create( ?int $event_id, string $prop_name, ?string $prop_type, mixed $old_value = null, mixed $new_value = null ): self {
-		$prop            = new self();
-		$prop->event_id  = $event_id;
-		$prop->prop_name = $prop_name;
-		$prop->prop_type = $prop_type;
-		$prop->old_value = $old_value;
-		$prop->new_value = $new_value;
-		return $prop;
+	public static function create( ?int $event_id, string $property_key, ?string $property_type, mixed $old_value = null, mixed $new_value = null ): self {
+		$property                = new self();
+		$property->event_id      = $event_id;
+		$property->property_key  = $property_key;
+		$property->property_type = $property_type;
+		$property->old_value     = $old_value;
+		$property->new_value     = $new_value;
+		return $property;
 	}
 }

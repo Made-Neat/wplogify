@@ -19,7 +19,7 @@ class Event {
 	 *
 	 * @var int
 	 */
-	public int $id;
+	public int $event_id;
 
 	/**
 	 * The date and time of the event in the site time zone, stored as a string.
@@ -101,11 +101,11 @@ class Event {
 	public ?string $object_name;
 
 	/**
-	 * Extra details relating to the event.
+	 * Metadata relating to the event.
 	 *
 	 * @var ?array
 	 */
-	public ?array $details;
+	public ?array $event_meta;
 
 	/**
 	 * Properties of the relevant object, including old and new values.
@@ -115,8 +115,11 @@ class Event {
 	public ?array $properties;
 
 	/**
-	 * Constructor.
+	 * Event Constructor.
+	 *
+	 * Initializes an empty Event object.
 	 */
 	public function __construct() {
+		// Empty constructor.
 	}
 }

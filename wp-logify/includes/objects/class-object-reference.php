@@ -47,14 +47,14 @@ class Object_Reference {
 	/**
 	 * Constructor.
 	 *
-	 * @param string           $type The type of the object.
-	 * @param int              $id The ID of the object.
-	 * @param null|string|bool $name The name of the object.
-	 *                         If a string, the name will be assigned this value.
-	 *                         If true, the name will be copied from the existing object.
-	 *                         If false or null, the name won't be set.
+	 * @param string      $type The type of the object.
+	 * @param int         $id The ID of the object.
+	 * @param string|bool $name The name of the object, or a bool to specify setting it automatically from the object.
+	 *                          - If a string, the name will be assigned this value.
+	 *                          - If true, the name will be extracted from the existing object.
+	 *                          - If false, the name won't be set.
 	 */
-	public function __construct( string $type, int $id, null|string|bool $name = null ) {
+	public function __construct( string $type, int $id, string|bool $name = true ) {
 		// Set the object type.
 		$this->type = $type;
 
@@ -159,53 +159,72 @@ class Object_Reference {
 	 * @return string The link HTML.
 	 */
 	public function get_edit_link() {
-		$url   = $this->get_edit_url();
-		$name  = $this->get_name();
-		$class = 'wp-logify-' . ( $this->type ) . '-link';
-		return "<a href='$url' class='wp-logify-object-link $class'>$name</a>";
+		$method = array( self::get_class(), 'get_edit_link' );
+		return call_user_func( $method, $this->id );
 	}
 
 	/**
 	 * If the object hasn't been deleted, get a link to its edit page; otherwise, get a span with
 	 * the old name.
 	 */
-	public function get_element() {
-		if ( $this->object_exists() ) {
-			return $this->get_edit_link();
-		} else {
-			$name = empty( $this->name ) ? 'Unknown' : $this->name;
-			return "<span class='wp-logify-deleted-label'>$name (deleted)</span>";
+	public function get_tag() {
+		$method = array( self::get_class(), 'get_tag' );
+		return call_user_func( $method, $this->id, $this->name );
+	}
+
+	/**
+	 * Get the string representation of the Object_Reference.
+	 *
+	 * @return string The string representation of the Object_Reference.
+	 */
+	public function __toString() {
+		return $this->type . '|' . $this->id . '|' . $this->name;
+	}
+
+	/**
+	 * Convert the object reference to a array suitable for encoding as JSON.
+	 *
+	 * @param Object_Reference $object_ref The Object_Reference to convert.
+	 */
+	public static function encode( Object_Reference $object_ref ): array {
+		// Store DateTimes in ATOM/W3C format.
+		return array( 'Object_Reference' => (string) $object_ref );
+	}
+
+	/**
+	 * Check if the value expresses a valid Object_Reference.
+	 *
+	 * @param mixed            $value    The value to check.
+	 * @param Object_Reference $object_ref The Object_Reference object to populate if valid.
+	 * @return bool    If the JSON contains a valid date-time string.
+	 */
+	public static function is_encoded_object_reference( mixed $value, Object_Reference &$object_ref ): bool {
+		$result = false;
+
+		// Check if the value is an object or an array.
+		if ( ! is_object( $value ) && ! is_array( $value ) ) {
+			return false;
 		}
-	}
 
-	/**
-	 * Convert the Object_Reference to an array.
-	 *
-	 * @return array The array representation of the Object_Reference.
-	 */
-	public function to_array(): array {
-		return array(
-			'type' => (string) $this->type,
-			'id'   => $this->id,
-			'name' => $this->name,
-		);
-	}
+		// Convert to an array if necessary.
+		if ( is_object( $value ) ) {
+			$value = (array) $value;
+		}
 
-	/**
-	 * Convert the Object_Reference to a JSON string.
-	 */
-	public function to_json(): string {
-		return Json::encode( $this->to_array() );
-	}
+		// Check it looks right.
+		if ( count( $value ) !== 1 || empty( $value['Object_Reference'] ) ) {
+			return false;
+		}
 
-	/**
-	 * Create an Object_Reference from a JSON string.
-	 *
-	 * @param string $json The JSON string.
-	 * @return Object_Reference The new Object_Reference object.
-	 */
-	public static function from_json( string $json ): self {
-		$fields = Json::decode( $json );
-		return new self( $fields['type'], $fields['id'], $fields['name'] );
+		// Try to convert the string to a Object_Reference.
+		try {
+			list( $type, $id, $name ) = explode( '|', $value['Object_Reference'] );
+			$object_ref               = new self( $type, (int) $id, $name );
+			$result                   = true;
+		} catch ( Exception $ex ) {
+			debug( 'Invalid Object_Reference encoding', $value['Object_Reference'], $ex->getMessage() );
+		}
+
+		return $result;
 	}
 }

@@ -21,9 +21,13 @@ class Json {
 	 * @return string The JSON string.
 	 */
 	public static function encode( mixed $data ): string {
-		// Special handling of DateTime objects.
+		// Check for special objects with custom encoding.
 		if ( $data instanceof DateTime ) {
-			return DateTimes::to_json( $data );
+			// Special handling of DateTime objects.
+			$data = DateTimes::encode( $data );
+		} elseif ( $data instanceof Object_Reference ) {
+			// Special handling of Object_Reference objects.
+			$data = Object_Reference::encode( $data );
 		}
 
 		return wp_json_encode( $data );
@@ -36,11 +40,21 @@ class Json {
 	 * @return mixed The decoded data.
 	 */
 	public static function decode( string $json ): mixed {
-		// Special handling of DateTime objects.
-		if ( DateTimes::json_is_datetime( $json, $datetime ) ) {
-			return $datetime;
+		$value = json_decode( $json );
+
+		// If the value is an object, check if it requires special handling.
+		if ( is_object( $value ) ) {
+			// Special handling of DateTime objects.
+			if ( DateTimes::is_encoded_datetime( $value, $datetime ) ) {
+				return $datetime;
+			}
+
+			// Special handling of Object_Reference objects.
+			if ( Object_Reference::is_encoded_object_reference( $value, $object_ref ) ) {
+				return $object_ref;
+			}
 		}
 
-		return json_decode( $json );
+		return $value;
 	}
 }

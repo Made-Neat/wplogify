@@ -24,9 +24,6 @@ class Property_Repository extends Repository {
 		// Set the table name.
 		global $wpdb;
 		self::$table_name = $wpdb->prefix . 'wp_logify_properties';
-
-		// Ensure table is created on plugin activation.
-		self::create_table();
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -35,14 +32,14 @@ class Property_Repository extends Repository {
 	/**
 	 * Select a property by ID.
 	 *
-	 * @param int $id The ID of the property.
+	 * @param int $property_id The ID of the property.
 	 * @return ?object The Property object, or null if not found.
 	 */
-	public static function select( int $id ): ?object {
+	public static function select( int $property_id ): ?object {
 		global $wpdb;
 
 		// Get the property record.
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE ID = %d', self::$table_name, $id );
+		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE property_id = %d', self::$table_name, $property_id );
 		$data = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
@@ -76,15 +73,22 @@ class Property_Repository extends Repository {
 		}
 
 		// Check if we're inserting or updating.
-		$inserting = empty( $property->id );
+		$inserting = empty( $property->property_id );
 
-		// Insert the property.
-		$data   = self::object_to_record( $property );
-		$format = array( '%s', '%s', '%s', '%s' );
+		// Update or insert the property record.
+		$data    = self::object_to_record( $property );
+		$formats = array( '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
-			$ok = $wpdb->insert( self::$table_name, $data, $format );
+			// Do the insert.
+			$ok = $wpdb->insert( self::$table_name, $data, $formats );
+
+			// If the new record was inserted ok, update the Property object with the new ID.
+			if ( $ok ) {
+				$property->property_id = $wpdb->insert_id;
+			}
 		} else {
-			$ok = $wpdb->update( self::$table_name, $data, array( 'ID' => $property->id ), $format, array( '%d' ) );
+			// Do the update.
+			$ok = $wpdb->update( self::$table_name, $data, array( 'property_id' => $property->property_id ), $formats, array( '%d' ) );
 		}
 
 		// Return on error.
@@ -92,12 +96,18 @@ class Property_Repository extends Repository {
 			return false;
 		}
 
-		// If inserting, set the ID for the new property record.
-		if ( $inserting ) {
-			$property->id = $wpdb->insert_id;
-		}
-
 		return true;
+	}
+
+	/**
+	 * Delete a property record by ID.
+	 *
+	 * @param int $property_id The ID of the property record to delete.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function delete( int $property_id ): bool {
+		global $wpdb;
+		return (bool) $wpdb->delete( self::$table_name, array( 'property_id' => $property_id ), array( '%d' ) );
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -113,43 +123,18 @@ class Property_Repository extends Repository {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
-            ID        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            event_id  BIGINT UNSIGNED NOT NULL,
-            prop_name VARCHAR(25)     NOT NULL,
-            prop_type VARCHAR(4)      NOT NULL,
-            old_value VARCHAR(255)    NOT NULL,
-            new_value VARCHAR(255)    NULL,
-            PRIMARY KEY (ID)
+            property_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            event_id      BIGINT UNSIGNED NOT NULL,
+            property_key  VARCHAR(100)    NOT NULL,
+            property_type VARCHAR(4)      NOT NULL,
+            old_value     LONGTEXT        NOT NULL,
+            new_value     LONGTEXT        NULL,
+            PRIMARY KEY (property_id),
+            KEY event_id (event_id),
+			KEY property_key (property_key(191))
         ) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
-	}
-
-	// ---------------------------------------------------------------------------------------------
-	// Custom methods.
-
-	/**
-	 * Select all properties of an object relating to an event.
-	 *
-	 * @param int $event_id The ID of the event.
-	 * @return ?array Array of Property objects or null if none found.
-	 */
-	public static function select_by_event_id( int $event_id ): ?array {
-		global $wpdb;
-
-		// Get all the properties connectted to the event.
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::$table_name, $event_id );
-		$data = $wpdb->get_results( $sql, ARRAY_A );
-
-		// If no properties are found, return null.
-		if ( ! $data ) {
-			return null;
-		}
-
-		// Convert the property records to objects.
-		$properties = array_map( fn( $record ) => self::record_to_object( $record ), $data );
-		return $properties;
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -162,13 +147,13 @@ class Property_Repository extends Repository {
 	 * @return Property The Property object.
 	 */
 	public static function record_to_object( array $data ): Property {
-		$property            = new Property();
-		$property->id        = (int) $data['ID'];
-		$property->event_id  = (int) $data['event_id'];
-		$property->prop_name = $data['prop_name'];
-		$property->prop_type = $data['prop_type'];
-		$property->old_value = Json::decode( $data['old_value'] );
-		$property->new_value = Json::decode( $data['new_value'] );
+		$property                = new Property();
+		$property->property_id   = (int) $data['property_id'];
+		$property->event_id      = (int) $data['event_id'];
+		$property->property_key  = $data['property_key'];
+		$property->property_type = $data['property_type'];
+		$property->old_value     = Json::decode( $data['old_value'] );
+		$property->new_value     = Json::decode( $data['new_value'] );
 		return $property;
 	}
 
@@ -182,11 +167,53 @@ class Property_Repository extends Repository {
 	 */
 	public static function object_to_record( Property $property ): array {
 		return array(
-			'event_id'  => $property->event_id,
-			'prop_name' => $property->prop_name,
-			'prop_type' => $property->prop_type,
-			'old_value' => Json::encode( $property->old_value ),
-			'new_value' => Json::encode( $property->new_value ),
+			'event_id'      => $property->event_id,
+			'property_key'  => $property->property_key,
+			'property_type' => $property->property_type,
+			'old_value'     => Json::encode( $property->old_value ),
+			'new_value'     => Json::encode( $property->new_value ),
 		);
+	}
+
+	// ---------------------------------------------------------------------------------------------
+	// Methods relating to events.
+
+	/**
+	 * Select all property records relating to an event.
+	 *
+	 * @param int $event_id The ID of the event.
+	 * @return ?array Array of Property objects or null if none found.
+	 */
+	public static function select_by_event_id( int $event_id ): ?array {
+		global $wpdb;
+
+		// Get all the properties connectted to the event.
+		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::$table_name, $event_id );
+		$data = $wpdb->get_results( $sql, ARRAY_A );
+
+		// If none found, return null.
+		if ( ! $data ) {
+			return null;
+		}
+
+		// Convert the records to objects.
+		$properties = array_map( fn( $record ) => self::record_to_object( $record ), $data );
+
+		return $properties;
+	}
+
+	/**
+	 * Delete all property records relating to an event.
+	 *
+	 * @param int $event_id The ID of the event.
+	 * @return bool True if the delete completed ok, false on error.
+	 */
+	public static function delete_by_event_id( int $event_id ): bool {
+		global $wpdb;
+
+		// Do the delete.
+		$ok = $wpdb->delete( self::$table_name, array( 'event_id' => $event_id ), array( '%d' ) );
+
+		return $ok !== false;
 	}
 }

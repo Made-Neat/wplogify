@@ -24,23 +24,21 @@ class Event_Repository extends Repository {
 		// Set the table name.
 		global $wpdb;
 		self::$table_name = $wpdb->prefix . 'wp_logify_events';
-
-		// Ensure table is created on plugin activation.
-		self::create_table();
 	}
 
 	// ---------------------------------------------------------------------------------------------
 	// CRUD methods.
 
 	/**
-	 * Get an entity by ID.
+	 * Select an entity by ID.
 	 *
-	 * @param int $id The ID of the event.
+	 * @param int $event_id The ID of the event.
 	 * @return ?object The Event object, or null if not found.
 	 */
-	public static function select( int $id ): ?object {
+	public static function select( int $event_id ): ?object {
 		global $wpdb;
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE ID = %d', self::$table_name, $id );
+
+		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::$table_name, $event_id );
 		$data = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
@@ -51,8 +49,11 @@ class Event_Repository extends Repository {
 		// Construct the new Event object.
 		$event = self::record_to_object( $data );
 
-		// Load the properties.
-		$event->properties = Property_Repository::select_by_event_id( $event->id );
+		// Load the event metadata.
+		$event->event_meta = Event_Meta_Repository::select_by_event_id( $event->event_id );
+
+		// Load the object properties.
+		$event->properties = Property_Repository::select_by_event_id( $event->event_id );
 
 		return $event;
 	}
@@ -67,7 +68,7 @@ class Event_Repository extends Repository {
 	 * Using transactions here because the overall operation requires a number of SQL commands.
 	 * If one fails, it's probably best to rollback the whole thing.
 	 *
-	 * @param object $event The event to update or insert.
+	 * @param object $event The entity to update or insert.
 	 * @return bool True on success, false on failure.
 	 * @throws InvalidArgumentException If the entity is not an instance of Event.
 	 */
@@ -80,50 +81,136 @@ class Event_Repository extends Repository {
 		}
 
 		// Check if we're inserting or updating.
-		$inserting = empty( $event->id );
+		$inserting = empty( $event->event_id );
 
 		// Start a transaction.
 		$wpdb->query( 'START TRANSACTION' );
 
 		// Update or insert the events record.
-		$data   = self::object_to_record( $event );
-		$format = array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
+		$data    = self::object_to_record( $event );
+		$formats = array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
-			$ok = $wpdb->insert( self::$table_name, $data, $format );
+			// Do the insert.
+			$ok = $wpdb->insert( self::$table_name, $data, $formats );
+
+			// If the new record was inserted ok, update the Event object with the new ID.
+			if ( $ok ) {
+				$event->event_id = $wpdb->insert_id;
+			}
 		} else {
-			$ok = $wpdb->update( self::$table_name, $data, array( 'ID' => $event->id ), $format, array( '%d' ) );
+			// Do the update.
+			$ok = $wpdb->update( self::$table_name, $data, array( 'event_id' => $event->event_id ), $formats, array( '%d' ) );
 		}
 
-		// Return on error.
+		// Rollback and return on error.
 		if ( ! $ok ) {
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
 
-		// If inserting, update the Event object with the new ID.
-		if ( $inserting ) {
-			$event->id = $wpdb->insert_id;
+		// Update the event_meta table.
+		$ok = self::upsert_meta( $event );
+
+		// Rollback and return on error.
+		if ( ! $ok ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
 		}
 
 		// Update the properties table.
-		if ( ! empty( $event->properties ) ) {
-			foreach ( $event->properties as $property ) {
+		$ok = self::upsert_properties( $event );
 
-				// Update the property record.
-				$ok = Property_Repository::upsert( $property );
-
-				// Return on error.
-				if ( ! $ok ) {
-					$wpdb->query( 'ROLLBACK' );
-					return false;
-				}
-			}
+		// Rollback and return on error.
+		if ( ! $ok ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
 		}
 
 		// Commit the transaction.
 		$wpdb->query( 'COMMIT' );
 
 		return true;
+	}
+
+	/**
+	 * Update the event_meta table.
+	 *
+	 * @param Event $event The event object.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function upsert_meta( Event $event ): bool {
+		// Delete all existing associated records in the event_meta table.
+		$ok = Event_Meta_Repository::delete_by_event_id( $event->event_id );
+
+		// Return on error.
+		if ( ! $ok ) {
+			return false;
+		}
+
+		// If we have any metadata, insert new records.
+		if ( ! empty( $event->event_meta ) ) {
+			foreach ( $event->event_meta as $event_meta ) {
+
+				// Ensure the event_id is set in the event_meta object.
+				$event_meta->event_id = $event->event_id;
+
+				// Update the event_meta record.
+				$ok = Event_Meta_Repository::upsert( $event_meta );
+
+				// Rollback and return on error.
+				if ( ! $ok ) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Update the properties table.
+	 *
+	 * @param Event $event The event object.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function upsert_properties( Event $event ): bool {
+		// Delete all associated records in the properties table.
+		$ok = Property_Repository::delete_by_event_id( $event->event_id );
+
+		// Return on error.
+		if ( ! $ok ) {
+			return false;
+		}
+
+		// If we have any properties, insert new records.
+		if ( ! empty( $event->properties ) ) {
+			foreach ( $event->properties as $property ) {
+
+				// Ensure the event_id is set in the property object.
+				$property->event_id = $event->event_id;
+
+				// Update the property record.
+				$ok = Property_Repository::upsert( $property );
+
+				// Return on error.
+				if ( ! $ok ) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Delete an event record by ID.
+	 *
+	 * @param int $event_id The ID of the event record to delete.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function delete( int $event_id ): bool {
+		global $wpdb;
+		return (bool) $wpdb->delete( self::$table_name, array( 'event_id' => $event_id ), array( '%d' ) );
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -139,22 +226,21 @@ class Event_Repository extends Repository {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
-            ID            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            event_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             date_time     DATETIME        NOT NULL,
             user_id       BIGINT UNSIGNED NOT NULL,
             user_name     VARCHAR(255)    NOT NULL,
             user_role     VARCHAR(255)    NOT NULL,
-            user_ip       VARCHAR(40)     NOT NULL,
+            user_ip       VARCHAR(40)     NULL,
             user_location VARCHAR(255)    NULL,
             user_agent    VARCHAR(255)    NULL,
             event_type    VARCHAR(255)    NOT NULL,
             object_type   VARCHAR(10)     NULL,
             object_id     BIGINT UNSIGNED NULL,
             object_name   VARCHAR(255)    NULL,
-            PRIMARY KEY (ID)
+            PRIMARY KEY (event_id)
         ) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
 	}
 
@@ -169,7 +255,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function record_to_object( array $data ): Event {
 		$event                = new Event();
-		$event->id            = (int) $data['ID'];
+		$event->event_id      = (int) $data['event_id'];
 		$event->date_time     = DateTimes::create_datetime( $data['date_time'] );
 		$event->user_id       = (int) $data['user_id'];
 		$event->user_name     = $data['user_name'];
@@ -187,7 +273,7 @@ class Event_Repository extends Repository {
 	/**
 	 * Converts an Event object to a data array for saving to the database.
 	 *
-	 * The ID property isn't included, as it isn't required for the insert or update operations.
+	 * The event_id property isn't included, as it isn't required for the insert or update operations.
 	 *
 	 * @param Event $event The Event object.
 	 * @return array The database record as an associative array.

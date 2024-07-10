@@ -58,10 +58,7 @@ abstract class Repository {
 	 * @param int $id The ID of the entity to delete.
 	 * @return bool True on success, false on failure.
 	 */
-	public static function delete( int $id ): bool {
-		global $wpdb;
-		return (bool) $wpdb->delete( self::$table_name, array( 'ID' => $id ), array( '%d' ) );
-	}
+	abstract public static function delete( int $id ): bool;
 
 	// ---------------------------------------------------------------------------------------------
 	// Table-related methods.

@@ -23,7 +23,7 @@ class Posts {
 	 *
 	 * @var array
 	 */
-	private static $properties = array();
+	private static $changes = array();
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -71,17 +71,17 @@ class Posts {
 			$post    = self::get_post( $post_id );
 		}
 
-		// Collect details.
+		// Get the post's properties.
 		$properties = self::get_properties( $post );
 
-		// Modify post changes as needed.
-		if ( ! empty( self::$properties ) ) {
+		// Update post properties with the changes.
+		if ( ! empty( self::$changes ) ) {
 			// TODO Have to fix this, need a way to access the changes to the content without storing them, as they are already stored in the revision.
 			// Replaces changes to the content with a link to the compare revisions page.
-			if ( ! empty( self::$properties['post_content'] ) ) {
-				$revisions                        = wp_get_post_revisions( $post );
-				$most_recent_revision             = array_shift( $revisions );
-				self::$properties['post_content'] = "<a href='" . admin_url( "/revision.php?revision={$most_recent_revision->ID}" ) . "'>Compare revisions</a>";
+			if ( ! empty( self::$changes['post_content'] ) ) {
+				$revisions                     = wp_get_post_revisions( $post );
+				$most_recent_revision          = array_shift( $revisions );
+				self::$changes['post_content'] = "<a href='" . admin_url( "/revision.php?revision={$most_recent_revision->ID}" ) . "'>Compare revisions</a>";
 			}
 
 			// // Remove dates from changes. The relevant dates are shown in the event details.
@@ -90,8 +90,10 @@ class Posts {
 			// unset( self::$properties['post_modified'] );
 			// unset( self::$properties['post_modified_gmt'] );
 
-			foreach ( self::$properties as $key => $new_value ) {
-				$properties[ $key ]->new_value = $new_value;
+			// Update post properties with the changes.
+			foreach ( self::$changes as $key => $change ) {
+				$properties[ $key ]->old_value = $change[0];
+				$properties[ $key ]->new_value = $change[1];
 			}
 		}
 
@@ -112,11 +114,8 @@ class Posts {
 	public static function track_update( $post_id, $post_after, $post_before ) {
 		// Compare values.
 		foreach ( $post_before as $key => $value ) {
-			$old_value = value_to_string( $value );
-			$new_value = value_to_string( $post_after->{$key} );
-
-			if ( $old_value !== $new_value ) {
-				self::$properties[ $key ] = array( $value, $post_after->{$key} );
+			if ( $value !== $post_after->{$key} ) {
+				self::$changes[ $key ] = array( $value, $post_after->{$key} );
 			}
 		}
 	}
@@ -133,13 +132,9 @@ class Posts {
 		// Get the current value.
 		$current_value = get_post_meta( $post_id, $meta_key, true );
 
-		// Get the old and new values as strings for comparison and display.
-		$old_value = value_to_string( $current_value );
-		$new_value = value_to_string( $meta_value );
-
-		// Track the change, if any.
-		if ( $old_value !== $new_value ) {
-			self::$properties[ $meta_key ] = array( $current_value, $meta_value );
+		// Note the change, if any.
+		if ( $current_value !== $meta_value ) {
+			self::$changes[ $meta_key ] = array( $current_value, $meta_value );
 		}
 	}
 
@@ -165,7 +160,7 @@ class Posts {
 		// Get the event type.
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' ' . $event_type_verb;
 
-		// Get the details.
+		// Get the post's properties.
 		$properties = self::get_properties( $post );
 
 		// Modify the properties to properly show the status change.
@@ -269,6 +264,58 @@ class Posts {
 	}
 
 	/**
+	 * Get the HTML for the link to the object's edit page.
+	 *
+	 * @param WP_Post|int $post The post object or ID.
+	 * @return string The link HTML tag.
+	 */
+	public static function get_edit_link( WP_Post|int $post ) {
+		// Load the post if necessary.
+		if ( is_int( $post ) ) {
+			$post = self::get_post( $post );
+		}
+
+		// Get the URL for the post's edit page.
+		$url = self::get_edit_url( $post );
+
+		// Return the link.
+		return "<a href='$url' class='wp-logify-post-link'>$post->post_title</a>";
+	}
+
+	/**
+	 * If the post hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param WP_Post|int $post The post object or ID.
+	 * @param string      $old_title The old title of the post.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( WP_Post|int $post, string $old_title ) {
+		// Check if the post exists.
+		if ( self::post_exists( $post ) ) {
+
+			// Load the post if necessary.
+			if ( is_int( $post ) ) {
+				$post = self::get_post( $post );
+			}
+
+			// If the post is trashed, we can't reach its edit page, so instead we'll link to the list of trashed posts.
+			if ( $post->post_status === 'trash' ) {
+				$url = admin_url( 'edit.php?post_status=trash&post_type=post' );
+			} else {
+				$url = self::get_edit_url( $post );
+			}
+
+			return "<a href='$url' class='wp-logify-post-link'>$post->post_title</a>";
+		}
+
+		// The post no longer exists. Construct the 'deleted' span element.
+		$post_id = is_int( $post ) ? $post : $post->ID;
+		$title   = empty( $old_title ) ? "Post $post_id" : $old_title;
+		return "<span class='wp-logify-deleted-object'>$title (deleted)</span>";
+	}
+
+	/**
 	 * Get the singular name of a custom post type.
 	 *
 	 * @param string $post_type The post type.
@@ -347,7 +394,7 @@ class Posts {
 	}
 
 	/**
-	 * Get the details of a post to show in the log.
+	 * Get the properties of a post.
 	 *
 	 * @param WP_Post|int $post The post object or ID.
 	 * @return array The properties of the post.

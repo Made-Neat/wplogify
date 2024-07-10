@@ -32,14 +32,3 @@ function debug_sql( string $sql ) {
 	global $wpdb;
 	debug( $wpdb->remove_placeholder_escape( $sql ) );
 }
-
-/**
- * Convert a value to a string for comparison and display.
- *
- * @param mixed $value The value to convert.
- * @return string The value as a string.
- */
-function value_to_string( mixed $value ) {
-	return is_string( $value ) ? $value
-		: ( is_scalar( $value ) ? (string) $value : Json::encode( $value ) );
-}

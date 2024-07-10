@@ -56,9 +56,9 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 				<?php foreach ( $results as $event ) : ?>
 					<tr>
 						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->date_time ) ); ?></td>
-						<td><?php echo Users::get_edit_tag( $event->user_id ); ?></td>
+						<td><?php echo Users::get_tag( $event->user_id, $event->user_name ); ?></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
-						<td><?php echo Log_Page::get_object_link( $event ); ?></td>
+						<td><?php echo Log_page::get_object_tag( $event ); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			<?php else : ?>
