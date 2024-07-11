@@ -35,6 +35,8 @@ $wp_logify_plugin_dir   = rtrim( plugin_dir_path( __FILE__ ), '/' );
 $wp_logify_includes_dir = "$wp_logify_plugin_dir/includes";
 
 // Include all include files.
+require_once "$wp_logify_includes_dir/utility/interface-encodable.php";
+
 require_once "$wp_logify_includes_dir/events/class-event-meta.php";
 require_once "$wp_logify_includes_dir/events/class-event.php";
 require_once "$wp_logify_includes_dir/events/class-logger.php";
@@ -61,7 +63,10 @@ require_once "$wp_logify_includes_dir/utility/class-json.php";
 require_once "$wp_logify_includes_dir/class-cron.php";
 require_once "$wp_logify_includes_dir/class-plugin.php";
 require_once "$wp_logify_includes_dir/debug.php";
+require_once "$wp_logify_includes_dir/functions.php";
+
 // require_once "$wp_logify_includes_dir/test.php";
+// exit;
 
 // Register plugin hooks.
 add_action( 'plugins_loaded', array( 'WP_Logify\Plugin', 'init' ) );

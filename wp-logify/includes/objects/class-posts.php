@@ -410,13 +410,34 @@ class Posts {
 
 		// Add the base properties.
 		foreach ( $post as $key => $value ) {
-			$properties[ $key ] = Property::create( $key, 'base', $value );
+
+			// Convert ID values to ints.
+			$value = make_id_int( $key, $value );
+
+			// Convert datetime strings to DateTimes.
+			if ( $key === 'post_date' || $key === 'post_modified' ) {
+				$value = DateTimes::create_datetime( $value, 'site' );
+			} elseif ( $key === 'post_date_gmt' || $key === 'post_modified_gmt' ) {
+				$value = DateTimes::create_datetime( $value, 'UTC' );
+			}
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'base', $value );
 		}
 
 		// Add the meta properties.
 		$postmeta = get_post_meta( $post->ID );
 		foreach ( $postmeta as $key => $value ) {
-			$properties[ $key ] = Property::create( $key, 'meta', $value );
+			// If there's only one value, reduce the result to that value.
+			if ( is_array( $value ) && count( $value ) === 1 ) {
+				$value = $value[0];
+			}
+
+			// Convert ID values to ints.
+			$value = make_id_int( $key, $value );
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'meta', $value );
 		}
 
 		return $properties;

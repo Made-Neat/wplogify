@@ -7,13 +7,13 @@
 
 namespace WP_Logify;
 
-use InvalidArgumentException;
 use Exception;
+use InvalidArgumentException;
 
 /**
  * Represents a reference to an WordPress object that can be created, updated, or deleted.
  */
-class Object_Reference {
+class Object_Reference implements Encodable {
 
 	/**
 	 * The type of the object, e.g. 'post', 'user', 'term'.
@@ -49,13 +49,13 @@ class Object_Reference {
 	 * Constructor.
 	 *
 	 * @param string      $type The type of the object.
-	 * @param int         $id The ID of the object.
+	 * @param int|string  $id The ID of the object, which could be an integer or a string.
 	 * @param string|bool $name The name of the object, or a bool to specify setting it automatically from the object.
 	 *                          - If a string, the name will be assigned this value.
 	 *                          - If true, the name will be extracted from the existing object.
 	 *                          - If false, the name won't be set.
 	 */
-	public function __construct( string $type, int $id, string|bool $name = true ) {
+	public function __construct( string $type, int|string $id, string|bool $name = true ) {
 		// Set the object type.
 		$this->type = $type;
 
@@ -127,54 +127,120 @@ class Object_Reference {
 		}
 	}
 
+	// =============================================================================================
+	// Encodable interface methods.
+
 	/**
 	 * Convert the object reference to a array suitable for encoding as JSON.
 	 *
-	 * @param Object_Reference $object_ref The Object_Reference to convert.
+	 * @param object $obj The Object_Reference to convert.
 	 * @return array The array representation of the Object_Reference.
 	 */
-	public static function encode( Object_Reference $object_ref ): array {
-		return array( 'Object_Reference' => (array) $object_ref );
+	public static function encode( object $obj ): array {
+		// Check the type.
+		if ( ! $obj instanceof Object_Reference ) {
+			throw new InvalidArgumentException( 'The object must be an instance of Object_Reference.' );
+		}
+
+		return array(
+			'Object_Reference' => array(
+				'type' => $obj->type,
+				'id'   => $obj->id,
+				'name' => $obj->name,
+			),
+		);
 	}
 
 	/**
 	 * Check if the value expresses a valid Object_Reference.
 	 *
-	 * @param object            $simple_object The value to check.
-	 * @param ?Object_Reference $object_ref The Object_Reference object to populate if valid.
+	 * @param array   $ary The value to check.
+	 * @param ?object $obj The Object_Reference object to populate if valid.
 	 * @return bool If the JSON contains a valid date-time string.
-	 * @throws InvalidArgumentException If the provided array does not represent an Object_Reference.
 	 */
-	public static function is_encoded_object( object $simple_object, ?Object_Reference &$object_ref ): bool {
-		// Convert to an array.
-		$ary = (array) $simple_object;
-
+	public static function can_decode( array $ary, ?object &$obj ): bool {
 		// Check it looks right.
-		if ( count( $ary ) !== 1 || empty( $ary['Object_Reference'] ) || ! is_object( $ary['Object_Reference'] ) ) {
+		if ( count( $ary ) !== 1 || empty( $ary['Object_Reference'] ) || ! is_array( $ary['Object_Reference'] ) ) {
 			return false;
 		}
 
-		// Convert the simple object to a Object_Reference.
-		$object_ref = self::__set_state( (array) $ary['Object_Reference'] );
+		// Check the array of properties has the right number and type of values.
+		$fields = $ary['Object_Reference'];
+		if ( count( $fields ) !== 3
+			|| ! key_exists( 'type', $fields ) || ! is_string( $fields['type'] )
+			|| ! key_exists( 'id', $fields ) || ( ! is_int( $fields['id'] ) && ! is_string( $fields['id'] ) )
+			|| ! key_exists( 'name', $fields ) || ! is_string( $fields['name'] )
+		) {
+			return false;
+		}
+
+		// Create the new object.
+		$obj = new self( $fields['type'], $fields['id'], $fields['name'] );
 
 		return true;
 	}
 
 	/**
-	 * Create a new Object_Reference from an array.
+	 * Gets the link or span element showing the object name.
 	 *
-	 * @param array $fields The array representation of the Object_Reference.
-	 * @return Object_Reference The Object_Reference object.
-	 * @throws InvalidArgumentException If the provided array does not represent an Object_Reference.
+	 * @return string The HTML for the link or span element.
+	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
-	public static function __set_state( array $fields ) {
-		// Check the provided array has the right number and type of properties.
-		if ( count( $fields ) !== 3 || ! key_exists( 'type', $fields ) || ! key_exists( 'id', $fields ) || ! key_exists( 'name', $fields )
-			|| ! is_string( $fields['type'] ) || ! is_int( $fields['id'] ) || ! is_string( $fields['name'] ) ) {
-			throw new InvalidArgumentException( 'The provided array does not represent an Object_Reference.' );
+	public function get_tag() {
+		// Check for non-empty object type and ID.
+		if ( empty( $this->type ) || empty( $this->id ) ) {
+			throw new Exception( 'The object type and ID must both be set to generate a tag.' );
 		}
 
-		// Create the new object.
-		return new self( $fields['type'], $fields['id'], $fields['name'] );
+		// Construct string to use in place of a link to the object if it's been deleted.
+		// This is only here temporarily until I write the get_tag() methods for the Comments, Themes, and Plugins classes.
+		$deleted_string = ( empty( $this->name ) ? ( ucfirst( $this->type ) . ' ' . $this->id ) : $this->name ) . ' (deleted)';
+
+		// Generate the link based on the object type.
+		switch ( $this->type ) {
+			case 'post':
+				// Return the post tag.
+				return Posts::get_tag( $this->id, $this->name );
+
+			case 'user':
+				// Return the user tag.
+				return Users::get_tag( $this->id, $this->name );
+
+			case 'term':
+				// Return the term tag.
+				return Terms::get_tag( $this->id, $this->name );
+
+			case 'comment':
+				// Return the comment tag.
+				return 'The Comment';
+				// return Comments::get_tag( $this->id, $this->name );
+
+			case 'theme':
+				// Attempt to load the theme.
+				$theme = wp_get_theme( $this->id );
+
+				// Check if the theme was deleted.
+				if ( ! $theme->exists() ) {
+					return $deleted_string;
+				}
+
+				// Return a link to the theme.
+				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
+
+			case 'plugin':
+				// Attempt to load the plugin.
+				$plugins = get_plugins();
+
+				// Check if the plugin was deleted.
+				if ( ! array_key_exists( $this->id, $plugins ) ) {
+					return $deleted_string;
+				}
+
+				// Link to the plugins page.
+				return "<a href='/wp-admin/plugins.php'>{$plugins[$this->id]['Name']}</a>";
+		}
+
+		// If the object type is invalid, throw an exception.
+		throw new Exception( "Invalid object type: $this->type" );
 	}
 }

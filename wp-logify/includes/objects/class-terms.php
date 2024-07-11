@@ -117,7 +117,7 @@ class Terms {
 		// Get the term's properties.
 		$properties = self::get_properties( $term );
 
-		// Record all posts tagged with this term, in case we need to restore the term.
+		// Find all posts tagged with this term, in case we need to restore the term.
 		$post_ids = get_objects_in_term( $term_id, $taxonomy );
 
 		// Handle error if the posts could not be retrieved.
@@ -128,11 +128,12 @@ class Terms {
 		// The function returns an array of strings for some reason, so let's convert them to ints.
 		$post_ids = array_map( fn( $post_id ) => (int) $post_id, $post_ids );
 
-		// Add to the term's properties.
-		$properties['posts'] = Property::create( null, 'posts', null, $post_ids );
+		// Store this in the event metadata.
+		$event_meta                   = array();
+		$event_meta['Attached posts'] = $post_ids;
 
 		// Log the event.
-		Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
+		Logger::log_event( $event_type, 'term', $term_id, $term->name, $event_meta, $properties );
 	}
 
 	/**
@@ -192,13 +193,26 @@ class Terms {
 
 		// Add the base properties.
 		foreach ( $term as $key => $value ) {
-			$properties[ $key ] = Property::create( null, $key, 'base', $value );
+			// Convert ID values to ints.
+			$value = make_id_int( $key, $value );
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'base', $value );
 		}
 
 		// Add the meta properties.
 		$termmeta = get_term_meta( $term->term_id );
 		foreach ( $termmeta as $key => $value ) {
-			$properties[ $key ] = Property::create( null, $key, 'meta', $value );
+			// If there's only one value, reduce the result to that value.
+			if ( is_array( $value ) && count( $value ) === 1 ) {
+				$value = $value[0];
+			}
+
+			// Convert ID values to ints.
+			$value = make_id_int( $key, $value );
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'meta', $value );
 		}
 
 		return $properties;

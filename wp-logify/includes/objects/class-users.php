@@ -19,11 +19,11 @@ use WP_User;
 class Users {
 
 	/**
-	 * Array of changed properties.
+	 * Array of changed meta properties.
 	 *
 	 * @var array
 	 */
-	private static $changes = array();
+	private static $changed_meta_properties = array();
 
 	/**
 	 * Initializes the class by adding WordPress actions.
@@ -109,9 +109,25 @@ class Users {
 
 		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
-			if ( $value !== $userdata[ $key ] ) {
-				$properties[ $key ]->old_value = $value;
-				$properties[ $key ]->new_value = $userdata[ $key ];
+			// Make IDs integers.
+			$old_value = make_id_int( $key, $value );
+			$new_value = make_id_int( $key, $userdata[ $key ] );
+
+			// If the value has changed, add the before and after values to the changes array.
+			if ( $old_value !== $new_value ) {
+				if ( key_exists( $key, $properties ) ) {
+					$properties[ $key ]->old_value = $old_value;
+					$properties[ $key ]->new_value = $new_value;
+				} else {
+					$properties[ $key ] = new Property( $key, 'base', $old_value, $new_value );
+				}
+			}
+		}
+
+		// Update meta properties with any changes recorded in track_meta_update().
+		if ( ! empty( self::$changed_meta_properties ) ) {
+			foreach ( self::$changed_meta_properties as $key => $property ) {
+				$properties[ $key ] = $property;
 			}
 		}
 
@@ -131,9 +147,18 @@ class Users {
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
-		// Track the change, if any.
-		if ( $current_value !== $meta_value ) {
-			self::$changes[ $meta_key ] = Property::create( null, $meta_key, 'meta', $current_value, $meta_value );
+		// Make IDs integers.
+		$old_value = make_id_int( $meta_key, $current_value );
+		$new_value = make_id_int( $meta_key, $meta_value );
+
+		// If the value has changed, add the before and after values to the changes array.
+		if ( $old_value !== $new_value ) {
+			if ( key_exists( $meta_key, self::$changed_meta_properties ) ) {
+				self::$changed_meta_properties[ $meta_key ]->old_value = $old_value;
+				self::$changed_meta_properties[ $meta_key ]->new_value = $new_value;
+			} else {
+				self::$changed_meta_properties[ $meta_key ] = new Property( $meta_key, 'meta', $old_value, $new_value );
+			}
 		}
 	}
 
@@ -152,19 +177,19 @@ class Users {
 		$now = DateTimes::current_datetime();
 
 		// Check if this is a continuing session.
-		$continuing      = false;
-		$sql             = $wpdb->prepare(
+		$continuing = false;
+		$sql        = $wpdb->prepare(
 			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY date_time DESC',
 			$table_name,
 			$user_id,
 			$event_type
 		);
-		$existing_record = $wpdb->get_row( $sql );
+		$row        = $wpdb->get_row( $sql, ARRAY_A );
 
-		if ( $existing_record ) {
+		if ( $row ) {
 
 			// Construct the Event object.
-			$event = Event_Repository::select( $existing_record->event_id );
+			$event = Event_Repository::load( $row['event_id'] );
 
 			// Check we have the info we need.
 			if ( ! empty( $event->event_meta['Session start'] ) && ! empty( $event->event_meta['Session end'] ) ) {
@@ -187,7 +212,7 @@ class Users {
 					$event->event_meta['Session duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
 
 					// Update the event meta data.
-					Event_Repository::upsert_meta( $event );
+					Event_Repository::save_metadata( $event );
 				}
 			}
 		}
@@ -255,14 +280,34 @@ class Users {
 		$properties = array();
 
 		// Add the base properties.
-		foreach ( $user as $key => $value ) {
-			$properties[ $key ] = Property::create( null, $key, 'base', $value );
+		foreach ( $user->data as $key => $value ) {
+			// Convert ID values to ints.
+			$value = make_id_int( $key, $value );
+
+			// Convert datetime strings to DateTimes.
+			if ( $key === 'user_registered' ) {
+				// For whatever reason, the user_registered column in the users table is in UTC,
+				// despite not having the same '_gmt' suffix as UTC datetimes in the posts table.
+				$value = DateTimes::create_datetime( $value, 'UTC' );
+			}
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'base', $value );
 		}
 
 		// Add the meta properties.
 		$usermeta = get_user_meta( $user->ID );
 		foreach ( $usermeta as $key => $value ) {
-			$properties[ $key ] = Property::create( null, $key, 'meta', $value );
+			// If there's only one value, reduce the result to that value.
+			if ( is_array( $value ) && count( $value ) === 1 ) {
+				$value = $value[0];
+			}
+
+			// Convert ID values to ints.
+			$value = make_id_int( $key, $value );
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'meta', $value );
 		}
 
 		return $properties;
@@ -346,13 +391,13 @@ class Users {
 		$data = Json::decode( $body );
 
 		// Construct the location string.
-		if ( $data->status === 'success' ) {
+		if ( $data['status'] === 'success' ) {
 			$location = array(
-				$data->city,
-				$data->regionName,
-				$data->country,
+				$data['city'],
+				$data['regionName'],
+				$data['country'],
 			);
-			return implode( ', ', array_filter( (array) $location ) );
+			return implode( ', ', array_filter( $location ) );
 		}
 
 		// Return null if the location could not be determined.
@@ -391,7 +436,7 @@ class Users {
 			$table_name,
 			$user->ID
 		);
-		$last_login_event = $wpdb->get_row( $sql );
+		$last_login_event = $wpdb->get_row( $sql, ARRAY_A );
 		return $last_login_event === null ? null : DateTimes::create_datetime( $last_login_event->date_time );
 	}
 
@@ -416,12 +461,12 @@ class Users {
 			$table_name,
 			$user->ID
 		);
-		$record     = $wpdb->get_row( $sql );
+		$record     = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If we got a record.
 		if ( $record !== null ) {
 			// Create the Event.
-			$event = Event_Repository::select( $record->event_id );
+			$event = Event_Repository::load( $record['event_id'] );
 
 			// Return the session end datetime if set.
 			if ( ! empty( $event->event_meta['Session end'] ) ) {

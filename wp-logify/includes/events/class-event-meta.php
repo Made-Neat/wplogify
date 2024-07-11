@@ -43,25 +43,13 @@ class Event_Meta {
 	/**
 	 * Event_Meta constructor.
 	 *
-	 * Initializes an empty Event_Meta object.
-	 */
-	public function __construct() {
-		// Empty constructor.
-	}
-
-	/**
-	 * Creates a new Event_Meta object.
-	 *
 	 * @param ?int   $event_id The event ID if known.
 	 * @param string $meta_key The meta key.
 	 * @param mixed  $meta_value The meta value.
-	 * @return Event_Meta The new object.
 	 */
-	public static function create( ?int $event_id, string $meta_key, mixed $meta_value ): self {
-		$event_meta             = new self();
-		$event_meta->event_id   = $event_id;
-		$event_meta->meta_key   = $meta_key;
-		$event_meta->meta_value = $meta_value;
-		return $event_meta;
+	public function __construct( ?int $event_id, string $meta_key, mixed $meta_value ) {
+		$this->event_id   = $event_id;
+		$this->meta_key   = $meta_key;
+		$this->meta_value = $meta_value;
 	}
 }

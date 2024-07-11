@@ -18,36 +18,36 @@ class Event_Repository extends Repository {
 	// CRUD methods.
 
 	/**
-	 * Select an entity by ID.
+	 * Load an Event from the database by ID.
 	 *
 	 * @param int $event_id The ID of the event.
-	 * @return ?object The Event object, or null if not found.
+	 * @return ?Event The Event object, or null if not found.
 	 */
-	public static function select( int $event_id ): ?object {
+	public static function load( int $event_id ): ?Event {
 		global $wpdb;
 
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-		$data = $wpdb->get_row( $sql, ARRAY_A );
+		$sql = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
-		if ( ! $data ) {
+		if ( ! $row ) {
 			return null;
 		}
 
 		// Construct the new Event object.
-		$event = self::record_to_object( $data );
+		$event = self::record_to_object( $row );
 
 		// Load the event metadata.
-		$event->event_meta = Event_Meta_Repository::select_by_event_id( $event->event_id );
+		self::load_metadata( $event );
 
 		// Load the object properties.
-		$event->properties = Property_Repository::select_by_event_id( $event->event_id );
+		self::load_properties( $event );
 
 		return $event;
 	}
 
 	/**
-	 * Update or insert an event record.
+	 * Save an Event object to the database.
 	 *
 	 * If the object has an ID, it will be updated. Otherwise, it will be inserted.
 	 *
@@ -60,7 +60,7 @@ class Event_Repository extends Repository {
 	 * @return bool True on success, false on failure.
 	 * @throws InvalidArgumentException If the entity is not an instance of Event.
 	 */
-	public static function upsert( object $event ): bool {
+	public static function save( object $event ): bool {
 		global $wpdb;
 
 		// Check entity type.
@@ -97,7 +97,7 @@ class Event_Repository extends Repository {
 		}
 
 		// Update the event_meta table.
-		$ok = self::upsert_meta( $event );
+		$ok = self::save_metadata( $event );
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
@@ -106,7 +106,7 @@ class Event_Repository extends Repository {
 		}
 
 		// Update the properties table.
-		$ok = self::upsert_properties( $event );
+		$ok = self::save_properties( $event );
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
@@ -121,12 +121,48 @@ class Event_Repository extends Repository {
 	}
 
 	/**
-	 * Update the event_meta table.
+	 * Delete an event record by ID.
+	 *
+	 * @param int $event_id The ID of the event record to delete.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function delete( int $event_id ): bool {
+		global $wpdb;
+		return (bool) $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
+	}
+
+	// =============================================================================================
+	// Methods for loading and saving metadata.
+
+	/**
+	 * Load metadata for an event.
+	 *
+	 * @param Event $event The event object.
+	 */
+	public static function load_metadata( Event $event ) {
+		global $wpdb;
+
+		// Get the metadata records for the event from the event_meta table.
+		$sql_meta = $wpdb->prepare(
+			'SELECT meta_key, meta_value FROM %i WHERE event_id = %d',
+			Event_Meta_Repository::get_table_name(),
+			$event->event_id
+		);
+		$rows     = $wpdb->get_results( $sql_meta, ARRAY_A );
+
+		// Convert the query result into an associative array.
+		foreach ( $rows as $row ) {
+			$event->event_meta[ $row['meta_key'] ] = Json::decode( $row['meta_value'] );
+		}
+	}
+
+	/**
+	 * Save metadata for an event.
 	 *
 	 * @param Event $event The event object.
 	 * @return bool True on success, false on failure.
 	 */
-	public static function upsert_meta( Event $event ): bool {
+	public static function save_metadata( Event $event ): bool {
 		// Delete all existing associated records in the event_meta table.
 		$ok = Event_Meta_Repository::delete_by_event_id( $event->event_id );
 
@@ -137,13 +173,13 @@ class Event_Repository extends Repository {
 
 		// If we have any metadata, insert new records.
 		if ( ! empty( $event->event_meta ) ) {
-			foreach ( $event->event_meta as $event_meta ) {
+			foreach ( $event->event_meta as $meta_key => $meta_value ) {
 
-				// Ensure the event_id is set in the event_meta object.
-				$event_meta->event_id = $event->event_id;
+				// Construct the new Event_Meta object.
+				$event_meta_object = new Event_Meta( $event->event_id, $meta_key, $meta_value );
 
-				// Update the event_meta record.
-				$ok = Event_Meta_Repository::upsert( $event_meta );
+				// Save the object.
+				$ok = Event_Meta_Repository::save( $event_meta_object );
 
 				// Rollback and return on error.
 				if ( ! $ok ) {
@@ -155,13 +191,25 @@ class Event_Repository extends Repository {
 		return true;
 	}
 
+	// =============================================================================================
+	// Methods for loading and saving properties.
+
+	/**
+	 * Load the properties for an event.
+	 *
+	 * @param Event $event The event object.
+	 */
+	public static function load_properties( Event $event ) {
+		$event->properties = Property_Repository::load_by_event_id( $event->event_id );
+	}
+
 	/**
 	 * Update the properties table.
 	 *
 	 * @param Event $event The event object.
 	 * @return bool True on success, false on failure.
 	 */
-	public static function upsert_properties( Event $event ): bool {
+	public static function save_properties( Event $event ): bool {
 		// Delete all associated records in the properties table.
 		$ok = Property_Repository::delete_by_event_id( $event->event_id );
 
@@ -178,7 +226,7 @@ class Event_Repository extends Repository {
 				$property->event_id = $event->event_id;
 
 				// Update the property record.
-				$ok = Property_Repository::upsert( $property );
+				$ok = Property_Repository::save( $property );
 
 				// Return on error.
 				if ( ! $ok ) {
@@ -188,17 +236,6 @@ class Event_Repository extends Repository {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Delete an event record by ID.
-	 *
-	 * @param int $event_id The ID of the event record to delete.
-	 * @return bool True on success, false on failure.
-	 */
-	public static function delete( int $event_id ): bool {
-		global $wpdb;
-		return (bool) $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
 	}
 
 	// =============================================================================================

@@ -11,13 +11,15 @@ use DateInterval;
 use DateTime;
 use DateTimeZone;
 use Exception;
+use InvalidArgumentException;
+use Throwable;
 
 /**
  * Class WP_Logify\DateTimes
  *
  * Contains useful date and time-related functions.
  */
-class DateTimes {
+class DateTimes implements Encodable {
 
 	/**
 	 * The MySQL datetime format.
@@ -56,12 +58,18 @@ class DateTimes {
 	 *
 	 * @param DateTime|string $datetime The DateTime object to format or the datetime as a string (presumably in some other format).
 	 * @param bool            $include_seconds Whether to include seconds in the time format if they aren't already.
+	 * @param bool            $include_timezone Whether to include the timezone name in the formatted string.
 	 * @return string The formatted datetime string.
 	 */
-	public static function format_datetime_site( DateTime|string $datetime, bool $include_seconds = false ): string {
+	public static function format_datetime_site( DateTime|string $datetime, bool $include_seconds = false, bool $include_timezone = false ): string {
 		// Convert string to DateTime if necessary.
 		if ( is_string( $datetime ) ) {
 			$datetime = self::create_datetime( $datetime );
+		}
+
+		// If the timezone is not the same as the site timezone, convert it.
+		if ( $datetime->getTimezone() !== wp_timezone() ) {
+			$datetime->setTimezone( wp_timezone() );
 		}
 
 		// Get the date and time formats from the site settings.
@@ -73,7 +81,14 @@ class DateTimes {
 			$time_format = str_replace( ':i', ':i:s', $time_format );
 		}
 
-		return $datetime->format( $time_format ) . ', ' . $datetime->format( $date_format );
+		$datetime_string = $datetime->format( $time_format ) . ', ' . $datetime->format( $date_format );
+
+		// Append the time zone name if requested.
+		if ( $include_timezone ) {
+			$datetime_string .= ' (' . $datetime->format( 'e' ) . ')';
+		}
+
+		return $datetime_string;
 	}
 
 	/**
@@ -155,41 +170,56 @@ class DateTimes {
 		return $duration_string;
 	}
 
+	// =============================================================================================
+	// Encodable interface methods.
+
 	/**
-	 * Convert the datetime to a form suitable for encoding as JSON.
+	 * Convert the DateTime to an array suitable for encoding as JSON.
 	 *
-	 * @param DateTime $datetime The DateTime to convert.
+	 * @param object $obj The DateTime to convert.
 	 * @return array The array representation of the DateTime.
 	 */
-	public static function encode( DateTime $datetime ): array {
-		return array( 'DateTime' => (array) $datetime );
+	public static function encode( object $obj ): array {
+		// Check the type.
+		if ( ! $obj instanceof DateTime ) {
+			throw new InvalidArgumentException( 'The object must be an instance of DateTime.' );
+		}
+
+		return array( 'DateTime' => (array) $obj );
 	}
 
 	/**
-	 * Check if the provided object is an encoded DateTime.
+	 * Check if the provided array is an encoded DateTime.
 	 *
-	 * @param object    $simple_object The value to check.
-	 * @param ?DateTime $datetime The DateTime object to populate if valid.
+	 * @param array   $ary The array to check.
+	 * @param ?object $obj The DateTime object to populate if valid.
 	 * @return bool    If the JSON contains a valid date-time string.
 	 */
-	public static function is_encoded_object( object $simple_object, ?DateTime &$datetime ): bool {
-		// Convert the object to an array.
-		$ary = (array) $simple_object;
-
+	public static function can_decode( array $ary, ?object &$obj ): bool {
 		// Check it looks right.
-		if ( count( $ary ) !== 1 || empty( $ary['DateTime'] ) || ! is_object( $ary['DateTime'] ) ) {
+		if ( count( $ary ) !== 1 || empty( $ary['DateTime'] ) || ! is_array( $ary['DateTime'] ) ) {
+			return false;
+		}
+
+		// Check the array of properties has the right number and type of values.
+		$fields = $ary['DateTime'];
+		if ( count( $fields ) !== 3
+			|| ! key_exists( 'date', $fields ) || ! is_string( $fields['date'] )
+			|| ! key_exists( 'timezone_type', $fields ) || ! is_int( $fields['timezone_type'] )
+			|| ! key_exists( 'timezone', $fields ) || ! is_string( $fields['timezone'] )
+		) {
 			return false;
 		}
 
 		// Try to convert the inner object to a DateTime.
 		try {
-			// The DateTime constructor will throw if the string does not represent a valid DateTime.
-			$datetime = DateTime::__set_state( (array) $ary['DateTime'] );
-			return true;
-		} catch ( Exception $ex ) {
-			debug( 'Invalid DateTime', $ary['DateTime'], $ex->getMessage() );
+			// The DateTime constructor will throw if the details don't represent a valid DateTime.
+			$obj = DateTime::__set_state( $ary['DateTime'] );
+		} catch ( Throwable $ex ) {
+			debug( $ex->getMessage(), $ary['DateTime'], );
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 }

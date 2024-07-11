@@ -22,12 +22,14 @@ class Json {
 	 */
 	public static function encode( mixed $data ): string {
 		// Check for special objects with custom encoding.
-		if ( $data instanceof DateTime ) {
-			// Special handling of DateTime objects.
-			$data = DateTimes::encode( $data );
-		} elseif ( $data instanceof Object_Reference ) {
-			// Special handling of Object_Reference objects.
-			$data = Object_Reference::encode( $data );
+		if ( is_object( $data ) ) {
+			if ( $data instanceof DateTime ) {
+				// Special handling of DateTime objects.
+				$data = DateTimes::encode( $data );
+			} elseif ( $data instanceof Object_Reference ) {
+				// Special handling of Object_Reference objects.
+				$data = Object_Reference::encode( $data );
+			}
 		}
 
 		return wp_json_encode( $data );
@@ -40,21 +42,19 @@ class Json {
 	 * @return mixed The decoded data.
 	 */
 	public static function decode( string $json ): mixed {
-		$value = json_decode( $json );
+		$data = json_decode( $json, true );
 
-		// If the value is an object, check if it requires special handling.
-		if ( is_object( $value ) ) {
-			// Special handling of DateTime objects.
-			if ( DateTimes::is_encoded_object( $value, $datetime ) ) {
+		// If the value is an array, check if it represents an encodable PHP object.
+		if ( is_array( $data ) ) {
+			if ( DateTimes::can_decode( $data, $datetime ) ) {
+				// Special handling of DateTime objects.
 				return $datetime;
-			}
-
-			// Special handling of Object_Reference objects.
-			if ( Object_Reference::is_encoded_object( $value, $object_ref ) ) {
+			} elseif ( Object_Reference::can_decode( $data, $object_ref ) ) {
+				// Special handling of Object_Reference objects.
 				return $object_ref;
 			}
 		}
 
-		return $value;
+		return $data;
 	}
 }

@@ -61,16 +61,6 @@ class Logger {
 			return;
 		}
 
-		// Construct the Event_Meta objects.
-		if ( $event_meta === null ) {
-			$event_meta_objects = null;
-		} else {
-			$event_meta_objects = array();
-			foreach ( $event_meta as $key => $value ) {
-				$event_meta_objects[] = Event_Meta::create( null, $key, $value );
-			}
-		}
-
 		// Construct the new Event object.
 		$event                = new Event();
 		$event->date_time     = DateTimes::current_datetime( 'UTC' );
@@ -84,11 +74,11 @@ class Logger {
 		$event->object_type   = $object_type;
 		$event->object_id     = $object_id;
 		$event->object_name   = $object_name;
-		$event->event_meta    = $event_meta_objects;
+		$event->event_meta    = $event_meta;
 		$event->properties    = $properties;
 
-		// Insert the new record.
-		$ok = Event_Repository::upsert( $event );
+		// Save the object.
+		$ok = Event_Repository::save( $event );
 
 		if ( ! $ok ) {
 			debug( 'Event insert failed.', func_get_args() );

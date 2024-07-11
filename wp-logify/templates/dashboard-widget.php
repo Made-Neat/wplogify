@@ -24,7 +24,8 @@ $twenty_four_hours_ago    = DateTimes::format_datetime_mysql( DateTimes::subtrac
 $activities_last_24_hours = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE date_time > %s", $twenty_four_hours_ago ) );
 
 // Fetch the last 10 activities.
-$results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DESC LIMIT 10" );
+$sql_fetch_10 = $wpdb->prepare( '"SELECT * FROM %i ORDER BY date_time DESC LIMIT 10"', $table_name );
+$results      = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 ?>
 
 <div class="wp-logify-dashboard-widget">
@@ -53,12 +54,15 @@ $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY date_time DES
 		</thead>
 		<tbody>
 			<?php if ( $results ) : ?>
-				<?php foreach ( $results as $event ) : ?>
+				<?php
+				foreach ( $results as $row ) :
+					$event = Event_Repository::record_to_object( $row );
+					?>
 					<tr>
 						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->date_time ) ); ?></td>
 						<td><?php echo Users::get_tag( $event->user_id, $event->user_name ); ?></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
-						<td><?php echo Log_page::get_object_tag( $event ); ?></td>
+						<td><?php echo $event->get_object_reference()->get_tag(); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			<?php else : ?>

@@ -166,7 +166,7 @@ class Log_Page {
 		$data = array();
 		foreach ( $rows as $row ) {
 			// Construct the Event object.
-			$event = Event_Repository::select( $row['event_id'] );
+			$event = Event_Repository::load( $row['event_id'] );
 
 			// Create a new data item.
 			$item             = array();
@@ -189,7 +189,8 @@ class Log_Page {
 			$item['event_type'] = $event->event_type;
 
 			// Get the HTML for the object name tag.
-			$item['object_name'] = self::get_object_tag( $event );
+			$object_reference    = new Object_Reference( $event->object_type, $event->object_id, $event->object_name );
+			$item['object_name'] = $object_reference->get_tag();
 
 			// Format the details.
 			$item['details'] = self::format_details( $event );
@@ -269,7 +270,7 @@ class Log_Page {
 	 * @param Event $event The event.
 	 * @return string The formatted event metadata as an HTML table.
 	 */
-	public static function format_event_meta( Event $event ): string {
+	public static function format_event_metadata( Event $event ): string {
 		// Handle the null case.
 		if ( empty( $event->event_meta ) ) {
 			return '';
@@ -279,9 +280,9 @@ class Log_Page {
 		$html  = "<div class='wp-logify-event-meta wp-logify-details-section'>\n";
 		$html .= "<h4>Metadata</h4>\n";
 		$html .= "<table class='wp-logify-event-meta-table'>\n";
-		foreach ( $event->event_meta as $event_meta ) {
-			$readable_key = self::make_key_readable( $event_meta->meta_key, array( 'wp', $event->object_type ) );
-			$html        .= "<tr><th>$readable_key</th><td>" . self::value_to_string( $event_meta->meta_value ) . '</td></tr>';
+		foreach ( $event->event_meta as $meta_key => $meta_value ) {
+			$readable_key = self::make_key_readable( $meta_key, array( 'wp', $event->object_type ) );
+			$html        .= "<tr><th>$readable_key</th><td>" . self::value_to_string( $meta_value ) . '</td></tr>';
 		}
 		$html .= "</table>\n";
 		$html .= "</div>\n";
@@ -359,10 +360,14 @@ class Log_Page {
 	 * @return string The value as a string.
 	 */
 	public static function value_to_string( mixed $value ) {
-		if ( is_string( $value ) ) {
+		if ( $value === null ) {
+			return '';
+		} elseif ( is_string( $value ) ) {
 			return $value;
 		} elseif ( $value instanceof DateTime ) {
 			return DateTimes::format_datetime_site( $value, true );
+		} elseif ( $value instanceof Object_Reference ) {
+			return $value->get_tag();
 		} elseif ( is_scalar( $value ) ) {
 			return (string) $value;
 		} else {
@@ -431,73 +436,9 @@ class Log_Page {
 	public static function format_details( Event $event ): string {
 		$html  = "<div class='wp-logify-details'>\n";
 		$html .= self::format_user_details( $event );
-		$html .= self::format_event_meta( $event );
+		$html .= self::format_event_metadata( $event );
 		$html .= self::format_object_properties( $event );
 		$html .= "</div>\n";
 		return $html;
-	}
-
-	/**
-	 * Retrieves the link to an object based on its type and ID.
-	 *
-	 * NB: The ID will be an integer (as a string) for posts and users, and a string for themes and
-	 * plugins.
-	 *
-	 * @param object $event The event object from the database.
-	 * @return string The link to the object.
-	 * @throws Exception If the object type is invalid or the object ID is null.
-	 */
-	public static function get_object_tag( object $event ) {
-		// Check for non-empty object type and ID.
-		if ( empty( $event->object_type ) || empty( $event->object_id ) ) {
-			throw new Exception( 'The object type and ID must both be set to generate a tag.' );
-		}
-
-		// Construct string to use in place of a link to the object if it's been deleted.
-		$deleted_string = ( empty( $event->object_name )
-			? ( ucfirst( $event->object_type ) . ' ' . $event->object_id )
-			: $event->object_name ) . ' (deleted)';
-
-		// Generate the link based on the object type.
-		switch ( $event->object_type ) {
-			case 'post':
-				// Return the post tag.
-				return Posts::get_tag( $event->object_id, $event->object_name );
-
-			case 'user':
-				// Return the user tag.
-				return Users::get_tag( $event->object_id, $event->object_name );
-
-			case 'term':
-				// Return the term tag.
-				return Terms::get_tag( $event->object_id, $event->object_name );
-
-			case 'theme':
-				// Attempt to load the theme.
-				$theme = wp_get_theme( $event->object_id );
-
-				// Check if the theme was deleted.
-				if ( ! $theme->exists() ) {
-					return $deleted_string;
-				}
-
-				// Return a link to the theme.
-				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
-
-			case 'plugin':
-				// Attempt to load the plugin.
-				$plugins = get_plugins();
-
-				// Check if the plugin was deleted.
-				if ( ! array_key_exists( $event->object_id, $plugins ) ) {
-					return $deleted_string;
-				}
-
-				// Link to the plugins page.
-				return "<a href='/wp-admin/plugins.php'>{$plugins[$event->object_id]['Name']}</a>";
-		}
-
-		// If the object type is invalid, throw an exception.
-		throw new Exception( "Invalid object type: $event->object_type" );
 	}
 }

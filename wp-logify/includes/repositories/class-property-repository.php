@@ -18,12 +18,12 @@ class Property_Repository extends Repository {
 	// CRUD methods.
 
 	/**
-	 * Select a property by ID.
+	 * Load a Property from the database by ID.
 	 *
 	 * @param int $property_id The ID of the property.
-	 * @return ?object The Property object, or null if not found.
+	 * @return ?Property The Property object, or null if not found.
 	 */
-	public static function select( int $property_id ): ?object {
+	public static function load( int $property_id ): ?Property {
 		global $wpdb;
 
 		// Get the property record.
@@ -42,7 +42,7 @@ class Property_Repository extends Repository {
 	}
 
 	/**
-	 * Update or insert a property record.
+	 * Save a Property object to the database.
 	 *
 	 * If the object has an ID, it will be updated. Otherwise, it will be inserted.
 	 *
@@ -52,7 +52,7 @@ class Property_Repository extends Repository {
 	 * @return bool True on success, false on failure.
 	 * @throws InvalidArgumentException If the entity is not an instance of Property.
 	 */
-	public static function upsert( object $property ): bool {
+	public static function save( object $property ): bool {
 		global $wpdb;
 
 		// Check entity type.
@@ -145,13 +145,11 @@ class Property_Repository extends Repository {
 	 * @return Property The Property object.
 	 */
 	public static function record_to_object( array $data ): Property {
-		$property                = new Property();
-		$property->property_id   = (int) $data['property_id'];
-		$property->event_id      = (int) $data['event_id'];
-		$property->property_key  = $data['property_key'];
-		$property->property_type = $data['property_type'];
-		$property->old_value     = Json::decode( $data['old_value'] );
-		$property->new_value     = Json::decode( $data['new_value'] );
+		$old_value             = Json::decode( $data['old_value'] );
+		$new_value             = Json::decode( $data['new_value'] );
+		$property              = new Property( $data['property_key'], $data['property_type'], $old_value, $new_value );
+		$property->property_id = (int) $data['property_id'];
+		$property->event_id    = (int) $data['event_id'];
 		return $property;
 	}
 
@@ -182,7 +180,7 @@ class Property_Repository extends Repository {
 	 * @param int $event_id The ID of the event.
 	 * @return ?array Array of Property objects or null if none found.
 	 */
-	public static function select_by_event_id( int $event_id ): ?array {
+	public static function load_by_event_id( int $event_id ): ?array {
 		global $wpdb;
 
 		// Get all the properties connectted to the event.

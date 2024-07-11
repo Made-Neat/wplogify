@@ -18,15 +18,15 @@ abstract class Repository {
 	// CRUD methods.
 
 	/**
-	 * Select an entity by ID.
+	 * Load an entity from the database by ID.
 	 *
 	 * @param int $id The ID of the entity.
 	 * @return ?object The entity, or null if not found.
 	 */
-	abstract public static function select( int $id ): ?object;
+	abstract public static function load( int $id ): ?object;
 
 	/**
-	 * Update or insert an entity.
+	 * Save an entity to the database.
 	 *
 	 * If the object has an ID, it will be updated. Otherwise, it will be inserted.
 	 *
@@ -35,7 +35,7 @@ abstract class Repository {
 	 * @param object $entity The entity to insert.
 	 * @return bool True on success, false on failure.
 	 */
-	abstract public static function upsert( object $entity ): bool;
+	abstract public static function save( object $entity ): bool;
 
 	/**
 	 * Delete an entity by ID.

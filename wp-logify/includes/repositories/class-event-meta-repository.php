@@ -20,12 +20,12 @@ class Event_Meta_Repository extends Repository {
 	// CRUD methods.
 
 	/**
-	 * Select an entity by ID.
+	 * Load an Event_Meta entity from the database by ID.
 	 *
 	 * @param int $event_meta_id The ID of the entity.
 	 * @return ?Event_Meta The entity, or null if not found.
 	 */
-	public static function select( int $event_meta_id ): ?Event_Meta {
+	public static function load( int $event_meta_id ): ?Event_Meta {
 		global $wpdb;
 
 		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_meta_id = %d', self::get_table_name(), $event_meta_id );
@@ -43,7 +43,7 @@ class Event_Meta_Repository extends Repository {
 	}
 
 	/**
-	 * Update or insert an entity.
+	 * Save an Event_Meta object to the database.
 	 *
 	 * If the object has an ID, it will be updated. Otherwise, it will be inserted.
 	 *
@@ -53,7 +53,7 @@ class Event_Meta_Repository extends Repository {
 	 * @return bool True on success, false on failure.
 	 * @throws InvalidArgumentException If the entity is not an instance of Event_Meta.
 	 */
-	public static function upsert( object $event_meta ): bool {
+	public static function save( object $event_meta ): bool {
 		global $wpdb;
 
 		// Check entity type.
@@ -66,7 +66,7 @@ class Event_Meta_Repository extends Repository {
 
 		// Update or insert the event_meta record.
 		$data    = self::object_to_record( $event_meta );
-		$formats = array( '%d', '%d', '%s', '%s' );
+		$formats = array( '%d', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
 			$ok = $wpdb->insert( self::get_table_name(), $data, $formats );
@@ -139,11 +139,9 @@ class Event_Meta_Repository extends Repository {
 	 * @return Event_Meta The Event_Meta entity.
 	 */
 	protected static function record_to_object( array $data ): Event_Meta {
-		$event_meta                = new Event_Meta();
+		$meta_value                = Json::decode( $data['meta_value'] );
+		$event_meta                = new Event_Meta( (int) $data['event_id'], $data['meta_key'], $meta_value );
 		$event_meta->event_meta_id = (int) $data['event_meta_id'];
-		$event_meta->event_id      = (int) $data['event_id'];
-		$event_meta->meta_key      = $data['meta_key'];
-		$event_meta->meta_value    = Json::decode( $data['meta_value'] );
 		return $event_meta;
 	}
 
@@ -164,28 +162,28 @@ class Event_Meta_Repository extends Repository {
 	// =============================================================================================
 	// Methods relating to events.
 
-	/**
-	 * Select all event_meta records relating to an event.
-	 *
-	 * @param int $event_id The ID of the event.
-	 * @return ?array Array of Event_Meta objects or null if none found.
-	 */
-	public static function select_by_event_id( int $event_id ): ?array {
-		global $wpdb;
+	// /**
+	// * Select all event_meta records relating to an event.
+	// *
+	// * @param int $event_id The ID of the event.
+	// * @return ?array Array of Event_Meta objects or null if none found.
+	// */
+	// public static function select_by_event_id( int $event_id ): ?array {
+	// global $wpdb;
 
-		// Get all the event_meta records connectted to the event.
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-		$data = $wpdb->get_results( $sql, ARRAY_A );
+	// Get all the event_meta records connectted to the event.
+	// $sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
+	// $data = $wpdb->get_results( $sql, ARRAY_A );
 
-		// If none found, return null.
-		if ( ! $data ) {
-			return null;
-		}
+	// If none found, return null.
+	// if ( ! $data ) {
+	// return null;
+	// }
 
-		// Convert the records to objects.
-		$event_metas = array_map( fn( $record ) => self::record_to_object( $record ), $data );
-		return $event_metas;
-	}
+	// Convert the records to objects.
+	// $event_metas = array_map( fn( $record ) => self::record_to_object( $record ), $data );
+	// return $event_metas;
+	// }
 
 	/**
 	 * Delete all event_meta records relating to an event.

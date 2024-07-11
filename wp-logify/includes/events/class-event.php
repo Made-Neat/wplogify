@@ -88,9 +88,9 @@ class Event {
 	 * The ID of the object associated with the event. This will be an integer (stored as a string)
 	 * in the case of a post, user, etc., but could be a string in the case of a theme or plugin.
 	 *
-	 * @var ?string
+	 * @var null|int|string
 	 */
-	public ?string $object_id;
+	public null|int|string $object_id;
 
 	/**
 	 * The name of the object associated with the event. This is only used when the object has been
@@ -121,5 +121,20 @@ class Event {
 	 */
 	public function __construct() {
 		// Empty constructor.
+	}
+
+	/**
+	 * Get the Object_Reference for the object associated with the event.
+	 *
+	 * @return ?Object_Reference The Object_Reference for the object, or null if there is no object.
+	 */
+	public function get_object_reference(): ?Object_Reference {
+		// Handle the null case.
+		if ( $this->object_type === null || $this->object_id === null ) {
+			return null;
+		}
+
+		// Construct the object reference.
+		return new Object_Reference( $this->object_type, $this->object_id, $this->object_name );
 	}
 }
