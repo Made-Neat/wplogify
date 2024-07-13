@@ -1,4 +1,9 @@
 <?php
+/**
+ * Contains utility functions.
+ *
+ * @package WP_Logify
+ */
 
 namespace WP_Logify;
 

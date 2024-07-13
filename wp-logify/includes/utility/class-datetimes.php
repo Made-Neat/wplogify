@@ -178,6 +178,7 @@ class DateTimes implements Encodable {
 	 *
 	 * @param object $obj The DateTime to convert.
 	 * @return array The array representation of the DateTime.
+	 * @throws InvalidArgumentException If the object is not an instance of DateTime.
 	 */
 	public static function encode( object $obj ): array {
 		// Check the type.

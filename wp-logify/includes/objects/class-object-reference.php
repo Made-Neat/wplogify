@@ -135,6 +135,7 @@ class Object_Reference implements Encodable {
 	 *
 	 * @param object $obj The Object_Reference to convert.
 	 * @return array The array representation of the Object_Reference.
+	 * @throws InvalidArgumentException If the object is not an instance of Object_Reference.
 	 */
 	public static function encode( object $obj ): array {
 		// Check the type.

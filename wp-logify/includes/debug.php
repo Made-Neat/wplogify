@@ -27,6 +27,8 @@ function debug( ...$args ) {
 
 /**
  * Dump an SQL query into the error log.
+ *
+ * @param string $sql The SQL query to dump.
  */
 function debug_sql( string $sql ) {
 	global $wpdb;

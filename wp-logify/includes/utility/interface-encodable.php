@@ -15,6 +15,7 @@ interface Encodable {
 	/**
 	 * Convert the object to an array suitable for encoding as JSON.
 	 *
+	 * @param object $obj The object to convert.
 	 * @return array The array representation of the object.
 	 */
 	public static function encode( object $obj ): array;

@@ -47,8 +47,9 @@ wp-config.php
 # uncomment the next line
 #/wp-content/themes
 
-# Jetbrains files
+# IDE files
 .idea/
+.vscode/
 
 # Node.js modules
 node_modules/

@@ -1,11 +1,13 @@
 <?php
+/**
+ * Contains test code.
+ *
+ * @package WP_Logify
+ */
 
 namespace WP_Logify;
 
 use DateTime;
-use Exception;
-use Error;
-use Throwable;
 
 function test_datetime() {
 

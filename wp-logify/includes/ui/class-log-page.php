@@ -139,7 +139,8 @@ class Log_Page {
 
 		// Construct and run the SQL statement.
 		$select_args          = array( $events_table_name, $user_table_name );
-		$filtered_sql         = $wpdb->prepare( "$select_count $where", ...$select_args, ...$where_args );
+		$args                 = array_merge( $select_args, $where_args );
+		$filtered_sql         = $wpdb->prepare( "$select_count $where", $args );
 		$num_filtered_records = $wpdb->get_var( $filtered_sql );
 
 		// -----------------------------------------------------------------------------------------
