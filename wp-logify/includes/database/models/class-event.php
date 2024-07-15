@@ -24,9 +24,9 @@ class Event {
 	/**
 	 * The date and time of the event in the site time zone, stored as a string.
 	 *
-	 * @var string
+	 * @var DateTime
 	 */
-	public DateTime $date_time;
+	public DateTime $when_happened;
 
 	/**
 	 * The ID of the user who did the action.

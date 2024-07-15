@@ -8,6 +8,7 @@
 namespace WP_Logify;
 
 use DateTime;
+use DateTimeZone;
 use Exception;
 use WP_User;
 
@@ -23,7 +24,7 @@ class Users {
 	 *
 	 * @var array
 	 */
-	private static $changed_meta_properties = array();
+	private static $changes = array();
 
 	/**
 	 * Initializes the class by adding WordPress actions.
@@ -104,35 +105,26 @@ class Users {
 	 * @param array   $userdata      The data for the user after the update.
 	 */
 	public static function track_update( int $user_id, WP_User $old_user_data, array $userdata ) {
-		// Get the user's properties.
-		$properties = self::get_properties( $old_user_data );
-
 		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
-			// Make IDs integers.
-			$old_value = make_id_int( $key, $value );
-			$new_value = make_id_int( $key, $userdata[ $key ] );
+
+			// Process meta values into correct types.
+			$old_value = process_database_value( $key, $value );
+			$new_value = process_database_value( $key, $userdata[ $key ] );
 
 			// If the value has changed, add the before and after values to the changes array.
-			if ( $old_value !== $new_value ) {
-				if ( key_exists( $key, $properties ) ) {
-					$properties[ $key ]->old_value = $old_value;
-					$properties[ $key ]->new_value = $new_value;
+			if ( ! are_equal( $old_value, $new_value ) ) {
+				if ( key_exists( $key, self::$changes ) ) {
+					self::$changes[ $key ]->old_value = $old_value;
+					self::$changes[ $key ]->new_value = $new_value;
 				} else {
-					$properties[ $key ] = new Property( $key, 'base', $old_value, $new_value );
+					self::$changes[ $key ] = new Property( $key, 'base', $old_value, $new_value );
 				}
 			}
 		}
 
-		// Update meta properties with any changes recorded in track_meta_update().
-		if ( ! empty( self::$changed_meta_properties ) ) {
-			foreach ( self::$changed_meta_properties as $key => $property ) {
-				$properties[ $key ] = $property;
-			}
-		}
-
 		// Log the event.
-		Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, $properties );
+		Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, self::$changes );
 	}
 
 	/**
@@ -147,17 +139,17 @@ class Users {
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
-		// Make IDs integers.
-		$old_value = make_id_int( $meta_key, $current_value );
-		$new_value = make_id_int( $meta_key, $meta_value );
+		// Process meta values into correct types.
+		$old_value = process_database_value( $meta_key, $current_value );
+		$new_value = process_database_value( $meta_key, $meta_value );
 
 		// If the value has changed, add the before and after values to the changes array.
-		if ( $old_value !== $new_value ) {
-			if ( key_exists( $meta_key, self::$changed_meta_properties ) ) {
-				self::$changed_meta_properties[ $meta_key ]->old_value = $old_value;
-				self::$changed_meta_properties[ $meta_key ]->new_value = $new_value;
+		if ( ! are_equal( $old_value, $new_value ) ) {
+			if ( key_exists( $meta_key, self::$changes ) ) {
+				self::$changes[ $meta_key ]->old_value = $old_value;
+				self::$changes[ $meta_key ]->new_value = $new_value;
 			} else {
-				self::$changed_meta_properties[ $meta_key ] = new Property( $meta_key, 'meta', $old_value, $new_value );
+				self::$changes[ $meta_key ] = new Property( $meta_key, 'meta', $old_value, $new_value );
 			}
 		}
 	}
@@ -179,7 +171,7 @@ class Users {
 		// Check if this is a continuing session.
 		$continuing = false;
 		$sql        = $wpdb->prepare(
-			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY date_time DESC',
+			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC',
 			$table_name,
 			$user_id,
 			$event_type
@@ -192,24 +184,24 @@ class Users {
 			$event = Event_Repository::load( $row['event_id'] );
 
 			// Check we have the info we need.
-			if ( ! empty( $event->event_meta['Session start'] ) && ! empty( $event->event_meta['Session end'] ) ) {
+			if ( ! empty( $event->event_meta['session_start'] ) && ! empty( $event->event_meta['session_end'] ) ) {
 
-				// Extract the current session end datetime from the event details.
-				$session_start_datetime = $event->event_meta['Session start'];
-				$session_end_datetime   = $event->event_meta['Session end'];
+				// Extract the current session_end datetime from the event details.
+				$session_start_datetime = $event->event_meta['session_start'];
+				$session_end_datetime   = $event->event_meta['session_end'];
 
 				// Get the duration in seconds.
 				$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
 
-				// If the current value for session end time is less than 10 minutes ago, we'll
-				// assume the current session is continuing, and update the session end time in the
+				// If the current value for session_end time is less than 10 minutes ago, we'll
+				// assume the current session is continuing, and update the session_end time in the
 				// existing log entry to now.
 				if ( $seconds_diff <= 600 ) {
 					$continuing = true;
 
-					// Update the session end time and duration.
-					$event->event_meta['Session end']      = $now;
-					$event->event_meta['Session duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
+					// Update the session_end time and duration.
+					$event->event_meta['session_end']      = $now;
+					$event->event_meta['session_duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
 
 					// Update the event meta data.
 					Event_Repository::save_metadata( $event );
@@ -221,9 +213,9 @@ class Users {
 		if ( ! $continuing ) {
 			// Create the array of metadata.
 			$event_meta = array(
-				'Session start'    => $now,
-				'Session end'      => $now,
-				'Session duration' => '0 minutes',
+				'session_start'    => $now,
+				'session_end'      => $now,
+				'session_duration' => '0 minutes',
 			);
 
 			// Log the event.
@@ -281,14 +273,13 @@ class Users {
 
 		// Add the base properties.
 		foreach ( $user->data as $key => $value ) {
-			// Convert ID values to ints.
-			$value = make_id_int( $key, $value );
+			// Process meta values into correct types.
+			$value = process_database_value( $key, $value );
 
-			// Convert datetime strings to DateTimes.
+			// For whatever reason, the user_registered column in the users table is in UTC,
+			// despite not having the same '_gmt' suffix as UTC datetimes in the posts table.
 			if ( $key === 'user_registered' ) {
-				// For whatever reason, the user_registered column in the users table is in UTC,
-				// despite not having the same '_gmt' suffix as UTC datetimes in the posts table.
-				$value = DateTimes::create_datetime( $value, 'UTC' );
+				DateTimes::set_timezone( $value, 'UTC' );
 			}
 
 			// Construct the new Property object and add it to the properties array.
@@ -298,13 +289,8 @@ class Users {
 		// Add the meta properties.
 		$usermeta = get_user_meta( $user->ID );
 		foreach ( $usermeta as $key => $value ) {
-			// If there's only one value, reduce the result to that value.
-			if ( is_array( $value ) && count( $value ) === 1 ) {
-				$value = $value[0];
-			}
-
-			// Convert ID values to ints.
-			$value = make_id_int( $key, $value );
+			// Process meta values into correct types.
+			$value = process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'meta', $value );
@@ -388,7 +374,7 @@ class Users {
 		}
 
 		$body = wp_remote_retrieve_body( $response );
-		$data = Json::decode( $body );
+		$data = json_decode( $body, true );
 
 		// Construct the location string.
 		if ( $data['status'] === 'success' ) {
@@ -432,12 +418,12 @@ class Users {
 		// Get the last login datetime from the wp_logify_events table.
 		$table_name       = Event_Repository::get_table_name();
 		$sql              = $wpdb->prepare(
-			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY date_time DESC LIMIT 1",
+			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY when_happened DESC LIMIT 1",
 			$table_name,
 			$user->ID
 		);
 		$last_login_event = $wpdb->get_row( $sql, ARRAY_A );
-		return $last_login_event === null ? null : DateTimes::create_datetime( $last_login_event->date_time );
+		return $last_login_event === null ? null : DateTimes::create_datetime( $last_login_event->when_happened );
 	}
 
 	/**
@@ -454,10 +440,10 @@ class Users {
 			$user = self::get_user( $user );
 		}
 
-		// Get the most recent session end datetime from the wp_logify_events table.
+		// Get the most recent session_end datetime from the wp_logify_events table.
 		$table_name = Event_Repository::get_table_name();
 		$sql        = $wpdb->prepare(
-			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY date_time DESC LIMIT 1",
+			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY when_happened DESC LIMIT 1",
 			$table_name,
 			$user->ID
 		);
@@ -468,9 +454,9 @@ class Users {
 			// Create the Event.
 			$event = Event_Repository::load( $record['event_id'] );
 
-			// Return the session end datetime if set.
-			if ( ! empty( $event->event_meta['Session end'] ) ) {
-				return $event->event_meta['Session end'];
+			// Return the session_end datetime if set.
+			if ( ! empty( $event->event_meta['session_end'] ) ) {
+				return $event->event_meta['session_end'];
 			}
 		}
 

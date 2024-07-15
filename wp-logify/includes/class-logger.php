@@ -63,7 +63,7 @@ class Logger {
 
 		// Construct the new Event object.
 		$event                = new Event();
-		$event->date_time     = DateTimes::current_datetime( 'UTC' );
+		$event->when_happened = DateTimes::current_datetime();
 		$event->user_id       = $user->ID;
 		$event->user_name     = Users::get_name( $user );
 		$event->user_role     = implode( ', ', $user->roles );

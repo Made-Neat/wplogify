@@ -53,9 +53,7 @@ class Plugin {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		// Create the tables.
-		Event_Repository::create_table();
-		Event_Meta_Repository::create_table();
-		Property_Repository::create_table();
+		Database::create_all_tables();
 	}
 
 	/**
@@ -71,9 +69,7 @@ class Plugin {
 	public static function uninstall() {
 		// Drop the tables if the option is set to do so.
 		if ( Settings::get_delete_on_uninstall() ) {
-			Event_Repository::drop_table();
-			Event_Meta_Repository::drop_table();
-			Property_Repository::drop_table();
+			Database::drop_all_tables();
 		}
 
 		// Delete settings.

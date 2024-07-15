@@ -8,12 +8,11 @@
 namespace WP_Logify;
 
 use Exception;
-use InvalidArgumentException;
 
 /**
  * Represents a reference to an WordPress object that can be created, updated, or deleted.
  */
-class Object_Reference implements Encodable {
+class Object_Reference {
 
 	/**
 	 * The type of the object, e.g. 'post', 'user', 'term'.
@@ -125,60 +124,6 @@ class Object_Reference implements Encodable {
 			default:
 				throw new Exception( 'Unknown object type.' );
 		}
-	}
-
-	// =============================================================================================
-	// Encodable interface methods.
-
-	/**
-	 * Convert the object reference to a array suitable for encoding as JSON.
-	 *
-	 * @param object $obj The Object_Reference to convert.
-	 * @return array The array representation of the Object_Reference.
-	 * @throws InvalidArgumentException If the object is not an instance of Object_Reference.
-	 */
-	public static function encode( object $obj ): array {
-		// Check the type.
-		if ( ! $obj instanceof Object_Reference ) {
-			throw new InvalidArgumentException( 'The object must be an instance of Object_Reference.' );
-		}
-
-		return array(
-			'Object_Reference' => array(
-				'type' => $obj->type,
-				'id'   => $obj->id,
-				'name' => $obj->name,
-			),
-		);
-	}
-
-	/**
-	 * Check if the value expresses a valid Object_Reference.
-	 *
-	 * @param array   $ary The value to check.
-	 * @param ?object $obj The Object_Reference object to populate if valid.
-	 * @return bool If the JSON contains a valid date-time string.
-	 */
-	public static function can_decode( array $ary, ?object &$obj ): bool {
-		// Check it looks right.
-		if ( count( $ary ) !== 1 || empty( $ary['Object_Reference'] ) || ! is_array( $ary['Object_Reference'] ) ) {
-			return false;
-		}
-
-		// Check the array of properties has the right number and type of values.
-		$fields = $ary['Object_Reference'];
-		if ( count( $fields ) !== 3
-			|| ! key_exists( 'type', $fields ) || ! is_string( $fields['type'] )
-			|| ! key_exists( 'id', $fields ) || ( ! is_int( $fields['id'] ) && ! is_string( $fields['id'] ) )
-			|| ! key_exists( 'name', $fields ) || ! is_string( $fields['name'] )
-		) {
-			return false;
-		}
-
-		// Create the new object.
-		$obj = new self( $fields['type'], $fields['id'], $fields['name'] );
-
-		return true;
 	}
 
 	/**

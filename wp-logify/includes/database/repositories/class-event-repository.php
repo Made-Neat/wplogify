@@ -152,7 +152,7 @@ class Event_Repository extends Repository {
 
 		// Convert the query result into an associative array.
 		foreach ( $rows as $row ) {
-			$event->event_meta[ $row['meta_key'] ] = Json::decode( $row['meta_value'] );
+			$event->event_meta[ $row['meta_key'] ] = Serialization::unserialize( $row['meta_value'] );
 		}
 	}
 
@@ -262,7 +262,7 @@ class Event_Repository extends Repository {
 
 		$sql = "CREATE TABLE $table_name (
             event_id      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            date_time     DATETIME        NOT NULL,
+            when_happened DATETIME        NOT NULL,
             user_id       BIGINT UNSIGNED NOT NULL,
             user_name     VARCHAR(255)    NOT NULL,
             user_role     VARCHAR(255)    NOT NULL,
@@ -280,6 +280,22 @@ class Event_Repository extends Repository {
 		dbDelta( $sql );
 	}
 
+	/**
+	 * Drop the events table.
+	 */
+	public static function drop_table() {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
+	}
+
+	/**
+	 * Empty the events table.
+	 */
+	public static function truncate_table() {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::get_table_name() ) );
+	}
+
 	// =============================================================================================
 	// Methods to convert between database records and entity objects.
 
@@ -292,7 +308,7 @@ class Event_Repository extends Repository {
 	public static function record_to_object( array $data ): Event {
 		$event                = new Event();
 		$event->event_id      = (int) $data['event_id'];
-		$event->date_time     = DateTimes::create_datetime( $data['date_time'] );
+		$event->when_happened = DateTimes::create_datetime( $data['when_happened'] );
 		$event->user_id       = (int) $data['user_id'];
 		$event->user_name     = $data['user_name'];
 		$event->user_role     = $data['user_role'];
@@ -316,7 +332,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function object_to_record( Event $event ): array {
 		return array(
-			'date_time'     => DateTimes::format_datetime_mysql( $event->date_time ),
+			'when_happened' => DateTimes::format_datetime_mysql( $event->when_happened ),
 			'user_id'       => $event->user_id,
 			'user_name'     => $event->user_name,
 			'user_role'     => $event->user_role,

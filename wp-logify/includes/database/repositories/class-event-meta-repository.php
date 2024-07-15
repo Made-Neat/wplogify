@@ -129,6 +129,22 @@ class Event_Meta_Repository extends Repository {
 		dbDelta( $sql );
 	}
 
+	/**
+	 * Drop the events table.
+	 */
+	public static function drop_table() {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
+	}
+
+	/**
+	 * Empty the events table.
+	 */
+	public static function truncate_table() {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::get_table_name() ) );
+	}
+
 	// =============================================================================================
 	// Methods to convert between database records and entity objects.
 
@@ -139,7 +155,7 @@ class Event_Meta_Repository extends Repository {
 	 * @return Event_Meta The Event_Meta entity.
 	 */
 	protected static function record_to_object( array $data ): Event_Meta {
-		$meta_value                = Json::decode( $data['meta_value'] );
+		$meta_value                = Serialization::unserialize( $data['meta_value'] );
 		$event_meta                = new Event_Meta( (int) $data['event_id'], $data['meta_key'], $meta_value );
 		$event_meta->event_meta_id = (int) $data['event_meta_id'];
 		return $event_meta;
@@ -155,7 +171,7 @@ class Event_Meta_Repository extends Repository {
 		return array(
 			'event_id'   => $event_meta->event_id,
 			'meta_key'   => $event_meta->meta_key,
-			'meta_value' => Json::encode( $event_meta->meta_value ),
+			'meta_value' => Serialization::serialize( $event_meta->meta_value ),
 		);
 	}
 

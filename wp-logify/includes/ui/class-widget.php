@@ -42,6 +42,6 @@ class Widget {
 	 * Displays the dashboard widget.
 	 */
 	public static function display_dashboard_widget() {
-		include plugin_dir_path( __FILE__ ) . '../templates/dashboard-widget.php';
+		include WP_LOGIFY_PLUGIN_DIR . 'templates/dashboard-widget.php';
 	}
 }

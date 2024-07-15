@@ -135,6 +135,22 @@ class Property_Repository extends Repository {
 		dbDelta( $sql );
 	}
 
+	/**
+	 * Drop the events table.
+	 */
+	public static function drop_table() {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
+	}
+
+	/**
+	 * Empty the events table.
+	 */
+	public static function truncate_table() {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::get_table_name() ) );
+	}
+
 	// =============================================================================================
 	// Methods to convert between database records and entity objects.
 
@@ -145,8 +161,8 @@ class Property_Repository extends Repository {
 	 * @return Property The Property object.
 	 */
 	public static function record_to_object( array $data ): Property {
-		$old_value             = Json::decode( $data['old_value'] );
-		$new_value             = Json::decode( $data['new_value'] );
+		$old_value             = Serialization::unserialize( $data['old_value'] );
+		$new_value             = Serialization::unserialize( $data['new_value'] );
 		$property              = new Property( $data['property_key'], $data['property_type'], $old_value, $new_value );
 		$property->property_id = (int) $data['property_id'];
 		$property->event_id    = (int) $data['event_id'];
@@ -166,8 +182,8 @@ class Property_Repository extends Repository {
 			'event_id'      => $property->event_id,
 			'property_key'  => $property->property_key,
 			'property_type' => $property->property_type,
-			'old_value'     => Json::encode( $property->old_value ),
-			'new_value'     => Json::encode( $property->new_value ),
+			'old_value'     => Serialization::serialize( $property->old_value ),
+			'new_value'     => Serialization::serialize( $property->new_value ),
 		);
 	}
 

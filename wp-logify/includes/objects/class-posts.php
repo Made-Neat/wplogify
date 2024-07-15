@@ -63,42 +63,35 @@ class Posts {
 			return;
 		}
 
-		// Check if a new post revision was created (meaning the post was updated).
-		$is_revision = wp_is_post_revision( $post_id ) !== false;
-		if ( $is_revision ) {
+		// Check if we're updating or creating.
+		$creating = wp_is_post_revision( $post_id ) === false;
+
+		// If creating, get all the post's properties.
+		if ( $creating ) {
+			$properties = self::get_properties( $post );
+		} else {
+			// We're updating, so just record the changed properties.
+
+			// TODO I think this is wrong, we need to find the ID of the most recent revision.
+			// We also need to handle the case of the revision being deleted. So this needs to be an object reference.
+			$revision_id = $post_id;
+
 			// Load the parent object.
 			$post_id = $post->post_parent;
 			$post    = self::get_post( $post_id );
-		}
 
-		// Get the post's properties.
-		$properties = self::get_properties( $post );
-
-		// Update post properties with the changes.
-		if ( ! empty( self::$changes ) ) {
-			// TODO Have to fix this, need a way to access the changes to the content without storing them, as they are already stored in the revision.
-			// Replaces changes to the content with a link to the compare revisions page.
-			if ( ! empty( self::$changes['post_content'] ) ) {
-				$revisions                     = wp_get_post_revisions( $post );
-				$most_recent_revision          = array_shift( $revisions );
-				self::$changes['post_content'] = "<a href='" . admin_url( "/revision.php?revision={$most_recent_revision->ID}" ) . "'>Compare revisions</a>";
-			}
-
-			// // Remove dates from changes. The relevant dates are shown in the event details.
-			// unset( self::$properties['post_date'] );
-			// unset( self::$properties['post_date_gmt'] );
-			// unset( self::$properties['post_modified'] );
-			// unset( self::$properties['post_modified_gmt'] );
-
-			// Update post properties with the changes.
-			foreach ( self::$changes as $key => $change ) {
-				$properties[ $key ]->old_value = $change[0];
-				$properties[ $key ]->new_value = $change[1];
+			// Copy changes to the properties array.
+			$properties = self::$changes;
+			if ( ! empty( $properties['post_content'] ) ) {
+				// For the old value, link to the revision (or show a deleted tag).
+				$properties['post_content']->old_value = "<a href='" . admin_url( "/revision.php?revision={$revision_id}" ) . "'>View revision</a>";
+				// For the new value, link to the edit page (or show a deleted tag).
+				$properties['post_content']->new_value = new Object_Reference( 'post', $post_id, $post->post_title );
 			}
 		}
 
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $properties['Post type'] ) . ( $is_revision ? ' Updated' : ' Created' );
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $creating ? ' Created' : ' Updated' );
 
 		// Log the event.
 		Logger::log_event( $event_type, 'post', $post_id, $post->post_title, null, $properties );
@@ -114,8 +107,14 @@ class Posts {
 	public static function track_update( $post_id, $post_after, $post_before ) {
 		// Compare values.
 		foreach ( $post_before as $key => $value ) {
-			if ( $value !== $post_after->{$key} ) {
-				self::$changes[ $key ] = array( $value, $post_after->{$key} );
+			// Process values into correct types.
+			$old_value = process_database_value( $key, $value );
+			$new_value = process_database_value( $key, $post_after->{$key} );
+
+			// Compare old and new values.
+			if ( ! are_equal( $old_value, $new_value ) ) {
+				// Record change.
+				self::$changes[ $key ] = array( $old_value, $new_value );
 			}
 		}
 	}
@@ -132,9 +131,13 @@ class Posts {
 		// Get the current value.
 		$current_value = get_post_meta( $post_id, $meta_key, true );
 
+		// Process values into correct types.
+		$old_value = process_database_value( $meta_key, $current_value );
+		$new_value = process_database_value( $meta_key, $meta_value );
+
 		// Note the change, if any.
-		if ( $current_value !== $meta_value ) {
-			self::$changes[ $meta_key ] = array( $current_value, $meta_value );
+		if ( ! are_equal( $old_value, $new_value ) ) {
+			self::$changes[ $meta_key ] = array( $old_value, $new_value );
 		}
 	}
 
@@ -410,16 +413,8 @@ class Posts {
 
 		// Add the base properties.
 		foreach ( $post as $key => $value ) {
-
-			// Convert ID values to ints.
-			$value = make_id_int( $key, $value );
-
-			// Convert datetime strings to DateTimes.
-			if ( $key === 'post_date' || $key === 'post_modified' ) {
-				$value = DateTimes::create_datetime( $value, 'site' );
-			} elseif ( $key === 'post_date_gmt' || $key === 'post_modified_gmt' ) {
-				$value = DateTimes::create_datetime( $value, 'UTC' );
-			}
+			// Process meta values into correct types.
+			$value = process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'base', $value );
@@ -428,13 +423,8 @@ class Posts {
 		// Add the meta properties.
 		$postmeta = get_post_meta( $post->ID );
 		foreach ( $postmeta as $key => $value ) {
-			// If there's only one value, reduce the result to that value.
-			if ( is_array( $value ) && count( $value ) === 1 ) {
-				$value = $value[0];
-			}
-
-			// Convert ID values to ints.
-			$value = make_id_int( $key, $value );
+			// Process meta values into correct types.
+			$value = process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'meta', $value );

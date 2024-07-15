@@ -56,23 +56,17 @@ abstract class Repository {
 	abstract public static function get_table_name(): string;
 
 	/**
-	 * Create the table used to store log events.
+	 * Create the table.
 	 */
 	abstract public static function create_table();
 
 	/**
-	 * Drop the events table.
+	 * Drop the table.
 	 */
-	public static function drop_table() {
-		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
-	}
+	abstract public static function drop_table();
 
 	/**
-	 * Empty the events table.
+	 * Empty the table.
 	 */
-	public static function truncate_table() {
-		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', self::get_table_name() ) );
-	}
+	abstract public static function truncate_table();
 }

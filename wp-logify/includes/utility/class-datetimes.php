@@ -10,8 +10,6 @@ namespace WP_Logify;
 use DateInterval;
 use DateTime;
 use DateTimeZone;
-use Exception;
-use InvalidArgumentException;
 use Throwable;
 
 /**
@@ -19,7 +17,7 @@ use Throwable;
  *
  * Contains useful date and time-related functions.
  */
-class DateTimes implements Encodable {
+class DateTimes {
 
 	/**
 	 * The MySQL datetime format.
@@ -29,27 +27,46 @@ class DateTimes implements Encodable {
 	public const MYSQL_DATETIME_FORMAT = 'Y-m-d H:i:s';
 
 	/**
-	 * Constructs a DateTime object from a given datetime string.
-	 * This can throw a DateMalformedStringException if the string is not a valid datetime.
+	 * The MySQL datetime format for a 'zero' date.
 	 *
-	 * @param string  $datetime_string The datetime string to create a DateTime object from.
-	 * @param ?string $tz_string       The timezone string to use. Defaults to the site time zone.
-	 * @return DateTime The created DateTime object.
+	 * @var string
 	 */
-	public static function create_datetime( string $datetime_string, ?string $tz_string = null ): DateTime {
-		// Convert the provided time zone argument to a suitable DateTimeZone.
-		$tz = $tz_string === null ? wp_timezone() : new DateTimeZone( $tz_string );
+	public const MYSQL_DATETIME_ZERO = '0000-00-00 00:00:00';
 
-		return new DateTime( $datetime_string, $tz );
+	/**
+	 * Constructs a DateTime object from a given datetime string.
+	 *
+	 * Returns null if the datetime string is null, zero, or otherwise invalid.
+	 *
+	 * @param string $datetime_string The datetime string to create a DateTime object from.
+	 * @param string $tz_string The timezone string to use. Defaults to the site time zone.
+	 * @return ?DateTime The created DateTime object or null if the string is invalid.
+	 */
+	public static function create_datetime( ?string $datetime_string, string $tz_string = 'site' ): ?DateTime {
+		// Handle the null and zero cases.
+		if ( $datetime_string === null || $datetime_string === self::MYSQL_DATETIME_ZERO ) {
+			return null;
+		}
+
+		// Convert the provided time zone argument to a DateTimeZone object.
+		$tz = $tz_string === 'site' ? wp_timezone() : new DateTimeZone( $tz_string );
+
+		// Try to create the DateTime object.
+		try {
+			// This will throw an exception if the string is not a valid datetime.
+			return new DateTime( $datetime_string, $tz );
+		} catch ( Throwable ) {
+			return null;
+		}
 	}
 
 	/**
 	 * Returns the current datetime as a DateTime object.
 	 *
-	 * @param ?string $tz_string The timezone string to use. Defaults to the site time zone.
+	 * @param string $tz_string The timezone string to use. Defaults to the site time zone.
 	 * @return DateTime The created DateTime object.
 	 */
-	public static function current_datetime( ?string $tz_string = null ): DateTime {
+	public static function current_datetime( string $tz_string = 'site' ): DateTime {
 		return self::create_datetime( 'now', $tz_string );
 	}
 
@@ -61,16 +78,14 @@ class DateTimes implements Encodable {
 	 * @param bool            $include_timezone Whether to include the timezone name in the formatted string.
 	 * @return string The formatted datetime string.
 	 */
-	public static function format_datetime_site( DateTime|string $datetime, bool $include_seconds = false, bool $include_timezone = false ): string {
+	public static function format_datetime_site( DateTime|string $datetime, bool $include_seconds = true, bool $include_timezone = false ): string {
 		// Convert string to DateTime if necessary.
 		if ( is_string( $datetime ) ) {
 			$datetime = self::create_datetime( $datetime );
 		}
 
-		// If the timezone is not the same as the site timezone, convert it.
-		if ( $datetime->getTimezone() !== wp_timezone() ) {
-			$datetime->setTimezone( wp_timezone() );
-		}
+		// Set the time zone to the site's time zone.
+		self::set_timezone( $datetime, 'site' );
 
 		// Get the date and time formats from the site settings.
 		$date_format = get_option( 'date_format' );
@@ -81,6 +96,7 @@ class DateTimes implements Encodable {
 			$time_format = str_replace( ':i', ':i:s', $time_format );
 		}
 
+		// Assemble the result string.
 		$datetime_string = $datetime->format( $time_format ) . ', ' . $datetime->format( $date_format );
 
 		// Append the time zone name if requested.
@@ -98,21 +114,6 @@ class DateTimes implements Encodable {
 	 * @return string The formatted datetime string.
 	 */
 	public static function format_datetime_mysql( DateTime|string $datetime ): string {
-		// Convert string to DateTime if necessary.
-		if ( is_string( $datetime ) ) {
-			$datetime = self::create_datetime( $datetime );
-		}
-
-		return $datetime->format( self::MYSQL_DATETIME_FORMAT );
-	}
-
-	/**
-	 * Formats a given DateTime using the MySQL datetime format.
-	 *
-	 * @param DateTime|string $datetime The DateTime object to format or the datetime as a string (presumably in some other format).
-	 * @return string The formatted datetime string.
-	 */
-	public static function format_datetime_database( DateTime|string $datetime ): string {
 		// Convert string to DateTime if necessary.
 		if ( is_string( $datetime ) ) {
 			$datetime = self::create_datetime( $datetime );
@@ -170,57 +171,24 @@ class DateTimes implements Encodable {
 		return $duration_string;
 	}
 
-	// =============================================================================================
-	// Encodable interface methods.
-
 	/**
-	 * Convert the DateTime to an array suitable for encoding as JSON.
+	 * Return a string showing how long ago the given DateTime was.
 	 *
-	 * @param object $obj The DateTime to convert.
-	 * @return array The array representation of the DateTime.
-	 * @throws InvalidArgumentException If the object is not an instance of DateTime.
+	 * @param DateTime $datetime The DateTime to compare with now.
+	 * @return string The
 	 */
-	public static function encode( object $obj ): array {
-		// Check the type.
-		if ( ! $obj instanceof DateTime ) {
-			throw new InvalidArgumentException( 'The object must be an instance of DateTime.' );
-		}
-
-		return array( 'DateTime' => (array) $obj );
+	public static function get_ago_string( DateTime $datetime ): string {
+		return human_time_diff( $datetime->getTimestamp() ) . ' ago';
 	}
 
 	/**
-	 * Check if the provided array is an encoded DateTime.
+	 * Set the time zone of a DateTime object.
 	 *
-	 * @param array   $ary The array to check.
-	 * @param ?object $obj The DateTime object to populate if valid.
-	 * @return bool    If the JSON contains a valid date-time string.
+	 * @param DateTime $datetime The DateTime object to set the time zone of.
+	 * @param string   $tz_string The time zone string to set the DateTime to.
 	 */
-	public static function can_decode( array $ary, ?object &$obj ): bool {
-		// Check it looks right.
-		if ( count( $ary ) !== 1 || empty( $ary['DateTime'] ) || ! is_array( $ary['DateTime'] ) ) {
-			return false;
-		}
-
-		// Check the array of properties has the right number and type of values.
-		$fields = $ary['DateTime'];
-		if ( count( $fields ) !== 3
-			|| ! key_exists( 'date', $fields ) || ! is_string( $fields['date'] )
-			|| ! key_exists( 'timezone_type', $fields ) || ! is_int( $fields['timezone_type'] )
-			|| ! key_exists( 'timezone', $fields ) || ! is_string( $fields['timezone'] )
-		) {
-			return false;
-		}
-
-		// Try to convert the inner object to a DateTime.
-		try {
-			// The DateTime constructor will throw if the details don't represent a valid DateTime.
-			$obj = DateTime::__set_state( $ary['DateTime'] );
-		} catch ( Throwable $ex ) {
-			debug( $ex->getMessage(), $ary['DateTime'], );
-			return false;
-		}
-
-		return true;
+	public static function set_timezone( DateTime $datetime, string $tz_string ) {
+		$tz = $tz_string === 'site' ? wp_timezone() : new DateTimeZone( $tz_string );
+		$datetime->setTimezone( $tz );
 	}
 }

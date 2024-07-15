@@ -22,7 +22,7 @@ jQuery(($) => {
                 data: "event_id",
                 width: '70px'
             },
-            { data: "date_time" },
+            { data: "when_happened" },
             { data: "display_name" },
             { data: "user_ip" },
             { data: "event_type" },

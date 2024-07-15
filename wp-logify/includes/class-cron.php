@@ -58,6 +58,6 @@ class Cron {
 
 		// Delete old records.
 		$table_name = Event_Repository::get_table_name();
-		$wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE date_time < NOW() - INTERVAL %d DAY", $days ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE when_happened < NOW() - INTERVAL %d DAY", $days ) );
 	}
 }

@@ -153,15 +153,12 @@ class Admin {
 	 * @return string The handle of the enqueued stylesheet.
 	 */
 	public static function enqueue_style( $src, $deps = array(), $ver = 'auto', $media = 'all' ): string {
-		global $wp_logify_plugin_url;
-		global $wp_logify_plugin_dir;
-
 		// If auto is specified, use the file modified time as the version number.
-		$ver = 'auto' === $ver ? filemtime( "$wp_logify_plugin_dir/assets/css/$src" ) : $ver;
+		$ver = 'auto' === $ver ? filemtime( WP_LOGIFY_PLUGIN_DIR . "assets/css/$src" ) : $ver;
 
 		// Enqueue the script.
 		$handle  = self::filename_to_handle( $src );
-		$src_url = "$wp_logify_plugin_url/assets/css/$src";
+		$src_url = WP_LOGIFY_PLUGIN_URL . "assets/css/$src";
 		wp_enqueue_style( $handle, $src_url, $deps, $ver, $media );
 
 		// Return the handle.
@@ -181,15 +178,12 @@ class Admin {
 	 * @return string The handle of the enqueued script.
 	 */
 	public static function enqueue_script( $src, $deps = array(), $ver = 'auto', $args = array() ): string {
-		global $wp_logify_plugin_url;
-		global $wp_logify_plugin_dir;
-
 		// If auto is specified, use the file modified time as the version number.
-		$ver = 'auto' === $ver ? filemtime( "$wp_logify_plugin_dir/assets/js/$src" ) : $ver;
+		$ver = 'auto' === $ver ? filemtime( WP_LOGIFY_PLUGIN_DIR . "assets/js/$src" ) : $ver;
 
 		// Enqueue the script.
 		$handle  = self::filename_to_handle( $src );
-		$src_url = "$wp_logify_plugin_url/assets/js/$src";
+		$src_url = WP_LOGIFY_PLUGIN_URL . "assets/js/$src";
 		wp_enqueue_script( $handle, $src_url, $deps, $ver, $args );
 
 		// Return the handle.
@@ -241,7 +235,7 @@ class Admin {
 	 * @return void
 	 */
 	public static function reset_logs() {
-		Event_Repository::truncate_table();
+		Database::truncate_all_tables();
 		wp_safe_redirect( admin_url( 'admin.php?page=wp-logify-settings&reset=success' ) );
 		exit;
 	}

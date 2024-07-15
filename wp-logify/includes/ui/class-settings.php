@@ -179,7 +179,7 @@ class Settings {
 	 */
 	public static function display_settings_page() {
 		// Include the settings-page.php template file to render the settings page.
-		include plugin_dir_path( __FILE__ ) . '../templates/settings-page.php';
+		include WP_LOGIFY_PLUGIN_DIR . 'templates/settings-page.php';
 	}
 
 	// ---------------------------------------------------------------------------------------------

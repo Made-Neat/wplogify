@@ -193,8 +193,8 @@ class Terms {
 
 		// Add the base properties.
 		foreach ( $term as $key => $value ) {
-			// Convert ID values to ints.
-			$value = make_id_int( $key, $value );
+			// Process meta values into correct types.
+			$value = process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'base', $value );
@@ -203,13 +203,8 @@ class Terms {
 		// Add the meta properties.
 		$termmeta = get_term_meta( $term->term_id );
 		foreach ( $termmeta as $key => $value ) {
-			// If there's only one value, reduce the result to that value.
-			if ( is_array( $value ) && count( $value ) === 1 ) {
-				$value = $value[0];
-			}
-
-			// Convert ID values to ints.
-			$value = make_id_int( $key, $value );
+			// Process meta values into correct types.
+			$value = process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'meta', $value );

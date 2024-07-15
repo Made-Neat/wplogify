@@ -28,8 +28,7 @@ class Log_Page {
 	 * Display the log page.
 	 */
 	public static function display_log_page() {
-		global $wp_logify_plugin_dir;
-		include "$wp_logify_plugin_dir/templates/log-page.php";
+		include WP_LOGIFY_PLUGIN_DIR . 'templates/log-page.php';
 	}
 
 	/**
@@ -55,7 +54,7 @@ class Log_Page {
 		// These should match the columns in admin.js.
 		$columns = array(
 			'event_id',
-			'date_time',
+			'when_happened',
 			'display_name',
 			'user_ip',
 			'event_type',
@@ -75,8 +74,8 @@ class Log_Page {
 			$start = 0;
 		}
 
-		// Get the order-by column. Default to date_time.
-		$order_by_column = 'date_time';
+		// Get the order-by column. Default to when_happened.
+		$order_by_column = 'when_happened';
 		if ( isset( $_POST['order'][0]['column'] ) ) {
 			$column_number = (int) $_POST['order'][0]['column'];
 			if ( array_key_exists( $column_number, $columns ) ) {
@@ -111,7 +110,7 @@ class Log_Page {
 		} else {
 			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
 			$where      =
-				'WHERE date_time LIKE %s
+				'WHERE when_happened LIKE %s
                     OR user_role LIKE %s
                     OR user_ip LIKE %s
                     OR user_location LIKE %s
@@ -174,9 +173,9 @@ class Log_Page {
 			$item['event_id'] = $event->event_id;
 
 			// Date and time of the event.
-			$formatted_datetime = DateTimes::format_datetime_site( $event->date_time, true );
-			$time_ago           = human_time_diff( ( $event->date_time )->getTimestamp() ) . ' ago';
-			$item['date_time']  = "<div>$formatted_datetime ($time_ago)</div>";
+			$formatted_datetime    = DateTimes::format_datetime_site( $event->when_happened );
+			$time_ago              = DateTimes::get_ago_string( $event->when_happened );
+			$item['when_happened'] = "<div>$formatted_datetime ($time_ago)</div>";
 
 			// User details.
 			$user_tag             = Users::get_tag( $event->user_id, $event->user_name );
@@ -234,11 +233,11 @@ class Log_Page {
 
 		// Get the last login datetime.
 		$last_login_datetime        = Users::get_last_login_datetime( $event->user_id );
-		$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime, true ) : 'Unknown';
+		$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime ) : 'Unknown';
 
 		// Get the last active datetime.
 		$last_active_datetime        = Users::get_last_active_datetime( $event->user_id );
-		$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime, true ) : 'Unknown';
+		$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime ) : 'Unknown';
 
 		// User location.
 		$user_location = empty( $event->user_location ) ? 'Unknown' : esc_html( $event->user_location );
@@ -279,11 +278,11 @@ class Log_Page {
 
 		// Convert event metadata to a table of key-value pairs.
 		$html  = "<div class='wp-logify-event-meta wp-logify-details-section'>\n";
-		$html .= "<h4>Metadata</h4>\n";
+		$html .= "<h4>Event Details</h4>\n";
 		$html .= "<table class='wp-logify-event-meta-table'>\n";
 		foreach ( $event->event_meta as $meta_key => $meta_value ) {
-			$readable_key = self::make_key_readable( $meta_key, array( 'wp', $event->object_type ) );
-			$html        .= "<tr><th>$readable_key</th><td>" . self::value_to_string( $meta_value ) . '</td></tr>';
+			$readable_key = self::make_key_readable( $meta_key );
+			$html        .= "<tr><th>$readable_key</th><td>" . self::value_to_html( $meta_key, $meta_value ) . '</td></tr>';
 		}
 		$html .= "</table>\n";
 		$html .= "</div>\n";
@@ -302,44 +301,59 @@ class Log_Page {
 			return '';
 		}
 
-		// Check if we need 2 columns or 3.
-		$include_new_values = false;
+		// Check which columns to show.
+		$show_old_values = false;
+		$show_new_values = false;
 		foreach ( $event->properties as $property ) {
+			// Check if we want to show the 'Before' column.
+			if ( $property->old_value !== null && $property->old_value !== '' ) {
+				$show_old_values = true;
+			}
+
+			// Check if we want to show the 'After' column.
 			if ( $property->new_value !== null && $property->new_value !== '' ) {
-				$include_new_values = true;
+				$show_new_values = true;
+			}
+
+			// If we're going to show both, no need to keep checking.
+			if ( $show_old_values && $show_new_values ) {
 				break;
 			}
 		}
 
 		// Convert JSON string to a table showing the changes.
-		$html  = "<div class='wp-logify-change-details wp-logify-details-section'>\n";
-		$html .= "<h4>Object Details</h4>\n";
+		$html              = "<div class='wp-logify-change-details wp-logify-details-section'>\n";
+		$object_type_title = $event->object_type === 'user' ? 'Account' : ucfirst( $event->object_type );
+		$html             .= "<h4>$object_type_title Details</h4>\n";
 
 		// Start table.
 		$html .= "<table class='wp-logify-change-details-table'>\n";
 
 		// Header row.
 		$html .= '<tr><th>Property</th>';
-		$html .= $include_new_values ? '<th>Before</th><th>After</th>' : '<th>Value</th>';
+		$html .= $show_old_values && $show_new_values ? '<th>Before</th><th>After</th>' : '<th>Value</th>';
 		$html .= "</tr>\n";
 
 		// Property rows.
 		foreach ( $event->properties as $property ) {
+			if ( $property->property_key === 'session_tokens' ) {
+				continue;
+			}
+
 			// Start row.
 			$html .= '<tr>';
 
 			// Property name.
-			$readable_key = self::make_key_readable( $property->property_key, array( 'wp', $event->object_type ) );
-			$html        .= "<th>$readable_key</th>";
+			$html .= '<th>' . self::make_key_readable( $property->property_key ) . '</th>';
 
 			// Old value.
-			$old_value_string = $property->property_key === 'user_pass' ? '(hidden)' : self::value_to_string( $property->old_value );
-			$html            .= "<td>$old_value_string</td>";
+			if ( $show_old_values ) {
+				$html .= '<td>' . self::value_to_html( $property->property_key, $property->old_value ) . '</td>';
+			}
 
 			// New value.
-			if ( $include_new_values ) {
-				$new_value_string = $property->property_key === 'user_pass' && ! empty( $property->new_value ) ? '(hidden)' : self::value_to_string( $property->new_value );
-				$html            .= "<td>$new_value_string</td>";
+			if ( $show_new_values ) {
+				$html .= '<td>' . self::value_to_html( $property->property_key, $property->new_value ) . '</td>';
 			}
 
 			// End row.
@@ -355,7 +369,7 @@ class Log_Page {
 	}
 
 	/**
-	 * Convert a value to a string for comparison and display.
+	 * Convert a value to a string for display.
 	 *
 	 * @param mixed $value The value to convert.
 	 * @return string The value as a string.
@@ -365,15 +379,66 @@ class Log_Page {
 			return '';
 		} elseif ( is_string( $value ) ) {
 			return $value;
-		} elseif ( $value instanceof DateTime ) {
-			return DateTimes::format_datetime_site( $value, true );
-		} elseif ( $value instanceof Object_Reference ) {
-			return $value->get_tag();
+		} elseif ( is_bool( $value ) ) {
+			return $value ? 'true' : 'false';
 		} elseif ( is_scalar( $value ) ) {
 			return (string) $value;
+		} elseif ( $value instanceof DateTime ) {
+			return DateTimes::format_datetime_site( $value );
+		} elseif ( $value instanceof Object_Reference ) {
+			return $value->get_tag();
 		} else {
-			return Json::encode( $value );
+			// Value is an array or another type of object.
+			return wp_json_encode( $value );
 		}
+	}
+
+	/**
+	 * Convert a value to an HTML string for display.
+	 *
+	 * @param string $key The key of the value.
+	 * @param mixed  $value The value to convert.
+	 * @return string The value as an HTML string.
+	 */
+	public static function value_to_html( string $key, mixed $value ): string {
+		// Hide passwords.
+		if ( $key === 'user_pass' ) {
+			return empty( $value ) ? '' : '(hidden)';
+		}
+
+		// Expand arrays into mini-tables.
+		if ( is_array( $value ) ) {
+
+			// Start the table.
+			$html = "<table>\n";
+
+			// Check if the array is a list.
+			$is_list = array_is_list( $value );
+
+			foreach ( $value as $key2 => $value2 ) {
+				// Start the table row.
+				$html .= '<tr>';
+
+				// If it's not a list, show the key.
+				if ( ! $is_list ) {
+					$html .= '<th>' . self::make_key_readable( $key2 ) . '</th>';
+				}
+
+				// Show the value.
+				$html .= '<td>' . self::value_to_html( $key2, $value2 ) . '</td>';
+
+				// End the table row.
+				$html .= '</tr>';
+			}
+
+			// End the table.
+			$html .= "</table>\n";
+
+			return $html;
+		}
+
+		// Convert to plain text string.
+		return self::value_to_string( $value );
 	}
 
 	/**
@@ -383,14 +448,16 @@ class Log_Page {
 	 * replacing underscores with spaces.
 	 *
 	 * @param string $key The key to make readable.
-	 * @param ?array $prefixes_to_ignore An array of prefixes to ignore when making the key readable. Examples: 'wp', 'user', 'post'.
 	 * @return string The readable key.
 	 */
-	public static function make_key_readable( string $key, ?array $prefixes_to_ignore = null ): string {
-		// Special cases.
+	public static function make_key_readable( string $key ): string {
+		// Handle some special, known cases.
 		switch ( $key ) {
 			case 'user_pass':
 				return 'Password';
+
+			case 'user_nicename':
+				return 'Nice name';
 
 			case 'show_admin_bar_front':
 				return 'Show toolbar';
@@ -412,19 +479,16 @@ class Log_Page {
 		}
 
 		// Split the key into words.
-		$words = explode( '_', $key );
+		$words = array_filter( preg_split( '/[-_]+/', $key ) );
 
-		// Remove any ignored prefix.
-		if ( ! empty( $prefixes_to_ignore ) ) {
-			while ( true ) {
-				if ( count( $words ) > 1 && in_array( $words[0], $prefixes_to_ignore, true ) ) {
-					$words = array_slice( $words, 1 );
-				} else {
-					break;
-				}
+		// Convert acronyms to uppercase.
+		foreach ( $words as $i => $word ) {
+			if ( in_array( $word, array( 'guid', 'id', 'ip', 'rss', 'ssl', 'url', 'wp' ) ) ) {
+				$words[ $i ] = strtoupper( $word );
 			}
 		}
 
+		// Convert to readable string.
 		return ucfirst( implode( ' ', $words ) );
 	}
 
