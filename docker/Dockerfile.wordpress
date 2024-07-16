@@ -6,6 +6,9 @@ USER root
 # Install the MySQL extension as root.
 RUN docker-php-ext-install mysqli
 
+# Install the Xdebug extension as root.
+RUN pecl install xdebug && docker-php-ext-enable xdebug
+
 # Change ownership of site files to www-data.
 RUN chown -R www-data:www-data /var/www/html
 
