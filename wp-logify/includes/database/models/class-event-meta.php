@@ -17,7 +17,7 @@ class Event_Meta {
 	 *
 	 * @var int
 	 */
-	public int $event_meta_id;
+	public int $id;
 
 	/**
 	 * The ID of the event associated with this metadata.

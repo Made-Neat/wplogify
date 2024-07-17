@@ -33,6 +33,7 @@ class Posts {
 	public static function init() {
 		// Track post creation and update.
 		add_action( 'save_post', array( __CLASS__, 'track_save' ), 10, 3 );
+		add_action( 'pre_post_update', array( __CLASS__, 'track_update_pre' ), 10, 2 );
 		add_action( 'post_updated', array( __CLASS__, 'track_update' ), 10, 3 );
 		add_action( 'update_post_meta', array( __CLASS__, 'track_meta_update' ), 10, 4 );
 
@@ -63,17 +64,17 @@ class Posts {
 			return;
 		}
 
+		// Get the core properties. No need to store all, just want to display some to the user.
+		$properties = self::get_core_properties( $post );
+
 		// Check if we're updating or creating.
 		$creating = wp_is_post_revision( $post_id ) === false;
 
-		// If creating, get all the post's properties.
-		if ( $creating ) {
-			$properties = self::get_properties( $post );
-		} else {
-			// We're updating, so just record the changed properties.
+		if ( ! $creating ) {
+			// If we're updating, the $post variable refers to the new revision rather than the
+			// parent post.
 
-			// TODO I think this is wrong, we need to find the ID of the most recent revision.
-			// We also need to handle the case of the revision being deleted. So this needs to be an object reference.
+			// Record the ID of the new revision.
 			$revision_id = $post_id;
 
 			// Load the parent object.
@@ -81,10 +82,14 @@ class Posts {
 			$post    = self::get_post( $post_id );
 
 			// Copy changes to the properties array.
-			$properties = self::$changes;
+			foreach ( self::$changes as $key => $property ) {
+				$properties[ $key ] = $property;
+			}
+
+			// Replace changed content with object references.
 			if ( ! empty( $properties['post_content'] ) ) {
 				// For the old value, link to the revision (or show a deleted tag).
-				$properties['post_content']->old_value = "<a href='" . admin_url( "/revision.php?revision={$revision_id}" ) . "'>View revision</a>";
+				$properties['post_content']->old_value = new Object_Reference( 'revision', $revision_id );
 				// For the new value, link to the edit page (or show a deleted tag).
 				$properties['post_content']->new_value = new Object_Reference( 'post', $post_id, $post->post_title );
 			}
@@ -98,6 +103,17 @@ class Posts {
 	}
 
 	/**
+	 * Make a note of the last modified datetime before the post is updated.
+	 *
+	 * @param int   $post_id The ID of the post being updated.
+	 * @param array $data    The data for the post.
+	 */
+	public static function track_update_pre( int $post_id, array $data, ) {
+		// Record the current last modified date.
+		self::$changes['post_modified'] = new Property( 'post_modified', 'base', self::get_last_modified_datetime( $post_id ) );
+	}
+
+	/**
 	 * Track post update.
 	 *
 	 * @param int     $post_id      Post ID.
@@ -107,16 +123,24 @@ class Posts {
 	public static function track_update( $post_id, $post_after, $post_before ) {
 		// Compare values.
 		foreach ( $post_before as $key => $value ) {
+			// Skip the dates in the posts table, they're incorrect.
+			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
+				continue;
+			}
+
 			// Process values into correct types.
-			$old_value = process_database_value( $key, $value );
-			$new_value = process_database_value( $key, $post_after->{$key} );
+			$old_value = Types::process_database_value( $key, $value );
+			$new_value = Types::process_database_value( $key, $post_after->{$key} );
 
 			// Compare old and new values.
-			if ( ! are_equal( $old_value, $new_value ) ) {
+			if ( ! Types::are_equal( $old_value, $new_value ) ) {
 				// Record change.
-				self::$changes[ $key ] = array( $old_value, $new_value );
+				self::$changes[ $key ] = new Property( $key, 'base', $old_value, $new_value );
 			}
 		}
+
+		// Get the new last modified datetime.
+		self::$changes['post_modified']->new_value = self::get_last_modified_datetime( $post_id );
 	}
 
 	/**
@@ -132,12 +156,12 @@ class Posts {
 		$current_value = get_post_meta( $post_id, $meta_key, true );
 
 		// Process values into correct types.
-		$old_value = process_database_value( $meta_key, $current_value );
-		$new_value = process_database_value( $meta_key, $meta_value );
+		$old_value = Types::process_database_value( $meta_key, $current_value );
+		$new_value = Types::process_database_value( $meta_key, $meta_value );
 
 		// Note the change, if any.
-		if ( ! are_equal( $old_value, $new_value ) ) {
-			self::$changes[ $meta_key ] = array( $old_value, $new_value );
+		if ( ! Types::are_equal( $old_value, $new_value ) ) {
+			self::$changes[ $meta_key ] = new Property( $meta_key, 'meta', $old_value, $new_value );
 		}
 	}
 
@@ -147,9 +171,8 @@ class Posts {
 	 * @param WP_Post|int $post The post object or ID.
 	 * @param string      $event_type_verb The verb to use in the event type.
 	 * @param string      $old_status The old status of the post.
-	 * @param bool        $deleted Whether the post was deleted.
 	 */
-	private static function track_status_change( WP_Post|int $post, string $event_type_verb, string $old_status, bool $deleted = false ) {
+	private static function track_status_change( WP_Post|int $post, string $event_type_verb, string $old_status ) {
 		// Ensure this is not a revision.
 		if ( wp_is_post_revision( $post ) ) {
 			return;
@@ -164,13 +187,11 @@ class Posts {
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' ' . $event_type_verb;
 
 		// Get the post's properties.
-		$properties = self::get_properties( $post );
+		$properties = self::get_core_properties( $post );
 
-		// Modify the properties to properly show the status change.
+		// Modify the properties to correctly show the status change.
 		$properties['post_status']->old_value = $old_status;
-		if ( ! $deleted ) {
-			$properties['post_status']->new_value = $post->post_status;
-		}
+		$properties['post_status']->new_value = $post->post_status;
 
 		// Log the event.
 		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, null, $properties );
@@ -221,7 +242,29 @@ class Posts {
 	 * @param WP_Post $post The post object that was deleted.
 	 */
 	public static function track_delete( int $post_id, WP_Post $post ) {
-		self::track_status_change( $post, 'Deleted', $post->post_status, true );
+		// Ensure this is not a revision.
+		if ( wp_is_post_revision( $post ) ) {
+			return;
+		}
+
+		// Load the post if necessary.
+		if ( is_int( $post ) ) {
+			$post = self::get_post( $post );
+		}
+
+		// Get the event type.
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Deleted';
+
+		// Get the post's properties, including metadata.
+		$properties = self::get_properties( $post );
+
+		// Get the attached terms and add to the properties array.
+		$terms                        = wp_get_post_terms( $post_id, array() );
+		$term_refs                    = array_map( fn( $term ) => new Object_Reference( 'term', $term->term_id, $term->name ), $terms );
+		$properties['attached_terms'] = new Property( 'terms', 'other', $term_refs );
+
+		// Log the event.
+		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, null, $properties );
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -267,6 +310,16 @@ class Posts {
 	}
 
 	/**
+	 * Get the URL for a revision comparison page.
+	 *
+	 * @param int $revision_id The ID of the revision.
+	 * @return string The revision comparison page URL.
+	 */
+	public static function get_revision_url( int $revision_id ) {
+		return admin_url( "revision.php?revision={$revision_id}" );
+	}
+
+	/**
 	 * Get the HTML for the link to the object's edit page.
 	 *
 	 * @param WP_Post|int $post The post object or ID.
@@ -291,9 +344,10 @@ class Posts {
 	 *
 	 * @param WP_Post|int $post The post object or ID.
 	 * @param string      $old_title The old title of the post.
+	 * @param bool        $override Whether to override the title with the old title.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( WP_Post|int $post, string $old_title ) {
+	public static function get_tag( WP_Post|int $post, string $old_title, bool $override = false ) {
 		// Check if the post exists.
 		if ( self::post_exists( $post ) ) {
 
@@ -309,13 +363,41 @@ class Posts {
 				$url = self::get_edit_url( $post );
 			}
 
-			return "<a href='$url' class='wp-logify-post-link'>$post->post_title</a>";
+			// Get the link text.
+			$text = ( $override && ! empty( $old_title ) ) ? $old_title : $post->post_title;
+
+			return "<a href='$url' class='wp-logify-post-link'>$text</a>";
 		}
 
 		// The post no longer exists. Construct the 'deleted' span element.
 		$post_id = is_int( $post ) ? $post : $post->ID;
-		$title   = empty( $old_title ) ? "Post $post_id" : $old_title;
-		return "<span class='wp-logify-deleted-object'>$title (deleted)</span>";
+		$text    = empty( $old_title ) ? "Post $post_id" : $old_title;
+		return "<span class='wp-logify-deleted-object'>$text (deleted)</span>";
+	}
+
+	/**
+	 * Get the HTML for a link to the revision comparison page.
+	 *
+	 * @param ?int $revision_id The ID of the revision.
+	 * @return string The HTML of the link or span tag.
+	 */
+	public static function get_revision_tag( ?int $revision_id ) {
+		// Handle the null case.
+		if ( $revision_id === null ) {
+			return '';
+		}
+
+		// Check if the revision exists.
+		if ( self::post_exists( $revision_id ) ) {
+			// Get the URL for the revision comparison page.
+			$url = self::get_revision_url( $revision_id );
+
+			// Construct the link.
+			return "<a href='$url' class='wp-logify-post-link'>Compare revisions</a>";
+		}
+
+		// The revision no longer exists. Construct the 'deleted' span element.
+		return "<span class='wp-logify-deleted-object'>(Revision deleted)</span>";
 	}
 
 	/**
@@ -413,8 +495,13 @@ class Posts {
 
 		// Add the base properties.
 		foreach ( $post as $key => $value ) {
+			// Skip the dates in the posts table, they're incorrect.
+			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
+				continue;
+			}
+
 			// Process meta values into correct types.
-			$value = process_database_value( $key, $value );
+			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'base', $value );
@@ -424,10 +511,46 @@ class Posts {
 		$postmeta = get_post_meta( $post->ID );
 		foreach ( $postmeta as $key => $value ) {
 			// Process meta values into correct types.
-			$value = process_database_value( $key, $value );
+			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'meta', $value );
+		}
+
+		return $properties;
+	}
+
+	/**
+	 * Get the core properties of a post.
+	 *
+	 * @param WP_Post|int $post The post object or ID.
+	 * @return array The core properties of the post.
+	 */
+	private static function get_core_properties( WP_Post|int $post ): array {
+		// Load the post if necessary.
+		if ( is_int( $post ) ) {
+			$post = self::get_post( $post );
+		}
+
+		// Define the core properties by key.
+		$core_properties = array( 'ID', 'post_author', 'post_title', 'post_status', 'post_date', 'post_modified' );
+
+		// Build the array of properties.
+		$properties = array();
+		foreach ( $core_properties as $key ) {
+
+			// Get the value.
+			if ( $key === 'post_date' ) {
+				$value = self::get_created_datetime( $post );
+			} elseif ( $key === 'post_modified' ) {
+				$value = self::get_last_modified_datetime( $post );
+			} else {
+				// Process database values into correct types.
+				$value = Types::process_database_value( $key, $post->{$key} );
+			}
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'base', $value );
 		}
 
 		return $properties;

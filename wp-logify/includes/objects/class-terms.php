@@ -128,12 +128,11 @@ class Terms {
 		// The function returns an array of strings for some reason, so let's convert them to ints.
 		$post_ids = array_map( fn( $post_id ) => (int) $post_id, $post_ids );
 
-		// Store this in the event metadata.
-		$event_meta                   = array();
-		$event_meta['Attached posts'] = $post_ids;
+		// Add to properties.
+		$properties['attached_posts'] = new Property( 'attached_posts', 'other', $post_ids );
 
 		// Log the event.
-		Logger::log_event( $event_type, 'term', $term_id, $term->name, $event_meta, $properties );
+		Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
 	}
 
 	/**
@@ -156,7 +155,7 @@ class Terms {
 	 */
 	public static function term_exists( int $term_id ): bool {
 		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->terms, $term_id );
+		$sql   = $wpdb->prepare( 'SELECT COUNT(term_id) FROM %i WHERE term_id = %d', $wpdb->terms, $term_id );
 		$count = (int) $wpdb->get_var( $sql );
 		return $count > 0;
 	}
@@ -194,7 +193,7 @@ class Terms {
 		// Add the base properties.
 		foreach ( $term as $key => $value ) {
 			// Process meta values into correct types.
-			$value = process_database_value( $key, $value );
+			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'base', $value );
@@ -204,7 +203,7 @@ class Terms {
 		$termmeta = get_term_meta( $term->term_id );
 		foreach ( $termmeta as $key => $value ) {
 			// Process meta values into correct types.
-			$value = process_database_value( $key, $value );
+			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'meta', $value );

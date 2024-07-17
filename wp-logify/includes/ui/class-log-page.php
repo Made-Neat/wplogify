@@ -170,7 +170,7 @@ class Log_Page {
 
 			// Create a new data item.
 			$item             = array();
-			$item['event_id'] = $event->event_id;
+			$item['event_id'] = $event->id;
 
 			// Date and time of the event.
 			$formatted_datetime    = DateTimes::format_datetime_site( $event->when_happened );
@@ -188,9 +188,8 @@ class Log_Page {
 			// Event type.
 			$item['event_type'] = $event->event_type;
 
-			// Get the HTML for the object name tag.
-			$object_reference    = new Object_Reference( $event->object_type, $event->object_id, $event->object_name );
-			$item['object_name'] = $object_reference->get_tag();
+			// Get the HTML for the object name.
+			$item['object_name'] = $event->get_object_tag();
 
 			// Format the details.
 			$item['details'] = self::format_details( $event );
@@ -281,8 +280,8 @@ class Log_Page {
 		$html .= "<h4>Event Details</h4>\n";
 		$html .= "<table class='wp-logify-event-meta-table'>\n";
 		foreach ( $event->event_meta as $meta_key => $meta_value ) {
-			$readable_key = self::make_key_readable( $meta_key );
-			$html        .= "<tr><th>$readable_key</th><td>" . self::value_to_html( $meta_key, $meta_value ) . '</td></tr>';
+			$readable_key = Types::make_key_readable( $meta_key );
+			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $meta_key, $meta_value ) . '</td></tr>';
 		}
 		$html .= "</table>\n";
 		$html .= "</div>\n";
@@ -330,13 +329,14 @@ class Log_Page {
 		$html .= "<table class='wp-logify-change-details-table'>\n";
 
 		// Header row.
-		$html .= '<tr><th>Property</th>';
+		$html .= '<tr><th></th>';
 		$html .= $show_old_values && $show_new_values ? '<th>Before</th><th>After</th>' : '<th>Value</th>';
 		$html .= "</tr>\n";
 
 		// Property rows.
 		foreach ( $event->properties as $property ) {
-			if ( $property->property_key === 'session_tokens' ) {
+			// No point in displaying session tokens.
+			if ( $property->key === 'session_tokens' ) {
 				continue;
 			}
 
@@ -344,16 +344,25 @@ class Log_Page {
 			$html .= '<tr>';
 
 			// Property name.
-			$html .= '<th>' . self::make_key_readable( $property->property_key ) . '</th>';
+			$html .= '<th>' . Types::make_key_readable( $property->key ) . '</th>';
 
 			// Old value.
 			if ( $show_old_values ) {
-				$html .= '<td>' . self::value_to_html( $property->property_key, $property->old_value ) . '</td>';
+				if ( $property->key === 'post_content' ) {
+					$revision_id = $property->old_value instanceof Object_Reference
+						? $property->old_value->id
+						: ( is_int( $property->old_value ) ? $property->old_value : null );
+					$tag         = Posts::get_revision_tag( $revision_id );
+				} else {
+					$tag = Types::value_to_html( $property->key, $property->old_value );
+				}
+
+				$html .= "<td>$tag</td>";
 			}
 
 			// New value.
 			if ( $show_new_values ) {
-				$html .= '<td>' . self::value_to_html( $property->property_key, $property->new_value ) . '</td>';
+				$html .= '<td>' . Types::value_to_html( $property->key, $property->new_value ) . '</td>';
 			}
 
 			// End row.
@@ -366,130 +375,6 @@ class Log_Page {
 		$html .= "</div>\n";
 
 		return $html;
-	}
-
-	/**
-	 * Convert a value to a string for display.
-	 *
-	 * @param mixed $value The value to convert.
-	 * @return string The value as a string.
-	 */
-	public static function value_to_string( mixed $value ) {
-		if ( $value === null ) {
-			return '';
-		} elseif ( is_string( $value ) ) {
-			return $value;
-		} elseif ( is_bool( $value ) ) {
-			return $value ? 'true' : 'false';
-		} elseif ( is_scalar( $value ) ) {
-			return (string) $value;
-		} elseif ( $value instanceof DateTime ) {
-			return DateTimes::format_datetime_site( $value );
-		} elseif ( $value instanceof Object_Reference ) {
-			return $value->get_tag();
-		} else {
-			// Value is an array or another type of object.
-			return wp_json_encode( $value );
-		}
-	}
-
-	/**
-	 * Convert a value to an HTML string for display.
-	 *
-	 * @param string $key The key of the value.
-	 * @param mixed  $value The value to convert.
-	 * @return string The value as an HTML string.
-	 */
-	public static function value_to_html( string $key, mixed $value ): string {
-		// Hide passwords.
-		if ( $key === 'user_pass' ) {
-			return empty( $value ) ? '' : '(hidden)';
-		}
-
-		// Expand arrays into mini-tables.
-		if ( is_array( $value ) ) {
-
-			// Start the table.
-			$html = "<table>\n";
-
-			// Check if the array is a list.
-			$is_list = array_is_list( $value );
-
-			foreach ( $value as $key2 => $value2 ) {
-				// Start the table row.
-				$html .= '<tr>';
-
-				// If it's not a list, show the key.
-				if ( ! $is_list ) {
-					$html .= '<th>' . self::make_key_readable( $key2 ) . '</th>';
-				}
-
-				// Show the value.
-				$html .= '<td>' . self::value_to_html( $key2, $value2 ) . '</td>';
-
-				// End the table row.
-				$html .= '</tr>';
-			}
-
-			// End the table.
-			$html .= "</table>\n";
-
-			return $html;
-		}
-
-		// Convert to plain text string.
-		return self::value_to_string( $value );
-	}
-
-	/**
-	 * Make a key readable.
-	 *
-	 * This function takes a key and makes it more readable by converting it to title case and
-	 * replacing underscores with spaces.
-	 *
-	 * @param string $key The key to make readable.
-	 * @return string The readable key.
-	 */
-	public static function make_key_readable( string $key ): string {
-		// Handle some special, known cases.
-		switch ( $key ) {
-			case 'user_pass':
-				return 'Password';
-
-			case 'user_nicename':
-				return 'Nice name';
-
-			case 'show_admin_bar_front':
-				return 'Show toolbar';
-
-			case 'user registered':
-				return 'Registered (UTC)';
-
-			case 'post_date':
-				return 'Created';
-
-			case 'post_date_gmt':
-				return 'Created (UTC)';
-
-			case 'post_modified':
-				return 'Last modified';
-
-			case 'post_modified_gmt':
-				return 'Last modified (UTC)';
-		}
-
-		// Split the key into words.
-		$words = array_filter( preg_split( '/[-_]+/', $key ) );
-
-		// Convert acronyms to uppercase.
-		foreach ( $words as $i => $word ) {
-			if ( in_array( $word, array( 'guid', 'id', 'ip', 'rss', 'ssl', 'url', 'wp' ) ) ) {
-				$words[ $i ] = strtoupper( $word );
-			}
-		}
-
-		// Convert to readable string.
-		return ucfirst( implode( ' ', $words ) );
 	}
 
 	/**

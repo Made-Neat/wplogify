@@ -47,14 +47,14 @@ class Object_Reference {
 	/**
 	 * Constructor.
 	 *
-	 * @param string      $type The type of the object.
-	 * @param int|string  $id The ID of the object, which could be an integer or a string.
-	 * @param string|bool $name The name of the object, or a bool to specify setting it automatically from the object.
-	 *                          - If a string, the name will be assigned this value.
-	 *                          - If true, the name will be extracted from the existing object.
-	 *                          - If false, the name won't be set.
+	 * @param string           $type The type of the object.
+	 * @param int|string       $id The ID of the object, which could be an integer or a string.
+	 * @param null|string|bool $name The name of the object, or a bool to specify setting it automatically from the object.
+	 *                                  - If a string, the name will be assigned this value.
+	 *                                  - If true, the name will be extracted from the existing object.
+	 *                                  - If false or null, the name won't be set.
 	 */
-	public function __construct( string $type, int|string $id, string|bool $name = true ) {
+	public function __construct( string $type, int|string $id, null|string|bool $name = true ) {
 		// Set the object type.
 		$this->type = $type;
 
@@ -86,9 +86,24 @@ class Object_Reference {
 			throw new Exception( 'Cannot load an object without knowing its type and ID.' );
 		}
 
-		// Call the appropriate get method.
-		$method = array( self::get_class(), 'get_' . $this->type );
-		return call_user_func( $method, $this->id );
+		// Load the object based on the type.
+		switch ( $this->type ) {
+			case 'post':
+			case 'revision':
+				$this->object = Posts::get_post( $this->id );
+				return;
+
+			case 'user':
+				$this->object = Users::get_user( $this->id );
+				return;
+
+			case 'term':
+				$this->object = Terms::get_term( $this->id );
+				return;
+
+			default:
+				throw new Exception( 'Unknown object type.' );
+		}
 	}
 
 	/**
@@ -113,6 +128,7 @@ class Object_Reference {
 	public function get_name() {
 		switch ( $this->type ) {
 			case 'post':
+			case 'revision':
 				return $this->get_object()->title;
 
 			case 'user':
@@ -147,6 +163,10 @@ class Object_Reference {
 			case 'post':
 				// Return the post tag.
 				return Posts::get_tag( $this->id, $this->name );
+
+			case 'revision':
+				// Return the revision tag.
+				return Posts::get_revision_tag( $this->id );
 
 			case 'user':
 				// Return the user tag.

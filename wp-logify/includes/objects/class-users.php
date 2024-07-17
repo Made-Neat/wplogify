@@ -8,7 +8,6 @@
 namespace WP_Logify;
 
 use DateTime;
-use DateTimeZone;
 use Exception;
 use WP_User;
 
@@ -30,15 +29,26 @@ class Users {
 	 * Initializes the class by adding WordPress actions.
 	 */
 	public static function init() {
+		// Track user login.
 		add_action( 'wp_login', array( __CLASS__, 'track_login' ), 10, 2 );
-		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
-		add_action( 'user_register', array( __CLASS__, 'track_register' ), 10, 2 );
-		add_action( 'delete_user', array( __CLASS__, 'track_delete' ), 10, 3 );
-		add_action( 'profile_update', array( __CLASS__, 'track_update' ), 10, 3 );
-		add_action( 'update_user_meta', array( __CLASS__, 'track_meta_update' ), 10, 4 );
 
-		// Track user activity on every HTTP request.
-		self::track_activity();
+		// Track user logout.
+		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
+
+		// Track user activity.
+		add_action( 'wp_loaded', array( __CLASS__, 'track_activity' ) );
+
+		// Track registration of a new user.
+		add_action( 'user_register', array( __CLASS__, 'track_register' ), 10, 2 );
+
+		// Track deletion of a user.
+		add_action( 'delete_user', array( __CLASS__, 'track_delete' ), 10, 3 );
+
+		// Track update of a user.
+		add_action( 'profile_update', array( __CLASS__, 'track_update' ), 10, 3 );
+
+		// Track update of user metadata.
+		add_action( 'update_user_meta', array( __CLASS__, 'track_meta_update' ), 10, 4 );
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -90,7 +100,7 @@ class Users {
 		// If the user's data is being reassigned, record that information in the event metadata.
 		$event_meta = array();
 		if ( $reassign ) {
-			$event_meta['Data reassigned to'] = new Object_Reference( 'user', $reassign );
+			$event_meta['content_reassigned_to_user_id'] = new Object_Reference( 'user', $reassign );
 		}
 
 		// Log the event.
@@ -109,11 +119,11 @@ class Users {
 		foreach ( $old_user_data->data as $key => $value ) {
 
 			// Process meta values into correct types.
-			$old_value = process_database_value( $key, $value );
-			$new_value = process_database_value( $key, $userdata[ $key ] );
+			$old_value = Types::process_database_value( $key, $value );
+			$new_value = Types::process_database_value( $key, $userdata[ $key ] );
 
 			// If the value has changed, add the before and after values to the changes array.
-			if ( ! are_equal( $old_value, $new_value ) ) {
+			if ( ! Types::are_equal( $old_value, $new_value ) ) {
 				if ( key_exists( $key, self::$changes ) ) {
 					self::$changes[ $key ]->old_value = $old_value;
 					self::$changes[ $key ]->new_value = $new_value;
@@ -140,11 +150,11 @@ class Users {
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
 		// Process meta values into correct types.
-		$old_value = process_database_value( $meta_key, $current_value );
-		$new_value = process_database_value( $meta_key, $meta_value );
+		$old_value = Types::process_database_value( $meta_key, $current_value );
+		$new_value = Types::process_database_value( $meta_key, $meta_value );
 
 		// If the value has changed, add the before and after values to the changes array.
-		if ( ! are_equal( $old_value, $new_value ) ) {
+		if ( ! Types::are_equal( $old_value, $new_value ) ) {
 			if ( key_exists( $meta_key, self::$changes ) ) {
 				self::$changes[ $meta_key ]->old_value = $old_value;
 				self::$changes[ $meta_key ]->new_value = $new_value;
@@ -156,30 +166,40 @@ class Users {
 
 	/**
 	 * Track user activity.
-	 *
-	 * This function is called via AJAX to track user activity.
 	 */
 	public static function track_activity() {
 		global $wpdb;
+
+		// Sometimes (e.g. when editing a post) WordPress triggers two simultaneous HTTP requests,
+		// which was causing a database deadlock in this method, which gets called on every request.
+		// Therefore, if one request is already tracking activity, we won't try to track activity
+		// again until it's done.
+
+		// Check if activity tracking is already in progress.
+		if ( ! empty( $_SESSION['tracking_activity'] ) ) {
+			// Another HTTP request is already handling the activity tracking, so let's go.
+			return;
+		}
+
+		// Note that activity tracking is in progress.
+		$_SESSION['tracking_activity'] = true;
+
+		// Prepare some values.
 		$user_id    = get_current_user_id();
 		$table_name = Event_Repository::get_table_name();
 		$event_type = 'User Session';
+		$now        = DateTimes::current_datetime();
 
-		// Get the current datetime.
-		$now = DateTimes::current_datetime();
-
-		// Check if this is a continuing session.
+		// Check if this is a new or continuing session.
 		$continuing = false;
 		$sql        = $wpdb->prepare(
-			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC',
+			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
 			$table_name,
 			$user_id,
 			$event_type
 		);
 		$row        = $wpdb->get_row( $sql, ARRAY_A );
-
 		if ( $row ) {
-
 			// Construct the Event object.
 			$event = Event_Repository::load( $row['event_id'] );
 
@@ -200,7 +220,8 @@ class Users {
 					$continuing = true;
 
 					// Update the session_end time and duration.
-					$event->event_meta['session_end']      = $now;
+					$event->event_meta['session_end'] = $now;
+					// This could be calculated, but for now we'll just record the string.
 					$event->event_meta['session_duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
 
 					// Update the event meta data.
@@ -219,8 +240,11 @@ class Users {
 			);
 
 			// Log the event.
-			Logger::log_event( $event_type, 'user', $user_id, self::get_name( $user_id ), $event_meta );
+			Logger::log_event( $event_type, null, null, null, $event_meta );
 		}
+
+		// Note that activity tracking is no longer in progress.
+		$_SESSION['tracking_activity'] = false;
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -274,7 +298,7 @@ class Users {
 		// Add the base properties.
 		foreach ( $user->data as $key => $value ) {
 			// Process meta values into correct types.
-			$value = process_database_value( $key, $value );
+			$value = Types::process_database_value( $key, $value );
 
 			// For whatever reason, the user_registered column in the users table is in UTC,
 			// despite not having the same '_gmt' suffix as UTC datetimes in the posts table.
@@ -290,7 +314,7 @@ class Users {
 		$usermeta = get_user_meta( $user->ID );
 		foreach ( $usermeta as $key => $value ) {
 			// Process meta values into correct types.
-			$value = process_database_value( $key, $value );
+			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
 			$properties[ $key ] = new Property( $key, 'meta', $value );

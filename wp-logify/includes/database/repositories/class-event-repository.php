@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use Exception;
 use InvalidArgumentException;
 
 /**
@@ -69,7 +70,7 @@ class Event_Repository extends Repository {
 		}
 
 		// Check if we're inserting or updating.
-		$inserting = empty( $event->event_id );
+		$inserting = empty( $event->id );
 
 		// Start a transaction.
 		$wpdb->query( 'START TRANSACTION' );
@@ -83,11 +84,11 @@ class Event_Repository extends Repository {
 
 			// If the new record was inserted ok, update the Event object with the new ID.
 			if ( $ok ) {
-				$event->event_id = $wpdb->insert_id;
+				$event->id = $wpdb->insert_id;
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $data, array( 'event_id' => $event->event_id ), $formats, array( '%d' ) );
+			$ok = $wpdb->update( self::get_table_name(), $data, array( 'event_id' => $event->id ), $formats, array( '%d' ) );
 		}
 
 		// Rollback and return on error.
@@ -138,6 +139,7 @@ class Event_Repository extends Repository {
 	 * Load metadata for an event.
 	 *
 	 * @param Event $event The event object.
+	 * @throws Exception If the metadata value cannot be unserialized.
 	 */
 	public static function load_metadata( Event $event ) {
 		global $wpdb;
@@ -146,13 +148,17 @@ class Event_Repository extends Repository {
 		$sql_meta = $wpdb->prepare(
 			'SELECT meta_key, meta_value FROM %i WHERE event_id = %d',
 			Event_Meta_Repository::get_table_name(),
-			$event->event_id
+			$event->id
 		);
 		$rows     = $wpdb->get_results( $sql_meta, ARRAY_A );
 
 		// Convert the query result into an associative array.
 		foreach ( $rows as $row ) {
-			$event->event_meta[ $row['meta_key'] ] = Serialization::unserialize( $row['meta_value'] );
+			if ( Serialization::try_unserialize( $row['meta_value'], $unserialized_value ) ) {
+				$event->event_meta[ $row['meta_key'] ] = $unserialized_value;
+			} else {
+				throw new Exception( 'Failed to unserialize event meta value.' );
+			}
 		}
 	}
 
@@ -164,7 +170,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function save_metadata( Event $event ): bool {
 		// Delete all existing associated records in the event_meta table.
-		$ok = Event_Meta_Repository::delete_by_event_id( $event->event_id );
+		$ok = Event_Meta_Repository::delete_by_event_id( $event->id );
 
 		// Return on error.
 		if ( ! $ok ) {
@@ -176,7 +182,7 @@ class Event_Repository extends Repository {
 			foreach ( $event->event_meta as $meta_key => $meta_value ) {
 
 				// Construct the new Event_Meta object.
-				$event_meta_object = new Event_Meta( $event->event_id, $meta_key, $meta_value );
+				$event_meta_object = new Event_Meta( $event->id, $meta_key, $meta_value );
 
 				// Save the object.
 				$ok = Event_Meta_Repository::save( $event_meta_object );
@@ -200,7 +206,7 @@ class Event_Repository extends Repository {
 	 * @param Event $event The event object.
 	 */
 	public static function load_properties( Event $event ) {
-		$event->properties = Property_Repository::load_by_event_id( $event->event_id );
+		$event->properties = Property_Repository::load_by_event_id( $event->id );
 	}
 
 	/**
@@ -211,7 +217,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function save_properties( Event $event ): bool {
 		// Delete all associated records in the properties table.
-		$ok = Property_Repository::delete_by_event_id( $event->event_id );
+		$ok = Property_Repository::delete_by_event_id( $event->id );
 
 		// Return on error.
 		if ( ! $ok ) {
@@ -223,7 +229,7 @@ class Event_Repository extends Repository {
 			foreach ( $event->properties as $property ) {
 
 				// Ensure the event_id is set in the property object.
-				$property->event_id = $event->event_id;
+				$property->event_id = $event->id;
 
 				// Update the property record.
 				$ok = Property_Repository::save( $property );
@@ -307,7 +313,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function record_to_object( array $data ): Event {
 		$event                = new Event();
-		$event->event_id      = (int) $data['event_id'];
+		$event->id            = (int) $data['event_id'];
 		$event->when_happened = DateTimes::create_datetime( $data['when_happened'] );
 		$event->user_id       = (int) $data['user_id'];
 		$event->user_name     = $data['user_name'];

@@ -13,4 +13,9 @@
         <exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
     </rule>
 
+    <!-- Turn off the warning about serialize() and unserialize(). -->
+    <rule ref="WordPress.PHP.DiscouragedPHPFunctions">
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize"/>
+    </rule>
+
 </ruleset>

@@ -17,7 +17,7 @@ class Property {
 	 *
 	 * @var int
 	 */
-	public int $property_id;
+	public int $id;
 
 	/**
 	 * The event ID.
@@ -27,18 +27,18 @@ class Property {
 	public int $event_id;
 
 	/**
-	 * The property name.
+	 * The property name or key.
 	 *
 	 * @var string
 	 */
-	public string $property_key;
+	public string $key;
 
 	/**
-	 * The type of database table the property belongs to: 'base', 'meta', or 'none'.
+	 * The type of database table the property belongs to: 'base', 'meta', or 'other'.
 	 *
 	 * @var string
 	 */
-	public string $property_type;
+	public string $type;
 
 	/**
 	 * The old or current value of the property.
@@ -63,9 +63,9 @@ class Property {
 	 * @param mixed   $new_value Optional. The new value of the property, if changed.
 	 */
 	public function __construct( string $property_key, ?string $property_type, mixed $old_value = null, mixed $new_value = null ) {
-		$this->property_key  = $property_key;
-		$this->property_type = $property_type;
-		$this->old_value     = $old_value;
-		$this->new_value     = $new_value;
+		$this->key       = $property_key;
+		$this->type      = $property_type;
+		$this->old_value = $old_value;
+		$this->new_value = $new_value;
 	}
 }

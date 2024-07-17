@@ -28,36 +28,37 @@ class Serialization {
 	}
 
 	/**
-	 * Attempts to unserialize a nullable string. If the value is null, null will be returned.
-	 * If the string represents PHP-serialized data, it will be unserialized and the unserialized value
-	 * will be returned. If it doesn't, the original string will be returned.
+	 * Attempts to unserialize a nullable string.
 	 *
-	 * @param ?string $value The input string which may contain serialized data.
-	 * @param bool    $suppress_exception Whether to suppress exceptions when unserialization fails.
-	 * @return mixed The unserialized value if the string represents serialized data; otherwise, the
-	 *               original string.
-	 * @throws InvalidArgumentException If the value is not null and unserialization fails.
+	 * If the provided value is null, the unserialized value will be null, and the return value will
+	 * be true.
+	 *
+	 * If the provided value is a string with value PHP-serialized data, it will be unserialized,
+	 * the unserialized value will be stored in the reference parameter, and the return value will
+	 * be true.
+	 *
+	 * If it doesn't, the unserialized value will be unaltered, and the return value will be false.
+	 *
+	 * @param ?string $serialized_value The input value which may contain serialized data.
+	 * @param mixed   $unserialized_value The unserialized value if the string represents serialized data.
+	 * @return bool True if the provided value was null or successfully unserialized; otherwise false.
 	 */
-	public static function unserialize( ?string $value, bool $suppress_exception = true ): mixed {
-		// If the value is null, return null.
-		if ( $value === null ) {
-			return null;
+	public static function try_unserialize( ?string $serialized_value, mixed &$unserialized_value ): bool {
+		// Handle the null case.
+		if ( $serialized_value === null ) {
+			$unserialized_value = null;
+			return true;
 		}
 
 		// Attempt to unserialize the value.
-		$unserialized_value = @unserialize( $value );
+		$unserialized_value = @unserialize( $serialized_value );
 
 		// Check if unserialization was successful.
-		if ( $unserialized_value !== false || $value === 'b:0;' ) {
-			return $unserialized_value;
+		if ( $unserialized_value !== false || $serialized_value === 'b:0;' ) {
+			return true;
 		}
 
-		// If we're suppressing exceptions, return the original value.
-		if ( $suppress_exception ) {
-			return $value;
-		}
-
-		// If unserialization failed, throw an exception.
-		throw new InvalidArgumentException( 'Failed to unserialize value: ' . $value );
+		// Unserialization failed.
+		return false;
 	}
 }

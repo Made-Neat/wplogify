@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use Exception;
 use InvalidArgumentException;
 
 /**
@@ -61,7 +62,7 @@ class Property_Repository extends Repository {
 		}
 
 		// Check if we're inserting or updating.
-		$inserting = empty( $property->property_id );
+		$inserting = empty( $property->id );
 
 		// Update or insert the property record.
 		$data    = self::object_to_record( $property );
@@ -72,11 +73,11 @@ class Property_Repository extends Repository {
 
 			// If the new record was inserted ok, update the Property object with the new ID.
 			if ( $ok ) {
-				$property->property_id = $wpdb->insert_id;
+				$property->id = $wpdb->insert_id;
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $data, array( 'property_id' => $property->property_id ), $formats, array( '%d' ) );
+			$ok = $wpdb->update( self::get_table_name(), $data, array( 'property_id' => $property->id ), $formats, array( '%d' ) );
 		}
 
 		// Return on error.
@@ -125,7 +126,7 @@ class Property_Repository extends Repository {
             event_id      BIGINT UNSIGNED NOT NULL,
             property_key  VARCHAR(255)    NOT NULL,
             property_type VARCHAR(4)      NOT NULL,
-            old_value     LONGTEXT        NOT NULL,
+            old_value     LONGTEXT        NULL,
             new_value     LONGTEXT        NULL,
             PRIMARY KEY (property_id),
             KEY event_id (event_id),
@@ -159,13 +160,24 @@ class Property_Repository extends Repository {
 	 *
 	 * @param array $data The database record as an associative array.
 	 * @return Property The Property object.
+	 * @throws Exception If the old or new value cannot be unserialized.
 	 */
 	public static function record_to_object( array $data ): Property {
-		$old_value             = Serialization::unserialize( $data['old_value'] );
-		$new_value             = Serialization::unserialize( $data['new_value'] );
-		$property              = new Property( $data['property_key'], $data['property_type'], $old_value, $new_value );
-		$property->property_id = (int) $data['property_id'];
-		$property->event_id    = (int) $data['event_id'];
+		// Unserialize the old and new values.
+		if ( ! Serialization::try_unserialize( $data['old_value'], $old_value ) ) {
+			throw new Exception( 'Failed to unserialize old property value.' );
+		}
+		if ( ! Serialization::try_unserialize( $data['new_value'], $new_value ) ) {
+			throw new Exception( 'Failed to unserialize new property value.' );
+		}
+
+		// Create the Property object.
+		$property = new Property( $data['property_key'], $data['property_type'], $old_value, $new_value );
+
+		// Set the ID and event ID.
+		$property->id       = (int) $data['property_id'];
+		$property->event_id = (int) $data['event_id'];
+
 		return $property;
 	}
 
@@ -180,8 +192,8 @@ class Property_Repository extends Repository {
 	public static function object_to_record( Property $property ): array {
 		return array(
 			'event_id'      => $property->event_id,
-			'property_key'  => $property->property_key,
-			'property_type' => $property->property_type,
+			'property_key'  => $property->key,
+			'property_type' => $property->type,
 			'old_value'     => Serialization::serialize( $property->old_value ),
 			'new_value'     => Serialization::serialize( $property->new_value ),
 		);

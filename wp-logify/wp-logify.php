@@ -29,6 +29,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Ensure session is started.
+if ( session_status() === PHP_SESSION_NONE ) {
+	session_start();
+}
+
 // Some useful globals.
 define( 'WP_LOGIFY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WP_LOGIFY_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -55,13 +60,13 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-widget.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-datetimes.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-serialization.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-types.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-cron.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-logger.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-plugin.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/debug.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/functions.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/test.php';
 
 // Register plugin hooks.

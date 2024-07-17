@@ -19,7 +19,7 @@ class Event {
 	 *
 	 * @var int
 	 */
-	public int $event_id;
+	public int $id;
 
 	/**
 	 * The date and time of the event in the site time zone, stored as a string.
@@ -93,6 +93,13 @@ class Event {
 	public null|int|string $object_id;
 
 	/**
+	 * The object reference.
+	 *
+	 * @var ?Object_Reference
+	 */
+	private ?Object_Reference $object_ref;
+
+	/**
 	 * The name of the object associated with the event. This is only used when the object has been
 	 * deleted.
 	 *
@@ -129,12 +136,32 @@ class Event {
 	 * @return ?Object_Reference The Object_Reference for the object, or null if there is no object.
 	 */
 	public function get_object_reference(): ?Object_Reference {
+		// Check if it's already been set.
+		if ( isset( $this->object_ref ) ) {
+			return $this->object_ref;
+		}
+
 		// Handle the null case.
 		if ( $this->object_type === null || $this->object_id === null ) {
 			return null;
 		}
 
 		// Construct the object reference.
-		return new Object_Reference( $this->object_type, $this->object_id, $this->object_name );
+		$this->object_ref = new Object_Reference( $this->object_type, $this->object_id, $this->object_name );
+
+		return $this->object_ref;
+	}
+
+	/**
+	 * Get the HTML for an object tag.
+	 *
+	 * @return string The object tag.
+	 */
+	public function get_object_tag(): string {
+		// Make sure the object reference has been created.
+		$object_ref = $this->get_object_reference();
+
+		// Return the tag, or empty string if there is no object reference.
+		return $object_ref === null ? '' : $object_ref->get_tag();
 	}
 }

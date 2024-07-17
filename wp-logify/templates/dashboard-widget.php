@@ -17,14 +17,16 @@ $current_datetime = DateTimes::current_datetime();
 
 // Fetch the total activities for the last hour.
 $one_hour_ago         = DateTimes::format_datetime_mysql( DateTimes::subtract_hours( $current_datetime, 1 ) );
-$activities_last_hour = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE when_happened >= %s", $one_hour_ago ) );
+$sql_one_hour         = $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE when_happened >= %s', $table_name, $one_hour_ago );
+$activities_last_hour = $wpdb->get_var( $sql_one_hour );
 
 // Fetch the total activities for the last 24 hours.
 $twenty_four_hours_ago    = DateTimes::format_datetime_mysql( DateTimes::subtract_hours( $current_datetime, 24 ) );
-$activities_last_24_hours = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name WHERE when_happened >= %s", $twenty_four_hours_ago ) );
+$sql_24_hour              = $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE when_happened >= %s', $table_name, $twenty_four_hours_ago );
+$activities_last_24_hours = $wpdb->get_var( $sql_24_hour );
 
 // Fetch the last 10 activities.
-$sql_fetch_10 = $wpdb->prepare( '"SELECT * FROM %i ORDER BY when_happened DESC LIMIT 10"', $table_name );
+$sql_fetch_10 = $wpdb->prepare( 'SELECT * FROM %i ORDER BY when_happened DESC LIMIT 10', $table_name );
 $results      = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 ?>
 
@@ -62,7 +64,7 @@ $results      = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->when_happened ) ); ?></td>
 						<td><?php echo Users::get_tag( $event->user_id, $event->user_name ); ?></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
-						<td><?php echo $event->get_object_reference()->get_tag(); ?></td>
+						<td><?php echo $event->get_object_tag(); ?></td>
 					</tr>
 				<?php endforeach; ?>
 			<?php else : ?>

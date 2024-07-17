@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use Exception;
 use InvalidArgumentException;
 
 /**
@@ -62,7 +63,7 @@ class Event_Meta_Repository extends Repository {
 		}
 
 		// Check if we're inserting or updating.
-		$inserting = empty( $event_meta->event_meta_id );
+		$inserting = empty( $event_meta->id );
 
 		// Update or insert the event_meta record.
 		$data    = self::object_to_record( $event_meta );
@@ -73,11 +74,11 @@ class Event_Meta_Repository extends Repository {
 
 			// If the new record was inserted ok, update the Event_Meta object with the new ID.
 			if ( $ok ) {
-				$event_meta->event_meta_id = $wpdb->insert_id;
+				$event_meta->id = $wpdb->insert_id;
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $data, array( 'event_meta_id' => $event_meta->event_meta_id ), $formats, array( '%d' ) );
+			$ok = $wpdb->update( self::get_table_name(), $data, array( 'event_meta_id' => $event_meta->id ), $formats, array( '%d' ) );
 		}
 
 		return (bool) $ok;
@@ -153,11 +154,20 @@ class Event_Meta_Repository extends Repository {
 	 *
 	 * @param array $data The database record.
 	 * @return Event_Meta The Event_Meta entity.
+	 * @throws Exception If the meta value cannot be unserialized.
 	 */
 	protected static function record_to_object( array $data ): Event_Meta {
-		$meta_value                = Serialization::unserialize( $data['meta_value'] );
-		$event_meta                = new Event_Meta( (int) $data['event_id'], $data['meta_key'], $meta_value );
-		$event_meta->event_meta_id = (int) $data['event_meta_id'];
+		// Unserialize the meta value.
+		if ( ! Serialization::try_unserialize( $data['meta_value'], $meta_value ) ) {
+			throw new Exception( 'Failed to unserialize event meta value.' );
+		}
+
+		// Create the Event_Meta object.
+		$event_meta = new Event_Meta( (int) $data['event_id'], $data['meta_key'], $meta_value );
+
+		// Set the ID.
+		$event_meta->id = (int) $data['event_meta_id'];
+
 		return $event_meta;
 	}
 
@@ -177,29 +187,6 @@ class Event_Meta_Repository extends Repository {
 
 	// =============================================================================================
 	// Methods relating to events.
-
-	// /**
-	// * Select all event_meta records relating to an event.
-	// *
-	// * @param int $event_id The ID of the event.
-	// * @return ?array Array of Event_Meta objects or null if none found.
-	// */
-	// public static function select_by_event_id( int $event_id ): ?array {
-	// global $wpdb;
-
-	// Get all the event_meta records connectted to the event.
-	// $sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-	// $data = $wpdb->get_results( $sql, ARRAY_A );
-
-	// If none found, return null.
-	// if ( ! $data ) {
-	// return null;
-	// }
-
-	// Convert the records to objects.
-	// $event_metas = array_map( fn( $record ) => self::record_to_object( $record ), $data );
-	// return $event_metas;
-	// }
 
 	/**
 	 * Delete all event_meta records relating to an event.
