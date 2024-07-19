@@ -4,7 +4,7 @@ services:
   wordpress:
     build:
       context: .
-      dockerfile: Dockerfile.wordpress
+      dockerfile: WordPress.Dockerfile
     container_name: wplogify-wordpress
     depends_on:
       - mysql
@@ -36,7 +36,7 @@ services:
   mysql:
     build:
       context: .
-      dockerfile: Dockerfile.mysql
+      dockerfile: MySQL.Dockerfile
     container_name: wplogify-mysql
     networks:
       - wplogify-network

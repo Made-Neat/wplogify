@@ -277,6 +277,11 @@ class Posts {
 	 * @param string $taxonomy  Taxonomy slug.
 	 */
 	public static function on_added_term_relationship( int $object_id, int $tt_id, string $taxonomy ) {
+		// Ignore revisions.
+		if ( wp_is_post_revision( $object_id ) ) {
+			return;
+		}
+
 		// Get the term.
 		$term = Terms::get_by_term_taxonomy_id( $tt_id );
 
