@@ -1,4 +1,4 @@
-FROM wordpress:6.5.5
+FROM wordpress:6.6
 
 # Switch to the root user. We should be already, but just in case.
 USER root

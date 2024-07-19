@@ -176,13 +176,13 @@ class Users {
 		// again until it's done.
 
 		// Check if activity tracking is already in progress.
-		if ( ! empty( $_SESSION['tracking_activity'] ) ) {
+		if ( get_transient( 'wp_logify_activity_tracking_in_progress' ) ) {
 			// Another HTTP request is already handling the activity tracking, so let's go.
 			return;
 		}
 
 		// Note that activity tracking is in progress.
-		$_SESSION['tracking_activity'] = true;
+		set_transient( 'wp_logify_activity_tracking_in_progress', true );
 
 		// Prepare some values.
 		$user_id    = get_current_user_id();
@@ -244,7 +244,7 @@ class Users {
 		}
 
 		// Note that activity tracking is no longer in progress.
-		$_SESSION['tracking_activity'] = false;
+		delete_transient( 'wp_logify_activity_tracking_in_progress' );
 	}
 
 	// ---------------------------------------------------------------------------------------------
