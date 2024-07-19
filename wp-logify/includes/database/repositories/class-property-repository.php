@@ -28,16 +28,16 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get the property record.
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE property_id = %d', self::get_table_name(), $property_id );
-		$data = $wpdb->get_row( $sql, ARRAY_A );
+		$sql    = $wpdb->prepare( 'SELECT * FROM %i WHERE property_id = %d', self::get_table_name(), $property_id );
+		$record = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
-		if ( ! $data ) {
+		if ( ! $record ) {
 			return null;
 		}
 
 		// Construct the new Property object.
-		$prop = self::record_to_object( $data );
+		$prop = self::record_to_object( $record );
 
 		return $prop;
 	}
@@ -65,11 +65,11 @@ class Property_Repository extends Repository {
 		$inserting = empty( $property->id );
 
 		// Update or insert the property record.
-		$data    = self::object_to_record( $property );
+		$record  = self::object_to_record( $property );
 		$formats = array( '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( self::get_table_name(), $data, $formats );
+			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Property object with the new ID.
 			if ( $ok ) {
@@ -77,15 +77,10 @@ class Property_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $data, array( 'property_id' => $property->id ), $formats, array( '%d' ) );
+			$ok = $wpdb->update( self::get_table_name(), $record, array( 'property_id' => $property->id ), $formats, array( '%d' ) ) !== false;
 		}
 
-		// Return on error.
-		if ( ! $ok ) {
-			return false;
-		}
-
-		return true;
+		return $ok;
 	}
 
 	/**
@@ -125,7 +120,7 @@ class Property_Repository extends Repository {
             property_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             event_id      BIGINT UNSIGNED NOT NULL,
             property_key  VARCHAR(255)    NOT NULL,
-            property_type VARCHAR(4)      NOT NULL,
+            property_type VARCHAR(100)    NOT NULL,
             old_value     LONGTEXT        NULL,
             new_value     LONGTEXT        NULL,
             PRIMARY KEY (property_id),
@@ -158,25 +153,25 @@ class Property_Repository extends Repository {
 	/**
 	 * Convert a database record to a Property object.
 	 *
-	 * @param array $data The database record as an associative array.
+	 * @param array $record The database record as an associative array.
 	 * @return Property The Property object.
 	 * @throws Exception If the old or new value cannot be unserialized.
 	 */
-	public static function record_to_object( array $data ): Property {
+	public static function record_to_object( array $record ): Property {
 		// Unserialize the old and new values.
-		if ( ! Serialization::try_unserialize( $data['old_value'], $old_value ) ) {
+		if ( ! Serialization::try_unserialize( $record['old_value'], $old_value ) ) {
 			throw new Exception( 'Failed to unserialize old property value.' );
 		}
-		if ( ! Serialization::try_unserialize( $data['new_value'], $new_value ) ) {
+		if ( ! Serialization::try_unserialize( $record['new_value'], $new_value ) ) {
 			throw new Exception( 'Failed to unserialize new property value.' );
 		}
 
 		// Create the Property object.
-		$property = new Property( $data['property_key'], $data['property_type'], $old_value, $new_value );
+		$property = new Property( $record['property_key'], $record['property_type'], $old_value, $new_value );
 
 		// Set the ID and event ID.
-		$property->id       = (int) $data['property_id'];
-		$property->event_id = (int) $data['event_id'];
+		$property->id       = (int) $record['property_id'];
+		$property->event_id = (int) $record['event_id'];
 
 		return $property;
 	}
@@ -212,16 +207,19 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get all the properties connectted to the event.
-		$sql  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-		$data = $wpdb->get_results( $sql, ARRAY_A );
+		$sql       = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
+		$recordset = $wpdb->get_results( $sql, ARRAY_A );
 
 		// If none found, return null.
-		if ( ! $data ) {
+		if ( ! $recordset ) {
 			return null;
 		}
 
 		// Convert the records to objects.
-		$properties = array_map( fn( $record ) => self::record_to_object( $record ), $data );
+		$properties = array();
+		foreach ( $recordset as $record ) {
+			$properties[ $record['property_key'] ] = self::record_to_object( $record );
+		}
 
 		return $properties;
 	}

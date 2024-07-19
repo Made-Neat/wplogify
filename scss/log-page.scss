@@ -108,32 +108,22 @@ $very-pale-grey: #f7f7f7;
             margin-bottom: 0.25rem;
         }
 
-        table {
+        .wp-logify-details-table {
             border-collapse: collapse;
-
-            th {
-                width: 8rem;
-            }
-        }
-
-        .wp-logify-event-details-table {
-            width: 24rem;
-        }
-
-        .wp-logify-user-details-table {
-            width: 36rem;
-        }
-
-        .wp-logify-change-details-table {
-            width: 40rem;
+            width: 30rem;
 
             th {
                 width: 10rem;
             }
+        }
 
-            td {
-                width: 15rem;
-            }
+        .wp-logify-event-meta-table,
+        .wp-logify-properties-table-2-column {
+            width: 24rem;
+        }
+
+        .wp-logify-properties-table-3-column {
+            width: 36rem;
         }
     }
 }

@@ -30,25 +30,25 @@ class Users {
 	 */
 	public static function init() {
 		// Track user login.
-		add_action( 'wp_login', array( __CLASS__, 'track_login' ), 10, 2 );
+		add_action( 'wp_login', array( __CLASS__, 'on_wp_login' ), 10, 2 );
 
 		// Track user logout.
-		add_action( 'wp_logout', array( __CLASS__, 'track_logout' ), 10, 1 );
+		add_action( 'wp_logout', array( __CLASS__, 'on_wp_logout' ), 10, 1 );
 
 		// Track user activity.
-		add_action( 'wp_loaded', array( __CLASS__, 'track_activity' ) );
+		add_action( 'wp_loaded', array( __CLASS__, 'on_wp_loaded' ) );
 
 		// Track registration of a new user.
-		add_action( 'user_register', array( __CLASS__, 'track_register' ), 10, 2 );
+		add_action( 'user_register', array( __CLASS__, 'on_user_register' ), 10, 2 );
 
 		// Track deletion of a user.
-		add_action( 'delete_user', array( __CLASS__, 'track_delete' ), 10, 3 );
+		add_action( 'delete_user', array( __CLASS__, 'on_delete_user' ), 10, 3 );
 
 		// Track update of a user.
-		add_action( 'profile_update', array( __CLASS__, 'track_update' ), 10, 3 );
+		add_action( 'profile_update', array( __CLASS__, 'on_profile_update' ), 10, 3 );
 
 		// Track update of user metadata.
-		add_action( 'update_user_meta', array( __CLASS__, 'track_meta_update' ), 10, 4 );
+		add_action( 'update_user_meta', array( __CLASS__, 'on_update_user_meta' ), 10, 4 );
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ class Users {
 	 * @param string  $user_login The username of the user that logged in.
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
-	public static function track_login( string $user_login, WP_User $user ) {
+	public static function on_wp_login( string $user_login, WP_User $user ) {
 		Logger::log_event( 'User Login', 'user', $user->ID, self::get_name( $user ) );
 	}
 
@@ -68,7 +68,7 @@ class Users {
 	 *
 	 * @param int $user_id The ID of the user that logged out.
 	 */
-	public static function track_logout( int $user_id ) {
+	public static function on_wp_logout( int $user_id ) {
 		Logger::log_event( 'User Logout', 'user', $user_id, self::get_name( $user_id ) );
 	}
 
@@ -78,7 +78,7 @@ class Users {
 	 * @param int   $user_id  The ID of the user that was registered.
 	 * @param array $userdata The data for the user that was registered.
 	 */
-	public static function track_register( int $user_id, array $userdata ) {
+	public static function on_user_register( int $user_id, array $userdata ) {
 		// Get the user's properties.
 		$properties = self::get_properties( $user_id );
 
@@ -93,7 +93,7 @@ class Users {
 	 * @param ?int    $reassign The ID of the user that the data was reassigned to.
 	 * @param WP_User $user     The WP_User object of the user that was deleted.
 	 */
-	public static function track_delete( int $user_id, ?int $reassign, WP_User $user ) {
+	public static function on_delete_user( int $user_id, ?int $reassign, WP_User $user ) {
 		// Get the user's properties.
 		$properties = self::get_properties( $user );
 
@@ -114,7 +114,7 @@ class Users {
 	 * @param WP_User $old_user_data The WP_User object of the user before the update.
 	 * @param array   $userdata      The data for the user after the update.
 	 */
-	public static function track_update( int $user_id, WP_User $old_user_data, array $userdata ) {
+	public static function on_profile_update( int $user_id, WP_User $old_user_data, array $userdata ) {
 		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
 
@@ -145,7 +145,7 @@ class Users {
 	 * @param string $meta_key   The key of the meta data.
 	 * @param mixed  $meta_value The new value of the meta data.
 	 */
-	public static function track_meta_update( int $meta_id, int $user_id, string $meta_key, mixed $meta_value ) {
+	public static function on_update_user_meta( int $meta_id, int $user_id, string $meta_key, mixed $meta_value ) {
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
@@ -167,7 +167,7 @@ class Users {
 	/**
 	 * Track user activity.
 	 */
-	public static function track_activity() {
+	public static function on_wp_loaded() {
 		global $wpdb;
 
 		// Sometimes (e.g. when editing a post) WordPress triggers two simultaneous HTTP requests,
@@ -198,10 +198,10 @@ class Users {
 			$user_id,
 			$event_type
 		);
-		$row        = $wpdb->get_row( $sql, ARRAY_A );
-		if ( $row ) {
+		$record     = $wpdb->get_row( $sql, ARRAY_A );
+		if ( $record ) {
 			// Construct the Event object.
-			$event = Event_Repository::load( $row['event_id'] );
+			$event = Event_Repository::load( $record['event_id'] );
 
 			// Check we have the info we need.
 			if ( ! empty( $event->event_meta['session_start'] ) && ! empty( $event->event_meta['session_end'] ) ) {
@@ -397,15 +397,15 @@ class Users {
 			return null;
 		}
 
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
+		$body   = wp_remote_retrieve_body( $response );
+		$result = json_decode( $body, true );
 
 		// Construct the location string.
-		if ( $data['status'] === 'success' ) {
+		if ( $result['status'] === 'success' ) {
 			$location = array(
-				$data['city'],
-				$data['regionName'],
-				$data['country'],
+				$result['city'],
+				$result['regionName'],
+				$result['country'],
 			);
 			return implode( ', ', array_filter( $location ) );
 		}
@@ -440,14 +440,14 @@ class Users {
 		}
 
 		// Get the last login datetime from the wp_logify_events table.
-		$table_name       = Event_Repository::get_table_name();
-		$sql              = $wpdb->prepare(
-			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY when_happened DESC LIMIT 1",
+		$table_name = Event_Repository::get_table_name();
+		$sql        = $wpdb->prepare(
+			"SELECT when_happened FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY when_happened DESC LIMIT 1",
 			$table_name,
 			$user->ID
 		);
-		$last_login_event = $wpdb->get_row( $sql, ARRAY_A );
-		return $last_login_event === null ? null : DateTimes::create_datetime( $last_login_event->when_happened );
+		$record     = $wpdb->get_row( $sql, ARRAY_A );
+		return $record === null ? null : DateTimes::create_datetime( $record['when_happened'] );
 	}
 
 	/**

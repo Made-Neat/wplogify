@@ -9,6 +9,7 @@ namespace WP_Logify;
 
 use DateTime;
 use Exception;
+use WP_Error;
 use WP_Post;
 
 /**
@@ -19,11 +20,25 @@ use WP_Post;
 class Posts {
 
 	/**
-	 * Changes to a post.
+	 * Array of properties to remember properties between different events.
 	 *
 	 * @var array
 	 */
-	private static $changes = array();
+	private static $properties = array();
+
+	/**
+	 * Array of metadata to remember metadata between different events.
+	 *
+	 * @var array
+	 */
+	private static $event_meta = array();
+
+	/**
+	 * Keep track of terms added to a post in a single request.
+	 *
+	 * @var array
+	 */
+	private static $terms_added = array();
 
 	// ---------------------------------------------------------------------------------------------
 
@@ -32,23 +47,29 @@ class Posts {
 	 */
 	public static function init() {
 		// Track post creation and update.
-		add_action( 'save_post', array( __CLASS__, 'track_save' ), 10, 3 );
-		add_action( 'pre_post_update', array( __CLASS__, 'track_update_pre' ), 10, 2 );
-		add_action( 'post_updated', array( __CLASS__, 'track_update' ), 10, 3 );
-		add_action( 'update_post_meta', array( __CLASS__, 'track_meta_update' ), 10, 4 );
+		add_action( 'save_post', array( __CLASS__, 'on_save_post' ), 10, 3 );
+		add_action( 'pre_post_update', array( __CLASS__, 'on_pre_post_update' ), 10, 2 );
+		add_action( 'post_updated', array( __CLASS__, 'on_post_updated' ), 10, 3 );
+		add_action( 'update_post_meta', array( __CLASS__, 'on_update_post_meta' ), 10, 4 );
 
 		// Track post status changes.
-		add_action( 'draft_to_publish', array( __CLASS__, 'track_publish' ), 10, 1 );
-		add_action( 'publish_to_draft', array( __CLASS__, 'track_unpublish' ), 10, 1 );
-		add_action( 'trashed_post', array( __CLASS__, 'track_trash' ), 10, 2 );
-		add_action( 'untrashed_post', array( __CLASS__, 'track_untrash' ), 10, 2 );
+		add_action( 'draft_to_publish', array( __CLASS__, 'on_draft_to_publish' ), 10, 1 );
+		add_action( 'publish_to_draft', array( __CLASS__, 'on_publish_to_draft' ), 10, 1 );
+		add_action( 'trashed_post', array( __CLASS__, 'on_trashed_post' ), 10, 2 );
+		add_action( 'untrashed_post', array( __CLASS__, 'on_untrashed_post' ), 10, 2 );
 
 		// Track post deletion.
-		add_action( 'delete_post', array( __CLASS__, 'track_delete' ), 10, 2 );
+		add_action( 'before_delete_post', array( __CLASS__, 'on_before_delete_post' ), 10, 2 );
+		add_action( 'delete_post', array( __CLASS__, 'on_delete_post' ), 10, 2 );
+
+		// Track attachment of terms and posts.
+		add_action( 'added_term_relationship', array( __CLASS__, 'on_added_term_relationship' ), 10, 3 );
+		add_action( 'deleted_term_relationships', array( __CLASS__, 'on_deleted_term_relationships' ), 10, 3 );
+		add_action( 'wp_after_insert_post', array( __CLASS__, 'on_wp_after_insert_post' ), 10, 4 );
 	}
 
 	// ---------------------------------------------------------------------------------------------
-	// Tracking methods.
+	// Event handlers.
 
 	/**
 	 * Log the creation and update of a post.
@@ -57,7 +78,7 @@ class Posts {
 	 * @param WP_Post $post The post object.
 	 * @param bool    $update Whether this is an update or a new post.
 	 */
-	public static function track_save( $post_id, $post, $update ) {
+	public static function on_save_post( $post_id, $post, $update ) {
 		// Ignore updates. We track post updates by tracking the creation of revisions, which
 		// enables us to link to the compare revisions page.
 		if ( $update ) {
@@ -82,7 +103,7 @@ class Posts {
 			$post    = self::get_post( $post_id );
 
 			// Copy changes to the properties array.
-			foreach ( self::$changes as $key => $property ) {
+			foreach ( self::$properties as $key => $property ) {
 				$properties[ $key ] = $property;
 			}
 
@@ -108,9 +129,9 @@ class Posts {
 	 * @param int   $post_id The ID of the post being updated.
 	 * @param array $data    The data for the post.
 	 */
-	public static function track_update_pre( int $post_id, array $data, ) {
+	public static function on_pre_post_update( int $post_id, array $data, ) {
 		// Record the current last modified date.
-		self::$changes['post_modified'] = new Property( 'post_modified', 'base', self::get_last_modified_datetime( $post_id ) );
+		self::$properties['post_modified'] = new Property( 'post_modified', 'base', self::get_last_modified_datetime( $post_id ) );
 	}
 
 	/**
@@ -120,7 +141,7 @@ class Posts {
 	 * @param WP_Post $post_after   Post object following the update.
 	 * @param WP_Post $post_before  Post object before the update.
 	 */
-	public static function track_update( $post_id, $post_after, $post_before ) {
+	public static function on_post_updated( $post_id, $post_after, $post_before ) {
 		// Compare values.
 		foreach ( $post_before as $key => $value ) {
 			// Skip the dates in the posts table, they're incorrect.
@@ -135,12 +156,12 @@ class Posts {
 			// Compare old and new values.
 			if ( ! Types::are_equal( $old_value, $new_value ) ) {
 				// Record change.
-				self::$changes[ $key ] = new Property( $key, 'base', $old_value, $new_value );
+				self::$properties[ $key ] = new Property( $key, 'base', $old_value, $new_value );
 			}
 		}
 
 		// Get the new last modified datetime.
-		self::$changes['post_modified']->new_value = self::get_last_modified_datetime( $post_id );
+		self::$properties['post_modified']->new_value = self::get_last_modified_datetime( $post_id );
 	}
 
 	/**
@@ -151,7 +172,7 @@ class Posts {
 	 * @param string $meta_key   The key of the meta data.
 	 * @param mixed  $meta_value The new value of the meta data.
 	 */
-	public static function track_meta_update( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
+	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
 		// Get the current value.
 		$current_value = get_post_meta( $post_id, $meta_key, true );
 
@@ -161,9 +182,198 @@ class Posts {
 
 		// Note the change, if any.
 		if ( ! Types::are_equal( $old_value, $new_value ) ) {
-			self::$changes[ $meta_key ] = new Property( $meta_key, 'meta', $old_value, $new_value );
+			self::$properties[ $meta_key ] = new Property( $meta_key, 'meta', $old_value, $new_value );
 		}
 	}
+
+	/**
+	 * Log the publishing of a post.
+	 *
+	 * @param WP_Post $post The post object that was published.
+	 */
+	public static function on_draft_to_publish( WP_Post $post ) {
+		self::log_status_change( $post, 'Published', 'draft' );
+	}
+
+	/**
+	 * Log the unpublishing of a post.
+	 *
+	 * @param WP_Post $post The post object that was unpublished.
+	 */
+	public static function on_publish_to_draft( WP_Post $post ) {
+		self::log_status_change( $post, 'Unpublished', 'publish' );
+	}
+
+	/**
+	 * Log the trashing of a post.
+	 *
+	 * @param int    $post_id The ID of the post that was trashed.
+	 * @param string $previous_status The previous status of the post.
+	 */
+	public static function on_trashed_post( int $post_id, string $previous_status ) {
+		self::log_status_change( $post_id, 'Trashed', $previous_status );
+	}
+
+	/**
+	 * Log the untrashing of a post.
+	 *
+	 * @param int    $post_id The ID of the post that was untrashed.
+	 * @param string $previous_status The previous status of the post.
+	 */
+	public static function on_untrashed_post( int $post_id, string $previous_status ) {
+		self::log_status_change( $post_id, 'Restored', 'trash' );
+	}
+
+	/**
+	 * Fires before a post is deleted, at the start of wp_delete_post().
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post   Post object.
+	 */
+	public static function on_before_delete_post( int $post_id, WP_Post $post ) {
+		// Ignore revisions.
+		if ( wp_is_post_revision( $post ) ) {
+			return;
+		}
+
+		// Get the attached terms and add to the event metadata.
+		self::$event_meta['attached_terms'] = self::get_attached_terms( $post_id );
+	}
+
+	/**
+	 * Log the deletion of a post.
+	 *
+	 * This method is called immediately before the post is deleted from the database.
+	 *
+	 * @param int     $post_id The ID of the post that was deleted.
+	 * @param WP_Post $post The post object that was deleted.
+	 */
+	public static function on_delete_post( int $post_id, WP_Post $post ) {
+		// Ensure this is not a revision.
+		if ( wp_is_post_revision( $post ) ) {
+			return;
+		}
+
+		// Load the post if necessary.
+		if ( is_int( $post ) ) {
+			$post = self::get_post( $post );
+		}
+
+		// Get the event type.
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Deleted';
+
+		// Get the post's properties, including metadata.
+		$properties = self::get_properties( $post );
+
+		// Log the event.
+		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, self::$event_meta, $properties );
+	}
+
+	/**
+	 * Fires immediately after an object-term relationship is added.
+	 *
+	 * @param int    $object_id Object ID.
+	 * @param int    $tt_id     Term taxonomy ID.
+	 * @param string $taxonomy  Taxonomy slug.
+	 */
+	public static function on_added_term_relationship( int $object_id, int $tt_id, string $taxonomy ) {
+		// Get the term.
+		$term = Terms::get_by_term_taxonomy_id( $tt_id );
+
+		// Record the attached term.
+		if ( ! key_exists( $taxonomy, self::$terms_added ) ) {
+			self::$terms_added[ $taxonomy ] = array();
+		}
+		self::$terms_added[ $taxonomy ][] = new Object_Reference( 'term', $term->term_id, $term->name );
+	}
+
+	/**
+	 * Fires immediately after an object-term relationship is added.
+	 *
+	 * @param int    $object_id Object ID.
+	 * @param array  $tt_ids    An array of term taxonomy IDs.
+	 * @param string $taxonomy  Taxonomy slug.
+	 */
+	public static function on_deleted_term_relationships( int $object_id, array $tt_ids, string $taxonomy ) {
+		// Load the post.
+		$post = self::get_post( $object_id );
+
+		// Get the post's core properties.
+		$properties = self::get_core_properties( $post );
+
+		// Get the taxonomy object.
+		$taxonomy_obj = get_taxonomy( $taxonomy );
+
+		// Get the singular or plural name, as needed.
+		if ( count( $tt_ids ) === 1 ) {
+			$taxonomy_name = $taxonomy_obj->labels->singular_name;
+		} else {
+			$taxonomy_name = $taxonomy_obj->labels->name;
+		}
+
+		// Convert the term_taxonomy IDs to Object_Reference objects.
+		$term_refs = array();
+		foreach ( $tt_ids as $tt_id ) {
+			$term        = Terms::get_by_term_taxonomy_id( $tt_id );
+			$term_refs[] = new Object_Reference( 'term', $term->term_id, $term->name );
+		}
+
+		// Show the removed term or terms in the event metadata.
+		$event_meta              = array();
+		$meta_key                = 'removed_' . strtolower( $taxonomy_name );
+		$event_meta[ $meta_key ] = count( $term_refs ) === 1 ? $term_refs[0] : $term_refs;
+
+		// Get the event type.
+		$post_type_name = self::get_post_type_singular_name( $post->post_type );
+		$event_type     = "Removed $taxonomy_name from $post_type_name";
+
+		// Log the event.
+		Logger::log_event( $event_type, 'post', $object_id, $post->post_title, $event_meta, $properties );
+	}
+
+	/**
+	 * Fires immediately after an object-term relationship is added.
+	 *
+	 * @param int      $post_id     Post ID.
+	 * @param WP_Post  $post        Post object.
+	 * @param bool     $update      Whether this is an existing post being updated.
+	 * @param ?WP_Post $post_before Null for new posts, the WP_Post object prior to the update for updated posts.
+	 */
+	public static function on_wp_after_insert_post( int $post_id, WP_Post $post, bool $update, ?WP_Post $post_before ) {
+		// Log the addition of any taxonomy terms.
+		if ( self::$terms_added ) {
+			// Loop through the taxonomies and create a single log entry for each.
+			foreach ( self::$terms_added as $taxonomy => $term_refs ) {
+				// Get the post's core properties.
+				$properties = self::get_core_properties( $post );
+
+				// Get the taxonomy object.
+				$taxonomy_obj = get_taxonomy( $taxonomy );
+
+				// Get the singular or plural name, as needed.
+				if ( count( $term_refs ) === 1 ) {
+					$taxonomy_name = $taxonomy_obj->labels->singular_name;
+				} else {
+					$taxonomy_name = $taxonomy_obj->labels->name;
+				}
+
+				// Show the removed term or terms in the event metadata.
+				$event_meta              = array();
+				$meta_key                = 'added_' . strtolower( $taxonomy_name );
+				$event_meta[ $meta_key ] = count( $term_refs ) === 1 ? $term_refs[0] : $term_refs;
+
+				// Get the event type.
+				$post_type_name = self::get_post_type_singular_name( $post->post_type );
+				$event_type     = "Added $taxonomy_name to $post_type_name";
+
+				// Log the event.
+				Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $event_meta, $properties );
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------------------------------
+	// Support methods.
 
 	/**
 	 * Log a post status change.
@@ -172,7 +382,7 @@ class Posts {
 	 * @param string      $event_type_verb The verb to use in the event type.
 	 * @param string      $old_status The old status of the post.
 	 */
-	private static function track_status_change( WP_Post|int $post, string $event_type_verb, string $old_status ) {
+	private static function log_status_change( WP_Post|int $post, string $event_type_verb, string $old_status ) {
 		// Ensure this is not a revision.
 		if ( wp_is_post_revision( $post ) ) {
 			return;
@@ -192,76 +402,6 @@ class Posts {
 		// Modify the properties to correctly show the status change.
 		$properties['post_status']->old_value = $old_status;
 		$properties['post_status']->new_value = $post->post_status;
-
-		// Log the event.
-		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, null, $properties );
-	}
-
-	/**
-	 * Log the publishing of a post.
-	 *
-	 * @param WP_Post $post The post object that was published.
-	 */
-	public static function track_publish( WP_Post $post ) {
-		self::track_status_change( $post, 'Published', 'draft' );
-	}
-
-	/**
-	 * Log the unpublishing of a post.
-	 *
-	 * @param WP_Post $post The post object that was published.
-	 */
-	public static function track_unpublish( WP_Post $post ) {
-		self::track_status_change( $post, 'Unpublished', 'publish' );
-	}
-
-	/**
-	 * Log the trashing of a post.
-	 *
-	 * @param int    $post_id The ID of the post that was deleted.
-	 * @param string $previous_status The previous status of the post.
-	 */
-	public static function track_trash( int $post_id, string $previous_status ) {
-		self::track_status_change( $post_id, 'Trashed', $previous_status );
-	}
-
-	/**
-	 * Log the restoring of a post.
-	 *
-	 * @param int    $post_id The ID of the post that was deleted.
-	 * @param string $previous_status The previous status of the post.
-	 */
-	public static function track_untrash( int $post_id, string $previous_status ) {
-		self::track_status_change( $post_id, 'Restored', 'trash' );
-	}
-
-	/**
-	 * Log the deletion of a post.
-	 *
-	 * @param int     $post_id The ID of the post that was deleted.
-	 * @param WP_Post $post The post object that was deleted.
-	 */
-	public static function track_delete( int $post_id, WP_Post $post ) {
-		// Ensure this is not a revision.
-		if ( wp_is_post_revision( $post ) ) {
-			return;
-		}
-
-		// Load the post if necessary.
-		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
-		}
-
-		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Deleted';
-
-		// Get the post's properties, including metadata.
-		$properties = self::get_properties( $post );
-
-		// Get the attached terms and add to the properties array.
-		$terms                        = wp_get_post_terms( $post_id, array() );
-		$term_refs                    = array_map( fn( $term ) => new Object_Reference( 'term', $term->term_id, $term->name ), $terms );
-		$properties['attached_terms'] = new Property( 'terms', 'other', $term_refs );
 
 		// Log the event.
 		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, null, $properties );
@@ -437,10 +577,9 @@ class Posts {
 		}
 
 		// Construct the SQL.
-		$table_name = $wpdb->prefix . 'posts';
-		$sql        = $wpdb->prepare(
-			"SELECT MIN(post_date) FROM %i WHERE (ID=%d OR post_parent=%d) AND post_date != '0000-00-00 00:00:00'",
-			$table_name,
+		$sql = $wpdb->prepare(
+			"SELECT MIN(post_date) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_date != '0000-00-00 00:00:00'",
+			$wpdb->posts,
 			$post->ID,
 			$post->ID
 		);
@@ -465,10 +604,9 @@ class Posts {
 		}
 
 		// Construct the SQL.
-		$table_name = $wpdb->prefix . 'posts';
-		$sql        = $wpdb->prepare(
-			"SELECT MAX(post_modified) FROM %i WHERE (ID=%d OR post_parent=%d) AND post_modified != '0000-00-00 00:00:00'",
-			$table_name,
+		$sql = $wpdb->prepare(
+			"SELECT MAX(post_modified) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_modified != '0000-00-00 00:00:00'",
+			$wpdb->posts,
 			$post->ID,
 			$post->ID
 		);
@@ -479,54 +617,12 @@ class Posts {
 	}
 
 	/**
-	 * Get the properties of a post.
-	 *
-	 * @param WP_Post|int $post The post object or ID.
-	 * @return array The properties of the post.
-	 */
-	private static function get_properties( WP_Post|int $post ): array {
-		// Load the post if necessary.
-		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
-		}
-
-		// Start building the properties array.
-		$properties = array();
-
-		// Add the base properties.
-		foreach ( $post as $key => $value ) {
-			// Skip the dates in the posts table, they're incorrect.
-			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
-				continue;
-			}
-
-			// Process meta values into correct types.
-			$value = Types::process_database_value( $key, $value );
-
-			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, 'base', $value );
-		}
-
-		// Add the meta properties.
-		$postmeta = get_post_meta( $post->ID );
-		foreach ( $postmeta as $key => $value ) {
-			// Process meta values into correct types.
-			$value = Types::process_database_value( $key, $value );
-
-			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, 'meta', $value );
-		}
-
-		return $properties;
-	}
-
-	/**
 	 * Get the core properties of a post.
 	 *
 	 * @param WP_Post|int $post The post object or ID.
 	 * @return array The core properties of the post.
 	 */
-	private static function get_core_properties( WP_Post|int $post ): array {
+	public static function get_core_properties( WP_Post|int $post ): array {
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
 			$post = self::get_post( $post );
@@ -540,13 +636,23 @@ class Posts {
 		foreach ( $core_properties as $key ) {
 
 			// Get the value.
-			if ( $key === 'post_date' ) {
-				$value = self::get_created_datetime( $post );
-			} elseif ( $key === 'post_modified' ) {
-				$value = self::get_last_modified_datetime( $post );
-			} else {
-				// Process database values into correct types.
-				$value = Types::process_database_value( $key, $post->{$key} );
+			switch ( $key ) {
+				case 'post_author':
+					$value = new Object_Reference( 'user', $post->post_author );
+					break;
+
+				case 'post_date':
+					$value = self::get_created_datetime( $post );
+					break;
+
+				case 'post_modified':
+					$value = self::get_last_modified_datetime( $post );
+					break;
+
+				default:
+					// Process database values into correct types.
+					$value = Types::process_database_value( $key, $post->{$key} );
+					break;
 			}
 
 			// Construct the new Property object and add it to the properties array.
@@ -554,5 +660,90 @@ class Posts {
 		}
 
 		return $properties;
+	}
+
+	/**
+	 * Get the properties of a post.
+	 *
+	 * @param WP_Post|int $post The post object or ID.
+	 * @return array The properties of the post.
+	 */
+	public static function get_properties( WP_Post|int $post ): array {
+		// Load the post if necessary.
+		if ( is_int( $post ) ) {
+			$post = self::get_post( $post );
+		}
+
+		// Start with the core properties.
+		$properties = self::get_core_properties( $post );
+
+		// Add the base properties.
+		foreach ( $post as $key => $value ) {
+			// Skip core properties.
+			if ( key_exists( $properties, $key ) ) {
+				continue;
+			}
+
+			// Skip the dates in the posts table, they're incorrect.
+			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
+				continue;
+			}
+
+			// Process database values into correct types.
+			$value = Types::process_database_value( $key, $value );
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'base', $value );
+		}
+
+		// Add the meta properties.
+		$postmeta = get_post_meta( $post->ID );
+		foreach ( $postmeta as $key => $value ) {
+			// Process database values into correct types.
+			$value = Types::process_database_value( $key, $value );
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'meta', $value );
+		}
+
+		return $properties;
+	}
+
+	/**
+	 * Get all terms attached to the specified post as an array of Object_Reference objects.
+	 *
+	 * @param WP_Post|int $post The post object or ID.
+	 * @return Object_Reference[] The attached terms as an array of Object_Reference objects.
+	 */
+	public static function get_attached_terms( WP_Post|int $post ): array {
+		// Load the post if necessary.
+		if ( is_int( $post ) ) {
+			$post = self::get_post( $post );
+		}
+
+		// Initialize the result.
+		$term_refs = array();
+
+		// Get all the relevant taxonomy names.
+		$taxonomies = get_object_taxonomies( $post->post_type );
+
+		foreach ( $taxonomies as $taxonomy ) {
+			// Get the terms in this taxonomy that are attached to the post.
+			$terms = get_the_terms( $post, $taxonomy );
+
+			// Check for error.
+			if ( $terms instanceof WP_Error ) {
+				throw new Exception( "Error getting terms attached to post $post->ID." );
+			}
+
+			// If we got some terms, convert them to object references.
+			if ( $terms ) {
+				foreach ( $terms as $term ) {
+					$term_refs[] = new Object_Reference( 'term', $term->term_id, $term->name );
+				}
+			}
+		}
+
+		return $term_refs;
 	}
 }

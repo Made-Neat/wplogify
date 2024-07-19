@@ -29,10 +29,13 @@ class Terms {
 	 * Link the events we want to log to methods.
 	 */
 	public static function init() {
-		add_action( 'created_term', array( __CLASS__, 'track_create' ), 10, 4 );
-		add_action( 'edit_terms', array( __CLASS__, 'track_edit' ), 10, 3 );
-		add_action( 'pre_delete_term', array( __CLASS__, 'track_delete' ), 10, 2 );
-		add_action( 'edit_term_taxonomies', array( __CLASS__, 'track_edit_term_taxonomy' ), 10, 1 );
+		// CRUD operations.
+		add_action( 'created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
+		add_action( 'edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
+		add_action( 'pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
+
+		// Track changes to term taxonomies.
+		add_action( 'edit_term_taxonomies', array( __CLASS__, 'on_edit_term_taxonomies' ), 10, 1 );
 	}
 
 	/**
@@ -43,7 +46,7 @@ class Terms {
 	 * @param string $taxonomy Taxonomy slug.
 	 * @param array  $args     Arguments passed to wp_insert_term().
 	 */
-	public static function track_create( int $term_id, int $tt_id, string $taxonomy, array $args ) {
+	public static function on_created_term( int $term_id, int $tt_id, string $taxonomy, array $args ) {
 		// Load the term.
 		$term = self::get_term( $term_id );
 
@@ -64,7 +67,7 @@ class Terms {
 	 * @param string $taxonomy Taxonomy slug.
 	 * @param array  $args     Arguments passed to wp_update_term().
 	 */
-	public static function track_edit( int $term_id, string $taxonomy, array $args ) {
+	public static function on_edit_terms( int $term_id, string $taxonomy, array $args ) {
 		debug( func_get_args() );
 
 		// Load the term.
@@ -76,10 +79,14 @@ class Terms {
 		// Compare values.
 		$changed = false;
 		foreach ( $term->data as $key => $value ) {
-			if ( $value !== $args[ $key ] ) {
+			// Get the old and new values.
+			$old_value = Types::process_database_value( $key, $value );
+			$new_value = Types::process_database_value( $args[ $key ] );
+
+			if ( ! Types::are_equal( $old_value, $new_value ) ) {
 				// Update the property's before and after values.
-				$properties[ $key ]->old_value = $value;
-				$properties[ $key ]->new_value = $args[ $key ];
+				$properties[ $key ]->old_value = $old_value;
+				$properties[ $key ]->new_value = $new_value;
 
 				// Note there were changes.
 				$changed = true;
@@ -102,7 +109,7 @@ class Terms {
 	 * @param string $taxonomy Taxonomy name.
 	 * @throws Exception If the term could not be retrieved.
 	 */
-	public static function track_delete( int $term_id, string $taxonomy ) {
+	public static function on_pre_delete_term( int $term_id, string $taxonomy ) {
 		// Get the term.
 		$term = get_term( $term_id, $taxonomy );
 
@@ -140,8 +147,8 @@ class Terms {
 	 *
 	 * @param array $edit_tt_ids An array of term taxonomy IDs for the given term.
 	 */
-	public static function track_edit_term_taxonomy( array $edit_tt_ids ) {
-		debug( 'track_edit_term_taxonomy', func_get_args() );
+	public static function on_edit_term_taxonomies( array $edit_tt_ids ) {
+		debug( 'on_edit_term_taxonomies', func_get_args() );
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -181,7 +188,7 @@ class Terms {
 	 * @param WP_Term|int $term The term object or ID.
 	 * @return array An associative array of term properties.
 	 */
-	private static function get_properties( WP_Term|int $term ) {
+	public static function get_properties( WP_Term|int $term ) {
 		// Load the term if necessary.
 		if ( is_int( $term ) ) {
 			$term = self::get_term( $term );
@@ -264,5 +271,30 @@ class Terms {
 		$term_id = is_int( $term ) ? $term : $term->term_id;
 		$name    = empty( $old_name ) ? "Term $term_id" : $old_name;
 		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+	}
+
+	/**
+	 * Get a term (as a WP_Term object) from a term_taxonomy_id.
+	 *
+	 * @param int $term_taxonomy_id The term taxonomy ID.
+	 * @return WP_Term|null WP_Term object on success, null on failure.
+	 */
+	public static function get_by_term_taxonomy_id( $term_taxonomy_id ) {
+		global $wpdb;
+
+		// Retrieve the term ID from the term_taxonomy_id.
+		$sql     = $wpdb->prepare( 'SELECT term_id FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_taxonomy, $term_taxonomy_id );
+		$term_id = $wpdb->get_var( $sql );
+
+		// If no term ID was found, return false.
+		if ( ! $term_id ) {
+			return null;
+		}
+
+		// Retrieve the WP_Term object using the term ID.
+		$term = get_term( $term_id );
+
+		// Return the WP_Term object or false if the term couldn't be found.
+		return ( ! is_wp_error( $term ) && $term ) ? $term : null;
 	}
 }

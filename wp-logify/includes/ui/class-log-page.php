@@ -95,7 +95,7 @@ class Log_Page {
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of events in the database.
 		$total_sql         = $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name );
-		$num_total_records = $wpdb->get_var( $total_sql );
+		$num_total_records = (int) $wpdb->get_var( $total_sql );
 
 		// -----------------------------------------------------------------------------------------
 		// Get the number of filtered records.
@@ -140,7 +140,7 @@ class Log_Page {
 		$select_args          = array( $events_table_name, $user_table_name );
 		$args                 = array_merge( $select_args, $where_args );
 		$filtered_sql         = $wpdb->prepare( "$select_count $where", $args );
-		$num_filtered_records = $wpdb->get_var( $filtered_sql );
+		$num_filtered_records = (int) $wpdb->get_var( $filtered_sql );
 
 		// -----------------------------------------------------------------------------------------
 		// Get the requested records.
@@ -159,14 +159,14 @@ class Log_Page {
 		// Construct and run the SQL statement.
 		$args        = array_merge( $select_args, $where_args, $order_by_args, $limit_args );
 		$results_sql = $wpdb->prepare( "$select $where $order_by $limit", $args );
-		$rows        = $wpdb->get_results( $results_sql, ARRAY_A );
+		$recordset   = $wpdb->get_results( $results_sql, ARRAY_A );
 
 		// -----------------------------------------------------------------------------------------
 		// Construct the data array to return to the client.
 		$data = array();
-		foreach ( $rows as $row ) {
+		foreach ( $recordset as $record ) {
 			// Construct the Event object.
-			$event = Event_Repository::load( $row['event_id'] );
+			$event = Event_Repository::load( $record['event_id'] );
 
 			// Create a new data item.
 			$item             = array();
@@ -245,9 +245,9 @@ class Log_Page {
 		$user_agent = empty( $event->user_agent ) ? 'Unknown' : esc_html( $event->user_agent );
 
 		// Construct the HTML.
-		$html  = "<div class='wp-logify-user-details wp-logify-details-section'>\n";
+		$html  = "<div class='wp-logify-details-section wp-logify-user-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
-		$html .= "<table class='wp-logify-user-details-table'>\n";
+		$html .= "<table class='wp-logify-details-table wp-logify-user-details-table'>\n";
 		$html .= "<tr><th>User</th><td>$user_tag</td></tr>\n";
 		$html .= "<tr><th>Email</th><td><a href='mailto:$user_email'>$user_email</a></td></tr>\n";
 		$html .= "<tr><th>Role</th><td>$user_role</td></tr>\n";
@@ -276,9 +276,9 @@ class Log_Page {
 		}
 
 		// Convert event metadata to a table of key-value pairs.
-		$html  = "<div class='wp-logify-event-meta wp-logify-details-section'>\n";
+		$html  = "<div class='wp-logify-details-section wp-logify-event-meta-section'>\n";
 		$html .= "<h4>Event Details</h4>\n";
-		$html .= "<table class='wp-logify-event-meta-table'>\n";
+		$html .= "<table class='wp-logify-details-table wp-logify-event-meta-table'>\n";
 		foreach ( $event->event_meta as $meta_key => $meta_value ) {
 			$readable_key = Types::make_key_readable( $meta_key );
 			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $meta_key, $meta_value ) . '</td></tr>';
@@ -301,37 +301,28 @@ class Log_Page {
 		}
 
 		// Check which columns to show.
-		$show_old_values = false;
 		$show_new_values = false;
 		foreach ( $event->properties as $property ) {
-			// Check if we want to show the 'Before' column.
-			if ( $property->old_value !== null && $property->old_value !== '' ) {
-				$show_old_values = true;
-			}
-
 			// Check if we want to show the 'After' column.
 			if ( $property->new_value !== null && $property->new_value !== '' ) {
 				$show_new_values = true;
-			}
-
-			// If we're going to show both, no need to keep checking.
-			if ( $show_old_values && $show_new_values ) {
 				break;
 			}
 		}
 
 		// Convert JSON string to a table showing the changes.
-		$html              = "<div class='wp-logify-change-details wp-logify-details-section'>\n";
+		$html              = "<div class='wp-logify-details-section wp-logify-properties-section'>\n";
 		$object_type_title = $event->object_type === 'user' ? 'Account' : ucfirst( $event->object_type );
 		$html             .= "<h4>$object_type_title Details</h4>\n";
 
 		// Start table.
-		$html .= "<table class='wp-logify-change-details-table'>\n";
+		$class = 'wp-logify-properties-table-' . ( $show_new_values ? 3 : 2 ) . '-column';
+		$html .= "<table class='wp-logify-details-table wp-logify-properties-table $class'>\n";
 
-		// Header row.
-		$html .= '<tr><th></th>';
-		$html .= $show_old_values && $show_new_values ? '<th>Before</th><th>After</th>' : '<th>Value</th>';
-		$html .= "</tr>\n";
+		// Header row is only needed if both old and new value columns are shown.
+		if ( $show_new_values ) {
+			$html .= "<tr><th></th><th>Before</th><th>After</th></tr>\n";
+		}
 
 		// Property rows.
 		foreach ( $event->properties as $property ) {
@@ -346,19 +337,18 @@ class Log_Page {
 			// Property name.
 			$html .= '<th>' . Types::make_key_readable( $property->key ) . '</th>';
 
-			// Old value.
-			if ( $show_old_values ) {
-				if ( $property->key === 'post_content' ) {
-					$revision_id = $property->old_value instanceof Object_Reference
-						? $property->old_value->id
-						: ( is_int( $property->old_value ) ? $property->old_value : null );
-					$tag         = Posts::get_revision_tag( $revision_id );
-				} else {
-					$tag = Types::value_to_html( $property->key, $property->old_value );
-				}
-
-				$html .= "<td>$tag</td>";
+			// Old or current value.
+			if ( $property->key === 'post_content' ) {
+				// For post_content, show link to compare revisions.
+				$revision_id = $property->old_value instanceof Object_Reference
+					? $property->old_value->id
+					: ( is_int( $property->old_value ) ? $property->old_value : null );
+				$tag         = Posts::get_revision_tag( $revision_id );
+			} else {
+				$tag = Types::value_to_html( $property->key, $property->old_value );
 			}
+
+			$html .= "<td>$tag</td>";
 
 			// New value.
 			if ( $show_new_values ) {
@@ -386,8 +376,8 @@ class Log_Page {
 	public static function format_details( Event $event ): string {
 		$html  = "<div class='wp-logify-details'>\n";
 		$html .= self::format_user_details( $event );
-		$html .= self::format_event_metadata( $event );
 		$html .= self::format_object_properties( $event );
+		$html .= self::format_event_metadata( $event );
 		$html .= "</div>\n";
 		return $html;
 	}

@@ -27,22 +27,22 @@ class Event_Repository extends Repository {
 	public static function load( int $event_id ): ?Event {
 		global $wpdb;
 
-		$sql = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-		$row = $wpdb->get_row( $sql, ARRAY_A );
+		$sql    = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
+		$record = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
-		if ( ! $row ) {
+		if ( ! $record ) {
 			return null;
 		}
 
 		// Construct the new Event object.
-		$event = self::record_to_object( $row );
+		$event = self::record_to_object( $record );
 
 		// Load the event metadata.
-		self::load_metadata( $event );
+		$event->event_meta = Event_Meta_Repository::load_by_event_id( $event->id );
 
 		// Load the object properties.
-		self::load_properties( $event );
+		$event->properties = Property_Repository::load_by_event_id( $event->id );
 
 		return $event;
 	}
@@ -76,11 +76,11 @@ class Event_Repository extends Repository {
 		$wpdb->query( 'START TRANSACTION' );
 
 		// Update or insert the events record.
-		$data    = self::object_to_record( $event );
+		$record  = self::object_to_record( $event );
 		$formats = array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( self::get_table_name(), $data, $formats );
+			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Event object with the new ID.
 			if ( $ok ) {
@@ -88,11 +88,12 @@ class Event_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $data, array( 'event_id' => $event->id ), $formats, array( '%d' ) );
+			$ok = $wpdb->update( self::get_table_name(), $record, array( 'event_id' => $event->id ), $formats, array( '%d' ) ) !== false;
 		}
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
+			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -102,6 +103,7 @@ class Event_Repository extends Repository {
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
+			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -111,6 +113,7 @@ class Event_Repository extends Repository {
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
+			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -129,38 +132,11 @@ class Event_Repository extends Repository {
 	 */
 	public static function delete( int $event_id ): bool {
 		global $wpdb;
-		return (bool) $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
+		return $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) ) !== false;
 	}
 
 	// =============================================================================================
 	// Methods for loading and saving metadata.
-
-	/**
-	 * Load metadata for an event.
-	 *
-	 * @param Event $event The event object.
-	 * @throws Exception If the metadata value cannot be unserialized.
-	 */
-	public static function load_metadata( Event $event ) {
-		global $wpdb;
-
-		// Get the metadata records for the event from the event_meta table.
-		$sql_meta = $wpdb->prepare(
-			'SELECT meta_key, meta_value FROM %i WHERE event_id = %d',
-			Event_Meta_Repository::get_table_name(),
-			$event->id
-		);
-		$rows     = $wpdb->get_results( $sql_meta, ARRAY_A );
-
-		// Convert the query result into an associative array.
-		foreach ( $rows as $row ) {
-			if ( Serialization::try_unserialize( $row['meta_value'], $unserialized_value ) ) {
-				$event->event_meta[ $row['meta_key'] ] = $unserialized_value;
-			} else {
-				throw new Exception( 'Failed to unserialize event meta value.' );
-			}
-		}
-	}
 
 	/**
 	 * Save metadata for an event.
@@ -201,15 +177,6 @@ class Event_Repository extends Repository {
 	// Methods for loading and saving properties.
 
 	/**
-	 * Load the properties for an event.
-	 *
-	 * @param Event $event The event object.
-	 */
-	public static function load_properties( Event $event ) {
-		$event->properties = Property_Repository::load_by_event_id( $event->id );
-	}
-
-	/**
 	 * Update the properties table.
 	 *
 	 * @param Event $event The event object.
@@ -227,11 +194,10 @@ class Event_Repository extends Repository {
 		// If we have any properties, insert new records.
 		if ( ! empty( $event->properties ) ) {
 			foreach ( $event->properties as $property ) {
-
 				// Ensure the event_id is set in the property object.
 				$property->event_id = $event->id;
 
-				// Update the property record.
+				// Save the property record.
 				$ok = Property_Repository::save( $property );
 
 				// Return on error.
@@ -308,23 +274,23 @@ class Event_Repository extends Repository {
 	/**
 	 * Event constructor.
 	 *
-	 * @param array $data The database record as an associative array.
+	 * @param array $record The database record as an associative array.
 	 * @return Event The new Event object.
 	 */
-	public static function record_to_object( array $data ): Event {
+	public static function record_to_object( array $record ): Event {
 		$event                = new Event();
-		$event->id            = (int) $data['event_id'];
-		$event->when_happened = DateTimes::create_datetime( $data['when_happened'] );
-		$event->user_id       = (int) $data['user_id'];
-		$event->user_name     = $data['user_name'];
-		$event->user_role     = $data['user_role'];
-		$event->user_ip       = $data['user_ip'];
-		$event->user_location = $data['user_location'];
-		$event->user_agent    = $data['user_agent'];
-		$event->event_type    = $data['event_type'];
-		$event->object_type   = $data['object_type'];
-		$event->object_id     = $data['object_id'];
-		$event->object_name   = $data['object_name'];
+		$event->id            = (int) $record['event_id'];
+		$event->when_happened = DateTimes::create_datetime( $record['when_happened'] );
+		$event->user_id       = (int) $record['user_id'];
+		$event->user_name     = $record['user_name'];
+		$event->user_role     = $record['user_role'];
+		$event->user_ip       = $record['user_ip'];
+		$event->user_location = $record['user_location'];
+		$event->user_agent    = $record['user_agent'];
+		$event->event_type    = $record['event_type'];
+		$event->object_type   = $record['object_type'];
+		$event->object_id     = $record['object_id'];
+		$event->object_name   = $record['object_name'];
 		return $event;
 	}
 

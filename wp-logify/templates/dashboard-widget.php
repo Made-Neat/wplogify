@@ -18,16 +18,16 @@ $current_datetime = DateTimes::current_datetime();
 // Fetch the total activities for the last hour.
 $one_hour_ago         = DateTimes::format_datetime_mysql( DateTimes::subtract_hours( $current_datetime, 1 ) );
 $sql_one_hour         = $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE when_happened >= %s', $table_name, $one_hour_ago );
-$activities_last_hour = $wpdb->get_var( $sql_one_hour );
+$activities_last_hour = (int) $wpdb->get_var( $sql_one_hour );
 
 // Fetch the total activities for the last 24 hours.
 $twenty_four_hours_ago    = DateTimes::format_datetime_mysql( DateTimes::subtract_hours( $current_datetime, 24 ) );
 $sql_24_hour              = $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE when_happened >= %s', $table_name, $twenty_four_hours_ago );
-$activities_last_24_hours = $wpdb->get_var( $sql_24_hour );
+$activities_last_24_hours = (int) $wpdb->get_var( $sql_24_hour );
 
 // Fetch the last 10 activities.
 $sql_fetch_10 = $wpdb->prepare( 'SELECT * FROM %i ORDER BY when_happened DESC LIMIT 10', $table_name );
-$results      = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
+$recordset    = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 ?>
 
 <div class="wp-logify-dashboard-widget">
@@ -55,10 +55,10 @@ $results      = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 			</tr>
 		</thead>
 		<tbody>
-			<?php if ( $results ) : ?>
+			<?php if ( $recordset ) : ?>
 				<?php
-				foreach ( $results as $row ) :
-					$event = Event_Repository::record_to_object( $row );
+				foreach ( $recordset as $record ) :
+					$event = Event_Repository::record_to_object( $record );
 					?>
 					<tr>
 						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->when_happened ) ); ?></td>
