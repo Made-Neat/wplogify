@@ -1,7 +1,13 @@
 FROM php:8.3.9-fpm
 
-# Switch to the root user. We should be already, but just in case.
-USER root
+# Copy the PHP configuration file into the container.
+COPY wp-logify-php.ini /usr/local/etc/php/conf.d/
+
+# Copy the custom PHP-FPM configuration file into the container.
+COPY wp-logify-php-fpm.conf /usr/local/etc/php-fpm.d/
+
+# Copy the custom PHP-FPM configuration file into the container.
+COPY phpinfo.php /var/www/html/
 
 # Install the MySQL extension as root.
 RUN docker-php-ext-install mysqli
@@ -14,8 +20,11 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     chmod +x wp-cli.phar && \
     mv wp-cli.phar /usr/local/bin/wp
 
-# Change ownership of site files to www-data.
-RUN chown -R www-data:www-data /var/www/html
+# Copy the start.sh script into the container.
+COPY wp-logify-start.sh /usr/local/bin/
 
-# Switch to the non-root user.
-USER www-data
+# Make sure the script is executable.
+RUN chmod +x /usr/local/bin/wp-logify-start.sh
+
+# Use the start.sh script as the entrypoint
+ENTRYPOINT ["wp-logify-start.sh"]
