@@ -9,6 +9,7 @@ namespace WP_Logify;
 
 use DateTime;
 use Exception;
+use WP_Query;
 use WP_User;
 
 /**
@@ -80,7 +81,7 @@ class Users {
 	 */
 	public static function on_user_register( int $user_id, array $userdata ) {
 		// Get the user's properties.
-		$properties = self::get_properties( $user_id );
+		$properties = self::get_core_properties( $user_id );
 
 		// Log the event.
 		Logger::log_event( 'User Registered', 'user', $user_id, self::get_name( $user_id ), null, $properties );
@@ -281,6 +282,48 @@ class Users {
 	}
 
 	/**
+	 * Get the core properties of a user.
+	 *
+	 * @param WP_User|int $user The user object or ID.
+	 * @return array The core properties of the user.
+	 */
+	public static function get_core_properties( WP_User|int $user ): array {
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user = self::get_user( $user );
+		}
+
+		// Define the core properties by key.
+		$core_properties = array( 'ID', 'display_name', 'user_login', 'user_email', 'user_registered' );
+
+		// Build the array of properties.
+		$properties = array();
+		foreach ( $core_properties as $key ) {
+
+			// Get the value.
+			switch ( $key ) {
+				case 'user_email':
+					$value = self::get_email_link( $user );
+					break;
+
+				case 'user_registered':
+					$value = DateTimes::create_datetime( $user->data->user_registered, 'UTC' );
+					break;
+
+				default:
+					// Process database values into correct types.
+					$value = Types::process_database_value( $key, $user->{$key} );
+					break;
+			}
+
+			// Construct the new Property object and add it to the properties array.
+			$properties[ $key ] = new Property( $key, 'base', $value );
+		}
+
+		return $properties;
+	}
+
+	/**
 	 * Get the properties of a user to show in the log.
 	 *
 	 * @param WP_User|int $user The user object or ID.
@@ -293,10 +336,15 @@ class Users {
 		}
 
 		// Start building the properties array.
-		$properties = array();
+		$properties = self::get_core_properties( $user );
 
 		// Add the base properties.
 		foreach ( $user->data as $key => $value ) {
+			// Skip core properties.
+			if ( key_exists( $key, $properties ) ) {
+				continue;
+			}
+
 			// Process meta values into correct types.
 			$value = Types::process_database_value( $key, $value );
 
@@ -537,6 +585,59 @@ class Users {
 		$name    = empty( $old_name ) ? "User $user_id" : $old_name;
 		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
+
+	/**
+	 * Get the email address of a user as a mailto link.
+	 *
+	 * @param WP_User|int|string $user The user object or ID or email address.
+	 * @return string The email link.
+	 */
+	public static function get_email_link( WP_User|int|string $user ) {
+		// Get the email address.
+		if ( is_int( $user ) ) {
+			$user_email = self::get_user( $user )->user_email;
+		} elseif ( $user instanceof WP_User ) {
+			$user_email = $user->user_email;
+		} else {
+			$user_email = $user;
+		}
+
+		return "<a href='mailto:$user_email'>$user_email</a>";
+	}
+
+	/**
+	 * Get all posts authored by a given user as an array of Object_Reference objects.
+	 *
+	 * @param WP_User|int $user The user object or ID.
+	 * @return Object_Reference[] Array of Object_Reference objects representing the posts.
+	 */
+	public static function get_posts_by_user( WP_User|int $user ): array {
+		// Load the user if necessary.
+		if ( is_int( $user ) ) {
+			$user = self::get_user( $user );
+		}
+
+		// Fetch all posts by the user.
+		$args = array(
+			'author'         => $user->ID,
+			'post_type'      => 'any', // Fetch any type of post
+			'post_status'    => 'any', // Fetch any posts
+			'posts_per_page' => -1, // Fetch all posts
+		);
+
+		$query = new WP_Query( $args );
+		$posts = $query->posts;
+
+		// Convert the posts to Object_Reference objects.
+		$object_references = array();
+		foreach ( $posts as $post ) {
+			$object_reference    = new Object_Reference( 'post', $post->ID, $post->post_title );
+			$object_references[] = $object_reference;
+		}
+
+		return $object_references;
+	}
+
 
 	// ---------------------------------------------------------------------------------------------
 	// Permission-related methods.

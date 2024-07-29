@@ -1,4 +1,4 @@
-FROM wordpress:6.6
+FROM php:8.3.9-fpm
 
 # Switch to the root user. We should be already, but just in case.
 USER root

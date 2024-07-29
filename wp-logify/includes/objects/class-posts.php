@@ -685,7 +685,7 @@ class Posts {
 		// Add the base properties.
 		foreach ( $post as $key => $value ) {
 			// Skip core properties.
-			if ( key_exists( $properties, $key ) ) {
+			if ( key_exists( $key, $properties ) ) {
 				continue;
 			}
 

@@ -76,3 +76,6 @@ logs/
 
 # Downloads
 downloads/
+
+# Mysql files
+mysql/

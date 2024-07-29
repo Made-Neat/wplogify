@@ -224,8 +224,8 @@ class Admin {
 			);
 
 			// DataTables assets.
-			self::enqueue_style( 'dataTables.css', array(), null );
-			self::enqueue_script( 'dataTables.js', array( 'jquery' ), null, true );
+			self::enqueue_style( 'datatables.css', array(), null );
+			self::enqueue_script( 'datatables.js', array( 'jquery' ), null, true );
 		}
 	}
 

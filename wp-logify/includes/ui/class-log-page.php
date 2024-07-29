@@ -249,7 +249,7 @@ class Log_Page {
 		$html .= "<h4>User Details</h4>\n";
 		$html .= "<table class='wp-logify-details-table wp-logify-user-details-table'>\n";
 		$html .= "<tr><th>User</th><td>$user_tag</td></tr>\n";
-		$html .= "<tr><th>Email</th><td><a href='mailto:$user_email'>$user_email</a></td></tr>\n";
+		$html .= '<tr><th>Email</th><td>' . Users::get_email_link( $user_email ) . "</a></td></tr>\n";
 		$html .= "<tr><th>Role</th><td>$user_role</td></tr>\n";
 		$html .= "<tr><th>ID</th><td>$event->user_id</td></tr>";
 		$html .= '<tr><th>IP address</th><td>' . ( $event->user_ip ?? 'Unknown' ) . "</td></tr>\n";
