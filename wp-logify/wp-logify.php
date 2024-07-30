@@ -35,18 +35,18 @@ define( 'WP_LOGIFY_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 // Include all include files.
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/class-database.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/models/class-event-meta.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/models/class-event.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/models/class-property.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-repository.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-event-meta-repository.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-event-repository.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-property-repository.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-posts.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-terms.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-users.php';
+// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-terms.php';
+// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-plugins.php';
+// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-settings.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-admin.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-log-page.php';
@@ -58,7 +58,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-serialization.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-types.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-cron.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-logger.php';
+// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-logger.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-plugin.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/debug.php';

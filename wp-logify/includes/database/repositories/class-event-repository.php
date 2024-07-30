@@ -38,10 +38,7 @@ class Event_Repository extends Repository {
 		// Construct the new Event object.
 		$event = self::record_to_object( $record );
 
-		// Load the event metadata.
-		$event->event_meta = Event_Meta_Repository::load_by_event_id( $event->id );
-
-		// Load the object properties.
+		// Load the event properties.
 		$event->properties = Property_Repository::load_by_event_id( $event->id );
 
 		return $event;
@@ -98,16 +95,6 @@ class Event_Repository extends Repository {
 			return false;
 		}
 
-		// Update the event_meta table.
-		$ok = self::save_metadata( $event );
-
-		// Rollback and return on error.
-		if ( ! $ok ) {
-			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
-			$wpdb->query( 'ROLLBACK' );
-			return false;
-		}
-
 		// Update the properties table.
 		$ok = self::save_properties( $event );
 
@@ -133,44 +120,6 @@ class Event_Repository extends Repository {
 	public static function delete( int $event_id ): bool {
 		global $wpdb;
 		return $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) ) !== false;
-	}
-
-	// =============================================================================================
-	// Methods for loading and saving metadata.
-
-	/**
-	 * Save metadata for an event.
-	 *
-	 * @param Event $event The event object.
-	 * @return bool True on success, false on failure.
-	 */
-	public static function save_metadata( Event $event ): bool {
-		// Delete all existing associated records in the event_meta table.
-		$ok = Event_Meta_Repository::delete_by_event_id( $event->id );
-
-		// Return on error.
-		if ( ! $ok ) {
-			return false;
-		}
-
-		// If we have any metadata, insert new records.
-		if ( ! empty( $event->event_meta ) ) {
-			foreach ( $event->event_meta as $meta_key => $meta_value ) {
-
-				// Construct the new Event_Meta object.
-				$event_meta_object = new Event_Meta( $event->id, $meta_key, $meta_value );
-
-				// Save the object.
-				$ok = Event_Meta_Repository::save( $event_meta_object );
-
-				// Rollback and return on error.
-				if ( ! $ok ) {
-					return false;
-				}
-			}
-		}
-
-		return true;
 	}
 
 	// =============================================================================================

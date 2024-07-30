@@ -108,7 +108,7 @@ class Property_Repository extends Repository {
 	}
 
 	/**
-	 * Create the table used to store log events.
+	 * Create the table used to store event properties.
 	 */
 	public static function create_table() {
 		global $wpdb;
@@ -119,13 +119,11 @@ class Property_Repository extends Repository {
 		$sql = "CREATE TABLE $table_name (
             property_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             event_id      BIGINT UNSIGNED NOT NULL,
-            property_key  VARCHAR(255)    NOT NULL,
-            property_type VARCHAR(100)    NOT NULL,
+            property_key  VARCHAR(100)    NOT NULL,
+            table_name    VARCHAR(100)    NOT NULL,
             old_value     LONGTEXT        NULL,
             new_value     LONGTEXT        NULL,
             PRIMARY KEY (property_id),
-            KEY event_id (event_id),
-			KEY property_key (property_key(191))
         ) $charset_collate;";
 
 		dbDelta( $sql );
@@ -167,7 +165,7 @@ class Property_Repository extends Repository {
 		}
 
 		// Create the Property object.
-		$property = new Property( $record['property_key'], $record['property_type'], $old_value, $new_value );
+		$property = new Property( $record['property_key'], $record['table_name'], $old_value, $new_value );
 
 		// Set the ID and event ID.
 		$property->id       = (int) $record['property_id'];
@@ -186,11 +184,11 @@ class Property_Repository extends Repository {
 	 */
 	public static function object_to_record( Property $property ): array {
 		return array(
-			'event_id'      => $property->event_id,
-			'property_key'  => $property->key,
-			'property_type' => $property->type,
-			'old_value'     => Serialization::serialize( $property->old_value ),
-			'new_value'     => Serialization::serialize( $property->new_value ),
+			'event_id'     => $property->event_id,
+			'property_key' => $property->key,
+			'table_name'   => $property->table_name,
+			'old_value'    => Serialization::serialize( $property->old_value ),
+			'new_value'    => Serialization::serialize( $property->new_value ),
 		);
 	}
 

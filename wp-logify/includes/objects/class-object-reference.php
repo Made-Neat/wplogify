@@ -50,9 +50,9 @@ class Object_Reference {
 	 * @param string           $type The type of the object.
 	 * @param int|string       $id The ID of the object, which could be an integer or a string.
 	 * @param null|string|bool $name The name of the object, or a bool to specify setting it automatically from the object.
-	 *                                  - If a string, the name will be assigned this value.
-	 *                                  - If true, the name will be extracted from the existing object.
-	 *                                  - If false or null, the name won't be set.
+	 *                                    - If a string, the name will be assigned this value.
+	 *                                    - If true, the name will be extracted from the existing object.
+	 *                                    - If false or null, the name won't be set.
 	 */
 	public function __construct( string $type, int|string $id, null|string|bool $name = true ) {
 		// Set the object type.
@@ -208,5 +208,40 @@ class Object_Reference {
 
 		// If the object type is invalid, throw an exception.
 		throw new Exception( "Invalid object type: $this->type" );
+	}
+
+	/**
+	 * Get the core properties of the object.
+	 *
+	 * @return array The core properties of the object.
+	 * @throws Exception If the object type is unknown.
+	 */
+	public function get_core_properties(): ?array {
+		switch ( $this->type ) {
+			case 'post':
+				return Posts::get_core_properties( $this->id );
+
+			case 'user':
+				return Users::get_core_properties( $this->id );
+
+			case 'term':
+				return null;
+				// return Terms::get_core_properties( $this->id );
+
+			case 'comment':
+				return null;
+				// return Comments::get_core_properties( $this->id );
+
+			case 'plugin':
+				return null;
+				// return Plugins::get_core_properties( $this->id );
+
+			case 'theme':
+				return null;
+				// return Themes::get_core_properties( $this->id );
+
+			default:
+				throw new Exception( 'Unknown object type.' );
+		}
 	}
 }
