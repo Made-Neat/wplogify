@@ -7,7 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
 use InvalidArgumentException;
 
 /**
@@ -38,8 +37,11 @@ class Event_Repository extends Repository {
 		// Construct the new Event object.
 		$event = self::record_to_object( $record );
 
-		// Load the event properties.
+		// Load the properties.
 		$event->properties = Property_Repository::load_by_event_id( $event->id );
+
+		// Load the eventmetas.
+		$event->eventmetas = Eventmeta_Repository::load_by_event_id( $event->id );
 
 		return $event;
 	}
@@ -105,6 +107,16 @@ class Event_Repository extends Repository {
 			return false;
 		}
 
+		// Update the eventmetas table.
+		$ok = self::save_eventmetas( $event );
+
+		// Rollback and return on error.
+		if ( ! $ok ) {
+			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+
 		// Commit the transaction.
 		$wpdb->query( 'COMMIT' );
 
@@ -150,6 +162,44 @@ class Event_Repository extends Repository {
 				$ok = Property_Repository::save( $property );
 
 				// Return on error.
+				if ( ! $ok ) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	// =============================================================================================
+	// Methods for loading and saving metadata.
+
+	/**
+	 * Save metadata for an event.
+	 *
+	 * @param Event $event The event object.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function save_eventmetas( Event $event ): bool {
+		// Delete all existing associated records in the eventmeta table.
+		$ok = Eventmeta_Repository::delete_by_event_id( $event->id );
+
+		// Return on error.
+		if ( ! $ok ) {
+			return false;
+		}
+
+		// If we have any metadata, insert new records.
+		if ( ! empty( $event->eventmetas ) ) {
+			foreach ( $event->eventmetas as $meta_key => $meta_value ) {
+
+				// Construct the new Eventmeta object.
+				$eventmeta = new Eventmeta( $event->id, $meta_key, $meta_value );
+
+				// Save the object.
+				$ok = Eventmeta_Repository::save( $eventmeta );
+
+				// Rollback and return on error.
 				if ( ! $ok ) {
 					return false;
 				}

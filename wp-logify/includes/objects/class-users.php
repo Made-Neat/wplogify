@@ -20,11 +20,18 @@ use WP_User;
 class Users {
 
 	/**
-	 * Current event under construction.
+	 * Array to remember properties between different events.
 	 *
 	 * @var array
 	 */
-	private static Event $new_event;
+	private static $properties = array();
+
+	/**
+	 * Array to remember metadata between different events.
+	 *
+	 * @var array
+	 */
+	private static $eventmetas = array();
 
 	/**
 	 * Initializes the class by adding WordPress actions.
@@ -35,11 +42,6 @@ class Users {
 
 		// Track user logout.
 		add_action( 'wp_logout', array( __CLASS__, 'on_wp_logout' ), 10, 1 );
-
-		// If the user isn't logged in, we don't need to track anything else.
-		if ( ! is_user_logged_in() ) {
-			return;
-		}
 
 		// Track user activity.
 		add_action( 'wp_loaded', array( __CLASS__, 'on_wp_loaded' ) );
@@ -66,9 +68,7 @@ class Users {
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
 	public static function on_wp_login( string $user_login, WP_User $user ) {
-		$event             = self::create_event( $user );
-		$event->event_type = 'User Login';
-		$event->save();
+		Logger::log_event( 'User Login', 'user', $user->ID, self::get_name( $user ) );
 	}
 
 	/**
@@ -77,9 +77,7 @@ class Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function on_wp_logout( int $user_id ) {
-		$event             = self::create_event( $user_id );
-		$event->event_type = 'User Logout';
-		$event->save();
+		Logger::log_event( 'User Logout', 'user', $user_id, self::get_name( $user_id ) );
 	}
 
 	/**
@@ -89,9 +87,11 @@ class Users {
 	 * @param array $userdata The data for the user that was registered.
 	 */
 	public static function on_user_register( int $user_id, array $userdata ) {
-		$event             = self::create_event( $user_id );
-		$event->event_type = 'User Registered';
-		$event->save();
+		// Get the user's properties.
+		$properties = self::get_core_properties( $user_id );
+
+		// Log the event.
+		Logger::log_event( 'User Registered', 'user', $user_id, self::get_name( $user_id ), null, $properties );
 	}
 
 	/**
@@ -102,25 +102,26 @@ class Users {
 	 * @param WP_User $user     The WP_User object of the user that was deleted.
 	 */
 	public static function on_delete_user( int $user_id, ?int $reassign, WP_User $user ) {
-		// Construct the new event if we need to.
-		$event = self::$new_event ?? self::create_event( $user );
+		// Get the user's properties.
+		$properties = self::get_properties( $user );
+
+		// Prepare to set some eventmetas.
+		$eventmetas = array();
 
 		// Get the posts created by this user.
-		$posts     = get_posts( array( 'author' => $user->ID ) );
-		$post_refs = array_map( fn( $post ) => new Object_Reference( 'post', $post->ID, $post->post_title ), $posts );
-		$event->set_property( 'posts', null, $post_refs );
+		$posts               = get_posts( array( 'author' => $user->ID ) );
+		$post_refs           = array_map( fn( $post ) => new Object_Reference( 'post', $post->ID, $post->post_title ), $posts );
+		$eventmetas['posts'] = $post_refs;
 
 		// TODO Get the comments created by this user.
 
-		// If the user's data is being reassigned, record that information in the event metadata.
+		// If the user's data is being reassigned, record that information in the eventmetas.
 		if ( $reassign ) {
-			$reassign_user_ref = new Object_Reference( 'user', $reassign );
-			$event->set_property( 'content_reassigned_to', null, $reassign_user_ref );
+			$eventmetas['content_reassigned_to'] = new Object_Reference( 'user', $reassign );
 		}
 
-		// Save the event.
-		$event->save();
-		// Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $event_meta, $properties );
+		// Log the event.
+		Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $eventmetas, $properties );
 	}
 
 	/**
@@ -133,25 +134,25 @@ class Users {
 	public static function on_profile_update( int $user_id, WP_User $old_user_data, array $userdata ) {
 		global $wpdb;
 
-		// Construct the new event if we need to.
-		$event = self::$new_event ?? self::create_event( $user_id );
-
 		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
 
 			// Process meta values into correct types.
-			$old_value = Types::process_database_value( $key, $value );
-			$new_value = Types::process_database_value( $key, $userdata[ $key ] );
+			$val     = Types::process_database_value( $key, $value );
+			$new_val = Types::process_database_value( $key, $userdata[ $key ] );
 
 			// If the value has changed, add the before and after values to the changes array.
-			if ( ! Types::are_equal( $old_value, $new_value ) ) {
-				$event->set_property( $key, $wpdb->users, $old_value, $new_value );
+			if ( ! Types::are_equal( $val, $new_val ) ) {
+				if ( ! key_exists( $key, self::$properties ) ) {
+					self::$properties[ $key ] = new Property( $key, $wpdb->users );
+				}
+				self::$properties[ $key ]->val     = $val;
+				self::$properties[ $key ]->new_val = $new_val;
 			}
 		}
 
-		// Save the event.
-		$event->save();
-		// Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, self::$properties );
+		// Log the event.
+		Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, self::$properties );
 	}
 
 	/**
@@ -165,23 +166,21 @@ class Users {
 	public static function on_update_user_meta( int $meta_id, int $user_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
 
-		// Construct the new event if we need to.
-		$event = self::$new_event ?? self::create_event( $user_id );
-
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
 		// Process meta values into correct types.
-		$old_value = Types::process_database_value( $meta_key, $current_value );
-		$new_value = Types::process_database_value( $meta_key, $meta_value );
+		$val     = Types::process_database_value( $meta_key, $current_value );
+		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
 		// If the value has changed, add the before and after values to the changes array.
-		if ( ! Types::are_equal( $old_value, $new_value ) ) {
-			$event->set_property( $meta_key, $wpdb->usermeta, $old_value, $new_value );
+		if ( ! Types::are_equal( $val, $new_val ) ) {
+			if ( ! key_exists( $meta_key, self::$properties ) ) {
+				self::$properties[ $meta_key ] = new Property( $meta_key, $wpdb->usermeta );
+			}
+			self::$properties[ $meta_key ]->val     = $val;
+			self::$properties[ $meta_key ]->new_val = $new_val;
 		}
-
-		// Remember the new event.
-		self::$new_event = $event;
 	}
 
 	/**
@@ -196,13 +195,13 @@ class Users {
 		// again until it's done.
 
 		// Check if activity tracking is already in progress.
-		if ( get_transient( 'wp_logify_activity_tracking_in_progress' ) ) {
+		if ( ! empty( $_SESSION['wp_logify_activity_tracking_in_progress'] ) ) {
 			// Another HTTP request is already handling the activity tracking, so let's go.
 			return;
 		}
 
 		// Note that activity tracking is in progress.
-		set_transient( 'wp_logify_activity_tracking_in_progress', true );
+		$_SESSION['wp_logify_activity_tracking_in_progress'] = true;
 
 		// Prepare some values.
 		$user_id    = get_current_user_id();
@@ -224,11 +223,11 @@ class Users {
 			$event = Event_Repository::load( $record['event_id'] );
 
 			// Check we have the info we need.
-			if ( ! $event->has_property( 'session_start' ) || ! $event->has_property( 'session_end' ) ) {
+			if ( ! empty( $event->eventmetas['session_start'] ) && ! empty( $event->eventmetas['session_end'] ) ) {
 
 				// Extract the current session_end datetime from the event details.
-				$session_start_datetime = $event->get_property_value( 'session_start' );
-				$session_end_datetime   = $event->get_property_value( 'session_end' );
+				$session_start_datetime = $event->eventmetas['session_start'];
+				$session_end_datetime   = $event->eventmetas['session_end'];
 
 				// Get the duration in seconds.
 				$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
@@ -240,12 +239,12 @@ class Users {
 					$continuing = true;
 
 					// Update the session_end time and duration.
-					$event->set_property_value( 'session_end', $now );
+					$event->eventmetas['session_end'] = $now;
 					// This could be calculated, but for now we'll just record the string.
-					$event->set_property_value( 'session_duration', DateTimes::get_duration_string( $session_start_datetime, $now ) );
+					$event->eventmetas['session_duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
 
-					// Update the event properties.
-					$event->save_properties();
+					// Update the event meta data.
+					Event_Repository::save_eventmetas( $event );
 				}
 			}
 		}
@@ -253,51 +252,19 @@ class Users {
 		// If we're not continuing an existing session, record the start of a new one.
 		if ( ! $continuing ) {
 
-			// Construct the new event if we need to.
-			if ( ! isset( $event ) ) {
-				$user  = self::get_user( $user_id );
-				$event = self::create_event( $user );
-			}
-
 			// Create the array of metadata.
-			$event->set_property( 'session_start', null, $now );
-			$event->set_property( 'session_end', null, $now );
-			$event->set_property( 'session_duration', null, '0 minutes' );
-
-			// Save the event.
-			$event->save();
+			$eventmetas = array(
+				'session_start'    => $now,
+				'session_end'      => $now,
+				'session_duration' => '0 minutes',
+			);
 
 			// Log the event.
-			// Logger::log_event( $event_type, null, null, null, $event_meta );
+			Logger::log_event( $event_type, null, null, null, $eventmetas );
 		}
 
 		// Note that activity tracking is no longer in progress.
-		delete_transient( 'wp_logify_activity_tracking_in_progress' );
-	}
-
-	// =============================================================================================
-	// Event-related methods.
-
-	/**
-	 * Create a user-related event.
-	 *
-	 * @param WP_User|int $user The user object or ID.
-	 * @return Event The new event about the specified user.
-	 */
-	public static function create_event( WP_User|int $user ): Event {
-		// Load the user if necessary.
-		if ( is_int( $user ) ) {
-			$user = self::get_user( $user );
-		}
-
-		// Create the new event.
-		$event = Event::create( 'user', $user->ID, self::get_name( $user ) );
-
-		// Add the core properties.
-		$event->properties = self::get_core_properties( $user );
-
-		// Return the new event.
-		return $event;
+		unset( $_SESSION['wp_logify_activity_tracking_in_progress'] );
 	}
 
 	// =============================================================================================
@@ -583,8 +550,8 @@ class Users {
 			$event = Event_Repository::load( $record['event_id'] );
 
 			// Return the session_end datetime if set.
-			if ( ! empty( $event->event_meta['session_end'] ) ) {
-				return $event->event_meta['session_end'];
+			if ( ! empty( $event->eventmetas['session_end'] ) ) {
+				return $event->eventmetas['session_end'];
 			}
 		}
 

@@ -264,22 +264,22 @@ class Log_Page {
 	}
 
 	/**
-	 * Formats the event metadata of a log entry.
+	 * Formats the eventmetas of a log entry.
 	 *
 	 * @param Event $event The event.
-	 * @return string The formatted event metadata as an HTML table.
+	 * @return string The formatted eventmetas as an HTML table.
 	 */
-	public static function format_event_metadata( Event $event ): string {
+	public static function format_eventmetas( Event $event ): string {
 		// Handle the null case.
-		if ( empty( $event->event_meta ) ) {
+		if ( empty( $event->eventmetas ) ) {
 			return '';
 		}
 
-		// Convert event metadata to a table of key-value pairs.
-		$html  = "<div class='wp-logify-details-section wp-logify-event-meta-section'>\n";
+		// Convert eventmetas to a table of key-value pairs.
+		$html  = "<div class='wp-logify-details-section wp-logify-eventmeta-section'>\n";
 		$html .= "<h4>Event Details</h4>\n";
-		$html .= "<table class='wp-logify-details-table wp-logify-event-meta-table'>\n";
-		foreach ( $event->event_meta as $meta_key => $meta_value ) {
+		$html .= "<table class='wp-logify-details-table wp-logify-eventmeta-table'>\n";
+		foreach ( $event->eventmetas as $meta_key => $meta_value ) {
 			$readable_key = Types::make_key_readable( $meta_key );
 			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $meta_key, $meta_value ) . '</td></tr>';
 		}
@@ -294,18 +294,18 @@ class Log_Page {
 	 * @param Event $event The event.
 	 * @return string The object properties formatted as an HTML table.
 	 */
-	public static function format_object_properties( Event $event ): string {
+	public static function format_properties( Event $event ): string {
 		// Handle the null case.
 		if ( empty( $event->properties ) ) {
 			return '';
 		}
 
 		// Check which columns to show.
-		$show_new_values = false;
+		$show_new_vals = false;
 		foreach ( $event->properties as $property ) {
 			// Check if we want to show the 'After' column.
-			if ( $property->new_value !== null && $property->new_value !== '' ) {
-				$show_new_values = true;
+			if ( $property->new_val !== null && $property->new_val !== '' ) {
+				$show_new_vals = true;
 				break;
 			}
 		}
@@ -316,11 +316,11 @@ class Log_Page {
 		$html             .= "<h4>$object_type_title Details</h4>\n";
 
 		// Start table.
-		$class = 'wp-logify-properties-table-' . ( $show_new_values ? 3 : 2 ) . '-column';
+		$class = 'wp-logify-properties-table-' . ( $show_new_vals ? 3 : 2 ) . '-column';
 		$html .= "<table class='wp-logify-details-table wp-logify-properties-table $class'>\n";
 
 		// Header row is only needed if both old and new value columns are shown.
-		if ( $show_new_values ) {
+		if ( $show_new_vals ) {
 			$html .= "<tr><th></th><th>Before</th><th>After</th></tr>\n";
 		}
 
@@ -340,19 +340,19 @@ class Log_Page {
 			// Old or current value.
 			if ( $property->key === 'post_content' ) {
 				// For post_content, show link to compare revisions.
-				$revision_id = $property->old_value instanceof Object_Reference
-					? $property->old_value->id
-					: ( is_int( $property->old_value ) ? $property->old_value : null );
+				$revision_id = $property->val instanceof Object_Reference
+					? $property->val->id
+					: ( is_int( $property->val ) ? $property->val : null );
 				$tag         = Posts::get_revision_tag( $revision_id );
 			} else {
-				$tag = Types::value_to_html( $property->key, $property->old_value );
+				$tag = Types::value_to_html( $property->key, $property->val );
 			}
 
 			$html .= "<td>$tag</td>";
 
 			// New value.
-			if ( $show_new_values ) {
-				$html .= '<td>' . Types::value_to_html( $property->key, $property->new_value ) . '</td>';
+			if ( $show_new_vals ) {
+				$html .= '<td>' . Types::value_to_html( $property->key, $property->new_val ) . '</td>';
 			}
 
 			// End row.
@@ -376,8 +376,8 @@ class Log_Page {
 	public static function format_details( Event $event ): string {
 		$html  = "<div class='wp-logify-details'>\n";
 		$html .= self::format_user_details( $event );
-		$html .= self::format_object_properties( $event );
-		$html .= self::format_event_metadata( $event );
+		$html .= self::format_properties( $event );
+		$html .= self::format_eventmetas( $event );
 		$html .= "</div>\n";
 		return $html;
 	}

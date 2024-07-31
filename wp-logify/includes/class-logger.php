@@ -25,8 +25,9 @@ class Logger {
 	/**
 	 * Check if we're logging actions of the current user.
 	 *
-	 * @param ?string $object_type The type of obejct, e.g. 'post', 'user', 'term'.
-	 * @param ?int    $object_id   The ID of the object.
+	 * @param ?string  $object_type The type of obejct, e.g. 'post', 'user', 'term'.
+	 * @param ?int     $object_id   The ID of the object.
+	 * @param ?WP_User &$current_user The current user or null if the user is anonymous.
 	 * @return bool True if we're logging the current user's actions, false otherwise.
 	 */
 	public static function log_current_user( ?string $object_type = null, ?int $object_id = null, ?WP_User &$current_user ): bool {
@@ -36,13 +37,14 @@ class Logger {
 
 		// If the current user could not be loaded, this may be a login or logout event.
 		// In such cases, we should be able to get the user from the object information.
-		if ( ( empty( $current_user ) || empty( $current_user->ID ) ) && $object_type === 'user' ) {
+		if ( empty( $current_user->ID ) && $object_type === 'user' ) {
 			$current_user = get_userdata( $object_id );
 		}
 
 		// If we still don't have a known user (i.e. it's an anonymous user), we don't need to log
 		// the event.
-		if ( empty( $current_user ) || empty( $current_user->ID ) ) {
+		if ( empty( $current_user->ID ) ) {
+			$current_user = null;
 			return false;
 		}
 
@@ -57,19 +59,21 @@ class Logger {
 	/**
 	 * Logs an event to the database.
 	 *
-	 * @param string  $event_type  The type of event.
-	 * @param ?string $object_type The type of obejct, e.g. 'post', 'user', 'term'.
-	 * @param ?int    $object_id   The ID of the object.
-	 * @param ?string $object_name The name of the object (in case it gets deleted).
-	 * @param ?array  $properties  The event Properties.
+	 * @param string          $event_type  The type of event.
+	 * @param ?string         $object_type The type of obejct, e.g. 'post', 'user', 'term'.
+	 * @param null|int|string $object_id   The object's identifier (int or string) or null if N/A.
+	 * @param ?string         $object_name The name of the object (in case it gets deleted).
+	 * @param ?array          $eventmetas  The event metadata.
+	 * @param ?array          $properties  The event properties.
 	 *
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function log_event(
 		string $event_type,
 		?string $object_type = null,
-		?int $object_id = null,
+		null|int|string $object_id = null,
 		?string $object_name = null,
+		?array $eventmetas = null,
 		?array $properties = null,
 	) {
 		// Check if we're logging actions of the current user.
@@ -91,6 +95,7 @@ class Logger {
 		$event->object_type   = $object_type;
 		$event->object_id     = $object_id;
 		$event->object_name   = $object_name;
+		$event->eventmetas    = $eventmetas;
 		$event->properties    = $properties;
 
 		// Save the object.

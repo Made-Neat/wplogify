@@ -86,8 +86,9 @@ class Event {
 	public ?string $object_type;
 
 	/**
-	 * The ID of the object associated with the event. This will be an integer (stored as a string)
-	 * in the case of a post, user, etc., but could be a string in the case of a theme or plugin.
+	 * The ID of the object associated with the event. This will be an integer matching a database
+	 * primary key in the case of a post, user, term, etc., but could be a string in the case of a
+	 * theme or plugin. The value is stored in the database as a nullable string.
 	 *
 	 * @var null|int|string
 	 */
@@ -109,12 +110,21 @@ class Event {
 	public ?array $properties;
 
 	/**
+	 * Metadata relating to the event.
+	 *
+	 * @var ?array
+	 */
+	public ?array $eventmetas;
+
+	/**
 	 * The object reference.
+	 * This is not stored in the database.
 	 *
 	 * @var ?Object_Reference
 	 */
 	private ?Object_Reference $object_ref;
 
+	// =============================================================================================
 	/**
 	 * Event Constructor.
 	 *
@@ -124,64 +134,8 @@ class Event {
 		// Empty constructor.
 	}
 
-	/**
-	 * Create a new Event object from an object.
-	 *
-	 * @param string  $object_type The type of object, e.g. 'post', 'user', 'term'.
-	 * @param int     $object_id The ID of the object.
-	 * @param ?string $object_name The name of the object.
-	 * @return Event The new Event object.
-	 * @throws Exception If the user causing the event could not be identified.
-	 */
-	public static function create( string $object_type, int $object_id, ?string $object_name = null ): Event {
-		// Get the current user.
-		$current_user = wp_get_current_user();
-
-		// If the current user could not be loaded, this may be a login or logout event.
-		// In such cases, we can get the user from the object information.
-		if ( ( empty( $current_user ) || empty( $current_user->ID ) ) && $object_type === 'user' ) {
-			$current_user = get_userdata( $object_id );
-		}
-
-		// If we still don't have a known user (i.e. it's an anonymous user), we shouldn't be in
-		// this method, so let's throw an exception.
-		if ( empty( $current_user ) || empty( $current_user->ID ) ) {
-			throw new Exception( 'Could not identify the user causing the event.' );
-		}
-
-		// Construct the new Event object.
-		$event                = new Event();
-		$event->when_happened = DateTimes::current_datetime();
-		$event->user_id       = $current_user->ID;
-		$event->user_name     = Users::get_name( $current_user );
-		$event->user_role     = implode( ', ', $current_user->roles );
-		$event->user_ip       = Users::get_ip();
-		$event->user_location = Users::get_location( $event->user_ip );
-		$event->user_agent    = Users::get_user_agent();
-		$event->object_type   = $object_type;
-		$event->object_id     = $object_id;
-		$event->object_name   = $object_name;
-
-		return $event;
-	}
-
-	/**
-	 * Save the event to the database.
-	 *
-	 * @return bool True on success, false on failure.
-	 */
-	public function save() {
-		return Event_Repository::save( $this );
-	}
-
-	/**
-	 * Save the event properties to the database.
-	 *
-	 * @return bool True on success, false on failure.
-	 */
-	public function save_properties() {
-		return Event_Repository::save_properties( $this );
-	}
+	// =============================================================================================
+	// Methods for getting information about the object.
 
 	/**
 	 * Get the Object_Reference for the object associated with the event.
@@ -218,101 +172,208 @@ class Event {
 		return $object_ref === null ? '' : $object_ref->get_tag();
 	}
 
+	// =============================================================================================
+	// Methods for getting and setting properties.
+
 	/**
 	 * Check if the event properties includes a property with the specified key.
 	 *
-	 * @param string $property_key The property key.
+	 * @param string $prop_key The property key.
 	 * @return bool True if the property exists, false otherwise.
 	 */
-	public function has_property( string $property_key ) {
-		return key_exists( $property_key, $this->properties );
+	public function has_prop( string $prop_key ) {
+		return key_exists( $prop_key, $this->properties );
+	}
+
+	/**
+	 * Get an event property.
+	 *
+	 * @param string $prop_key The property key.
+	 * @return ?Property The property or null if not set.
+	 */
+	public function get_prop( string $prop_key ): ?Property {
+		return empty( $this->properties[ $prop_key ] ) ? null : $this->properties[ $prop_key ];
 	}
 
 	/**
 	 * Set an event property.
 	 *
-	 * @param string  $property_key The property key.
+	 * @param string  $prop_key The property key.
 	 * @param ?string $table_name The table name the property came from.
-	 * @param mixed   $old_value The old or current value.
-	 * @param mixed   $new_value The new value.
+	 * @param mixed   $val The old or current value.
+	 * @param mixed   $new_val The new value.
 	 */
-	public function set_property( string $property_key, ?string $table_name, mixed $old_value, mixed $new_value = null ) {
+	public function set_prop( string $prop_key, ?string $table_name, mixed $val, mixed $new_val = null ) {
 		// If the properties array is not set, create it.
 		if ( ! isset( $this->properties ) ) {
 			$this->properties = array();
 		}
 
 		// If the property with this key already exists, update it.
-		if ( self::has_property( $property_key ) ) {
-			$property             = $this->properties[ $property_key ];
-			$property->table_name = $table_name;
-			$property->old_value  = $old_value;
-			$property->new_value  = $new_value;
+		if ( self::has_prop( $prop_key ) ) {
+			$prop             = $this->properties[ $prop_key ];
+			$prop->table_name = $table_name;
+			$prop->val        = $val;
+			$prop->new_val    = $new_val;
 		} else {
 			// The property with this key doesn't already exist in the properties array, so create it.
-			$this->properties[ $property_key ] = new Property( $property_key, $table_name, $old_value, $new_value );
+			$this->properties[ $prop_key ] = new Property( $prop_key, $table_name, $val, $new_val );
 		}
 	}
 
 	/**
 	 * Set multiple properties at once.
 	 *
-	 * @param array $properties The properties to set.
-	 *
-	 * TODO: Remove if not needed.
+	 * @param array $props The properties to set.
 	 */
-	public function set_properties( array $properties ) {
-		foreach ( $properties as $property ) {
-			$this->set_property( $property->key, $property->table_name, $property->old_value, $property->new_value );
+	public function set_props( array $props ) {
+		foreach ( $props as $prop ) {
+			$this->set_prop( $prop->key, $prop->table_name, $prop->val, $prop->new_val );
 		}
 	}
 
 	/**
 	 * Add the object's core properties to the event properties.
-	 *
-	 * TODO: Remove if not needed.
 	 */
-	public function set_core_properties() {
-		$this->set_properties( $this->get_object_reference()->get_core_properties() );
-	}
+	// public function set_core_props() {
+	// $this->set_props( $this->get_object_reference()->get_core_properties() );
+	// }
 
 	/**
 	 * Get the current or old value of a property.
 	 *
-	 * @param string $property_key The property key.
+	 * @param string $prop_key The property key.
 	 * @return mixed The current or old value.
 	 */
-	public function get_property_value( string $property_key ): mixed {
-		return $this->properties[ $property_key ]->old_value;
+	public function get_prop_val( string $prop_key ): mixed {
+		// Check if the property exists.
+		if ( ! $this->has_prop( $prop_key ) ) {
+			return null;
+		}
+
+		return $this->properties[ $prop_key ]->val;
 	}
 
 	/**
 	 * Set the current or old value of a property.
 	 *
-	 * @param string $property_key The property key.
-	 * @param mixed  $value The current or old property value.
+	 * @param string $prop_key The property key.
+	 * @param mixed  $val The current or old property value.
+	 * @throws Exception If the property with the specified key is not found.
 	 */
-	public function set_property_value( string $property_key, mixed $value ) {
-		$this->properties[ $property_key ]->old_value = $value;
+	public function set_prop_val( string $prop_key, mixed $val ) {
+		// Check if the property exists.
+		if ( ! $this->has_prop( $prop_key ) ) {
+			throw new Exception( "Property with key $prop_key not found." );
+		}
+
+		$this->properties[ $prop_key ]->val = $val;
 	}
 
 	/**
 	 * Get the new value of a property.
 	 *
-	 * @param string $property_key The property key.
+	 * @param string $prop_key The property key.
 	 * @return mixed The new value of the property.
 	 */
-	public function get_property_new_value( string $property_key ): mixed {
-		return $this->properties[ $property_key ]->new_value;
+	public function get_prop_new_val( string $prop_key ): mixed {
+		// Check if the property exists.
+		if ( ! $this->has_prop( $prop_key ) ) {
+			return null;
+		}
+
+		return $this->properties[ $prop_key ]->new_val;
 	}
 
 	/**
 	 * Set the new value of a property.
 	 *
-	 * @param string $property_key The property key.
-	 * @param mixed  $value The new value of the property.
+	 * @param string $prop_key The property key.
+	 * @param mixed  $new_val The new value of the property.
+	 * @throws Exception If the property with the specified key is not found.
 	 */
-	public function set_property_new_value( string $property_key, mixed $value ) {
-		$this->properties[ $property_key ]->new_value = $value;
+	public function set_prop_new_val( string $prop_key, mixed $new_val ) {
+		// Check if the property exists.
+		if ( ! $this->has_prop( $prop_key ) ) {
+			throw new Exception( "Property with key $prop_key not found." );
+		}
+
+		$this->properties[ $prop_key ]->new_val = $new_val;
+	}
+
+	// =============================================================================================
+	// Methods for getting and setting eventmetas.
+
+	/**
+	 * Check if the eventmetas includes one with the specified key.
+	 *
+	 * @param string $meta_key The eventmeta key.
+	 * @return bool True if the eventmeta exists, false otherwise.
+	 */
+	public function has_meta( string $meta_key ) {
+		return key_exists( $meta_key, $this->eventmetas );
+	}
+
+	/**
+	 * Get an eventmeta.
+	 *
+	 * @param string $meta_key The eventmeta key.
+	 * @return mixed The eventmeta object or null if not set.
+	 */
+	public function get_meta( string $meta_key ): mixed {
+		return empty( $this->eventmetas[ $meta_key ] ) ? null : $this->eventmetas[ $meta_key ];
+	}
+
+	/**
+	 * Get an eventmeta value.
+	 *
+	 * @param string $meta_key The eventmeta key.
+	 * @return mixed The eventmeta value or null if not set.
+	 */
+	public function get_meta_val( string $meta_key ): mixed {
+		$meta = $this->get_meta( $meta_key );
+		return $meta ? $meta->meta_value : null;
+	}
+
+	/**
+	 * Set an eventmeta.
+	 *
+	 * @param Eventmeta $meta The eventmeta.
+	 */
+	public function set_meta( Eventmeta $meta ) {
+		// Create the eventmeta array if necessary.
+		if ( ! isset( $this->eventmetas ) ) {
+			$this->eventmetas = array();
+		}
+
+		// Set the meta value.
+		$this->eventmetas[ $meta->meta_key ] = $meta;
+	}
+
+	/**
+	 * Set multiple eventmetas.
+	 *
+	 * @param array $metas The eventmetas to set.
+	 */
+	public function set_metas( array $metas ) {
+		foreach ( $metas as $meta ) {
+			$this->set_meta( $meta );
+		}
+	}
+
+	/**
+	 * Set an eventmeta data value.
+	 *
+	 * @param string $meta_key The eventmeta key.
+	 * @param mixed  $meta_value The eventmeta value.
+	 */
+	public function set_meta_val( string $meta_key, mixed $meta_value ) {
+		// Create the eventmeta array if necessary.
+		if ( ! isset( $this->eventmetas ) ) {
+			$this->eventmetas = array();
+		}
+
+		// Set the meta value.
+		$this->eventmetas[ $meta_key ] = new Eventmeta( $this->id, $meta_key, $meta_value );
 	}
 }

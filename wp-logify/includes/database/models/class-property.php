@@ -48,14 +48,14 @@ class Property {
 	 *
 	 * @var mixed
 	 */
-	public mixed $old_value = null;
+	public mixed $val = null;
 
 	/**
 	 * The new value of the property, if changed. This will be null if the value wasn't changed.
 	 *
 	 * @var mixed
 	 */
-	public mixed $new_value = null;
+	public mixed $new_val = null;
 
 	/**
 	 * Property constructor.
@@ -64,13 +64,13 @@ class Property {
 	 * @param string $table_name The name of the database table the property belongs to (e.g.
 	 *                           'posts'), which could be null if the property is unrelated to a
 	 *                           database table.
-	 * @param mixed  $old_value The old or current value of the property.
-	 * @param mixed  $new_value Optional. The new value of the property, if changed.
+	 * @param mixed  $val The old or current value of the property.
+	 * @param mixed  $new_val Optional. The new value of the property, if changed.
 	 */
-	public function __construct( string $key, ?string $table_name, mixed $old_value = null, mixed $new_value = null ) {
+	public function __construct( string $key, ?string $table_name, mixed $val = null, mixed $new_val = null ) {
 		$this->key        = $key;
 		$this->table_name = $table_name;
-		$this->old_value  = $old_value;
-		$this->new_value  = $new_value;
+		$this->val        = $val;
+		$this->new_val    = $new_val;
 	}
 }

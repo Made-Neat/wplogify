@@ -8,7 +8,6 @@
 namespace WP_Logify;
 
 use Exception;
-use InvalidArgumentException;
 use WP_Term;
 
 /**
@@ -80,13 +79,13 @@ class Terms {
 		$changed = false;
 		foreach ( $term->data as $key => $value ) {
 			// Get the old and new values.
-			$old_value = Types::process_database_value( $key, $value );
-			$new_value = Types::process_database_value( $args[ $key ] );
+			$val     = Types::process_database_value( $key, $value );
+			$new_val = Types::process_database_value( $key, $args[ $key ] );
 
-			if ( ! Types::are_equal( $old_value, $new_value ) ) {
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 				// Update the property's before and after values.
-				$properties[ $key ]->old_value = $old_value;
-				$properties[ $key ]->new_value = $new_value;
+				$properties[ $key ]->val     = $val;
+				$properties[ $key ]->new_val = $new_val;
 
 				// Note there were changes.
 				$changed = true;

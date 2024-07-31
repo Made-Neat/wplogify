@@ -37,7 +37,7 @@ class Object_Reference {
 
 	/**
 	 * The object itself.
-	 * This is a private field. To access publically, call getObject(), which will lazy-load the
+	 * This is a private field. To access publically, call get_object(), which will lazy-load the
 	 * object as needed.
 	 *
 	 * @var mixed
@@ -216,32 +216,32 @@ class Object_Reference {
 	 * @return array The core properties of the object.
 	 * @throws Exception If the object type is unknown.
 	 */
-	public function get_core_properties(): ?array {
-		switch ( $this->type ) {
-			case 'post':
-				return Posts::get_core_properties( $this->id );
+	// public function get_core_properties(): ?array {
+	// switch ( $this->type ) {
+	// case 'post':
+	// return Posts::get_core_properties( $this->id );
 
-			case 'user':
-				return Users::get_core_properties( $this->id );
+	// case 'user':
+	// return Users::get_core_properties( $this->id );
 
-			case 'term':
-				return null;
-				// return Terms::get_core_properties( $this->id );
+	// case 'term':
+	// return null;
+	// return Terms::get_core_properties( $this->id );
 
-			case 'comment':
-				return null;
-				// return Comments::get_core_properties( $this->id );
+	// case 'comment':
+	// return null;
+	// return Comments::get_core_properties( $this->id );
 
-			case 'plugin':
-				return null;
-				// return Plugins::get_core_properties( $this->id );
+	// case 'plugin':
+	// return null;
+	// return Plugins::get_core_properties( $this->id );
 
-			case 'theme':
-				return null;
-				// return Themes::get_core_properties( $this->id );
+	// case 'theme':
+	// return null;
+	// return Themes::get_core_properties( $this->id );
 
-			default:
-				throw new Exception( 'Unknown object type.' );
-		}
-	}
+	// default:
+	// throw new Exception( 'Unknown object type.' );
+	// }
+	// }
 }

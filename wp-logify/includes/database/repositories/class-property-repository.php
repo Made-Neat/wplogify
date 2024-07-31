@@ -21,14 +21,14 @@ class Property_Repository extends Repository {
 	/**
 	 * Load a Property from the database by ID.
 	 *
-	 * @param int $property_id The ID of the property.
+	 * @param int $prop_id The ID of the property.
 	 * @return ?Property The Property object, or null if not found.
 	 */
-	public static function load( int $property_id ): ?Property {
+	public static function load( int $prop_id ): ?Property {
 		global $wpdb;
 
 		// Get the property record.
-		$sql    = $wpdb->prepare( 'SELECT * FROM %i WHERE property_id = %d', self::get_table_name(), $property_id );
+		$sql    = $wpdb->prepare( 'SELECT * FROM %i WHERE prop_id = %d', self::get_table_name(), $prop_id );
 		$record = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If the record is not found, return null.
@@ -66,7 +66,7 @@ class Property_Repository extends Repository {
 
 		// Update or insert the property record.
 		$record  = self::object_to_record( $property );
-		$formats = array( '%s', '%s', '%s', '%s' );
+		$formats = array( '%d', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
 			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
@@ -77,7 +77,7 @@ class Property_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $record, array( 'property_id' => $property->id ), $formats, array( '%d' ) ) !== false;
+			$ok = $wpdb->update( self::get_table_name(), $record, array( 'prop_id' => $property->id ), $formats, array( '%d' ) ) !== false;
 		}
 
 		return $ok;
@@ -86,12 +86,12 @@ class Property_Repository extends Repository {
 	/**
 	 * Delete a property record by ID.
 	 *
-	 * @param int $property_id The ID of the property record to delete.
+	 * @param int $prop_id The ID of the property record to delete.
 	 * @return bool True on success, false on failure.
 	 */
-	public static function delete( int $property_id ): bool {
+	public static function delete( int $prop_id ): bool {
 		global $wpdb;
-		return (bool) $wpdb->delete( self::get_table_name(), array( 'property_id' => $property_id ), array( '%d' ) );
+		return (bool) $wpdb->delete( self::get_table_name(), array( 'prop_id' => $prop_id ), array( '%d' ) );
 	}
 
 	// =============================================================================================
@@ -117,13 +117,13 @@ class Property_Repository extends Repository {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
-            property_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            event_id      BIGINT UNSIGNED NOT NULL,
-            property_key  VARCHAR(100)    NOT NULL,
-            table_name    VARCHAR(100)    NOT NULL,
-            old_value     LONGTEXT        NULL,
-            new_value     LONGTEXT        NULL,
-            PRIMARY KEY (property_id),
+            prop_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            event_id   BIGINT UNSIGNED NOT NULL,
+            prop_key   VARCHAR(100)    NOT NULL,
+            table_name VARCHAR(100)    NULL,
+            val        LONGTEXT        NULL,
+            new_val    LONGTEXT        NULL,
+            PRIMARY KEY (prop_id),
         ) $charset_collate;";
 
 		dbDelta( $sql );
@@ -157,18 +157,18 @@ class Property_Repository extends Repository {
 	 */
 	public static function record_to_object( array $record ): Property {
 		// Unserialize the old and new values.
-		if ( ! Serialization::try_unserialize( $record['old_value'], $old_value ) ) {
-			throw new Exception( 'Failed to unserialize old property value.' );
+		if ( ! Serialization::try_unserialize( $record['val'], $val ) ) {
+			throw new Exception( 'Failed to unserialize value.' );
 		}
-		if ( ! Serialization::try_unserialize( $record['new_value'], $new_value ) ) {
-			throw new Exception( 'Failed to unserialize new property value.' );
+		if ( ! Serialization::try_unserialize( $record['new_val'], $new_val ) ) {
+			throw new Exception( 'Failed to unserialize new value.' );
 		}
 
 		// Create the Property object.
-		$property = new Property( $record['property_key'], $record['table_name'], $old_value, $new_value );
+		$property = new Property( $record['prop_key'], $record['table_name'], $val, $new_val );
 
 		// Set the ID and event ID.
-		$property->id       = (int) $record['property_id'];
+		$property->id       = (int) $record['prop_id'];
 		$property->event_id = (int) $record['event_id'];
 
 		return $property;
@@ -184,11 +184,11 @@ class Property_Repository extends Repository {
 	 */
 	public static function object_to_record( Property $property ): array {
 		return array(
-			'event_id'     => $property->event_id,
-			'property_key' => $property->key,
-			'table_name'   => $property->table_name,
-			'old_value'    => Serialization::serialize( $property->old_value ),
-			'new_value'    => Serialization::serialize( $property->new_value ),
+			'event_id'   => $property->event_id,
+			'prop_key'   => $property->key,
+			'table_name' => $property->table_name,
+			'val'        => Serialization::serialize( $property->val ),
+			'new_val'    => Serialization::serialize( $property->new_val ),
 		);
 	}
 
@@ -216,7 +216,7 @@ class Property_Repository extends Repository {
 		// Convert the records to objects.
 		$properties = array();
 		foreach ( $recordset as $record ) {
-			$properties[ $record['property_key'] ] = self::record_to_object( $record );
+			$properties[ $record['prop_key'] ] = self::record_to_object( $record );
 		}
 
 		return $properties;
