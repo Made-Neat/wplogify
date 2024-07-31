@@ -31,9 +31,7 @@ services:
       - ../log/php:/var/log
 
   nginx:
-    build:
-      context: .
-      dockerfile: Nginx.Dockerfile
+    image: nginx:1.22.1
     container_name: wplogify-nginx
     depends_on:
       - php
