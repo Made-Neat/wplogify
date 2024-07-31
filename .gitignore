@@ -79,3 +79,6 @@ downloads/
 
 # Mysql files
 mysql/
+
+# Testing files
+testing/
