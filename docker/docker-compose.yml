@@ -28,7 +28,7 @@ services:
     volumes:
       - ../www:/var/www/html
       - ../wp-logify:/var/www/html/wp-content/plugins/wp-logify
-      - ../log/php:/var/log
+      - ../logs/php:/var/log
 
   nginx:
     build:
@@ -43,7 +43,7 @@ services:
     volumes:
       - ../www:/var/www/html
       - ../wp-logify:/var/www/html/wp-content/plugins/wp-logify
-      - ../log/nginx:/var/log/nginx
+      - ../logs/nginx:/var/log/nginx
     ports:
       - "8080:80"
 
