@@ -19,11 +19,11 @@ use WP_Term;
 class Terms {
 
 	/**
-	 * Changes to a term.
+	 * Current event under construction.
 	 *
 	 * @var array
 	 */
-	private static $term_changes = array();
+	private static Event $new_event;
 
 	/**
 	 * Link the events we want to log to methods.
@@ -136,7 +136,7 @@ class Terms {
 		$post_ids = array_map( fn( $post_id ) => (int) $post_id, $post_ids );
 
 		// Add to properties.
-		$properties['attached_posts'] = new Property( 'attached_posts', 'other', $post_ids );
+		$properties['attached_posts'] = new Property( 'attached_posts', null, $post_ids );
 
 		// Log the event.
 		Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
@@ -189,6 +189,8 @@ class Terms {
 	 * @return array An associative array of term properties.
 	 */
 	public static function get_properties( WP_Term|int $term ) {
+		global $wpdb;
+
 		// Load the term if necessary.
 		if ( is_int( $term ) ) {
 			$term = self::get_term( $term );
@@ -203,7 +205,7 @@ class Terms {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, 'base', $value );
+			$properties[ $key ] = new Property( $key, $wpdb->terms, $value );
 		}
 
 		// Add the meta properties.
@@ -213,7 +215,7 @@ class Terms {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, 'meta', $value );
+			$properties[ $key ] = new Property( $key, $wpdb->termmeta, $value );
 		}
 
 		return $properties;

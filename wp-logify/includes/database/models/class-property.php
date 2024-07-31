@@ -36,21 +36,22 @@ class Property {
 	public string $key;
 
 	/**
-	 * The type of database table the property belongs to: 'base', 'meta', or 'other'.
+	 * The name of the database table the property comes from, e.g. 'wp_posts'.
+	 * This can be null if the property is not related to a database table.
 	 *
-	 * @var string
+	 * @var ?string
 	 */
-	public string $type;
+	public ?string $table_name;
 
 	/**
-	 * The old or current value of the property.
+	 * The old or current value of the property. This should not be null.
 	 *
 	 * @var mixed
 	 */
 	public mixed $old_value = null;
 
 	/**
-	 * The new value of the property, if changed.
+	 * The new value of the property, if changed. This will be null if the value wasn't changed.
 	 *
 	 * @var mixed
 	 */
@@ -60,14 +61,16 @@ class Property {
 	 * Property constructor.
 	 *
 	 * @param string $key The property name.
-	 * @param string $type The type of database table the property belongs to: 'base', 'meta', 'none', or 'other'.
+	 * @param string $table_name The name of the database table the property belongs to (e.g.
+	 *                           'posts'), which could be null if the property is unrelated to a
+	 *                           database table.
 	 * @param mixed  $old_value The old or current value of the property.
 	 * @param mixed  $new_value Optional. The new value of the property, if changed.
 	 */
-	public function __construct( string $key, string $type, mixed $old_value = null, mixed $new_value = null ) {
-		$this->key       = $key;
-		$this->type      = $type;
-		$this->old_value = $old_value;
-		$this->new_value = $new_value;
+	public function __construct( string $key, ?string $table_name, mixed $old_value = null, mixed $new_value = null ) {
+		$this->key        = $key;
+		$this->table_name = $table_name;
+		$this->old_value  = $old_value;
+		$this->new_value  = $new_value;
 	}
 }
