@@ -49,35 +49,53 @@ class Property_Repository extends Repository {
 	 *
 	 * If inserting, and the insert is successful, the entity's ID property will be set.*
 	 *
-	 * @param object $property The property to update or insert.
+	 * @param object $prop The property to update or insert.
 	 * @return bool True on success, false on failure.
 	 * @throws InvalidArgumentException If the entity is not an instance of Property.
 	 */
-	public static function save( object $property ): bool {
+	public static function save( object $prop ): bool {
 		global $wpdb;
 
 		// Check entity type.
-		if ( ! $property instanceof Property ) {
+		if ( ! $prop instanceof Property ) {
 			throw new InvalidArgumentException( 'Entity must be an instance of Property.' );
 		}
 
+		// Get the table name.
+		$table_name = self::get_table_name();
+
 		// Check if we're inserting or updating.
-		$inserting = empty( $property->id );
+		$inserting = false;
+		if ( empty( $prop->id ) ) {
+			// See if there is an existing record we should update.
+			$sql              = $wpdb->prepare(
+				'SELECT prop_id FROM %i WHERE event_id = %d AND prop_key = %s',
+				$table_name,
+				$prop->event_id,
+				$prop->key
+			);
+			$existing_prop_id = $wpdb->get_var( $sql );
+			if ( $existing_prop_id ) {
+				$prop->id = $existing_prop_id;
+			} else {
+				$inserting = true;
+			}
+		}
 
 		// Update or insert the property record.
-		$record  = self::object_to_record( $property );
+		$record  = self::object_to_record( $prop );
 		$formats = array( '%d', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
+			$ok = $wpdb->insert( $table_name, $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Property object with the new ID.
 			if ( $ok ) {
-				$property->id = $wpdb->insert_id;
+				$prop->id = $wpdb->insert_id;
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $record, array( 'prop_id' => $property->id ), $formats, array( '%d' ) ) !== false;
+			$ok = $wpdb->update( $table_name, $record, array( 'prop_id' => $prop->id ), $formats, array( '%d' ) ) !== false;
 		}
 
 		return $ok;
@@ -124,6 +142,7 @@ class Property_Repository extends Repository {
             val        LONGTEXT        NULL,
             new_val    LONGTEXT        NULL,
             PRIMARY KEY (prop_id),
+            KEY event_id (event_id)
         ) $charset_collate;";
 
 		dbDelta( $sql );
@@ -165,13 +184,13 @@ class Property_Repository extends Repository {
 		}
 
 		// Create the Property object.
-		$property = new Property( $record['prop_key'], $record['table_name'], $val, $new_val );
+		$prop = new Property( $record['prop_key'], $record['table_name'], $val, $new_val );
 
 		// Set the ID and event ID.
-		$property->id       = (int) $record['prop_id'];
-		$property->event_id = (int) $record['event_id'];
+		$prop->id       = (int) $record['prop_id'];
+		$prop->event_id = (int) $record['event_id'];
 
-		return $property;
+		return $prop;
 	}
 
 	/**
@@ -179,16 +198,16 @@ class Property_Repository extends Repository {
 	 *
 	 * The ID property isn't included, as it isn't required for the insert or update operations.
 	 *
-	 * @param Property $property The Property object.
+	 * @param Property $prop The Property object.
 	 * @return array The database record as an associative array.
 	 */
-	public static function object_to_record( Property $property ): array {
+	public static function object_to_record( Property $prop ): array {
 		return array(
-			'event_id'   => $property->event_id,
-			'prop_key'   => $property->key,
-			'table_name' => $property->table_name,
-			'val'        => Serialization::serialize( $property->val ),
-			'new_val'    => Serialization::serialize( $property->new_val ),
+			'event_id'   => $prop->event_id,
+			'prop_key'   => $prop->key,
+			'table_name' => $prop->table_name,
+			'val'        => Serialization::serialize( $prop->val ),
+			'new_val'    => Serialization::serialize( $prop->new_val ),
 		);
 	}
 

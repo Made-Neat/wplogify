@@ -62,15 +62,33 @@ class Eventmeta_Repository extends Repository {
 			throw new InvalidArgumentException( 'Entity must be an instance of Eventmeta.' );
 		}
 
+		// Get the table name.
+		$table_name = self::get_table_name();
+
 		// Check if we're inserting or updating.
-		$inserting = empty( $eventmeta->id );
+		$inserting = false;
+		if ( empty( $eventmeta->id ) ) {
+			// See if there is an existing record we should update.
+			$sql                   = $wpdb->prepare(
+				'SELECT eventmeta_id FROM %i WHERE event_id = %d AND meta_key = %s',
+				$table_name,
+				$eventmeta->event_id,
+				$eventmeta->meta_key
+			);
+			$existing_eventmeta_id = $wpdb->get_var( $sql );
+			if ( $existing_eventmeta_id ) {
+				$eventmeta->id = $existing_eventmeta_id;
+			} else {
+				$inserting = true;
+			}
+		}
 
 		// Update or insert the eventmeta record.
 		$record  = self::object_to_record( $eventmeta );
 		$formats = array( '%d', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
+			$ok = $wpdb->insert( $table_name, $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Eventmeta object with the new ID.
 			if ( $ok ) {
@@ -78,7 +96,7 @@ class Eventmeta_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( self::get_table_name(), $record, array( 'eventmeta_id' => $eventmeta->id ), $formats, array( '%d' ) ) !== false;
+			$ok = $wpdb->update( $table_name, $record, array( 'eventmeta_id' => $eventmeta->id ), $formats, array( '%d' ) ) !== false;
 		}
 
 		return $ok;

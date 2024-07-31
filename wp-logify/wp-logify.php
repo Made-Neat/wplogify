@@ -46,7 +46,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-proper
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-posts.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-users.php';
-// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-terms.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-terms.php';
 // require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-plugins.php';
 // require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-settings.php';
 

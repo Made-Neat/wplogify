@@ -20,41 +20,7 @@ class Logger {
 	/**
 	 * The valid object types for which events can be logged.
 	 */
-	public const VALID_OBJECT_TYPES = array( 'post', 'user', 'term', 'plugin', 'theme' );
-
-	/**
-	 * Check if we're logging actions of the current user.
-	 *
-	 * @param ?string  $object_type The type of obejct, e.g. 'post', 'user', 'term'.
-	 * @param ?int     $object_id   The ID of the object.
-	 * @param ?WP_User &$current_user The current user or null if the user is anonymous.
-	 * @return bool True if we're logging the current user's actions, false otherwise.
-	 */
-	public static function log_current_user( ?string $object_type = null, ?int $object_id = null, ?WP_User &$current_user ): bool {
-
-		// Get the current user.
-		$current_user = wp_get_current_user();
-
-		// If the current user could not be loaded, this may be a login or logout event.
-		// In such cases, we should be able to get the user from the object information.
-		if ( empty( $current_user->ID ) && $object_type === 'user' ) {
-			$current_user = get_userdata( $object_id );
-		}
-
-		// If we still don't have a known user (i.e. it's an anonymous user), we don't need to log
-		// the event.
-		if ( empty( $current_user->ID ) ) {
-			$current_user = null;
-			return false;
-		}
-
-		// Check if we're interested in tracking this user's actions.
-		if ( ! Users::user_has_role( $current_user, Settings::get_roles_to_track() ) ) {
-			return false;
-		}
-
-		return true;
-	}
+	public const VALID_OBJECT_TYPES = array( 'post', 'user', 'term', 'plugin', 'theme', 'setting', 'comment' );
 
 	/**
 	 * Logs an event to the database.
@@ -76,9 +42,24 @@ class Logger {
 		?array $eventmetas = null,
 		?array $properties = null,
 	) {
-		// Check if we're logging actions of the current user.
-		$log_the_event = self::log_current_user( $object_type, $object_id, $current_user );
-		if ( ! $log_the_event ) {
+		// Get the current user.
+		$current_user = wp_get_current_user();
+
+		// If the current user could not be loaded, this may be a login or logout event.
+		// In such cases, we should be able to get the user from the object information.
+		if ( empty( $current_user->ID ) && $object_type === 'user' ) {
+			$current_user = get_userdata( $object_id );
+		}
+
+		// If we still don't have a known user (i.e. it's an anonymous user), we don't need to log
+		// the event.
+		if ( empty( $current_user->ID ) ) {
+			return;
+		}
+
+		// If we aren't tracking this user's role, we don't need to log the event.
+		// This shouldn't happen; it should be checked earlier.
+		if ( ! Users::user_has_role( $current_user, Settings::get_roles_to_track() ) ) {
 			return;
 		}
 

@@ -135,7 +135,7 @@ class Event_Repository extends Repository {
 	}
 
 	// =============================================================================================
-	// Methods for loading and saving properties.
+	// Methods for loading and saving properties and eventmetas.
 
 	/**
 	 * Update the properties table.
@@ -144,22 +144,31 @@ class Event_Repository extends Repository {
 	 * @return bool True on success, false on failure.
 	 */
 	public static function save_properties( Event $event ): bool {
-		// Delete all associated records in the properties table.
-		$ok = Property_Repository::delete_by_event_id( $event->id );
+		global $wpdb;
 
-		// Return on error.
-		if ( ! $ok ) {
-			return false;
+		// Get all properties currently attached to this event in the database.
+		$table_name = Property_Repository::get_table_name();
+		$sql        = $wpdb->prepare( 'SELECT prop_id, prop_key FROM %i WHERE event_id = %d', $table_name, $event->id );
+		$records    = $wpdb->get_results( $sql, ARRAY_A );
+
+		// Delete any we don't need anymore.
+		foreach ( $records as $record ) {
+			if ( ! $event->has_meta( $record['prop_key'] ) ) {
+				$del_result = $wpdb->delete( $table_name, array( 'prop_id' => $record['prop_id'] ), '%d' );
+				if ( $del_result === false ) {
+					debug( 'Error deleting property record.' );
+				}
+			}
 		}
 
 		// If we have any properties, insert new records.
 		if ( ! empty( $event->properties ) ) {
-			foreach ( $event->properties as $property ) {
+			foreach ( $event->properties as $prop ) {
 				// Ensure the event_id is set in the property object.
-				$property->event_id = $event->id;
+				$prop->event_id = $event->id;
 
 				// Save the property record.
-				$ok = Property_Repository::save( $property );
+				$ok = Property_Repository::save( $prop );
 
 				// Return on error.
 				if ( ! $ok ) {
@@ -171,9 +180,6 @@ class Event_Repository extends Repository {
 		return true;
 	}
 
-	// =============================================================================================
-	// Methods for loading and saving metadata.
-
 	/**
 	 * Save metadata for an event.
 	 *
@@ -181,20 +187,28 @@ class Event_Repository extends Repository {
 	 * @return bool True on success, false on failure.
 	 */
 	public static function save_eventmetas( Event $event ): bool {
-		// Delete all existing associated records in the eventmeta table.
-		$ok = Eventmeta_Repository::delete_by_event_id( $event->id );
+		global $wpdb;
 
-		// Return on error.
-		if ( ! $ok ) {
-			return false;
+		// Get all eventmetas currently attached to this event in the database.
+		$table_name = Eventmeta_Repository::get_table_name();
+		$sql        = $wpdb->prepare( 'SELECT eventmeta_id, meta_key FROM %i WHERE event_id = %d', $table_name, $event->id );
+		$records    = $wpdb->get_results( $sql, ARRAY_A );
+
+		// Delete any we don't need anymore.
+		foreach ( $records as $record ) {
+			if ( ! $event->has_meta( $record['meta_key'] ) ) {
+				$del_result = $wpdb->delete( $table_name, array( 'eventmeta_id' => $record['eventmeta_id'] ), '%d' );
+				if ( $del_result === false ) {
+					debug( 'Error deleting eventmeta record.' );
+				}
+			}
 		}
 
-		// If we have any metadata, insert new records.
+		// Save current eventmetas.
 		if ( ! empty( $event->eventmetas ) ) {
-			foreach ( $event->eventmetas as $meta_key => $meta_value ) {
-
-				// Construct the new Eventmeta object.
-				$eventmeta = new Eventmeta( $event->id, $meta_key, $meta_value );
+			foreach ( $event->eventmetas as $eventmeta ) {
+				// Ensure the event_id is set in the eventmeta object.
+				$eventmeta->event_id = $event->id;
 
 				// Save the object.
 				$ok = Eventmeta_Repository::save( $eventmeta );

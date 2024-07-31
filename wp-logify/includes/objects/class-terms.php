@@ -29,12 +29,12 @@ class Terms {
 	 */
 	public static function init() {
 		// CRUD operations.
-		add_action( 'created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
-		add_action( 'edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
-		add_action( 'pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
+		// add_action( 'created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
+		// add_action( 'edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
+		// add_action( 'pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
 
-		// Track changes to term taxonomies.
-		add_action( 'edit_term_taxonomies', array( __CLASS__, 'on_edit_term_taxonomies' ), 10, 1 );
+		// // Track changes to term taxonomies.
+		// add_action( 'edit_term_taxonomies', array( __CLASS__, 'on_edit_term_taxonomies' ), 10, 1 );
 	}
 
 	/**

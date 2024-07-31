@@ -1,139 +1,118 @@
 .table-wp-logify {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
-
 .table-wp-logify th,
 .table-wp-logify td {
-    border: 1px solid #ddd;
-    padding: 0.5rem;
+  border: 1px solid #ddd;
+  padding: 0.5rem;
 }
-
 .table-wp-logify th {
-    background-color: #f7f7f7;
-    text-align: left;
+  background-color: #f7f7f7;
+  text-align: left;
 }
-
 .table-wp-logify th.dt-type-numeric.column-id {
-    text-align: left;
+  text-align: left;
 }
-
 .table-wp-logify td {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-    padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.5rem;
 }
-
 .dataTables_wrapper .dataTables_filter {
-    display: none;
-    /* Hide default DataTables search box */
+  display: none;
+  /* Hide default DataTables search box */
 }
-
 .dataTables_wrapper .dataTables_length select {
-    width: 53px;
+  width: 53px;
 }
 
 #wp-logify-activity-log_length {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 #wp-logify-activity-log_processing {
-    margin-top: -8px;
-    background: repeating-linear-gradient(45deg, hsl(200, 66%, 95%), hsl(200, 66%, 95%) 1rem, white 1rem, white 2rem);
-    background-size: 200% 200%;
-    animation: slide 60s linear infinite;
-    border: solid 1px hsl(200, 66%, 85%);
+  margin-top: -8px;
+  background: repeating-linear-gradient(45deg, hsl(200, 66%, 95%), hsl(200, 66%, 95%) 1rem, white 1rem, white 2rem);
+  background-size: 200% 200%;
+  animation: slide 60s linear infinite;
+  border: solid 1px hsl(200, 66%, 85%);
 }
 
 @keyframes slide {
-    0% {
-        background-position: 100% 0;
-    }
-
-    100% {
-        background-position: 0 0%;
-    }
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0%;
+  }
 }
-
 #wp-logify-activity-log th.details-control {
-    text-align: center;
+  text-align: center;
 }
-
 #wp-logify-activity-log td.details-control {
-    text-align: center;
+  text-align: center;
 }
-
 #wp-logify-activity-log .wp-logify-show-details {
-    background-color: #eee;
-    color: #2271b1;
-    padding: 0.25rem 0.5rem;
-    border-radius: 3px;
-    cursor: pointer;
+  background-color: #eee;
+  color: #2271b1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
 }
 
 .dt-search {
-    margin: 1rem 0 0.5rem 0;
+  margin: 1rem 0 0.5rem 0;
 }
 
 #dt-search-0 {
-    background-color: white;
-    width: 20rem;
+  background-color: white;
+  width: 20rem;
 }
 
 .wp-logify-details {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
-
 .wp-logify-details .wp-logify-details-section {
-    display: inline-block;
-    margin-left: 1rem;
+  display: inline-block;
+  margin-left: 1rem;
 }
-
 .wp-logify-details .wp-logify-details-section h4 {
-    margin-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
 }
-
 .wp-logify-details .wp-logify-details-section .wp-logify-details-table {
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
-
 .wp-logify-details .wp-logify-details-section .wp-logify-user-details-table th {
-    width: 8rem;
+  width: 8rem;
 }
-
 .wp-logify-details .wp-logify-details-section .wp-logify-user-details-table td {
-    width: 18rem;
+  width: 18rem;
 }
-
 .wp-logify-details .wp-logify-details-section .wp-logify-eventmeta-table th {
-    width: 10rem;
+  width: 12rem;
 }
-
 .wp-logify-details .wp-logify-details-section .wp-logify-eventmeta-table td {
-    width: 12rem;
+  width: 16rem;
 }
-
 .wp-logify-details .wp-logify-details-section .wp-logify-properties-table th {
-    width: 12rem;
+  width: 12rem;
 }
-
 .wp-logify-details .wp-logify-details-section .wp-logify-properties-table td {
-    width: 16rem;
+  width: 16rem;
 }
 
 .wp-logify-user-info {
-    display: inline-block;
-    vertical-align: top;
-    margin-left: 0.5rem;
+  display: inline-block;
+  vertical-align: top;
+  margin-left: 0.5rem;
 }
-
 .wp-logify-user-info a {
-    font-weight: bold;
+  font-weight: bold;
 }
-
 .wp-logify-user-info .wp-logify-user-role {
-    font-size: 0.9em;
-    color: #555;
+  font-size: 0.9em;
+  color: #555;
 }

@@ -279,9 +279,9 @@ class Log_Page {
 		$html  = "<div class='wp-logify-details-section wp-logify-eventmeta-section'>\n";
 		$html .= "<h4>Event Details</h4>\n";
 		$html .= "<table class='wp-logify-details-table wp-logify-eventmeta-table'>\n";
-		foreach ( $event->eventmetas as $meta_key => $meta_value ) {
-			$readable_key = Types::make_key_readable( $meta_key );
-			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $meta_key, $meta_value ) . '</td></tr>';
+		foreach ( $event->eventmetas as $eventmeta ) {
+			$readable_key = Types::make_key_readable( $eventmeta->meta_key );
+			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $eventmeta->meta_key, $eventmeta->meta_value ) . '</td></tr>';
 		}
 		$html .= "</table>\n";
 		$html .= "</div>\n";
@@ -302,9 +302,9 @@ class Log_Page {
 
 		// Check which columns to show.
 		$show_new_vals = false;
-		foreach ( $event->properties as $property ) {
+		foreach ( $event->properties as $prop ) {
 			// Check if we want to show the 'After' column.
-			if ( $property->new_val !== null && $property->new_val !== '' ) {
+			if ( $prop->new_val !== null && $prop->new_val !== '' ) {
 				$show_new_vals = true;
 				break;
 			}
@@ -325,9 +325,9 @@ class Log_Page {
 		}
 
 		// Property rows.
-		foreach ( $event->properties as $property ) {
+		foreach ( $event->properties as $prop ) {
 			// No point in displaying session tokens.
-			if ( $property->key === 'session_tokens' ) {
+			if ( $prop->key === 'session_tokens' ) {
 				continue;
 			}
 
@@ -335,24 +335,24 @@ class Log_Page {
 			$html .= '<tr>';
 
 			// Property name.
-			$html .= '<th>' . Types::make_key_readable( $property->key ) . '</th>';
+			$html .= '<th>' . Types::make_key_readable( $prop->key ) . '</th>';
 
 			// Old or current value.
-			if ( $property->key === 'post_content' ) {
+			if ( $prop->key === 'post_content' ) {
 				// For post_content, show link to compare revisions.
-				$revision_id = $property->val instanceof Object_Reference
-					? $property->val->id
-					: ( is_int( $property->val ) ? $property->val : null );
+				$revision_id = $prop->val instanceof Object_Reference
+					? $prop->val->id
+					: ( is_int( $prop->val ) ? $prop->val : null );
 				$tag         = Posts::get_revision_tag( $revision_id );
 			} else {
-				$tag = Types::value_to_html( $property->key, $property->val );
+				$tag = Types::value_to_html( $prop->key, $prop->val );
 			}
 
 			$html .= "<td>$tag</td>";
 
 			// New value.
 			if ( $show_new_vals ) {
-				$html .= '<td>' . Types::value_to_html( $property->key, $property->new_val ) . '</td>';
+				$html .= '<td>' . Types::value_to_html( $prop->key, $prop->new_val ) . '</td>';
 			}
 
 			// End row.

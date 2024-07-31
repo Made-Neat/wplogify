@@ -109,15 +109,15 @@ class Users {
 		$eventmetas = array();
 
 		// Get the posts created by this user.
-		$posts               = get_posts( array( 'author' => $user->ID ) );
-		$post_refs           = array_map( fn( $post ) => new Object_Reference( 'post', $post->ID, $post->post_title ), $posts );
-		$eventmetas['posts'] = $post_refs;
+		$posts     = get_posts( array( 'author' => $user->ID ) );
+		$post_refs = array_map( fn( $post ) => new Object_Reference( 'post', $post->ID, $post->post_title ), $posts );
+		Eventmeta::add_to_array( $eventmetas, 'posts', $post_refs );
 
 		// TODO Get the comments created by this user.
 
 		// If the user's data is being reassigned, record that information in the eventmetas.
 		if ( $reassign ) {
-			$eventmetas['content_reassigned_to'] = new Object_Reference( 'user', $reassign );
+			Eventmeta::add_to_array( $eventmetas, 'content_reassigned_to', new Object_Reference( 'user', $reassign ) );
 		}
 
 		// Log the event.
@@ -189,20 +189,6 @@ class Users {
 	public static function on_wp_loaded() {
 		global $wpdb;
 
-		// Sometimes (e.g. when editing a post) WordPress triggers two simultaneous HTTP requests,
-		// which was causing a database deadlock in this method, which gets called on every request.
-		// Therefore, if one request is already tracking activity, we won't try to track activity
-		// again until it's done.
-
-		// Check if activity tracking is already in progress.
-		if ( ! empty( $_SESSION['wp_logify_activity_tracking_in_progress'] ) ) {
-			// Another HTTP request is already handling the activity tracking, so let's go.
-			return;
-		}
-
-		// Note that activity tracking is in progress.
-		$_SESSION['wp_logify_activity_tracking_in_progress'] = true;
-
 		// Prepare some values.
 		$user_id    = get_current_user_id();
 		$table_name = Event_Repository::get_table_name();
@@ -223,11 +209,11 @@ class Users {
 			$event = Event_Repository::load( $record['event_id'] );
 
 			// Check we have the info we need.
-			if ( ! empty( $event->eventmetas['session_start'] ) && ! empty( $event->eventmetas['session_end'] ) ) {
+			if ( $event->has_meta( 'session_start' ) && $event->has_meta( 'session_end' ) ) {
 
 				// Extract the current session_end datetime from the event details.
-				$session_start_datetime = $event->eventmetas['session_start'];
-				$session_end_datetime   = $event->eventmetas['session_end'];
+				$session_start_datetime = $event->get_meta_val( 'session_start' );
+				$session_end_datetime   = $event->get_meta_val( 'session_end' );
 
 				// Get the duration in seconds.
 				$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
@@ -239,9 +225,9 @@ class Users {
 					$continuing = true;
 
 					// Update the session_end time and duration.
-					$event->eventmetas['session_end'] = $now;
+					$event->set_meta_val( 'session_end', $now );
 					// This could be calculated, but for now we'll just record the string.
-					$event->eventmetas['session_duration'] = DateTimes::get_duration_string( $session_start_datetime, $now );
+					$event->set_meta_val( 'session_duration', DateTimes::get_duration_string( $session_start_datetime, $now ) );
 
 					// Update the event meta data.
 					Event_Repository::save_eventmetas( $event );
@@ -252,19 +238,15 @@ class Users {
 		// If we're not continuing an existing session, record the start of a new one.
 		if ( ! $continuing ) {
 
-			// Create the array of metadata.
-			$eventmetas = array(
-				'session_start'    => $now,
-				'session_end'      => $now,
-				'session_duration' => '0 minutes',
-			);
+			// Create the array of eventmetas.
+			$eventmetas = array();
+			Eventmeta::add_to_array( $eventmetas, 'session_start', $now );
+			Eventmeta::add_to_array( $eventmetas, 'session_end', $now );
+			Eventmeta::add_to_array( $eventmetas, 'session_duration', '0 minutes' );
 
 			// Log the event.
 			Logger::log_event( $event_type, null, null, null, $eventmetas );
 		}
-
-		// Note that activity tracking is no longer in progress.
-		unset( $_SESSION['wp_logify_activity_tracking_in_progress'] );
 	}
 
 	// =============================================================================================
@@ -550,8 +532,8 @@ class Users {
 			$event = Event_Repository::load( $record['event_id'] );
 
 			// Return the session_end datetime if set.
-			if ( ! empty( $event->eventmetas['session_end'] ) ) {
-				return $event->eventmetas['session_end'];
+			if ( $event->has_meta( 'session_end' ) ) {
+				return $event->get_meta_val( 'session_end' );
 			}
 		}
 

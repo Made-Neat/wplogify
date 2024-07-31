@@ -311,7 +311,7 @@ class Event {
 	 * @return bool True if the eventmeta exists, false otherwise.
 	 */
 	public function has_meta( string $meta_key ) {
-		return key_exists( $meta_key, $this->eventmetas );
+		return isset( $this->eventmetas ) && key_exists( $meta_key, $this->eventmetas );
 	}
 
 	/**
@@ -331,23 +331,23 @@ class Event {
 	 * @return mixed The eventmeta value or null if not set.
 	 */
 	public function get_meta_val( string $meta_key ): mixed {
-		$meta = $this->get_meta( $meta_key );
-		return $meta ? $meta->meta_value : null;
+		$eventmeta = $this->get_meta( $meta_key );
+		return $eventmeta ? $eventmeta->meta_value : null;
 	}
 
 	/**
 	 * Set an eventmeta.
 	 *
-	 * @param Eventmeta $meta The eventmeta.
+	 * @param Eventmeta $eventmeta The eventmeta.
 	 */
-	public function set_meta( Eventmeta $meta ) {
+	public function set_meta( Eventmeta $eventmeta ) {
 		// Create the eventmeta array if necessary.
 		if ( ! isset( $this->eventmetas ) ) {
 			$this->eventmetas = array();
 		}
 
 		// Set the meta value.
-		$this->eventmetas[ $meta->meta_key ] = $meta;
+		$this->eventmetas[ $eventmeta->meta_key ] = $eventmeta;
 	}
 
 	/**
@@ -356,8 +356,8 @@ class Event {
 	 * @param array $metas The eventmetas to set.
 	 */
 	public function set_metas( array $metas ) {
-		foreach ( $metas as $meta ) {
-			$this->set_meta( $meta );
+		foreach ( $metas as $eventmeta ) {
+			$this->set_meta( $eventmeta );
 		}
 	}
 
