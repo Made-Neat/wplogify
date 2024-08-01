@@ -81,6 +81,7 @@ class Posts {
 		if ( $update ) {
 			return;
 		}
+		debug( 'on_save_post' );
 
 		// Get the core properties. No need to store all, just want to display some to the user.
 		$properties = self::get_core_properties( $post );
@@ -126,6 +127,7 @@ class Posts {
 	 * @param array $data    The data for the post.
 	 */
 	public static function on_pre_post_update( int $post_id, array $data, ) {
+		debug( 'on_pre_post_update' );
 		global $wpdb;
 
 		// Record the current last modified date.
@@ -133,13 +135,15 @@ class Posts {
 	}
 
 	/**
-	 * Track post update.
+	 * Track post update. This handler allows us to capture changed properties before the
+	 * save_post handler is called, as that hook doesn't provide us with the before state.
 	 *
 	 * @param int     $post_id      Post ID.
 	 * @param WP_Post $post_after   Post object following the update.
 	 * @param WP_Post $post_before  Post object before the update.
 	 */
 	public static function on_post_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
+		debug( 'on_post_updated' );
 		global $wpdb;
 
 		// Add changes.
@@ -173,6 +177,7 @@ class Posts {
 	 * @param mixed  $meta_value The new value of the meta data.
 	 */
 	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
+		debug( 'on_update_post_meta' );
 		global $wpdb;
 
 		// Get the current value.
@@ -201,56 +206,23 @@ class Posts {
 			return;
 		}
 
-		// Get the event type verb.
-		if ( $old_status === 'trash' ) {
-			$event_type_verb = 'Restored';
-		} else {
-			// Generate the event type verb from the new status.
-			switch ( $new_status ) {
-				case 'publish':
-					$event_type_verb = 'Published';
-					break;
-				case 'draft':
-					$event_type_verb = 'Drafted';
-					break;
-				case 'pending':
-					$event_type_verb = 'Pending';
-					break;
-				case 'private':
-					$event_type_verb = 'Privatized';
-					break;
-				case 'trash':
-					$event_type_verb = 'Trashed';
-					break;
-				case 'auto-draft':
-					$event_type_verb = 'Auto-drafted';
-					break;
-				case 'inherit':
-					$event_type_verb = 'Inherited';
-					break;
-				case 'future':
-					$event_type_verb = 'Scheduled';
-					break;
-				case 'request-pending':
-					$event_type_verb = 'Request Pending';
-					break;
-				case 'request-confirmed':
-					$event_type_verb = 'Request Confirmed';
-					break;
-				case 'request-failed':
-					$event_type_verb = 'Request Failed';
-					break;
-				case 'request-completed':
-					$event_type_verb = 'Request Completed';
-					break;
-				default:
-					$event_type_verb = 'Status Changed';
-					break;
-			}
+		// This event is triggered even when the status hasn't change, but we only need to log an
+		// event if the status has changed.
+		if ( $new_status === $old_status ) {
+			return;
 		}
 
+		// Some status changes we don't care about.
+		if ( in_array( $new_status, array( 'auto-draft', 'inherit' ), true ) ) {
+			return;
+		}
+
+		debug( 'on_transition_post_status' );
+
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' ' . $event_type_verb;
+		$post_type       = self::get_post_type_singular_name( $post->post_type );
+		$event_type_verb = self::get_status_transition_verb( $old_status, $new_status );
+		$event_type      = "$post_type $event_type_verb";
 
 		// Get the post's properties.
 		$properties = self::get_core_properties( $post );
@@ -263,7 +235,7 @@ class Posts {
 		if ( $new_status === 'future' ) {
 			$scheduled_publish_datetime = DateTimes::create_datetime( $post->post_date );
 			$eventmetas                 = array();
-			Eventmeta::add_to_array( $eventmetas, 'when_to_publish', $scheduled_publish_datetime );
+			Eventmeta::update_array( $eventmetas, 'when_to_publish', $scheduled_publish_datetime );
 		} else {
 			$eventmetas = null;
 		}
@@ -283,6 +255,8 @@ class Posts {
 		if ( wp_is_post_revision( $post ) ) {
 			return;
 		}
+
+		debug( 'on_before_delete_post' );
 
 		// Get the attached terms.
 		$attached_terms = self::get_attached_terms( $post_id );
@@ -304,7 +278,7 @@ class Posts {
 
 			// Create and add the event meta.
 			$meta_key = 'attached_' . strtolower( $taxonomy_obj->labels->name );
-			Eventmeta::add_to_array( self::$eventmetas, $meta_key, $term_refs );
+			Eventmeta::update_array( self::$eventmetas, $meta_key, $term_refs );
 		}
 	}
 
@@ -321,6 +295,8 @@ class Posts {
 		if ( wp_is_post_revision( $post ) ) {
 			return;
 		}
+
+		debug( 'on_delete_post' );
 
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
@@ -350,6 +326,8 @@ class Posts {
 			return;
 		}
 
+		debug( 'on_added_term_relationship' );
+
 		// Get the term.
 		$term = Terms::get_by_term_taxonomy_id( $tt_id );
 
@@ -374,6 +352,8 @@ class Posts {
 			return;
 		}
 
+		debug( 'on_wp_after_insert_post' );
+
 		// Log the addition of any taxonomy terms.
 		if ( self::$terms_added ) {
 			// Loop through the taxonomies and create a single log entry for each.
@@ -381,21 +361,14 @@ class Posts {
 				// Get the post's core properties.
 				$properties = self::get_core_properties( $post );
 
-				// Get the taxonomy object.
-				$taxonomy_obj = get_taxonomy( $taxonomy );
-
-				// Get the singular or plural name, as needed.
-				if ( count( $term_refs ) === 1 ) {
-					$taxonomy_name = $taxonomy_obj->labels->singular_name;
-				} else {
-					$taxonomy_name = $taxonomy_obj->labels->name;
-				}
+				// Get the taxonomy object and name.
+				$taxonomy_obj  = get_taxonomy( $taxonomy );
+				$taxonomy_name = $taxonomy_obj->labels->name;
 
 				// Show the removed term or terms in the eventmetas.
 				$eventmetas = array();
 				$meta_key   = 'added_' . strtolower( $taxonomy_name );
-				$meta_value = count( $term_refs ) === 1 ? $term_refs[0] : $term_refs;
-				Eventmeta::add_to_array( $eventmetas, $meta_key, $meta_value );
+				Eventmeta::update_array( $eventmetas, $meta_key, $term_refs );
 
 				// Get the event type.
 				$post_type_name = self::get_post_type_singular_name( $post->post_type );
@@ -415,21 +388,17 @@ class Posts {
 	 * @param string $taxonomy The taxonomy slug.
 	 */
 	public static function on_deleted_term_relationships( int $post_id, array $tt_ids, string $taxonomy ) {
+		debug( 'on_deleted_term_relationships' );
+
 		// Load the post.
 		$post = self::get_post( $post_id );
 
 		// Get the post's core properties.
 		$properties = self::get_core_properties( $post );
 
-		// Get the taxonomy object.
-		$taxonomy_obj = get_taxonomy( $taxonomy );
-
-		// Get the singular or plural name, as needed.
-		if ( count( $tt_ids ) === 1 ) {
-			$taxonomy_name = $taxonomy_obj->labels->singular_name;
-		} else {
-			$taxonomy_name = $taxonomy_obj->labels->name;
-		}
+		// Get the taxonomy object and name.
+		$taxonomy_obj  = get_taxonomy( $taxonomy );
+		$taxonomy_name = $taxonomy_obj->labels->name;
 
 		// Convert the term_taxonomy IDs to Object_Reference objects.
 		$term_refs = array();
@@ -441,8 +410,7 @@ class Posts {
 		// Show the removed term or terms in the eventmetas.
 		$eventmetas = array();
 		$meta_key   = 'removed_' . strtolower( $taxonomy_name );
-		$meta_value = count( $term_refs ) === 1 ? $term_refs[0] : $term_refs;
-		Eventmeta::add_to_array( $eventmetas, $meta_key, $meta_value );
+		Eventmeta::update_array( $eventmetas, $meta_key, $term_refs );
 
 		// Get the event type.
 		$post_type_name = self::get_post_type_singular_name( $post->post_type );
@@ -452,7 +420,7 @@ class Posts {
 		Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $eventmetas, $properties );
 	}
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Get post information.
 
 	/**
@@ -796,5 +764,61 @@ class Posts {
 		}
 
 		return $term_refs;
+	}
+
+	/**
+	 * Get the verb for a post status transition.
+	 *
+	 * @param string $old_status The old post status.
+	 * @param string $new_status The new post status.
+	 * @return string The verb for the status transition.
+	 */
+	private static function get_status_transition_verb( string $old_status, string $new_status ) {
+		// If transitioning out of trash, use a special verb.
+		if ( $old_status === 'trash' ) {
+			return 'Restored';
+		}
+
+		// Generate the event type verb from the new status.
+		switch ( $new_status ) {
+			case 'publish':
+				return 'Published';
+
+			case 'draft':
+				return 'Drafted';
+
+			case 'pending':
+				return 'Pending';
+
+			case 'private':
+				return 'Privatized';
+
+			case 'trash':
+				return 'Trashed';
+
+			case 'auto-draft':
+				return 'Auto-drafted';
+
+			case 'inherit':
+				return 'Inherited';
+
+			case 'future':
+				return 'Scheduled';
+
+			case 'request-pending':
+				return 'Request Pending';
+
+			case 'request-confirmed':
+				return 'Request Confirmed';
+
+			case 'request-failed':
+				return 'Request Failed';
+
+			case 'request-completed':
+				return 'Request Completed';
+
+			default:
+				return 'Status Changed';
+		}
 	}
 }

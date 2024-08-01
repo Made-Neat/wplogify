@@ -25,13 +25,13 @@ class Logger {
 	/**
 	 * Logs an event to the database.
 	 *
-	 * @param string          $event_type  The type of event.
-	 * @param ?string         $object_type The type of obejct, e.g. 'post', 'user', 'term'.
-	 * @param null|int|string $object_id   The object's identifier (int or string) or null if N/A.
-	 * @param ?string         $object_name The name of the object (in case it gets deleted).
-	 * @param ?array          $eventmetas  The event metadata.
-	 * @param ?array          $properties  The event properties.
-	 *
+	 * @param string           $event_type  The type of event.
+	 * @param ?string          $object_type The type of obejct, e.g. 'post', 'user', 'term'.
+	 * @param null|int|string  $object_id   The object's identifier (int or string) or null if N/A.
+	 * @param ?string          $object_name The name of the object (in case it gets deleted).
+	 * @param ?array           $eventmetas  The event metadata.
+	 * @param ?array           $properties  The event properties.
+	 * @param null|WP_User|int $current_user The user who performed the action (object or ID) or null to use the curernt user.
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function log_event(
@@ -41,18 +41,17 @@ class Logger {
 		?string $object_name = null,
 		?array $eventmetas = null,
 		?array $properties = null,
+		null|WP_User|int $current_user = null
 	) {
-		// Get the current user.
-		$current_user = wp_get_current_user();
-
-		// If the current user could not be loaded, this may be a login or logout event.
-		// In such cases, we should be able to get the user from the object information.
-		if ( empty( $current_user->ID ) && $object_type === 'user' ) {
-			$current_user = get_userdata( $object_id );
+		// If the acting user isn't specifid, use the current user.
+		if ( $current_user === null ) {
+			$current_user = wp_get_current_user();
+		} elseif ( is_int( $current_user ) ) {
+			// If only the user ID for the acting user is specified, load the user object.
+			$current_user = get_userdata( $current_user );
 		}
 
-		// If we still don't have a known user (i.e. it's an anonymous user), we don't need to log
-		// the event.
+		// If we don't have a user (i.e. they're anonymous), we don't need to log the event.
 		if ( empty( $current_user->ID ) ) {
 			return;
 		}

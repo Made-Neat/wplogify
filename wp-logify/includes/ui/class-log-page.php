@@ -220,43 +220,57 @@ class Log_Page {
 			return '';
 		}
 
-		// User tag.
-		$user_tag = Users::get_tag( $event->user_id, $event->user_name );
-
-		// User email.
-		$user       = Users::get_user( $event->user_id );
-		$user_email = empty( $user->user_email ) ? 'Unknown' : esc_html( $user->user_email );
-
-		// Role.
-		$user_role = esc_html( ucwords( $event->user_role ) );
-
-		// Get the last login datetime.
-		$last_login_datetime        = Users::get_last_login_datetime( $event->user_id );
-		$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime ) : 'Unknown';
-
-		// Get the last active datetime.
-		$last_active_datetime        = Users::get_last_active_datetime( $event->user_id );
-		$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime ) : 'Unknown';
-
-		// User location.
-		$user_location = empty( $event->user_location ) ? 'Unknown' : esc_html( $event->user_location );
-
-		// User agent.
-		$user_agent = empty( $event->user_agent ) ? 'Unknown' : esc_html( $event->user_agent );
-
 		// Construct the HTML.
 		$html  = "<div class='wp-logify-details-section wp-logify-user-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
 		$html .= "<table class='wp-logify-details-table wp-logify-user-details-table'>\n";
-		$html .= "<tr><th>User</th><td>$user_tag</td></tr>\n";
-		$html .= '<tr><th>Email</th><td>' . Users::get_email_link( $user_email ) . "</a></td></tr>\n";
-		$html .= "<tr><th>Role</th><td>$user_role</td></tr>\n";
+
+		// User tag.
+		$user_tag = Users::get_tag( $event->user_id, $event->user_name );
+		$html    .= "<tr><th>User</th><td>$user_tag</td></tr>\n";
+
+		// Role.
+		$user_role = esc_html( ucwords( $event->user_role ) );
+		$html     .= "<tr><th>Role</th><td>$user_role</td></tr>\n";
+
+		// User ID.
 		$html .= "<tr><th>ID</th><td>$event->user_id</td></tr>";
+
+		// IP address.
 		$html .= '<tr><th>IP address</th><td>' . ( $event->user_ip ?? 'Unknown' ) . "</td></tr>\n";
-		$html .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>\n";
-		$html .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>\n";
-		$html .= "<tr><th>Location</th><td>$user_location</td></tr>\n";
-		$html .= "<tr><th>User agent</th><td>$user_agent</td></tr>\n";
+
+		// User location.
+		$user_location = empty( $event->user_location ) ? 'Unknown' : esc_html( $event->user_location );
+		$html         .= "<tr><th>Location</th><td>$user_location</td></tr>\n";
+
+		// User agent.
+		$user_agent = empty( $event->user_agent ) ? 'Unknown' : esc_html( $event->user_agent );
+		$html      .= "<tr><th>User agent</th><td>$user_agent</td></tr>\n";
+
+		// If the user has been deleted, we won't have all their details. Although, we could
+		// try looking up the log entry for when the user was deleted, and see if we can
+		// get their details from there.
+
+		// Get some extra details if the user has not been deleted.
+		if ( Users::user_exists( $event->user_id ) ) {
+			// Load the user.
+			$user = Users::get_user( $event->user_id );
+
+			// User email.
+			$user_email = empty( $user->user_email ) ? 'Unknown' : esc_html( $user->user_email );
+			$html      .= '<tr><th>Email</th><td>' . Users::get_email_link( $user_email ) . "</a></td></tr>\n";
+
+			// Get the last login datetime.
+			$last_login_datetime        = Users::get_last_login_datetime( $event->user_id );
+			$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime ) : 'Unknown';
+			$html                      .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>\n";
+
+			// Get the last active datetime.
+			$last_active_datetime        = Users::get_last_active_datetime( $event->user_id );
+			$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime ) : 'Unknown';
+			$html                       .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>\n";
+		}
+
 		$html .= "</table>\n";
 		$html .= "</div>\n";
 
@@ -326,33 +340,60 @@ class Log_Page {
 
 		// Property rows.
 		foreach ( $event->properties as $prop ) {
-			// No point in displaying session tokens.
-			if ( $prop->key === 'session_tokens' ) {
+			// Some info we don't care about. Maybe we shouldn't even store these.
+			if ( $prop->key === 'session_tokens' || $prop->key === 'wp_user_level' ) {
 				continue;
 			}
 
 			// Start row.
 			$html .= '<tr>';
 
-			// Property name.
-			$html .= '<th>' . Types::make_key_readable( $prop->key ) . '</th>';
+			// Property key.
+			if ( $prop->key === 'wp_capabilities' ) {
+				$key = 'Roles';
 
-			// Old or current value.
-			if ( $prop->key === 'post_content' ) {
-				// For post_content, show link to compare revisions.
-				$revision_id = $prop->val instanceof Object_Reference
-					? $prop->val->id
-					: ( is_int( $prop->val ) ? $prop->val : null );
-				$tag         = Posts::get_revision_tag( $revision_id );
+				// Get the current or old roles.
+				$roles = array();
+				if ( ! empty( $prop->val ) ) {
+					foreach ( $prop->val as $role => $enabled ) {
+						if ( $enabled ) {
+							$roles[] = ucfirst( $role );
+						}
+					}
+				}
+
+				// Get the new roles.
+				$new_roles = array();
+				if ( ! empty( $prop->new_val ) ) {
+					foreach ( $prop->new_val as $role => $enabled ) {
+						if ( $enabled ) {
+							$new_roles[] = ucfirst( $role );
+						}
+					}
+				}
 			} else {
-				$tag = Types::value_to_html( $prop->key, $prop->val );
+				$key = Types::make_key_readable( $prop->key );
 			}
+			$html .= "<th>$key</th>";
 
-			$html .= "<td>$tag</td>";
+			// Current or old value.
+			if ( $prop->key === 'wp_capabilities' ) {
+				// Show the role(s) without the booleans.
+				$val = Types::value_to_html( $key, $roles );
+			} else {
+				// Default.
+				$val = Types::value_to_html( $prop->key, $prop->val );
+			}
+			$html .= "<td>$val</td>";
 
 			// New value.
 			if ( $show_new_vals ) {
-				$html .= '<td>' . Types::value_to_html( $prop->key, $prop->new_val ) . '</td>';
+				if ( $prop->key === 'wp_capabilities' ) {
+					$new_val = Types::value_to_html( $key, $new_roles );
+				} else {
+					$new_val = Types::value_to_html( $prop->key, $prop->new_val );
+				}
+				$html .= "<td>$new_val</td>";
 			}
 
 			// End row.

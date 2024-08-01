@@ -68,7 +68,7 @@ class Users {
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
 	public static function on_wp_login( string $user_login, WP_User $user ) {
-		Logger::log_event( 'User Login', 'user', $user->ID, self::get_name( $user ) );
+		Logger::log_event( 'User Login', 'user', $user->ID, self::get_name( $user ), current_user: $user );
 	}
 
 	/**
@@ -77,7 +77,7 @@ class Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function on_wp_logout( int $user_id ) {
-		Logger::log_event( 'User Logout', 'user', $user_id, self::get_name( $user_id ) );
+		Logger::log_event( 'User Logout', 'user', $user_id, self::get_name( $user_id ), current_user: $user_id );
 	}
 
 	/**
@@ -102,23 +102,45 @@ class Users {
 	 * @param WP_User $user     The WP_User object of the user that was deleted.
 	 */
 	public static function on_delete_user( int $user_id, ?int $reassign, WP_User $user ) {
+		global $wpdb;
+
 		// Get the user's properties.
 		$properties = self::get_properties( $user );
 
-		// Prepare to set some eventmetas.
+		// Prepare to collect eventmetas.
 		$eventmetas = array();
-
-		// Get the posts created by this user.
-		$posts     = get_posts( array( 'author' => $user->ID ) );
-		$post_refs = array_map( fn( $post ) => new Object_Reference( 'post', $post->ID, $post->post_title ), $posts );
-		Eventmeta::add_to_array( $eventmetas, 'posts', $post_refs );
-
-		// TODO Get the comments created by this user.
 
 		// If the user's data is being reassigned, record that information in the eventmetas.
 		if ( $reassign ) {
-			Eventmeta::add_to_array( $eventmetas, 'content_reassigned_to', new Object_Reference( 'user', $reassign ) );
+			Eventmeta::update_array( $eventmetas, 'content_reassigned_to', new Object_Reference( 'user', $reassign ) );
 		}
+
+		// Get the posts created by this user.
+		$sql_posts = $wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id );
+		$post_ids  = $wpdb->get_col( $sql_posts );
+		$post_refs = array_map(
+			fn ( $post_id ) =>new Object_Reference( 'post', $post_id, Posts::get_post( $post_id )->post_title ),
+			$post_ids
+		);
+		Eventmeta::update_array( $eventmetas, 'posts', $post_refs );
+
+		// Get the comments created by this user.
+		$sql_comments = $wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_author = %d', $wpdb->comments, $user_id );
+		$comment_ids  = $wpdb->get_col( $sql_comments );
+		// $comment_refs = array_map(
+		// fn ( $comment_id ) =>new Object_Reference( 'comment', $comment_id, Posts::get_comment( $comment_id )->comment_title ),
+		// $comment_ids
+		// );
+		Eventmeta::update_array( $eventmetas, 'comments', $comment_ids );
+
+		// Get the links owned by this user.
+		$sql_links = $wpdb->prepare( 'SELECT link_id FROM %i WHERE link_owner = %d', $wpdb->links, $user_id );
+		$link_ids  = $wpdb->get_col( $sql_links );
+		// $link_refs = array_map(
+		// fn ( $link_id ) =>new Object_Reference( 'link', $link_id, Posts::get_link( $link_id )->link_title ),
+		// $link_ids
+		// );
+		Eventmeta::update_array( $eventmetas, 'links', $link_ids );
 
 		// Log the event.
 		Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $eventmetas, $properties );
@@ -134,6 +156,11 @@ class Users {
 	public static function on_profile_update( int $user_id, WP_User $old_user_data, array $userdata ) {
 		global $wpdb;
 
+		// Initialise the properties array to the user's core properties if it's empty.
+		if ( empty( self::$properties ) ) {
+			self::$properties = self::get_core_properties( $user_id );
+		}
+
 		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
 
@@ -143,16 +170,14 @@ class Users {
 
 			// If the value has changed, add the before and after values to the changes array.
 			if ( ! Types::are_equal( $val, $new_val ) ) {
-				if ( ! key_exists( $key, self::$properties ) ) {
-					self::$properties[ $key ] = new Property( $key, $wpdb->users );
-				}
-				self::$properties[ $key ]->val     = $val;
-				self::$properties[ $key ]->new_val = $new_val;
+				Property::update_array( self::$properties, $key, $wpdb->users, $val, $new_val );
 			}
 		}
 
-		// Log the event.
-		Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, self::$properties );
+		// Log the event if there were any changes.
+		if ( self::$properties ) {
+			Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, self::$properties );
+		}
 	}
 
 	/**
@@ -166,6 +191,11 @@ class Users {
 	public static function on_update_user_meta( int $meta_id, int $user_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
 
+		// Initialise the properties array to the user's core properties if it's empty.
+		if ( empty( self::$properties ) ) {
+			self::$properties = self::get_core_properties( $user_id );
+		}
+
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
@@ -175,11 +205,7 @@ class Users {
 
 		// If the value has changed, add the before and after values to the changes array.
 		if ( ! Types::are_equal( $val, $new_val ) ) {
-			if ( ! key_exists( $meta_key, self::$properties ) ) {
-				self::$properties[ $meta_key ] = new Property( $meta_key, $wpdb->usermeta );
-			}
-			self::$properties[ $meta_key ]->val     = $val;
-			self::$properties[ $meta_key ]->new_val = $new_val;
+			Property::update_array( self::$properties, $meta_key, $wpdb->usermeta, $val, $new_val );
 		}
 	}
 
@@ -188,6 +214,13 @@ class Users {
 	 */
 	public static function on_wp_loaded() {
 		global $wpdb;
+
+		// Ignore AJAX requests, as it's likely WP doing something and not the user.
+		// The user has probably just left the web page open in the browser while they do something
+		// else.
+		if ( wp_doing_ajax() ) {
+			return;
+		}
 
 		// Prepare some values.
 		$user_id    = get_current_user_id();
@@ -240,9 +273,9 @@ class Users {
 
 			// Create the array of eventmetas.
 			$eventmetas = array();
-			Eventmeta::add_to_array( $eventmetas, 'session_start', $now );
-			Eventmeta::add_to_array( $eventmetas, 'session_end', $now );
-			Eventmeta::add_to_array( $eventmetas, 'session_duration', '0 minutes' );
+			Eventmeta::update_array( $eventmetas, 'session_start', $now );
+			Eventmeta::update_array( $eventmetas, 'session_end', $now );
+			Eventmeta::update_array( $eventmetas, 'session_duration', '0 minutes' );
 
 			// Log the event.
 			Logger::log_event( $event_type, null, null, null, $eventmetas );

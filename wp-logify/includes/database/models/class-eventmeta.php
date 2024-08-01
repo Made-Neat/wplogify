@@ -54,13 +54,18 @@ class Eventmeta {
 	}
 
 	/**
-	 * Add a new eventmeta to an array of eventmetas.
+	 * Add a new eventmeta to an array of eventmetas, or update an existing one, as needed.
 	 *
 	 * @param array  $eventmetas The array of eventmetas to update.
 	 * @param string $meta_key The meta key.
 	 * @param mixed  $meta_value The meta value.
 	 */
-	public static function add_to_array( array &$eventmetas, string $meta_key, mixed $meta_value ) {
-		$eventmetas[ $meta_key ] = new Eventmeta( null, $meta_key, $meta_value );
+	public static function update_array( array &$eventmetas, string $meta_key, mixed $meta_value ) {
+		if ( ! key_exists( $meta_key, $eventmetas ) ) {
+			$eventmetas[ $meta_key ] = new Eventmeta( null, $meta_key, $meta_value );
+		} else {
+			$eventmetas[ $meta_key ]->meta_value = $meta_value;
+		}
+		return $eventmetas;
 	}
 }
