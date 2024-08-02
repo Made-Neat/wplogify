@@ -34,6 +34,17 @@ class Users {
 	private static $eventmetas = array();
 
 	/**
+	 * The maximum break period in seconds. If there has been no activity for this period, we'll
+	 * assume the user has left the site and is starting a new session when they return.
+	 *
+	 * @var int
+	 */
+	private const MAX_BREAK_PERIOD = 1200; // 20 minutes
+
+	// =============================================================================================
+	// Hooks.
+
+	/**
 	 * Initializes the class by adding WordPress actions.
 	 */
 	public static function init() {
@@ -59,8 +70,8 @@ class Users {
 		add_action( 'update_user_meta', array( __CLASS__, 'on_update_user_meta' ), 10, 4 );
 	}
 
-	// ---------------------------------------------------------------------------------------------
-	// Tracking methods.
+	// =============================================================================================
+	// Event handlers.
 
 	/**  * Track user login.
 	 *
@@ -119,7 +130,7 @@ class Users {
 		$sql_posts = $wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id );
 		$post_ids  = $wpdb->get_col( $sql_posts );
 		$post_refs = array_map(
-			fn ( $post_id ) =>new Object_Reference( 'post', $post_id, Posts::get_post( $post_id )->post_title ),
+			fn ( $post_id ) =>new Object_Reference( 'post', $post_id, Posts::load( $post_id )->post_title ),
 			$post_ids
 		);
 		Eventmeta::update_array( $eventmetas, 'posts', $post_refs );
@@ -254,7 +265,7 @@ class Users {
 				// If the current value for session_end time is less than 10 minutes ago, we'll
 				// assume the current session is continuing, and update the session_end time in the
 				// existing log entry to now.
-				if ( $seconds_diff <= 600 ) {
+				if ( $seconds_diff <= self::MAX_BREAK_PERIOD ) {
 					$continuing = true;
 
 					// Update the session_end time and duration.
@@ -283,7 +294,7 @@ class Users {
 	}
 
 	// =============================================================================================
-	// Methods for getting user information.
+	// Methods for getting information about users.
 
 	/**
 	 * Check if a user exists.
@@ -305,7 +316,7 @@ class Users {
 	 * @return WP_User The user object.
 	 * @throws Exception If the user could not be loaded.
 	 */
-	public static function get_user( int $user_id ): WP_User {
+	public static function load( int $user_id ): WP_User {
 		$user = get_userdata( $user_id );
 
 		if ( ! $user ) {
@@ -326,7 +337,7 @@ class Users {
 
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			$user = self::get_user( $user );
+			$user = self::load( $user );
 		}
 
 		// Define the core properties by key.
@@ -370,7 +381,7 @@ class Users {
 
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			$user = self::get_user( $user );
+			$user = self::load( $user );
 		}
 
 		// Start building the properties array.
@@ -422,7 +433,7 @@ class Users {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			try {
-				$user = self::get_user( $user );
+				$user = self::load( $user );
 			} catch ( Exception ) {
 				return 'Unknown';
 			}
@@ -522,7 +533,7 @@ class Users {
 
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			$user = self::get_user( $user );
+			$user = self::load( $user );
 		}
 
 		// Get the last login datetime from the wp_logify_events table.
@@ -547,7 +558,7 @@ class Users {
 
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			$user = self::get_user( $user );
+			$user = self::load( $user );
 		}
 
 		// Get the most recent session_end datetime from the wp_logify_events table.
@@ -593,7 +604,7 @@ class Users {
 	public static function get_edit_link( WP_User|int $user ) {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			$user = self::get_user( $user );
+			$user = self::load( $user );
 		}
 
 		// Get the URL for the user's edit page.
@@ -633,7 +644,7 @@ class Users {
 	public static function get_email_link( WP_User|int|string $user ) {
 		// Get the email address.
 		if ( is_int( $user ) ) {
-			$user_email = self::get_user( $user )->user_email;
+			$user_email = self::load( $user )->user_email;
 		} elseif ( $user instanceof WP_User ) {
 			$user_email = $user->user_email;
 		} else {
@@ -652,7 +663,7 @@ class Users {
 	public static function get_posts_by_user( WP_User|int $user ): array {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			$user = self::get_user( $user );
+			$user = self::load( $user );
 		}
 
 		// Fetch all posts by the user.
@@ -676,8 +687,7 @@ class Users {
 		return $object_references;
 	}
 
-
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Permission-related methods.
 
 	/**

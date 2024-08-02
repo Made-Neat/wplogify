@@ -254,7 +254,7 @@ class Log_Page {
 		// Get some extra details if the user has not been deleted.
 		if ( Users::user_exists( $event->user_id ) ) {
 			// Load the user.
-			$user = Users::get_user( $event->user_id );
+			$user = Users::load( $event->user_id );
 
 			// User email.
 			$user_email = empty( $user->user_email ) ? 'Unknown' : esc_html( $user->user_email );

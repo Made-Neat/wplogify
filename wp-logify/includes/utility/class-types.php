@@ -278,7 +278,7 @@ class Types {
 
 		// Convert acronyms to uppercase.
 		foreach ( $words as $i => $word ) {
-			if ( in_array( $word, array( 'guid', 'id', 'ip', 'rss', 'ssl', 'url', 'wp' ), true ) ) {
+			if ( in_array( $word, array( 'guid', 'id', 'ip', 'rss', 'ssl', 'uri', 'url', 'wp' ), true ) ) {
 				$words[ $i ] = strtoupper( $word );
 			}
 		}

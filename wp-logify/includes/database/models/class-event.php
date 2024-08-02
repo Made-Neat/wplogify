@@ -86,17 +86,21 @@ class Event {
 	public ?string $object_type;
 
 	/**
-	 * The ID of the object associated with the event. This will be an integer matching a database
-	 * primary key in the case of a post, user, term, etc., but could be a string in the case of a
-	 * theme or plugin. The value is stored in the database as a nullable string.
+	 * The ID of the object associated with the event.
 	 *
-	 * @var null|int|string
+	 * This will be an integer matching a database primary key in the case of a post, user, term,
+	 * etc., but will be null in the case of a theme or plugin, which are identified by their names.
+	 *
+	 * @var ?int
 	 */
-	public null|int|string $object_id;
+	public ?int $object_id;
 
 	/**
-	 * The name of the object associated with the event. This is only used when the object has been
-	 * deleted.
+	 * The name of the object associated with the event.
+	 *
+	 * For a theme or plugin, this serves as the unique identifier for the object.
+	 * For other objects, this is the name of the object at the time of the event and will only be
+	 * used if the object has been deleted.
 	 *
 	 * @var ?string
 	 */
@@ -148,8 +152,8 @@ class Event {
 			return $this->object_ref;
 		}
 
-		// Handle the null case.
-		if ( $this->object_type === null || $this->object_id === null ) {
+		// Handle the case where the event has no object.
+		if ( $this->object_type === null ) {
 			return null;
 		}
 

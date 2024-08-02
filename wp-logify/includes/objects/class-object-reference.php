@@ -24,14 +24,16 @@ class Object_Reference {
 	/**
 	 * The ID of the object.
 	 *
-	 * @var int
+	 * This will be null for objects identified by their name, e.g. plugins and themes.
+	 *
+	 * @var ?int
 	 */
-	public int $id;
+	public ?int $id;
 
 	/**
 	 * The name of the object.
 	 *
-	 * @var string
+	 * @var ?string
 	 */
 	public string $name;
 
@@ -48,13 +50,14 @@ class Object_Reference {
 	 * Constructor.
 	 *
 	 * @param string           $type The type of the object.
-	 * @param int|string       $id The ID of the object, which could be an integer or a string.
-	 * @param null|string|bool $name The name of the object, or a bool to specify setting it automatically from the object.
-	 *                                    - If a string, the name will be assigned this value.
-	 *                                    - If true, the name will be extracted from the existing object.
-	 *                                    - If false or null, the name won't be set.
+	 * @param ?int             $id The ID of the object.
+	 * @param null|string|true $name The name of the object, or a bool to specify setting it
+	 *                               automatically from the object.
+	 *                               - If a string, the name will be assigned this value.
+	 *                               - If true, the name will be extracted from the existing object.
+	 *                               - If null, the name won't be set.
 	 */
-	public function __construct( string $type, int|string $id, null|string|bool $name = true ) {
+	public function __construct( string $type, ?int $id, null|string|true $name = true ) {
 		// Set the object type.
 		$this->type = $type;
 
@@ -63,7 +66,7 @@ class Object_Reference {
 
 		if ( is_string( $name ) ) {
 			$this->name = $name;
-		} elseif ( $name === true ) {
+		} elseif ( $name ) {
 			$this->name = $this->get_name();
 		}
 	}
@@ -90,15 +93,19 @@ class Object_Reference {
 		switch ( $this->type ) {
 			case 'post':
 			case 'revision':
-				$this->object = Posts::get_post( $this->id );
+				$this->object = Posts::load( $this->id );
 				return;
 
 			case 'user':
-				$this->object = Users::get_user( $this->id );
+				$this->object = Users::load( $this->id );
 				return;
 
 			case 'term':
-				$this->object = Terms::get_term( $this->id );
+				$this->object = Terms::load( $this->id );
+				return;
+
+			case 'plugin':
+				$this->object = Plugins::load( $this->name );
 				return;
 
 			default:
@@ -112,10 +119,12 @@ class Object_Reference {
 	 * @return mixed The object.
 	 */
 	public function get_object() {
+		// If the object hasn't been loaded yet, load it.
 		if ( ! isset( $this->object ) ) {
 			$this->load();
 		}
 
+		// Return the object.
 		return $this->object;
 	}
 
@@ -137,6 +146,12 @@ class Object_Reference {
 			case 'term':
 				return $this->get_object()->name;
 
+			case 'plugin':
+				return $this->name;
+
+			case 'theme':
+				return $this->name;
+
 			default:
 				throw new Exception( 'Unknown object type.' );
 		}
@@ -149,15 +164,6 @@ class Object_Reference {
 	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
 	public function get_tag() {
-		// Check for non-empty object type and ID.
-		if ( empty( $this->type ) || empty( $this->id ) ) {
-			throw new Exception( 'The object type and ID must both be set to generate a tag.' );
-		}
-
-		// Construct string to use in place of a link to the object if it's been deleted.
-		// This is only here temporarily until I write the get_tag() methods for the Comments, Themes, and Plugins classes.
-		$deleted_string = ( empty( $this->name ) ? ( ucfirst( $this->type ) . ' ' . $this->id ) : $this->name ) . ' (deleted)';
-
 		// Generate the link based on the object type.
 		switch ( $this->type ) {
 			case 'post':
@@ -178,32 +184,23 @@ class Object_Reference {
 
 			case 'comment':
 				// Return the comment tag.
-				return 'The Comment';
-				// return Comments::get_tag( $this->id, $this->name );
-
-			case 'theme':
-				// Attempt to load the theme.
-				$theme = wp_get_theme( $this->id );
-
-				// Check if the theme was deleted.
-				if ( ! $theme->exists() ) {
-					return $deleted_string;
-				}
-
-				// Return a link to the theme.
-				return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
+				return $this->name;
 
 			case 'plugin':
-				// Attempt to load the plugin.
-				$plugins = get_plugins();
+				// Return the plugin tag.
+				return Plugins::get_tag( $this->name );
 
-				// Check if the plugin was deleted.
-				if ( ! array_key_exists( $this->id, $plugins ) ) {
-					return $deleted_string;
-				}
+			case 'setting':
+				// Return the setting tag.
+				return $this->name;
 
-				// Link to the plugins page.
-				return "<a href='/wp-admin/plugins.php'>{$plugins[$this->id]['Name']}</a>";
+			case 'theme':
+				// Return the theme tag.
+				return $this->name;
+				// return Themes::get_tag( $this->name );
+
+				// Return a link to the theme.
+				// return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
 		}
 
 		// If the object type is invalid, throw an exception.

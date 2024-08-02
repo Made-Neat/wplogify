@@ -24,6 +24,9 @@ class Terms {
 	 */
 	private static Event $new_event;
 
+	// =============================================================================================
+	// Hooks.
+
 	/**
 	 * Link the events we want to log to methods.
 	 */
@@ -37,6 +40,9 @@ class Terms {
 		// add_action( 'edit_term_taxonomies', array( __CLASS__, 'on_edit_term_taxonomies' ), 10, 1 );
 	}
 
+	// =============================================================================================
+	// Event handlers.
+
 	/**
 	 * Track the creation of a term.
 	 *
@@ -47,7 +53,7 @@ class Terms {
 	 */
 	public static function on_created_term( int $term_id, int $tt_id, string $taxonomy, array $args ) {
 		// Load the term.
-		$term = self::get_term( $term_id );
+		$term = self::load( $term_id );
 
 		// Get the event type.
 		$event_type = ucwords( $taxonomy ) . ' Created';
@@ -70,7 +76,7 @@ class Terms {
 		debug( func_get_args() );
 
 		// Load the term.
-		$term = self::get_term( $term_id );
+		$term = self::load( $term_id );
 
 		// Get the term properties.
 		$properties = self::get_properties( $term );
@@ -150,8 +156,8 @@ class Terms {
 		debug( 'on_edit_term_taxonomies', func_get_args() );
 	}
 
-	// ---------------------------------------------------------------------------------------------
-	// Methods for getting term information.
+	// =============================================================================================
+	// Methods for getting information about terms.
 
 	/**
 	 * Check if a term exists.
@@ -173,7 +179,7 @@ class Terms {
 	 * @return WP_Term The term object.
 	 * @throws Exception If the term could not be loaded.
 	 */
-	public static function get_term( int $term_id ): WP_Term {
+	public static function load( int $term_id ): WP_Term {
 		$term = get_term( $term_id );
 		if ( ! $term || is_wp_error( $term ) ) {
 			throw new Exception( "Term {$term_id} could not be loaded." );
@@ -192,7 +198,7 @@ class Terms {
 
 		// Load the term if necessary.
 		if ( is_int( $term ) ) {
-			$term = self::get_term( $term );
+			$term = self::load( $term );
 		}
 
 		// Start building the properties array.
@@ -229,7 +235,7 @@ class Terms {
 	public static function get_edit_url( WP_Term|int $term ) {
 		// Load the term if necessary.
 		if ( is_int( $term ) ) {
-			$term = self::get_term( $term );
+			$term = self::load( $term );
 		}
 
 		return admin_url( "term.php?taxonomy={$term->taxonomy}&tag_ID={$term->term_id}" );
@@ -244,7 +250,7 @@ class Terms {
 	public static function get_edit_link( WP_Term|int $term ) {
 		// Load the term if necessary.
 		if ( is_int( $term ) ) {
-			$term = self::get_term( $term );
+			$term = self::load( $term );
 		}
 
 		// Get the URL for the term's edit page.

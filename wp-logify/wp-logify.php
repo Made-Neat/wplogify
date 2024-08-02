@@ -3,7 +3,7 @@
  * Plugin Name: WP Logify
  * Plugin URI: https://wplogify.com
  * Description: WP Logify features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
- * Version: 1.15
+ * Version: 1.16
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
  * License: GPL2
@@ -47,7 +47,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-posts.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-users.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-terms.php';
-// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-plugins.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-plugins.php';
 // require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-settings.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-admin.php';
@@ -61,14 +61,14 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-types.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-cron.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-logger.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-plugin.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-main.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/debug.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/test.php';
 
 // Register plugin hooks.
-add_action( 'plugins_loaded', array( 'WP_Logify\Plugin', 'init' ) );
-register_activation_hook( __FILE__, array( 'WP_Logify\Plugin', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'WP_Logify\Plugin', 'deactivate' ) );
-register_uninstall_hook( __FILE__, array( 'WP_Logify\Plugin', 'uninstall' ) );
-add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( 'WP_Logify\Plugin', 'add_action_links' ) );
+add_action( 'plugins_loaded', array( 'WP_Logify\Main', 'init' ) );
+register_activation_hook( __FILE__, array( 'WP_Logify\Main', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'WP_Logify\Main', 'deactivate' ) );
+register_uninstall_hook( __FILE__, array( 'WP_Logify\Main', 'uninstall' ) );
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( 'WP_Logify\Main', 'add_action_links' ) );

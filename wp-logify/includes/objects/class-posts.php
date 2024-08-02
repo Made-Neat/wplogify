@@ -41,6 +41,7 @@ class Posts {
 	private static array $terms_added = array();
 
 	// =============================================================================================
+	// Hooks.
 
 	/**
 	 * Link the events we want to log to methods.
@@ -63,7 +64,7 @@ class Posts {
 		add_action( 'deleted_term_relationships', array( __CLASS__, 'on_deleted_term_relationships' ), 10, 3 );
 	}
 
-	// ---------------------------------------------------------------------------------------------
+	// =============================================================================================
 	// Event handlers.
 
 	/**
@@ -97,7 +98,7 @@ class Posts {
 
 			// Load the parent object.
 			$post_id = $post->post_parent;
-			$post    = self::get_post( $post_id );
+			$post    = self::load( $post_id );
 
 			// Copy changes to the properties array.
 			foreach ( self::$properties as $key => $prop ) {
@@ -300,7 +301,7 @@ class Posts {
 
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
+			$post = self::load( $post );
 		}
 
 		// Get the event type.
@@ -391,7 +392,7 @@ class Posts {
 		debug( 'on_deleted_term_relationships' );
 
 		// Load the post.
-		$post = self::get_post( $post_id );
+		$post = self::load( $post_id );
 
 		// Get the post's core properties.
 		$properties = self::get_core_properties( $post );
@@ -421,7 +422,7 @@ class Posts {
 	}
 
 	// =============================================================================================
-	// Get post information.
+	// Methods for getting information about posts.
 
 	/**
 	 * Check if a post exists.
@@ -443,7 +444,7 @@ class Posts {
 	 * @return WP_Post The post object.
 	 * @throws Exception If the post could not be loaded.
 	 */
-	public static function get_post( int $post_id ): WP_Post {
+	public static function load( int $post_id ): WP_Post {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			throw new Exception( "Post $post_id could not be loaded." );
@@ -481,7 +482,7 @@ class Posts {
 	public static function get_edit_link( WP_Post|int $post ) {
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
+			$post = self::load( $post );
 		}
 
 		// Get the URL for the post's edit page.
@@ -506,7 +507,7 @@ class Posts {
 
 			// Load the post if necessary.
 			if ( is_int( $post ) ) {
-				$post = self::get_post( $post );
+				$post = self::load( $post );
 			}
 
 			// If the post is trashed, we can't reach its edit page, so instead we'll link to the list of trashed posts.
@@ -586,7 +587,7 @@ class Posts {
 
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
+			$post = self::load( $post );
 		}
 
 		// Construct the SQL.
@@ -613,7 +614,7 @@ class Posts {
 
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
+			$post = self::load( $post );
 		}
 
 		// Construct the SQL.
@@ -640,7 +641,7 @@ class Posts {
 
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
+			$post = self::load( $post );
 		}
 
 		// Define the core properties by key.
@@ -688,7 +689,7 @@ class Posts {
 
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
+			$post = self::load( $post );
 		}
 
 		// Start with the core properties.
@@ -736,7 +737,7 @@ class Posts {
 	public static function get_attached_terms( WP_Post|int $post ): array {
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
-			$post = self::get_post( $post );
+			$post = self::load( $post );
 		}
 
 		// Initialize the result.

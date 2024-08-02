@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Plugin class.
+ * Contains the Main class.
  *
  * @package WP_Logify
  */
@@ -10,11 +10,11 @@ namespace WP_Logify;
 use ReflectionClass;
 
 /**
- * Class WP_Logify\Plugin
+ * Class WP_Logify\Main
  *
  * Contains functions to perform actions on the plugin itself.
  */
-class Plugin {
+class Main {
 
 	/**
 	 * Initialize the plugin.
@@ -26,8 +26,8 @@ class Plugin {
 		// Iterate over each class.
 		foreach ( $classes as $class ) {
 
-			// Check if the class is in the WP_Logify namespace. Ignore the Plugin class (this class).
-			if ( $class !== 'WP_Logify\\Plugin' && strpos( $class, 'WP_Logify\\' ) === 0 ) {
+			// Check if the class is in the WP_Logify namespace. Ignore the Main class (this class).
+			if ( $class !== 'WP_Logify\\Main' && strpos( $class, 'WP_Logify\\' ) === 0 ) {
 
 				// Use reflection to check for the init method.
 				$reflection = new ReflectionClass( $class );
