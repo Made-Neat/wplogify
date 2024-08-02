@@ -19,7 +19,7 @@ function debug( ...$args ) {
 	}
 
 	// Convert each argument to a string representation.
-	$strings = array_map( fn( $arg ) => var_export( $arg, true ), $args );
+	$strings = array_map( fn( $arg ) => @var_export( $arg, true ), $args );
 
 	// Log the strings.
 	error_log( implode( ', ', $strings ) );

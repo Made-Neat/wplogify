@@ -21,18 +21,16 @@ class Plugins {
 	 * Link the events we want to log to methods.
 	 */
 	public static function init() {
-		// Plugin installation.
+		// Plugin install and update.
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
 
 		// Plugin activation and deactivation.
 		add_action( 'activate_plugin', array( __CLASS__, 'on_activate_plugin' ), 10, 2 );
 		add_action( 'deactivate_plugin', array( __CLASS__, 'on_deactivate_plugin' ), 10, 2 );
 
-		// Plugin deletion and uninstallation.
+		// Plugin deletion and uninstall.
 		add_action( 'delete_plugin', array( __CLASS__, 'on_delete_plugin' ), 10, 1 );
 		add_action( 'pre_uninstall_plugin', array( __CLASS__, 'on_pre_uninstall_plugin' ), 10, 2 );
-
-		// TODO: Plugin update.
 
 		// Upgrader overwrote package???
 		// add_action( 'upgrader_overwrote_package', array( __CLASS__, 'on_upgrader_overwrote_package' ), 10, 3 );
@@ -75,21 +73,24 @@ class Plugins {
 			return;
 		}
 
-		// Check we're installing a plugin.
-		$installing_plugin =
-			key_exists( 'type', $hook_extra ) && $hook_extra['type'] === 'plugin' &&
-			key_exists( 'action', $hook_extra ) && $hook_extra['action'] === 'install';
-		if ( ! $installing_plugin ) {
+		// debug( $upgrader );
+		// debug( $hook_extra );
+
+		// Check we're installing or updating a plugin.
+		$installing_plugin = $hook_extra['action'] === 'install';
+		$updating_plugin   = $hook_extra['action'] === 'update';
+		if ( ! $installing_plugin && ! $updating_plugin ) {
 			return;
 		}
-
-		// debug( $upgrader );
 
 		// Get the properties.
 		$props = self::get_core_properties( $upgrader->new_plugin_data );
 
+		// Get the event type.
+		$event_type = 'Plugin ' . ( $installing_plugin ? 'Installed' : 'Updated' );
+
 		// Log the event.
-		Logger::log_event( 'Plugin Installed', 'plugin', null, $upgrader->new_plugin_data['Name'], null, $props );
+		Logger::log_event( $event_type, 'plugin', null, $upgrader->new_plugin_data['Name'], null, $props );
 	}
 
 	/**
