@@ -109,10 +109,6 @@ class Plugins {
 			return;
 		}
 
-		// debug( $upgrader->new_plugin_data );
-		// debug( $upgrader->result );
-		// debug( $hook_extra );
-
 		// Default the old version to null (i.e. the plugin is new).
 		$old_version = null;
 
@@ -261,6 +257,11 @@ class Plugins {
 		// Log an event for each plugin for which auto-update has been enabled.
 		$enabled = array_diff( $value, $old_value );
 		foreach ( $enabled as $plugin ) {
+			// Check the plugin exists.
+			if ( ! self::plugin_exists( $plugin ) ) {
+				continue;
+			}
+
 			// Load the plugin.
 			$plugin_data = self::load( $plugin );
 
@@ -274,6 +275,11 @@ class Plugins {
 		// Log an event for each plugin for which auto-update has been enabled.
 		$disabled = array_diff( $old_value, $value );
 		foreach ( $disabled as $plugin ) {
+			// Check the plugin exists.
+			if ( ! self::plugin_exists( $plugin ) ) {
+				continue;
+			}
+
 			// Load the plugin.
 			$plugin_data = self::load( $plugin );
 
