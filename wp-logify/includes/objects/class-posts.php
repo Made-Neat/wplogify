@@ -297,8 +297,6 @@ class Posts {
 			return;
 		}
 
-		debug( 'on_delete_post' );
-
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
 			$post = self::load( $post );

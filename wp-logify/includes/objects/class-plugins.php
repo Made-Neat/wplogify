@@ -85,9 +85,6 @@ class Plugins {
 			return;
 		}
 
-		// debug( $upgrader );
-		// debug( $hook_extra );
-
 		// Check we're installing or updating a plugin.
 		$installing_plugin = $hook_extra['action'] === 'install';
 		$updating_plugin   = $hook_extra['action'] === 'update';
@@ -95,11 +92,56 @@ class Plugins {
 			return;
 		}
 
+		// If the result is null, the plugin was not installed or updated, so we won't log anything.
+		if ( $upgrader->result === null ) {
+
+			// The user may be downgrading the plugin, so let's store the current plugin verison in
+			// the options.
+			$plugin = self::get_plugin_by_name( $upgrader->new_plugin_data['Name'] );
+			if ( $plugin ) {
+				$version_key = $plugin['Name'] . ' version';
+				$old_version = $plugin['Version'] ?? null;
+				if ( $old_version ) {
+					update_option( $version_key, $old_version );
+				}
+			}
+
+			return;
+		}
+
+		// Default the old version to null (i.e. the plugin is new).
+		$old_version = null;
+
 		// Get the properties.
 		$props = self::get_core_properties( $upgrader->new_plugin_data );
 
 		// Get the event type.
-		$event_type = 'Plugin ' . ( $installing_plugin ? 'Installed' : 'Updated' );
+		if ( $installing_plugin ) {
+			if ( $upgrader->result['clear_destination'] === 'downgrade-plugin' ) {
+				$event_type_verb = 'Downgraded';
+
+				// See if the old version was stored in the options.
+				$version_key = $upgrader->new_plugin_data['Name'] . ' version';
+				$old_version = get_option( $version_key );
+
+				// Remove the option, as we don't need it anymore.
+				if ( $old_version ) {
+					delete_option( $version_key );
+				}
+			} else {
+				$event_type_verb = 'Installed';
+			}
+		} else {
+			$event_type_verb = 'Upgraded';
+			$old_version     = $upgrader->skin->plugin_info['Version'] ?? null;
+		}
+		$event_type = "Plugin $event_type_verb";
+
+		// If we have both the old and new versions, show this.
+		$new_version = $upgrader->new_plugin_data['Version'] ?? null;
+		if ( $old_version && $new_version && $old_version !== $new_version ) {
+			Property::update_array( $props, 'version', null, $old_version, $new_version );
+		}
 
 		// Log the event.
 		Logger::log_event( $event_type, 'plugin', null, $upgrader->new_plugin_data['Name'], null, $props );
