@@ -18,6 +18,20 @@ use WP_Upgrader;
 class Plugins {
 
 	/**
+	 * Array to remember properties between different events.
+	 *
+	 * @var array
+	 */
+	private static $properties = array();
+
+	/**
+	 * Array to remember metadata between different events.
+	 *
+	 * @var array
+	 */
+	private static $eventmetas = array();
+
+	/**
 	 * Link the events we want to log to methods.
 	 */
 	public static function init() {
@@ -32,10 +46,8 @@ class Plugins {
 		add_action( 'delete_plugin', array( __CLASS__, 'on_delete_plugin' ), 10, 1 );
 		add_action( 'pre_uninstall_plugin', array( __CLASS__, 'on_pre_uninstall_plugin' ), 10, 2 );
 
-		// Upgrader overwrote package???
-		// add_action( 'upgrader_overwrote_package', array( __CLASS__, 'on_upgrader_overwrote_package' ), 10, 3 );
-
-		// TODO: Enabling or disabling auto-updates.
+		// Enabling and disabling auto-updates.
+		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
 	}
 
 	// =============================================================================================
@@ -99,7 +111,7 @@ class Plugins {
 	 * If a plugin is silently activated (such as during an update),
 	 * this hook does not fire.
 	 *
-	 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
+	 * @param string $plugin_file  Path to the plugin file relative to the plugins directory.
 	 * @param bool   $network_wide Whether to enable the plugin for all sites in the network
 	 *                             or just the current site. Multisite only. Default false.
 	 */
@@ -126,7 +138,7 @@ class Plugins {
 	 * If a plugin is silently deactivated (such as during an update),
 	 * this hook does not fire.
 	 *
-	 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
+	 * @param string $plugin_file          Path to the plugin file relative to the plugins directory.
 	 * @param bool   $network_deactivating Whether the plugin is deactivated for all sites in the network
 	 *                                     or just the current site. Multisite only. Default false.
 	 */
@@ -166,7 +178,7 @@ class Plugins {
 	/**
 	 * Fires in uninstall_plugin() immediately before the plugin is uninstalled.
 	 *
-	 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
+	 * @param string $plugin_file           Path to the plugin file relative to the plugins directory.
 	 * @param array  $uninstallable_plugins Uninstallable plugins.
 	 */
 	public static function on_pre_uninstall_plugin( string $plugin_file, array $uninstallable_plugins ) {
@@ -181,14 +193,43 @@ class Plugins {
 	}
 
 	/**
-	 * Fires when the upgrader has successfully overwritten a currently installed
-	 * plugin or theme with an uploaded zip package.
+	 * Fires after a plugin has been enabled or disabled for auto-updates.
 	 *
-	 * @param string $package      The package file.
-	 * @param array  $data         The new plugin or theme data.
-	 * @param string $package_type The package type ('plugin' or 'theme').
+	 * @param string $option    Name of the option to update.
+	 * @param mixed  $old_value The old option value.
+	 * @param mixed  $value     The new option value.
 	 */
-	public static function on_upgrader_overwrote_package( string $package, array $data, string $package_type ) {
+	public static function on_update_option( string $option, mixed $old_value, mixed $value ) {
+		// Check if the changed option is the auto_update_plugins option.
+		if ( $option !== 'auto_update_plugins' ) {
+			return;
+		}
+
+		// Log an event for each plugin for which auto-update has been enabled.
+		$enabled = array_diff( $value, $old_value );
+		foreach ( $enabled as $plugin ) {
+			// Load the plugin.
+			$plugin_data = self::load( $plugin );
+
+			// Get the properties.
+			$props = self::get_core_properties( $plugin_data );
+
+			// Log the event.
+			Logger::log_event( 'Plugin Auto-update Enabled', 'plugin', null, $plugin_data['Name'], null, $props );
+		}
+
+		// Log an event for each plugin for which auto-update has been enabled.
+		$disabled = array_diff( $old_value, $value );
+		foreach ( $disabled as $plugin ) {
+			// Load the plugin.
+			$plugin_data = self::load( $plugin );
+
+			// Get the properties.
+			$props = self::get_core_properties( $plugin_data );
+
+			// Log the event.
+			Logger::log_event( 'Plugin Auto-update Disabled', 'plugin', null, $plugin_data['Name'], null, $props );
+		}
 	}
 
 	// =============================================================================================
@@ -294,5 +335,29 @@ class Plugins {
 
 		// The plugin has been deleted. Construct the 'deleted' span element.
 		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+	}
+
+	// =============================================================================================
+	// Helper methods.
+
+	/**
+	 * Convert a plugin file to an object references.
+	 *
+	 * @param string $plugin_file The plugin file.
+	 * @return Object_Reference[] The object references.
+	 */
+	private static function convert_plugin_file_to_object_reference( string $plugin_file ): Object_Reference {
+		$plugin = self::load( $plugin_file );
+		return new Object_Reference( 'plugin', null, $plugin['Name'] );
+	}
+
+	/**
+	 * Convert an array of plugin files to an array of object references.
+	 *
+	 * @param string[] $plugin_files The plugin files.
+	 * @return Object_Reference[] The object references.
+	 */
+	private static function convert_plugin_files_to_object_references( array $plugin_files ): array {
+		return array_map( fn( $plugin_file ) => self::convert_plugin_file_to_object_reference( $plugin_file ), $plugin_files );
 	}
 }
