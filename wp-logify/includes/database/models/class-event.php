@@ -121,6 +121,14 @@ class Event {
 	public ?array $eventmetas;
 
 	/**
+	 * The object.
+	 * This is not stored in the database.
+	 *
+	 * @var ?object
+	 */
+	private ?object $object;
+
+	/**
 	 * The object reference.
 	 * This is not stored in the database.
 	 *
@@ -142,11 +150,33 @@ class Event {
 	// Methods for getting information about the object.
 
 	/**
+	 * Get the object associated with the event.
+	 *
+	 * @return ?object The object, or null if there is no object.
+	 */
+	public function get_object(): ?object {
+		// Check if it's already been set.
+		if ( isset( $this->object ) ) {
+			return $this->object;
+		}
+
+		// Handle the case where the event has no object.
+		if ( $this->object_type === null ) {
+			return null;
+		}
+
+		// Get the object and remember it.
+		$this->object = $this->get_object_ref()->get_object();
+
+		return $this->object;
+	}
+
+	/**
 	 * Get the Object_Reference for the object associated with the event.
 	 *
 	 * @return ?Object_Reference The Object_Reference for the object, or null if there is no object.
 	 */
-	public function get_object_reference(): ?Object_Reference {
+	public function get_object_ref(): ?Object_Reference {
 		// Check if it's already been set.
 		if ( isset( $this->object_ref ) ) {
 			return $this->object_ref;
@@ -157,7 +187,7 @@ class Event {
 			return null;
 		}
 
-		// Construct the object reference.
+		// Construct the object reference and remember it.
 		$this->object_ref = new Object_Reference( $this->object_type, $this->object_id, $this->object_name );
 
 		return $this->object_ref;
@@ -170,7 +200,7 @@ class Event {
 	 */
 	public function get_object_tag(): string {
 		// Make sure the object reference has been created.
-		$object_ref = $this->get_object_reference();
+		$object_ref = $this->get_object_ref();
 
 		// Return the tag, or empty string if there is no object reference.
 		return $object_ref === null ? '' : $object_ref->get_tag();

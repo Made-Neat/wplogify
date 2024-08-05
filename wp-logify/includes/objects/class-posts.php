@@ -84,22 +84,24 @@ class Posts {
 		}
 		debug( 'on_save_post' );
 
-		// Get the core properties. No need to store all, just want to display some to the user.
-		$properties = self::get_core_properties( $post );
-
 		// Check if we're updating or creating.
 		$creating = wp_is_post_revision( $post_id ) === false;
 
 		// If we're updating, the $post variable refers to the new revision rather than the parent post.
 		if ( ! $creating ) {
-
 			// Record the ID of the new revision.
 			$revision_id = $post_id;
 
 			// Load the parent object.
 			$post_id = $post->post_parent;
 			$post    = self::load( $post_id );
+		}
 
+		// Get the core properties. No need to store all, just want to display some to the user.
+		$properties = self::get_core_properties( $post );
+
+		// If updating, modify the properties.
+		if ( ! $creating ) {
 			// Copy changes to the properties array.
 			foreach ( self::$properties as $key => $prop ) {
 				$properties[ $key ] = $prop;
@@ -324,8 +326,6 @@ class Posts {
 		if ( wp_is_post_revision( $post_id ) ) {
 			return;
 		}
-
-		debug( 'on_added_term_relationship' );
 
 		// Get the term.
 		$term = Terms::get_by_term_taxonomy_id( $tt_id );
@@ -562,13 +562,8 @@ class Posts {
 		// Get the post type object.
 		$post_type_object = get_post_type_object( $post_type );
 
-		// Return the singular name if set.
-		if ( $post_type_object && isset( $post_type_object->labels->singular_name ) ) {
-			return $post_type_object->labels->singular_name;
-		}
-
-		// Otherwise default to the key.
-		return $post_type_object->name;
+		// Return the singular name.
+		return $post_type_object->labels->singular_name;
 	}
 
 	/**
@@ -643,7 +638,7 @@ class Posts {
 		}
 
 		// Define the core properties by key.
-		$core_properties = array( 'ID', 'post_author', 'post_title', 'post_status', 'post_date', 'post_modified' );
+		$core_properties = array( 'ID', 'post_type', 'post_author', 'post_title', 'post_status', 'post_date', 'post_modified' );
 
 		// Build the array of properties.
 		$properties = array();

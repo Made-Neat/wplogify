@@ -325,9 +325,39 @@ class Log_Page {
 		}
 
 		// Convert JSON string to a table showing the changes.
-		$html              = "<div class='wp-logify-details-section wp-logify-properties-section'>\n";
-		$object_type_title = $event->object_type === 'user' ? 'Account' : ucfirst( $event->object_type );
-		$html             .= "<h4>$object_type_title Details</h4>\n";
+		$html = "<div class='wp-logify-details-section wp-logify-properties-section'>\n";
+
+		// Get the title given the object type.
+		switch ( $event->object_type ) {
+			case 'user':
+				$object_type_title = 'Account';
+				break;
+
+			case 'post':
+				// Get the post type. It might be in the properties.
+				$post_type = $event->properties['post_type']->val ?? null;
+				// If not, we can get it from the post.
+				if ( ! $post_type ) {
+					$post_type = $event->get_object()->post_type;
+				}
+				$object_type_title = Posts::get_post_type_singular_name( $post_type );
+				break;
+
+			case 'term':
+				// Get the taxonomy. It might be in the properties.
+				$taxonomy = $event->properties['taxonomy']->val ?? null;
+				// If not, we can get it from the term.
+				if ( ! $taxonomy ) {
+					$taxonomy = $event->get_object()->taxonomy;
+				}
+				$object_type_title = Terms::get_taxonomy_singular_name( $taxonomy );
+				break;
+
+			default:
+				// Default is upper-case-first the object-type (e.g. 'Plugin').
+				$object_type_title = ucfirst( $event->object_type );
+		}
+		$html .= "<h4>$object_type_title Details</h4>\n";
 
 		// Start table.
 		$class = 'wp-logify-properties-table-' . ( $show_new_vals ? 3 : 2 ) . '-column';

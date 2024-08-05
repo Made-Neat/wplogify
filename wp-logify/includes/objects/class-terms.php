@@ -304,4 +304,18 @@ class Terms {
 		// Return the WP_Term object or false if the term couldn't be found.
 		return ( ! is_wp_error( $term ) && $term ) ? $term : null;
 	}
+
+	/**
+	 * Get the singular name of a taxonomy.
+	 *
+	 * @param string $taxonomy
+	 * @return string
+	 */
+	public static function get_taxonomy_singular_name( string $taxonomy ) {
+		// Get the taxonomy object.
+		$taxonomy_obj = get_taxonomy( $taxonomy );
+
+		// Return the taxonomy singular name.
+		return $taxonomy_obj->labels->singular_name;
+	}
 }
