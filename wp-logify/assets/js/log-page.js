@@ -1,5 +1,5 @@
 jQuery(($) => {
-    let table = $('#wp-logify-activity-log').DataTable({
+    let eventsTable = $('#wp-logify-activity-log').DataTable({
         processing: true,
         language: {
             processing: 'Please wait...'
@@ -44,35 +44,40 @@ jQuery(($) => {
 
     // Custom search box
     $('#wp-logify-search-box').on('keyup', function () {
-        table.search(this.value).draw();
+        eventsTable.search(this.value).draw();
     });
 
     // Add event listener for opening and closing details
-    table.on('click', 'tr', function (e) {
+    eventsTable.on('click', 'tr', function (e) {
         // Ignore link clicks.
         if ($(e.target).is('a, a *')) {
             return;
         }
 
         // Get the row.
-        let tr = $(this);
+        let $tr = $(this);
 
         // Ignore clicks on the header row.
-        if (tr.parent().is('thead')) {
+        if ($tr.parent().is('thead')) {
             return;
         }
 
-        let row = table.row(tr);
+        // Ignore clicks on the rows of the details tables.
+        if ($tr.closest('table').hasClass('wp-logify-details-table')) {
+            return;
+        }
+
+        let row = eventsTable.row($tr);
 
         if (row.child.isShown()) {
             // This row is already open - close it.
             row.child.hide();
-            tr.find('td.details-control span').text('Show');
+            $tr.find('td.details-control span').text('Show');
         }
         else {
             // Open this row.
             row.child(row.data().details, 'details-row').show();
-            tr.find('td.details-control span').text('Hide');
+            $tr.find('td.details-control span').text('Hide');
         }
     });
 
@@ -85,7 +90,7 @@ jQuery(($) => {
 
         // Check if the length of the search term is at least 3 characters, or none.
         if (searchTerm.length >= 3 || searchTerm.length === 0) {
-            table.search(searchTerm).draw();
+            eventsTable.search(searchTerm).draw();
         }
     });
 });
