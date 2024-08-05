@@ -109,6 +109,10 @@ class Plugins {
 			return;
 		}
 
+		// debug( $upgrader->new_plugin_data );
+		// debug( $upgrader->result );
+		// debug( $hook_extra );
+
 		// Default the old version to null (i.e. the plugin is new).
 		$old_version = null;
 
@@ -117,21 +121,28 @@ class Plugins {
 
 		// Get the event type.
 		if ( $installing_plugin ) {
-			if ( $upgrader->result['clear_destination'] === 'downgrade-plugin' ) {
-				$event_type_verb = 'Downgraded';
+			// Default event type verb.
+			$event_type_verb = 'Installed';
 
-				// See if the old version was stored in the options.
-				$version_key = $upgrader->new_plugin_data['Name'] . ' version';
-				$old_version = get_option( $version_key );
-
-				// Remove the option, as we don't need it anymore.
-				if ( $old_version ) {
-					delete_option( $version_key );
+			// Handle upgrade and downgrade events.
+			if ( $upgrader->result['clear_destination'] ) {
+				if ( $upgrader->result['clear_destination'] === 'downgrade-plugin' ) {
+					$event_type_verb = 'Downgraded';
+				} elseif ( $upgrader->result['clear_destination'] === 'update-plugin' ) {
+					$event_type_verb = 'Upgraded';
 				}
-			} else {
-				$event_type_verb = 'Installed';
+			}
+
+			// See if the old version was stored in the options.
+			$version_key = $upgrader->new_plugin_data['Name'] . ' version';
+			$old_version = get_option( $version_key );
+
+			// Remove the option, as we don't need it anymore.
+			if ( $old_version ) {
+				delete_option( $version_key );
 			}
 		} else {
+			// Updating the plugin from the install page.
 			$event_type_verb = 'Upgraded';
 			$old_version     = $upgrader->skin->plugin_info['Version'] ?? null;
 		}
@@ -295,7 +306,30 @@ class Plugins {
 	 * @return array The plugin data.
 	 */
 	public static function load( string $plugin_file ): array {
-		return get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
+		// Load the plugin data.
+		$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
+
+		// Add the file to the array.
+		$plugin_data['File'] = $plugin_file;
+
+		// Add the slug to the array.
+		$plugin_data['Slug'] = self::get_slug( $plugin_file );
+
+		return $plugin_data;
+	}
+
+	/**
+	 * Get the slug of a plugin.
+	 *
+	 * @param string $plugin_file The plugin file.
+	 * @return string The plugin slug.
+	 */
+	public static function get_slug( string $plugin_file ): string {
+		$slug = dirname( $plugin_file );
+		if ( $slug === '.' ) {
+			$slug = basename( $plugin_file, '.php' );
+		}
+		return $slug;
 	}
 
 	/**
@@ -317,7 +351,13 @@ class Plugins {
 		Property::update_array( $properties, 'name', null, $name );
 
 		// Slug.
-		Property::update_array( $properties, 'slug', null, $plugin_data['TextDomain'] );
+		if ( isset( $plugin_data['Slug'] ) ) {
+			$slug = $plugin_data['Slug'];
+		} else {
+			$plugin_data2 = self::get_plugin_by_name( $plugin_data['Name'] );
+			$slug         = $plugin_data2['Slug'];
+		}
+		Property::update_array( $properties, 'slug', null, $slug );
 
 		// Version.
 		Property::update_array( $properties, 'version', null, $plugin_data['Version'] );
@@ -349,8 +389,14 @@ class Plugins {
 		$all_plugins = get_plugins();
 
 		// Loop through each plugin and check its text domain.
-		foreach ( $all_plugins as $plugin_data ) {
+		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
 			if ( isset( $plugin_data['Name'] ) && $plugin_data['Name'] === $name ) {
+				// Add the file to the array.
+				$plugin_data['File'] = $plugin_file;
+
+				// Add the slug to the array.
+				$plugin_data['Slug'] = self::get_slug( $plugin_file );
+
 				return $plugin_data;
 			}
 		}
