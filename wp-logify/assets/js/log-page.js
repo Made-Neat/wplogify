@@ -45,7 +45,7 @@ jQuery(($) => {
         // Get the page length from the per_page screen option.
         pageLength: +$('#wp_logify_events_per_page').val(),
         createdRow: (row, data, dataIndex) => {
-            $(row).addClass('wp-logify-object-type-' + data.object_type);
+            $(row).addClass('wp-logify-summary-row wp-logify-object-type-' + data.object_type);
         }
     });
 
@@ -69,39 +69,49 @@ jQuery(($) => {
             return;
         }
 
-        // Ignore clicks on the rows of the details tables.
-        if ($tr.closest('table').hasClass('wp-logify-details-table')) {
+        // Check and see which type of row was clicked.
+        let isSummaryRow = $tr.hasClass('wp-logify-summary-row');
+        let isDetailsRow = $tr.hasClass('wp-logify-details-row');
+
+        // If neither (for example, clicking a row in a details table), bail.
+        if (!isSummaryRow && !isDetailsRow) {
             return;
         }
 
+        // Get the datatable row object.
         let row = eventsTable.row($tr);
 
-        if (row.child.isShown()) {
-            // Close the data row.
-
-            // Hide the child details row.
-            row.child.hide();
-
-            // Update the label on the show/hide button.
-            $tr.find('td.details-control span').text('Show');
-
-            // Remove the shown class from the summary row.
-            $tr.removeClass('shown');
+        if (isSummaryRow) {
+            // Summary row clicked.
+            // console.log('summary row clicked');
+            if (row.child.isShown()) {
+                // Update the label on the show/hide button.
+                $tr.find('td.details-control span').text('Show');
+                // Remove the shown class from the summary row.
+                $tr.removeClass('shown');
+                // Hide the child details row.
+                row.child.hide();
+            }
+            else {
+                // Add CSS classes to the details row.
+                let classes = 'wp-logify-details-row wp-logify-object-type-' + row.data().object_type + ' shown';
+                // Show the details row.
+                row.child(row.data().details, classes).show();
+                // Update the label on the show/hide button.
+                $tr.find('td.details-control span').text('Hide');
+                // Add the shown class to the summary row.
+                $tr.addClass('shown');
+            }
         }
         else {
-            // Open the data row.
-
-            // Add CSS classes to the details row.
-            let classes = 'wp-logify-details-row wp-logify-object-type-' + row.data().object_type + ' shown';
-
-            // Show the details row.
-            row.child(row.data().details, classes).show();
-
+            // Details row clicked.
+            // console.log('details row clicked');
             // Update the label on the show/hide button.
-            $tr.find('td.details-control span').text('Hide');
-
-            // Add the shown class to the summary row.
-            $tr.addClass('shown');
+            $tr.prev().find('td.details-control span').text('Show');
+            // Remove the shown class from the summary row.
+            $tr.prev().removeClass('shown');
+            // Hide the details row.
+            row.child.hide();
         }
     });
 
