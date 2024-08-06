@@ -32,6 +32,10 @@ jQuery(($) => {
                 orderable: false,
                 defaultContent: '<span class="wp-logify-show-details">Show</span>',
                 width: '100px'
+            },
+            {
+                data: "object_type",
+                visible: false
             }
         ],
         order: [[1, 'desc']],
@@ -39,7 +43,10 @@ jQuery(($) => {
         paging: true,
         lengthChange: false,
         // Get the page length from the per_page screen option.
-        pageLength: +$('#wp_logify_events_per_page').val()
+        pageLength: +$('#wp_logify_events_per_page').val(),
+        createdRow: (row, data, dataIndex) => {
+            $(row).addClass('wp-logify-object-type-' + data.object_type);
+        }
     });
 
     // Custom search box
@@ -70,14 +77,31 @@ jQuery(($) => {
         let row = eventsTable.row($tr);
 
         if (row.child.isShown()) {
-            // This row is already open - close it.
+            // Close the data row.
+
+            // Hide the child details row.
             row.child.hide();
+
+            // Update the label on the show/hide button.
             $tr.find('td.details-control span').text('Show');
+
+            // Remove the shown class from the summary row.
+            $tr.removeClass('shown');
         }
         else {
-            // Open this row.
-            row.child(row.data().details, 'details-row').show();
+            // Open the data row.
+
+            // Add CSS classes to the details row.
+            let classes = 'wp-logify-details-row wp-logify-object-type-' + row.data().object_type + ' shown';
+
+            // Show the details row.
+            row.child(row.data().details, classes).show();
+
+            // Update the label on the show/hide button.
             $tr.find('td.details-control span').text('Hide');
+
+            // Add the shown class to the summary row.
+            $tr.addClass('shown');
         }
     });
 

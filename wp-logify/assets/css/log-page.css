@@ -62,6 +62,48 @@
   border-radius: 3px;
   cursor: pointer;
 }
+#wp-logify-activity-log .wp-logify-object-type-post {
+  background-color: #eff6ff;
+}
+#wp-logify-activity-log .wp-logify-object-type-post.shown {
+  background-color: #dbeafe;
+}
+#wp-logify-activity-log .wp-logify-object-type-user {
+  background-color: #fefce8;
+}
+#wp-logify-activity-log .wp-logify-object-type-user.shown {
+  background-color: #fef9c3;
+}
+#wp-logify-activity-log .wp-logify-object-type-term {
+  background-color: #fdf2f8;
+}
+#wp-logify-activity-log .wp-logify-object-type-term.shown {
+  background-color: #fce7f3;
+}
+#wp-logify-activity-log .wp-logify-object-type-plugin {
+  background-color: #f0fdf4;
+}
+#wp-logify-activity-log .wp-logify-object-type-plugin.shown {
+  background-color: #dcfce7;
+}
+#wp-logify-activity-log .wp-logify-object-type-setting {
+  background-color: #faf5ff;
+}
+#wp-logify-activity-log .wp-logify-object-type-setting.shown {
+  background-color: #f3e8ff;
+}
+#wp-logify-activity-log .wp-logify-object-type-theme {
+  background-color: #fff7ed;
+}
+#wp-logify-activity-log .wp-logify-object-type-theme.shown {
+  background-color: #ffedd5;
+}
+#wp-logify-activity-log .wp-logify-object-type-comment {
+  background-color: #ecfeff;
+}
+#wp-logify-activity-log .wp-logify-object-type-comment.shown {
+  background-color: #cffafe;
+}
 
 .dt-search {
   margin: 1rem 0 0.5rem 0;
@@ -84,6 +126,9 @@
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-details-table {
   border-collapse: collapse;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-details-table td {
+  background-color: white;
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-user-details-table th {
   width: 8rem;

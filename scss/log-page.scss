@@ -1,3 +1,5 @@
+@import 'tailwind-colors';
+
 $blue: #2271b1;
 $light-blue: hsl(200, 66%, 65%);
 $pale-blue: hsl(200, 66%, 85%);
@@ -86,6 +88,62 @@ $very-pale-grey: #f7f7f7;
         border-radius: 3px;
         cursor: pointer;
     }
+
+    .wp-logify-object-type-post {
+        background-color: $blue-50;
+
+        &.shown {
+            background-color: $blue-100;
+        }
+    }
+
+    .wp-logify-object-type-user {
+        background-color: $yellow-50;
+
+        &.shown {
+            background-color: $yellow-100;
+        }
+    }
+
+    .wp-logify-object-type-term {
+        background-color: $pink-50;
+
+        &.shown {
+            background-color: $pink-100;
+        }
+    }
+
+    .wp-logify-object-type-plugin {
+        background-color: $green-50;
+
+        &.shown {
+            background-color: $green-100;
+        }
+    }
+
+    .wp-logify-object-type-setting {
+        background-color: $purple-50;
+
+        &.shown {
+            background-color: $purple-100;
+        }
+    }
+
+    .wp-logify-object-type-theme {
+        background-color: $orange-50;
+
+        &.shown {
+            background-color: $orange-100;
+        }
+    }
+
+    .wp-logify-object-type-comment {
+        background-color: $cyan-50;
+
+        &.shown {
+            background-color: $cyan-100;
+        }
+    }
 }
 
 .dt-search {
@@ -110,6 +168,10 @@ $very-pale-grey: #f7f7f7;
 
         .wp-logify-details-table {
             border-collapse: collapse;
+
+            td {
+                background-color: white;
+            }
         }
 
         .wp-logify-user-details-table {

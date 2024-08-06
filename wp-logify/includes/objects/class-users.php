@@ -45,7 +45,7 @@ class Users {
 	// Hooks.
 
 	/**
-	 * Initializes the class by adding WordPress actions.
+	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
 		// Track user login.
@@ -79,7 +79,7 @@ class Users {
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
 	public static function on_wp_login( string $user_login, WP_User $user ) {
-		Logger::log_event( 'User Login', 'user', $user->ID, self::get_name( $user ), current_user: $user );
+		Logger::log_event( 'User Login', $user, acting_user: $user );
 	}
 
 	/**
@@ -88,21 +88,18 @@ class Users {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function on_wp_logout( int $user_id ) {
-		Logger::log_event( 'User Logout', 'user', $user_id, self::get_name( $user_id ), current_user: $user_id );
+		$user = self::load( $user_id );
+		Logger::log_event( 'User Logout', $user, acting_user: $user );
 	}
 
 	/**
 	 * Track user registration.
 	 *
-	 * @param int   $user_id  The ID of the user that was registered.
+	 * @param int   $user_id  The ID of the user being registered.
 	 * @param array $userdata The data for the user that was registered.
 	 */
 	public static function on_user_register( int $user_id, array $userdata ) {
-		// Get the user's properties.
-		$properties = self::get_core_properties( $user_id );
-
-		// Log the event.
-		Logger::log_event( 'User Registered', 'user', $user_id, self::get_name( $user_id ), null, $properties );
+		Logger::log_event( 'User Registered', self::load( $user_id ) );
 	}
 
 	/**
@@ -118,12 +115,9 @@ class Users {
 		// Get the user's properties.
 		$properties = self::get_properties( $user );
 
-		// Prepare to collect eventmetas.
-		$eventmetas = array();
-
 		// If the user's data is being reassigned, record that information in the eventmetas.
 		if ( $reassign ) {
-			Eventmeta::update_array( $eventmetas, 'content_reassigned_to', new Object_Reference( 'user', $reassign ) );
+			Eventmeta::update_array( self::$eventmetas, 'content_reassigned_to', new Object_Reference( 'user', $reassign ) );
 		}
 
 		// Get the posts created by this user.
@@ -133,7 +127,7 @@ class Users {
 			fn ( $post_id ) =>new Object_Reference( 'post', $post_id, Posts::load( $post_id )->post_title ),
 			$post_ids
 		);
-		Eventmeta::update_array( $eventmetas, 'posts', $post_refs );
+		Eventmeta::update_array( self::$eventmetas, 'posts', $post_refs );
 
 		// Get the comments created by this user.
 		$sql_comments = $wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_author = %d', $wpdb->comments, $user_id );
@@ -142,7 +136,7 @@ class Users {
 		// fn ( $comment_id ) =>new Object_Reference( 'comment', $comment_id, Posts::get_comment( $comment_id )->comment_title ),
 		// $comment_ids
 		// );
-		Eventmeta::update_array( $eventmetas, 'comments', $comment_ids );
+		Eventmeta::update_array( self::$eventmetas, 'comments', $comment_ids );
 
 		// Get the links owned by this user.
 		$sql_links = $wpdb->prepare( 'SELECT link_id FROM %i WHERE link_owner = %d', $wpdb->links, $user_id );
@@ -151,26 +145,21 @@ class Users {
 		// fn ( $link_id ) =>new Object_Reference( 'link', $link_id, Posts::get_link( $link_id )->link_title ),
 		// $link_ids
 		// );
-		Eventmeta::update_array( $eventmetas, 'links', $link_ids );
+		Eventmeta::update_array( self::$eventmetas, 'links', $link_ids );
 
 		// Log the event.
-		Logger::log_event( 'User Deleted', 'user', $user_id, self::get_name( $user ), $eventmetas, $properties );
+		Logger::log_event( 'User Deleted', $user, self::$eventmetas, $properties );
 	}
 
 	/**
 	 * Track user update.
 	 *
-	 * @param int     $user_id       The ID of the user that was updated.
+	 * @param int     $user_id       The ID of the user being updated.
 	 * @param WP_User $old_user_data The WP_User object of the user before the update.
 	 * @param array   $userdata      The data for the user after the update.
 	 */
 	public static function on_profile_update( int $user_id, WP_User $old_user_data, array $userdata ) {
 		global $wpdb;
-
-		// Initialise the properties array to the user's core properties if it's empty.
-		if ( empty( self::$properties ) ) {
-			self::$properties = self::get_core_properties( $user_id );
-		}
 
 		// Compare values and make note of any changes.
 		foreach ( $old_user_data->data as $key => $value ) {
@@ -187,7 +176,7 @@ class Users {
 
 		// Log the event if there were any changes.
 		if ( self::$properties ) {
-			Logger::log_event( 'User Updated', 'user', $user_id, self::get_name( $user_id ), null, self::$properties );
+			Logger::log_event( 'User Updated', $old_user_data, null, self::$properties );
 		}
 	}
 
@@ -201,11 +190,6 @@ class Users {
 	 */
 	public static function on_update_user_meta( int $meta_id, int $user_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
-
-		// Initialise the properties array to the user's core properties if it's empty.
-		if ( empty( self::$properties ) ) {
-			self::$properties = self::get_core_properties( $user_id );
-		}
 
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
@@ -234,9 +218,9 @@ class Users {
 		}
 
 		// Prepare some values.
-		$user_id    = get_current_user_id();
+		$user       = wp_get_current_user();
 		$table_name = Event_Repository::get_table_name();
-		$event_type = 'User Session';
+		$event_type = 'User Active';
 		$now        = DateTimes::current_datetime();
 
 		// Check if this is a new or continuing session.
@@ -244,7 +228,7 @@ class Users {
 		$sql        = $wpdb->prepare(
 			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
 			$table_name,
-			$user_id,
+			$user->ID,
 			$event_type
 		);
 		$record     = $wpdb->get_row( $sql, ARRAY_A );
@@ -283,13 +267,12 @@ class Users {
 		if ( ! $continuing ) {
 
 			// Create the array of eventmetas.
-			$eventmetas = array();
-			Eventmeta::update_array( $eventmetas, 'session_start', $now );
-			Eventmeta::update_array( $eventmetas, 'session_end', $now );
-			Eventmeta::update_array( $eventmetas, 'session_duration', '0 minutes' );
+			Eventmeta::update_array( self::$eventmetas, 'session_start', $now );
+			Eventmeta::update_array( self::$eventmetas, 'session_end', $now );
+			Eventmeta::update_array( self::$eventmetas, 'session_duration', '0 minutes' );
 
 			// Log the event.
-			Logger::log_event( $event_type, null, null, null, $eventmetas );
+			Logger::log_event( $event_type, $user, self::$eventmetas );
 		}
 	}
 
@@ -364,7 +347,7 @@ class Users {
 			}
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->users, $value );
+			Property::update_array( $properties, $key, $wpdb->users, $value );
 		}
 
 		return $properties;
@@ -384,16 +367,10 @@ class Users {
 			$user = self::load( $user );
 		}
 
-		// Start building the properties array.
-		$properties = self::get_core_properties( $user );
+		$properties = array();
 
 		// Add the base properties.
 		foreach ( $user->data as $key => $value ) {
-			// Skip core properties.
-			if ( key_exists( $key, $properties ) ) {
-				continue;
-			}
-
 			// Process meta values into correct types.
 			$value = Types::process_database_value( $key, $value );
 
@@ -404,7 +381,7 @@ class Users {
 			}
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->users, $value );
+			Property::update_array( $properties, $key, $wpdb->users, $value );
 		}
 
 		// Add the meta properties.
@@ -414,7 +391,7 @@ class Users {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->usermeta, $value );
+			Property::update_array( $properties, $key, $wpdb->usermeta, $value );
 		}
 
 		return $properties;
@@ -564,7 +541,7 @@ class Users {
 		// Get the most recent session_end datetime from the wp_logify_events table.
 		$table_name = Event_Repository::get_table_name();
 		$sql        = $wpdb->prepare(
-			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Session' ORDER BY when_happened DESC LIMIT 1",
+			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Active' ORDER BY when_happened DESC LIMIT 1",
 			$table_name,
 			$user->ID
 		);

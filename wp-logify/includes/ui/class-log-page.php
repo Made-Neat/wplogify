@@ -59,6 +59,7 @@ class Log_Page {
 			'user_ip',
 			'event_type',
 			'object_name',
+			'object_type',
 		);
 
 		// -----------------------------------------------------------------------------------------
@@ -190,6 +191,9 @@ class Log_Page {
 
 			// Get the HTML for the object name.
 			$item['object_name'] = $event->get_object_tag();
+
+			// Include the object type.
+			$item['object_type'] = $event->object_type;
 
 			// Format the details.
 			$item['details'] = self::format_details( $event );

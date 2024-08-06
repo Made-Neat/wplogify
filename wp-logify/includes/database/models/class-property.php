@@ -60,12 +60,12 @@ class Property {
 	/**
 	 * Property constructor.
 	 *
-	 * @param string $key The property name.
+	 * @param string $key        The property name.
 	 * @param string $table_name The name of the database table the property belongs to (e.g.
 	 *                           'posts'), which could be null if the property is unrelated to a
 	 *                           database table.
-	 * @param mixed  $val The old or current value of the property.
-	 * @param mixed  $new_val Optional. The new value of the property, if changed.
+	 * @param mixed  $val        The old or current value of the property.
+	 * @param mixed  $new_val    Optional. The new value of the property, if changed.
 	 */
 	public function __construct( string $key, ?string $table_name, mixed $val = null, mixed $new_val = null ) {
 		$this->key        = $key;
@@ -79,11 +79,11 @@ class Property {
 	 *
 	 * NB: the table name will only be set if it is not already set.
 	 *
-	 * @param array   $props The array of properties to update.
-	 * @param string  $key The property key.
+	 * @param array   $props      The array of properties to update.
+	 * @param string  $key        The property key.
 	 * @param ?string $table_name The name of the database table the property belongs to.
-	 * @param mixed   $val The old or current value of the property.
-	 * @param mixed   $new_val Optional. The new value of the property, if changed.
+	 * @param mixed   $val        The old or current value of the property.
+	 * @param mixed   $new_val    Optional. The new value of the property, if changed.
 	 */
 	public static function update_array( array &$props, string $key, ?string $table_name, mixed $val, mixed $new_val = null ) {
 		if ( ! key_exists( $key, $props ) ) {
@@ -91,5 +91,15 @@ class Property {
 		}
 		$props[ $key ]->val     = $val;
 		$props[ $key ]->new_val = $new_val;
+	}
+
+	/**
+	 * Update an array of properties from a Property object.
+	 *
+	 * @param array $props The array of properties to update.
+	 * @param self  $prop  The Property object to copy into the array.
+	 */
+	public static function update_array_from_prop( array &$props, self $prop ) {
+		self::update_array( $props, $prop->key, $prop->table_name, $prop->val, $prop->new_val );
 	}
 }

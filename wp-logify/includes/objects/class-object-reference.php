@@ -8,6 +8,11 @@
 namespace WP_Logify;
 
 use Exception;
+use WP_Comment;
+use WP_Post;
+use WP_Term;
+use WP_Theme;
+use WP_User;
 
 /**
  * Represents a reference to an WordPress object that can be created, updated, or deleted.
@@ -67,8 +72,57 @@ class Object_Reference {
 		if ( is_string( $name ) ) {
 			$this->name = $name;
 		} elseif ( $name ) {
-			$this->name = $this->get_name();
+			$this->name = $this->load_name();
 		}
+	}
+
+	/**
+	 * Create a new Object_Reference from a WordPress object.
+	 *
+	 * @param object $wp_object The WordPress object.
+	 * @return self The new Object_Reference.
+	 * @throws Exception If the object type is unknown or unsupported.
+	 */
+	public static function new_from_wp_object( object $wp_object ): Object_Reference {
+		$type = null;
+		$id   = null;
+		$name = null;
+
+		if ( $wp_object instanceof WP_Post ) {
+			$type = 'post';
+			$id   = $wp_object->ID;
+			$name = $wp_object->post_title;
+		} elseif ( $wp_object instanceof WP_User ) {
+			$type = 'user';
+			$id   = $wp_object->ID;
+			$name = Users::get_name( $wp_object );
+		} elseif ( $wp_object instanceof WP_Term ) {
+			$type = 'term';
+			$id   = $wp_object->term_id;
+			$name = $wp_object->name;
+		} elseif ( $wp_object instanceof WP_Theme ) {
+			$type = 'theme';
+			$id   = null;
+			$name = $wp_object->name;
+		} elseif ( $wp_object instanceof WP_Comment ) {
+			$type = 'comment';
+			$id   = $wp_object->comment_ID;
+			$name = Comments::get_title( $wp_object );
+		} else {
+			throw new Exception( 'Unknown or unsupported object type.' );
+		}
+
+		return new Object_Reference( $type, $id, $name );
+	}
+
+	/**
+	 * Get an object reference for a plugin.
+	 *
+	 * @param string $plugin_name The name of the plugin.
+	 * @return Object_Reference The object reference.
+	 */
+	public static function new_from_plugin( string $plugin_name ): Object_Reference {
+		return new Object_Reference( 'plugin', null, $plugin_name );
 	}
 
 	/**
@@ -83,7 +137,7 @@ class Object_Reference {
 	 *
 	 * @throws Exception If the object cannot be loaded or if the object type is unknown.
 	 */
-	public function load() {
+	private function load() {
 		// Check we know which object to load.
 		if ( empty( $this->type ) || empty( $this->id ) ) {
 			throw new Exception( 'Cannot load an object without knowing its type and ID.' );
@@ -108,8 +162,20 @@ class Object_Reference {
 				$this->object = Plugins::load( $this->name );
 				return;
 
+			case 'setting':
+				// $this->object = Settings::load( $this->name );
+				return;
+
+			case 'theme':
+				// $this->object = Themes::load( $this->name );
+				return;
+
+			case 'comment':
+				$this->object = Comments::load( $this->id );
+				return;
+
 			default:
-				throw new Exception( 'Unknown object type.' );
+				throw new Exception( 'Unknown or unsupported object type.' );
 		}
 	}
 
@@ -130,30 +196,34 @@ class Object_Reference {
 
 	/**
 	 * Get the name or title of the object.
+	 * This only works for object types identified by ID, not those identified by name.
 	 *
 	 * @return string The name or title of the object.
-	 * @throws Exception If the object type is unknown.
+	 * @throws Exception If this method doesn't work for the specified object type.
 	 */
-	public function get_name() {
+	public function load_name() {
 		switch ( $this->type ) {
 			case 'post':
 			case 'revision':
 				return $this->get_object()->title;
 
 			case 'user':
-				return Users::get_name( $this->id );
+				return Users::get_name( $this->get_object() );
 
 			case 'term':
 				return $this->get_object()->name;
 
-			case 'plugin':
-				return $this->name;
+			// case 'plugin':
 
-			case 'theme':
-				return $this->name;
+			// case 'setting':
+
+			// case 'theme':
+
+			case 'comment':
+				return Comments::get_title( $this->id );
 
 			default:
-				throw new Exception( 'Unknown object type.' );
+				throw new Exception( 'Unknown or unsupported object type.' );
 		}
 	}
 
@@ -182,10 +252,6 @@ class Object_Reference {
 				// Return the term tag.
 				return Terms::get_tag( $this->id, $this->name );
 
-			case 'comment':
-				// Return the comment tag.
-				return $this->name;
-
 			case 'plugin':
 				// Return the plugin tag.
 				return Plugins::get_tag( $this->name );
@@ -201,6 +267,10 @@ class Object_Reference {
 
 				// Return a link to the theme.
 				// return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
+
+			case 'comment':
+				// Return the comment tag.
+				return $this->name;
 		}
 
 		// If the object type is invalid, throw an exception.
@@ -213,32 +283,36 @@ class Object_Reference {
 	 * @return array The core properties of the object.
 	 * @throws Exception If the object type is unknown.
 	 */
-	// public function get_core_properties(): ?array {
-	// switch ( $this->type ) {
-	// case 'post':
-	// return Posts::get_core_properties( $this->id );
+	public function get_core_properties(): ?array {
+		switch ( $this->type ) {
+			case 'post':
+				return Posts::get_core_properties( $this->id );
 
-	// case 'user':
-	// return Users::get_core_properties( $this->id );
+			case 'user':
+				return Users::get_core_properties( $this->id );
 
-	// case 'term':
-	// return null;
-	// return Terms::get_core_properties( $this->id );
+			case 'term':
+				return null;
+				// return Terms::get_core_properties( $this->id );
 
-	// case 'comment':
-	// return null;
-	// return Comments::get_core_properties( $this->id );
+			case 'plugin':
+				$plugin_data = Plugins::load_by_name( $this->name );
+				return Plugins::get_core_properties( $plugin_data );
 
-	// case 'plugin':
-	// return null;
-	// return Plugins::get_core_properties( $this->id );
+			case 'setting':
+				return null;
+				// return Settings::get_core_properties( $this->name );
 
-	// case 'theme':
-	// return null;
-	// return Themes::get_core_properties( $this->id );
+			case 'theme':
+				return null;
+				// return Themes::get_core_properties( $this->id );
 
-	// default:
-	// throw new Exception( 'Unknown object type.' );
-	// }
-	// }
+			case 'comment':
+				return null;
+				// return Comments::get_core_properties( $this->id );
+
+			default:
+				throw new Exception( 'Unknown or unsupported object type.' );
+		}
+	}
 }

@@ -38,13 +38,13 @@ class Posts {
 	 *
 	 * @var array
 	 */
-	private static array $terms_added = array();
+	private static array $terms = array();
 
 	// =============================================================================================
 	// Hooks.
 
 	/**
-	 * Link the events we want to log to methods.
+	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
 		// Track post creation and update.
@@ -82,45 +82,35 @@ class Posts {
 		if ( $update ) {
 			return;
 		}
+
 		debug( 'on_save_post' );
 
 		// Check if we're updating or creating.
-		$creating = wp_is_post_revision( $post_id ) === false;
+		$updating = wp_is_post_revision( $post_id ) !== false;
 
 		// If we're updating, the $post variable refers to the new revision rather than the parent post.
-		if ( ! $creating ) {
+		if ( $updating ) {
 			// Record the ID of the new revision.
 			$revision_id = $post_id;
 
 			// Load the parent object.
 			$post_id = $post->post_parent;
 			$post    = self::load( $post_id );
-		}
-
-		// Get the core properties. No need to store all, just want to display some to the user.
-		$properties = self::get_core_properties( $post );
-
-		// If updating, modify the properties.
-		if ( ! $creating ) {
-			// Copy changes to the properties array.
-			foreach ( self::$properties as $key => $prop ) {
-				$properties[ $key ] = $prop;
-			}
 
 			// Replace changed content with object references.
-			if ( ! empty( $properties['post_content'] ) ) {
+			if ( ! empty( self::$properties['post_content'] ) ) {
 				// For the old value, link to the revision (or show a deleted tag).
-				$properties['post_content']->val = new Object_Reference( 'revision', $revision_id );
+				self::$properties['post_content']->val = new Object_Reference( 'revision', $revision_id );
 				// For the new value, link to the edit page (or show a deleted tag).
-				$properties['post_content']->new_val = new Object_Reference( 'post', $post_id, $post->post_title );
+				self::$properties['post_content']->new_val = new Object_Reference( 'post', $post_id, $post->post_title );
 			}
 		}
 
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $creating ? ' Created' : ' Updated' );
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $updating ? ' Updated' : ' Created' );
 
 		// Log the event.
-		Logger::log_event( $event_type, 'post', $post_id, $post->post_title, null, $properties );
+		Logger::log_event( $event_type, $post, null, self::$properties );
 	}
 
 	/**
@@ -131,10 +121,11 @@ class Posts {
 	 */
 	public static function on_pre_post_update( int $post_id, array $data, ) {
 		debug( 'on_pre_post_update' );
+
 		global $wpdb;
 
 		// Record the current last modified date.
-		self::$properties['post_modified'] = new Property( 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post_id ) );
+		Property::update_array( self::$properties, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post_id ) );
 	}
 
 	/**
@@ -147,28 +138,32 @@ class Posts {
 	 */
 	public static function on_post_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
 		debug( 'on_post_updated' );
+
 		global $wpdb;
 
 		// Add changes.
 		foreach ( $post_before as $key => $value ) {
 			// Skip the dates in the posts table, they're incorrect.
-			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
+			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified_gmt' ), true ) ) {
 				continue;
 			}
 
-			// Process values into correct types.
-			$val     = Types::process_database_value( $key, $value );
-			$new_val = Types::process_database_value( $key, $post_after->{$key} );
+			// Process old value into the correct type.
+			$old_val = Types::process_database_value( $key, $value );
+
+			// Special handling for the last modified datetime.
+			if ( $key === 'post_modified' ) {
+				$new_val = self::get_last_modified_datetime( $post_id );
+			} else {
+				$new_val = Types::process_database_value( $key, $post_after->{$key} );
+			}
 
 			// Compare old and new values.
-			if ( ! Types::are_equal( $val, $new_val ) ) {
+			if ( ! Types::are_equal( $old_val, $new_val ) ) {
 				// Record change.
-				self::$properties[ $key ] = new Property( $key, $wpdb->posts, $val, $new_val );
+				Property::update_array( self::$properties, $key, $wpdb->posts, $old_val, $new_val );
 			}
 		}
-
-		// Get the new last modified datetime.
-		self::$properties['post_modified']->new_val = self::get_last_modified_datetime( $post_id );
 	}
 
 	/**
@@ -181,6 +176,7 @@ class Posts {
 	 */
 	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
 		debug( 'on_update_post_meta' );
+
 		global $wpdb;
 
 		// Get the current value.
@@ -192,7 +188,7 @@ class Posts {
 
 		// Note the change, if any.
 		if ( ! Types::are_equal( $val, $new_val ) ) {
-			self::$properties[ $meta_key ] = new Property( $meta_key, $wpdb->postmeta, $val, $new_val );
+			Property::update_array( self::$properties, $meta_key, $wpdb->postmeta, $val, $new_val );
 		}
 	}
 
@@ -204,6 +200,8 @@ class Posts {
 	 * @param WP_Post $post       Post object.
 	 */
 	public static function on_transition_post_status( string $new_status, string $old_status, WP_Post $post ) {
+		global $wpdb;
+
 		// Ensure this is not a revision.
 		if ( wp_is_post_revision( $post ) ) {
 			return;
@@ -223,28 +221,23 @@ class Posts {
 		debug( 'on_transition_post_status' );
 
 		// Get the event type.
-		$post_type       = self::get_post_type_singular_name( $post->post_type );
-		$event_type_verb = self::get_status_transition_verb( $old_status, $new_status );
-		$event_type      = "$post_type $event_type_verb";
+		$post_type  = self::get_post_type_singular_name( $post->post_type );
+		$verb       = self::get_status_transition_verb( $old_status, $new_status );
+		$event_type = "$post_type $verb";
 
-		// Get the post's properties.
-		$properties = self::get_core_properties( $post );
-
-		// Modify the properties to correctly show the status change.
-		$properties['post_status']->val     = $old_status;
-		$properties['post_status']->new_val = $new_status;
+		// Update the properties to correctly show the status change.
+		$props = array();
+		Property::update_array( $props, 'post_status', $wpdb->posts, $old_status, $new_status );
 
 		// If the post is scheduled for the future, let's show this information.
+		$metas = array();
 		if ( $new_status === 'future' ) {
 			$scheduled_publish_datetime = DateTimes::create_datetime( $post->post_date );
-			$eventmetas                 = array();
-			Eventmeta::update_array( $eventmetas, 'when_to_publish', $scheduled_publish_datetime );
-		} else {
-			$eventmetas = null;
+			Eventmeta::update_array( $metas, 'when_to_publish', $scheduled_publish_datetime );
 		}
 
 		// Log the event.
-		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, $eventmetas, $properties );
+		Logger::log_event( $event_type, $post, $metas, $props );
 	}
 
 	/**
@@ -267,11 +260,6 @@ class Posts {
 		// If there weren't any, bail.
 		if ( empty( $attached_terms ) ) {
 			return;
-		}
-
-		// Make sure the eventmetas array has been created.
-		if ( ! isset( self::$eventmetas ) ) {
-			self::$eventmetas = array();
 		}
 
 		// Add them to the eventmetas. One for each taxonomy.
@@ -299,19 +287,16 @@ class Posts {
 			return;
 		}
 
-		// Load the post if necessary.
-		if ( is_int( $post ) ) {
-			$post = self::load( $post );
-		}
+		debug( 'on_delete_post' );
 
 		// Get the event type.
 		$event_type = self::get_post_type_singular_name( $post->post_type ) . ' Deleted';
 
 		// Get all the post's properties, including metadata.
-		$properties = self::get_properties( $post );
+		$props = self::get_properties( $post );
 
 		// Log the event.
-		Logger::log_event( $event_type, 'post', $post->ID, $post->post_title, self::$eventmetas, $properties );
+		Logger::log_event( $event_type, $post, self::$eventmetas, $props );
 	}
 
 	/**
@@ -327,14 +312,33 @@ class Posts {
 			return;
 		}
 
-		// Get the term.
-		$term = Terms::get_by_term_taxonomy_id( $tt_id );
+		debug( 'on_added_term_relationship' );
 
 		// Remember the newly attached term.
-		if ( ! key_exists( $taxonomy, self::$terms_added ) ) {
-			self::$terms_added[ $taxonomy ] = array();
+		$term                                = Terms::get_by_term_taxonomy_id( $tt_id );
+		self::$terms[ $taxonomy ]['added'][] = Object_Reference::new_from_wp_object( $term );
+	}
+
+	/**
+	 * Fires immediately after an object-term relationship is added.
+	 *
+	 * @param int    $post_id  The post ID.
+	 * @param array  $tt_ids   An array of term taxonomy IDs.
+	 * @param string $taxonomy The taxonomy slug.
+	 */
+	public static function on_deleted_term_relationships( int $post_id, array $tt_ids, string $taxonomy ) {
+		// Ignore revisions.
+		if ( wp_is_post_revision( $post_id ) ) {
+			return;
 		}
-		self::$terms_added[ $taxonomy ][] = new Object_Reference( 'term', $term->term_id, $term->name );
+
+		debug( 'on_deleted_term_relationships' );
+
+		// Convert the term_taxonomy IDs to Object_Reference objects.
+		foreach ( $tt_ids as $tt_id ) {
+			$term                                  = Terms::get_by_term_taxonomy_id( $tt_id );
+			self::$terms[ $taxonomy ]['removed'][] = Object_Reference::new_from_wp_object( $term );
+		}
 	}
 
 	/**
@@ -353,70 +357,53 @@ class Posts {
 
 		debug( 'on_wp_after_insert_post' );
 
-		// Log the addition of any taxonomy terms.
-		if ( self::$terms_added ) {
-			// Loop through the taxonomies and create a single log entry for each.
-			foreach ( self::$terms_added as $taxonomy => $term_refs ) {
-				// Get the post's core properties.
-				$properties = self::get_core_properties( $post );
-
+		// Log the addition or removal of any taxonomy terms.
+		if ( self::$terms ) {
+			// Loop through the taxonomies and create a log entry for each.
+			foreach ( self::$terms as $taxonomy => $term_changes ) {
 				// Get the taxonomy object and name.
 				$taxonomy_obj  = get_taxonomy( $taxonomy );
 				$taxonomy_name = $taxonomy_obj->labels->name;
 
-				// Show the removed term or terms in the eventmetas.
-				$eventmetas = array();
-				$meta_key   = 'added_' . strtolower( $taxonomy_name );
-				Eventmeta::update_array( $eventmetas, $meta_key, $term_refs );
+				// Get some useful information.
+				$terms_were_added   = ! empty( $term_changes['added'] );
+				$terms_were_removed = ! empty( $term_changes['removed'] );
+
+				// Get event type verb
+				if ( $terms_were_added && $terms_were_removed ) {
+					$verb = 'Updated';
+				} elseif ( $terms_were_added ) {
+					$verb = 'Added';
+				} elseif ( $terms_were_removed ) {
+					$verb = 'Removed';
+				} else {
+					// This shouldn't occur.
+					continue;
+				}
 
 				// Get the event type.
 				$post_type_name = self::get_post_type_singular_name( $post->post_type );
-				$event_type     = "Added $taxonomy_name to $post_type_name";
+				$event_type     = "$post_type_name $taxonomy_name $verb";
+
+				// Collect eventmetas.
+				$metas = array();
+
+				// Show the added terms in the eventmetas.
+				if ( $terms_were_added ) {
+					$meta_key = 'added_' . strtolower( $taxonomy_name );
+					Eventmeta::update_array( $metas, $meta_key, $term_changes['added'] );
+				}
+
+				// Show the removed terms in the eventmetas.
+				if ( $terms_were_removed ) {
+					$meta_key = 'removed_' . strtolower( $taxonomy_name );
+					Eventmeta::update_array( $metas, $meta_key, $term_changes['removed'] );
+				}
 
 				// Log the event.
-				Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $eventmetas, $properties );
+				Logger::log_event( $event_type, $post, $metas );
 			}
 		}
-	}
-
-	/**
-	 * Fires immediately after an object-term relationship is added.
-	 *
-	 * @param int    $post_id  The post ID.
-	 * @param array  $tt_ids   An array of term taxonomy IDs.
-	 * @param string $taxonomy The taxonomy slug.
-	 */
-	public static function on_deleted_term_relationships( int $post_id, array $tt_ids, string $taxonomy ) {
-		debug( 'on_deleted_term_relationships' );
-
-		// Load the post.
-		$post = self::load( $post_id );
-
-		// Get the post's core properties.
-		$properties = self::get_core_properties( $post );
-
-		// Get the taxonomy object and name.
-		$taxonomy_obj  = get_taxonomy( $taxonomy );
-		$taxonomy_name = $taxonomy_obj->labels->name;
-
-		// Convert the term_taxonomy IDs to Object_Reference objects.
-		$term_refs = array();
-		foreach ( $tt_ids as $tt_id ) {
-			$term        = Terms::get_by_term_taxonomy_id( $tt_id );
-			$term_refs[] = new Object_Reference( 'term', $term->term_id, $term->name );
-		}
-
-		// Show the removed term or terms in the eventmetas.
-		$eventmetas = array();
-		$meta_key   = 'removed_' . strtolower( $taxonomy_name );
-		Eventmeta::update_array( $eventmetas, $meta_key, $term_refs );
-
-		// Get the event type.
-		$post_type_name = self::get_post_type_singular_name( $post->post_type );
-		$event_type     = "Removed $taxonomy_name from $post_type_name";
-
-		// Log the event.
-		Logger::log_event( $event_type, 'post', $post_id, $post->post_title, $eventmetas, $properties );
 	}
 
 	// =============================================================================================
@@ -665,7 +652,7 @@ class Posts {
 			}
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->posts, $value );
+			Property::update_array( $properties, $key, $wpdb->posts, $value );
 		}
 
 		return $properties;
@@ -685,16 +672,10 @@ class Posts {
 			$post = self::load( $post );
 		}
 
-		// Start with the core properties.
-		$properties = self::get_core_properties( $post );
+		$properties = array();
 
 		// Add the base properties.
 		foreach ( $post as $key => $value ) {
-			// Skip core properties.
-			if ( key_exists( $key, $properties ) ) {
-				continue;
-			}
-
 			// Skip the dates in the posts table, they're incorrect.
 			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
 				continue;
@@ -704,7 +685,7 @@ class Posts {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->posts, $value );
+			Property::update_array( $properties, $key, $wpdb->posts, $value );
 		}
 
 		// Add the meta properties.
@@ -714,7 +695,7 @@ class Posts {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->postmeta, $value );
+			Property::update_array( $properties, $key, $wpdb->postmeta, $value );
 		}
 
 		return $properties;

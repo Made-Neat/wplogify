@@ -18,17 +18,24 @@ use WP_Term;
 class Terms {
 
 	/**
-	 * Current event under construction.
+	 * Array to remember properties between different events.
 	 *
 	 * @var array
 	 */
-	private static Event $new_event;
+	private static $properties = array();
+
+	/**
+	 * Array to remember metadata between different events.
+	 *
+	 * @var array
+	 */
+	private static $eventmetas = array();
 
 	// =============================================================================================
 	// Hooks.
 
 	/**
-	 * Link the events we want to log to methods.
+	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
 		// CRUD operations.
@@ -58,11 +65,8 @@ class Terms {
 		// Get the event type.
 		$event_type = ucwords( $taxonomy ) . ' Created';
 
-		// Get the term properties.
-		$properties = self::get_properties( $term );
-
 		// Log the event.
-		Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
+		Logger::log_event( $event_type, $term );
 	}
 
 	/**
@@ -73,13 +77,12 @@ class Terms {
 	 * @param array  $args     Arguments passed to wp_update_term().
 	 */
 	public static function on_edit_terms( int $term_id, string $taxonomy, array $args ) {
-		debug( func_get_args() );
+		// debug( func_get_args() );
+
+		global $wpdb;
 
 		// Load the term.
 		$term = self::load( $term_id );
-
-		// Get the term properties.
-		$properties = self::get_properties( $term );
 
 		// Compare values.
 		$changed = false;
@@ -90,8 +93,7 @@ class Terms {
 
 			if ( ! Types::are_equal( $val, $new_val ) ) {
 				// Update the property's before and after values.
-				$properties[ $key ]->val     = $val;
-				$properties[ $key ]->new_val = $new_val;
+				Property::update_array( self::$properties, $key, $wpdb->terms, $val, $new_val );
 
 				// Note there were changes.
 				$changed = true;
@@ -103,7 +105,7 @@ class Terms {
 			$event_type = ucwords( $taxonomy ) . ' Updated';
 
 			// Log the event.
-			Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
+			Logger::log_event( $event_type, $term, null, self::$properties );
 		}
 	}
 
@@ -115,6 +117,8 @@ class Terms {
 	 * @throws Exception If the term could not be retrieved.
 	 */
 	public static function on_pre_delete_term( int $term_id, string $taxonomy ) {
+		global $wpdb;
+
 		// Get the term.
 		$term = get_term( $term_id, $taxonomy );
 
@@ -125,9 +129,6 @@ class Terms {
 
 		// Get the event type.
 		$event_type = ucwords( $taxonomy ) . ' Deleted';
-
-		// Get the term's properties.
-		$properties = self::get_properties( $term );
 
 		// Find all posts tagged with this term, in case we need to restore the term.
 		$post_ids = get_objects_in_term( $term_id, $taxonomy );
@@ -141,10 +142,10 @@ class Terms {
 		$post_ids = array_map( fn( $post_id ) => (int) $post_id, $post_ids );
 
 		// Add to properties.
-		$properties['attached_posts'] = new Property( 'attached_posts', null, $post_ids );
+		Property::update_array( self::$properties, 'attached_posts', $wpdb->terms, $post_ids );
 
 		// Log the event.
-		Logger::log_event( $event_type, 'term', $term_id, $term->name, null, $properties );
+		Logger::log_event( $event_type, $term, null, self::$properties );
 	}
 
 	/**
@@ -153,7 +154,7 @@ class Terms {
 	 * @param array $edit_tt_ids An array of term taxonomy IDs for the given term.
 	 */
 	public static function on_edit_term_taxonomies( array $edit_tt_ids ) {
-		debug( 'on_edit_term_taxonomies', func_get_args() );
+		// debug( 'on_edit_term_taxonomies', func_get_args() );
 	}
 
 	// =============================================================================================
@@ -210,7 +211,7 @@ class Terms {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->terms, $value );
+			Property::update_array( $properties, $key, $wpdb->terms, $value );
 		}
 
 		// Add the meta properties.
@@ -220,7 +221,7 @@ class Terms {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			$properties[ $key ] = new Property( $key, $wpdb->termmeta, $value );
+			Property::update_array( $properties, $key, $wpdb->termmeta, $value );
 		}
 
 		return $properties;
