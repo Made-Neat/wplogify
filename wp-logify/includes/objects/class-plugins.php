@@ -311,9 +311,14 @@ class Plugins {
 	 * Get the data for a plugin.
 	 *
 	 * @param string $plugin_file The plugin file.
-	 * @return array The plugin data.
+	 * @return ?array The plugin data or null if the plugin isn't found.
 	 */
-	public static function load( string $plugin_file ): array {
+	public static function load( string $plugin_file ): ?array {
+		// Check if the plugin exists.
+		if ( ! self::plugin_exists( $plugin_file ) ) {
+			return null;
+		}
+
 		// Load the plugin data.
 		$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
 

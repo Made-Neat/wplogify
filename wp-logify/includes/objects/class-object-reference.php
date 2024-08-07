@@ -33,14 +33,14 @@ class Object_Reference {
 	 *
 	 * @var ?int
 	 */
-	public ?int $id;
+	public ?int $id = null;
 
 	/**
 	 * The name of the object.
 	 *
 	 * @var ?string
 	 */
-	public string $name;
+	public ?string $name = null;
 
 	/**
 	 * The object itself.
@@ -49,7 +49,7 @@ class Object_Reference {
 	 *
 	 * @var mixed
 	 */
-	private mixed $object;
+	private mixed $object = null;
 
 	/**
 	 * Constructor.
@@ -133,14 +133,14 @@ class Object_Reference {
 	}
 
 	/**
-	 * Load an object.
+	 * Load the object.
 	 *
 	 * @throws Exception If the object cannot be loaded or if the object type is unknown.
 	 */
 	private function load() {
 		// Check we know which object to load.
-		if ( empty( $this->type ) || empty( $this->id ) ) {
-			throw new Exception( 'Cannot load an object without knowing its type and ID.' );
+		if ( empty( $this->type ) ) {
+			throw new Exception( 'Cannot load an object without knowing its type.' );
 		}
 
 		// Load the object based on the type.
@@ -171,7 +171,7 @@ class Object_Reference {
 				return;
 
 			case 'comment':
-				$this->object = Comments::load( $this->id );
+				// $this->object = Comments::load( $this->id );
 				return;
 
 			default:
@@ -202,25 +202,33 @@ class Object_Reference {
 	 * @throws Exception If this method doesn't work for the specified object type.
 	 */
 	public function load_name() {
+		// Get the object and check for null.
+		$obj = $this->get_object();
+		if ( $obj === null ) {
+			return 'Unknown';
+		}
+
+		// Get the name from the object.
 		switch ( $this->type ) {
 			case 'post':
 			case 'revision':
-				return $this->get_object()->title;
+				return $obj->title;
 
 			case 'user':
-				return Users::get_name( $this->get_object() );
+				return Users::get_name( $obj );
 
 			case 'term':
-				return $this->get_object()->name;
+				return $obj->name;
 
-			// case 'plugin':
+			case 'plugin':
+				return $obj['Name'];
 
 			// case 'setting':
 
 			// case 'theme':
 
 			case 'comment':
-				return Comments::get_title( $this->id );
+				return Comments::get_title( $obj );
 
 			default:
 				throw new Exception( 'Unknown or unsupported object type.' );

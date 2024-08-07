@@ -86,10 +86,10 @@ class Posts {
 		debug( 'on_save_post' );
 
 		// Check if we're updating or creating.
-		$updating = wp_is_post_revision( $post_id ) !== false;
+		$creating = wp_is_post_revision( $post_id ) === false;
 
 		// If we're updating, the $post variable refers to the new revision rather than the parent post.
-		if ( $updating ) {
+		if ( ! $creating ) {
 			// Record the ID of the new revision.
 			$revision_id = $post_id;
 
@@ -106,8 +106,11 @@ class Posts {
 			}
 		}
 
+		// Check if we need to use the 'Created' verb.
+		$created = $creating || $post->post_status === 'auto-draft';
+
 		// Get the event type.
-		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $updating ? ' Updated' : ' Created' );
+		$event_type = self::get_post_type_singular_name( $post->post_type ) . ( $created ? ' Created' : ' Updated' );
 
 		// Log the event.
 		Logger::log_event( $event_type, $post, null, self::$properties );
@@ -361,13 +364,14 @@ class Posts {
 		if ( self::$terms ) {
 			// Loop through the taxonomies and create a log entry for each.
 			foreach ( self::$terms as $taxonomy => $term_changes ) {
+				// Get some useful information.
+				$terms_were_added   = empty( $term_changes['added'] ) ? 0 : count( $term_changes['added'] );
+				$terms_were_removed = empty( $term_changes['removed'] ) ? 0 : count( $term_changes['removed'] );
+				$total              = $terms_were_added + $terms_were_removed;
+
 				// Get the taxonomy object and name.
 				$taxonomy_obj  = get_taxonomy( $taxonomy );
-				$taxonomy_name = $taxonomy_obj->labels->name;
-
-				// Get some useful information.
-				$terms_were_added   = ! empty( $term_changes['added'] );
-				$terms_were_removed = ! empty( $term_changes['removed'] );
+				$taxonomy_name = $total === 1 ? $taxonomy_obj->labels->singular_name : $taxonomy_obj->labels->name;
 
 				// Get event type verb
 				if ( $terms_were_added && $terms_were_removed ) {
@@ -426,13 +430,12 @@ class Posts {
 	 * Get a post by ID.
 	 *
 	 * @param int $post_id The ID of the post.
-	 * @return WP_Post The post object.
-	 * @throws Exception If the post could not be loaded.
+	 * @return ?WP_Post The post object or null if the post doesn't exist.
 	 */
-	public static function load( int $post_id ): WP_Post {
+	public static function load( int $post_id ): ?WP_Post {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			throw new Exception( "Post $post_id could not be loaded." );
+			return null;
 		}
 		return $post;
 	}

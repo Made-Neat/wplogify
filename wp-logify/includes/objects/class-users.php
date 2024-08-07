@@ -115,37 +115,28 @@ class Users {
 		// Get the user's properties.
 		$properties = self::get_properties( $user );
 
+		// Get the posts authored by this user.
+		$sql_posts = $wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id );
+		$post_ids  = $wpdb->get_col( $sql_posts );
+		$post_refs = array_map(
+			fn ( $post_id ) => new Object_Reference( 'post', $post_id ),
+			$post_ids
+		);
+		Eventmeta::update_array( self::$eventmetas, 'posts_authored', $post_refs );
+
+		// Get the comments authored by this user.
+		$sql_comments = $wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_author = %d', $wpdb->comments, $user_id );
+		$comment_ids  = $wpdb->get_col( $sql_comments );
+		// $comment_refs = array_map(
+		// fn ( $comment_id ) =>new Object_Reference( 'comment', $comment_id ),
+		// $comment_ids
+		// );
+		Eventmeta::update_array( self::$eventmetas, 'comments_authored', $comment_ids );
+
 		// If the user's data is being reassigned, record that information in the eventmetas.
 		if ( $reassign ) {
 			Eventmeta::update_array( self::$eventmetas, 'content_reassigned_to', new Object_Reference( 'user', $reassign ) );
 		}
-
-		// Get the posts created by this user.
-		$sql_posts = $wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id );
-		$post_ids  = $wpdb->get_col( $sql_posts );
-		$post_refs = array_map(
-			fn ( $post_id ) =>new Object_Reference( 'post', $post_id, Posts::load( $post_id )->post_title ),
-			$post_ids
-		);
-		Eventmeta::update_array( self::$eventmetas, 'posts', $post_refs );
-
-		// Get the comments created by this user.
-		$sql_comments = $wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_author = %d', $wpdb->comments, $user_id );
-		$comment_ids  = $wpdb->get_col( $sql_comments );
-		// $comment_refs = array_map(
-		// fn ( $comment_id ) =>new Object_Reference( 'comment', $comment_id, Posts::get_comment( $comment_id )->comment_title ),
-		// $comment_ids
-		// );
-		Eventmeta::update_array( self::$eventmetas, 'comments', $comment_ids );
-
-		// Get the links owned by this user.
-		$sql_links = $wpdb->prepare( 'SELECT link_id FROM %i WHERE link_owner = %d', $wpdb->links, $user_id );
-		$link_ids  = $wpdb->get_col( $sql_links );
-		// $link_refs = array_map(
-		// fn ( $link_id ) =>new Object_Reference( 'link', $link_id, Posts::get_link( $link_id )->link_title ),
-		// $link_ids
-		// );
-		Eventmeta::update_array( self::$eventmetas, 'links', $link_ids );
 
 		// Log the event.
 		Logger::log_event( 'User Deleted', $user, self::$eventmetas, $properties );
@@ -296,16 +287,13 @@ class Users {
 	 * Get a user by ID.
 	 *
 	 * @param int $user_id The ID of the user.
-	 * @return WP_User The user object.
-	 * @throws Exception If the user could not be loaded.
+	 * @return ?WP_User The user object if found, null otherwise.
 	 */
-	public static function load( int $user_id ): WP_User {
+	public static function load( int $user_id ): ?WP_User {
 		$user = get_userdata( $user_id );
-
 		if ( ! $user ) {
-			throw new Exception( "User $user_id could not be loaded." );
+			return null;
 		}
-
 		return $user;
 	}
 
@@ -409,9 +397,8 @@ class Users {
 	public static function get_name( WP_User|int $user ) {
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
-			try {
-				$user = self::load( $user );
-			} catch ( Exception ) {
+			$user = self::load( $user );
+			if ( ! $user ) {
 				return 'Unknown';
 			}
 		}

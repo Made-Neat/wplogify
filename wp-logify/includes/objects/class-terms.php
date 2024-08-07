@@ -177,13 +177,12 @@ class Terms {
 	 * Get a term by ID.
 	 *
 	 * @param int $term_id The ID of the term.
-	 * @return WP_Term The term object.
-	 * @throws Exception If the term could not be loaded.
+	 * @return ?WP_Term The term object if it exists, null otherwise.
 	 */
-	public static function load( int $term_id ): WP_Term {
+	public static function load( int $term_id ): ?WP_Term {
 		$term = get_term( $term_id );
 		if ( ! $term || is_wp_error( $term ) ) {
-			throw new Exception( "Term {$term_id} could not be loaded." );
+			return null;
 		}
 		return $term;
 	}
