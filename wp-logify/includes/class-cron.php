@@ -30,13 +30,13 @@ class Cron {
 		global $wpdb;
 
 		// Check if we need to delete any old records.
-		if ( Settings::get_keep_forever() ) {
+		if ( Plugin_Settings::get_keep_forever() ) {
 			return;
 		}
 
 		// Calculate the number of days to keep records.
-		$quantity = Settings::get_keep_period_quantity();
-		$units    = Settings::get_keep_period_units();
+		$quantity = Plugin_Settings::get_keep_period_quantity();
+		$units    = Plugin_Settings::get_keep_period_units();
 		switch ( $units ) {
 			case 'day':
 				$days = $quantity;

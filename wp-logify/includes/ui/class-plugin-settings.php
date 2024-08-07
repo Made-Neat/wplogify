@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Settings class.
+ * Contains the Plugin_Settings class.
  *
  * @package WP_Logify
  */
@@ -8,11 +8,11 @@
 namespace WP_Logify;
 
 /**
- * Class WP_Logify\Settings
+ * Class WP_Logify\Plugin_Settings
  *
  * This class encapsulates properties and methods relating to plugin settings.
  */
-class Settings {
+class Plugin_Settings {
 
 	// ---------------------------------------------------------------------------------------------
 	// Default values for settings.

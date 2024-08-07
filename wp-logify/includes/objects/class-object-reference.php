@@ -56,13 +56,13 @@ class Object_Reference {
 	 *
 	 * @param string           $type The type of the object.
 	 * @param ?int             $id The ID of the object.
-	 * @param null|string|true $name The name of the object, or a bool to specify setting it
+	 * @param null|string|bool $name The name of the object, or a bool to specify setting it
 	 *                               automatically from the object.
 	 *                               - If a string, the name will be assigned this value.
 	 *                               - If true, the name will be extracted from the existing object.
-	 *                               - If null, the name won't be set.
+	 *                               - If null or false, the name won't be set.
 	 */
-	public function __construct( string $type, ?int $id, null|string|true $name = true ) {
+	public function __construct( string $type, ?int $id, null|string|bool $name = true ) {
 		// Set the object type.
 		$this->type = $type;
 

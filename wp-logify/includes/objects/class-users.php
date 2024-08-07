@@ -349,7 +349,7 @@ class Users {
 	 * @param string      $old_name The old name of the user.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( WP_User|int $user, string $old_name ) {
+	public static function get_tag( WP_User|int $user, string $old_name ): string {
 		// If the user exists, return a link to their edit page.
 		if ( self::exists( $user ) ) {
 			return self::get_edit_link( $user );

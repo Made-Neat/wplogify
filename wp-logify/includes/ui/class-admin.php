@@ -52,7 +52,7 @@ class Admin {
 
 		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ), 'dashicons-list-view' );
 		add_submenu_page( 'wp-logify', 'View Log', 'View Log', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ) );
-		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( 'WP_Logify\Settings', 'display_settings_page' ) );
+		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( 'WP_Logify\Plugin_Settings', 'display_settings_page' ) );
 		add_action( "load-$hook", array( __CLASS__, 'add_screen_options' ) );
 	}
 
@@ -63,7 +63,7 @@ class Admin {
 	 */
 	public static function add_admin_bar_menu( WP_Admin_Bar $wp_admin_bar ) {
 		// Don't show if the user isn't an admin or if they don't want to see it in the admin bar.
-		if ( ! Users::current_user_has_role( 'administrator' ) || ! Settings::get_show_in_admin_bar() ) {
+		if ( ! Users::current_user_has_role( 'administrator' ) || ! Plugin_Settings::get_show_in_admin_bar() ) {
 			return;
 		}
 

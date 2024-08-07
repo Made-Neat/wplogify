@@ -58,7 +58,7 @@ class Logger {
 
 		// If we aren't tracking this user's role, we don't need to log the event.
 		// This shouldn't happen; it should be checked earlier.
-		if ( ! Users::user_has_role( $acting_user, Settings::get_roles_to_track() ) ) {
+		if ( ! Users::user_has_role( $acting_user, Plugin_Settings::get_roles_to_track() ) ) {
 			return;
 		}
 

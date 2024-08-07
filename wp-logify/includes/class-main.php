@@ -68,12 +68,12 @@ class Main {
 	 */
 	public static function uninstall() {
 		// Drop the tables if the option is set to do so.
-		if ( Settings::get_delete_on_uninstall() ) {
+		if ( Plugin_Settings::get_delete_on_uninstall() ) {
 			Database::drop_all_tables();
 		}
 
 		// Delete settings.
-		Settings::delete_all();
+		Plugin_Settings::delete_all();
 	}
 
 	/**

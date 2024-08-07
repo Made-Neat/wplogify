@@ -376,7 +376,7 @@ class Plugins {
 	 * @param string $name The name of the plugin.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( string $name ) {
+	public static function get_tag( string $name ): string {
 		// Check if the plugin exists.
 		$plugin = self::load_by_name( $name );
 

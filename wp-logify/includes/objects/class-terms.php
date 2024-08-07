@@ -203,7 +203,7 @@ class Terms {
 	 * @param string      $old_name The old name of the term.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( WP_Term|int $term, string $old_name ) {
+	public static function get_tag( WP_Term|int $term, string $old_name ): string {
 		// If the term exists, return a link to its edit page.
 		if ( self::exists( $term ) ) {
 			return self::get_edit_link( $term );

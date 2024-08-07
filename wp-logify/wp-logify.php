@@ -52,7 +52,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-plugins.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-admin.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-log-page.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-settings.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-plugin-settings.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-widget.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-datetimes.php';

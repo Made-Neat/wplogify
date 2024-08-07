@@ -17,15 +17,15 @@ namespace WP_Logify;
 		<table class="form-table wp-logify-settings-table">
 			<tr valign="top">
 				<th scope="row">API Key</th>
-				<td><input type="text" name="wp_logify_api_key" value="<?php echo esc_attr( Settings::get_api_key() ); ?>" /></td>
+				<td><input type="text" name="wp_logify_api_key" value="<?php echo esc_attr( Plugin_Settings::get_api_key() ); ?>" /></td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">How long to keep records</th>
 				<td>
 					<?php
-					$keep_forever = Settings::get_keep_forever();
-					$quantity     = Settings::get_keep_period_quantity();
-					$units        = Settings::get_keep_period_units();
+					$keep_forever = Plugin_Settings::get_keep_forever();
+					$quantity     = Plugin_Settings::get_keep_period_quantity();
+					$units        = Plugin_Settings::get_keep_period_units();
 					?>
 					<label class="wp-logify-settings-radio">
 						<input type="radio" name="wp_logify_keep_forever" value="true" <?php checked( $keep_forever, true ); ?>> Forever
@@ -53,7 +53,7 @@ namespace WP_Logify;
 				<td>
 					<?php
 					$roles                   = wp_roles()->roles;
-					$selected_roles_to_track = Settings::get_roles_to_track();
+					$selected_roles_to_track = Plugin_Settings::get_roles_to_track();
 					foreach ( $roles as $role_key => $role ) {
 						$checked = in_array( $role_key, $selected_roles_to_track, true ) ? 'checked' : '';
 						echo '<label><input type="checkbox" name="wp_logify_roles_to_track[]" value="' . esc_attr( $role_key ) . '" ' . $checked . '> ' . esc_html( $role['name'] ) . '</label><br>';
@@ -63,15 +63,15 @@ namespace WP_Logify;
 			</tr>
 			<tr valign="top">
 				<th scope="row">Show submenu in admin bar</th>
-				<td><input type="checkbox" name="wp_logify_show_in_admin_bar" value="1" <?php checked( Settings::get_show_in_admin_bar(), 1 ); ?> /></td>
+				<td><input type="checkbox" name="wp_logify_show_in_admin_bar" value="1" <?php checked( Plugin_Settings::get_show_in_admin_bar(), 1 ); ?> /></td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">WP-Cron Tracking</th>
-				<td><input type="checkbox" name="wp_logify_wp_cron_tracking" value="1" <?php checked( Settings::get_wp_cron_tracking(), 1 ); ?> /></td>
+				<td><input type="checkbox" name="wp_logify_wp_cron_tracking" value="1" <?php checked( Plugin_Settings::get_wp_cron_tracking(), 1 ); ?> /></td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Delete events log when uninstalling</th>
-				<td><input type="checkbox" name="wp_logify_delete_on_uninstall" value="1" <?php checked( Settings::get_delete_on_uninstall(), 1 ); ?> /></td>
+				<td><input type="checkbox" name="wp_logify_delete_on_uninstall" value="1" <?php checked( Plugin_Settings::get_delete_on_uninstall(), 1 ); ?> /></td>
 			</tr>
 			<tr valign="top">
 				<th scope="row">Delete all logs now</th>
