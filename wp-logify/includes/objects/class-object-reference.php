@@ -304,8 +304,7 @@ class Object_Reference {
 				// return Terms::get_core_properties( $this->id );
 
 			case 'plugin':
-				$plugin_data = Plugins::load_by_name( $this->name );
-				return Plugins::get_core_properties( $plugin_data );
+				return Plugins::get_core_properties( $this->name );
 
 			case 'setting':
 				return null;

@@ -411,7 +411,7 @@ class Posts {
 	}
 
 	// =============================================================================================
-	// Methods for getting information about posts.
+	// Methods common to all object types.
 
 	/**
 	 * Check if a post exists.
@@ -419,7 +419,7 @@ class Posts {
 	 * @param int $post_id The ID of the post.
 	 * @return bool True if the post exists, false otherwise.
 	 */
-	public static function post_exists( int $post_id ): bool {
+	public static function exists( int $post_id ): bool {
 		global $wpdb;
 		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->posts, $post_id );
 		$count = (int) $wpdb->get_var( $sql );
@@ -439,6 +439,94 @@ class Posts {
 		}
 		return $post;
 	}
+
+	/**
+	 * Get the core properties of a post.
+	 *
+	 * @param WP_Post|int $post The post object or ID.
+	 * @return array The core properties of the post.
+	 */
+	public static function get_core_properties( WP_Post|int $post ): array {
+		global $wpdb;
+
+		// Load the post if necessary.
+		if ( is_int( $post ) ) {
+			$post = self::load( $post );
+		}
+
+		// Define the core properties by key.
+		$core_properties = array( 'ID', 'post_type', 'post_author', 'post_title', 'post_status', 'post_date', 'post_modified' );
+
+		// Build the array of properties.
+		$properties = array();
+		foreach ( $core_properties as $key ) {
+
+			// Get the value.
+			switch ( $key ) {
+				case 'post_author':
+					$value = new Object_Reference( 'user', $post->post_author );
+					break;
+
+				case 'post_date':
+					$value = self::get_created_datetime( $post );
+					break;
+
+				case 'post_modified':
+					$value = self::get_last_modified_datetime( $post );
+					break;
+
+				default:
+					// Process database values into correct types.
+					$value = Types::process_database_value( $key, $post->{$key} );
+					break;
+			}
+
+			// Construct the new Property object and add it to the properties array.
+			Property::update_array( $properties, $key, $wpdb->posts, $value );
+		}
+
+		return $properties;
+	}
+
+	/**
+	 * If the post hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param WP_Post|int $post The post object or ID.
+	 * @param string      $old_title The old title of the post.
+	 * @param bool        $override Whether to override the title with the old title.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( WP_Post|int $post, string $old_title, bool $override = false ): string {
+		// Check if the post exists.
+		if ( self::exists( $post ) ) {
+
+			// Load the post if necessary.
+			if ( is_int( $post ) ) {
+				$post = self::load( $post );
+			}
+
+			// If the post is trashed, we can't reach its edit page, so instead we'll link to the list of trashed posts.
+			if ( $post->post_status === 'trash' ) {
+				$url = admin_url( 'edit.php?post_status=trash&post_type=post' );
+			} else {
+				$url = self::get_edit_url( $post );
+			}
+
+			// Get the link text.
+			$text = ( $override && ! empty( $old_title ) ) ? $old_title : $post->post_title;
+
+			return "<a href='$url' class='wp-logify-post-link'>$text</a>";
+		}
+
+		// The post no longer exists. Construct the 'deleted' span element.
+		$post_id = is_int( $post ) ? $post : $post->ID;
+		$text    = empty( $old_title ) ? "Post $post_id" : $old_title;
+		return "<span class='wp-logify-deleted-object'>$text (deleted)</span>";
+	}
+
+	// =============================================================================================
+	// Methods for getting information about posts.
 
 	/**
 	 * Get the URL for a post's edit page.
@@ -481,43 +569,6 @@ class Posts {
 	}
 
 	/**
-	 * If the post hasn't been deleted, get a link to its edit page; otherwise, get a span with
-	 * the old title as the link text.
-	 *
-	 * @param WP_Post|int $post The post object or ID.
-	 * @param string      $old_title The old title of the post.
-	 * @param bool        $override Whether to override the title with the old title.
-	 * @return string The link or span HTML tag.
-	 */
-	public static function get_tag( WP_Post|int $post, string $old_title, bool $override = false ) {
-		// Check if the post exists.
-		if ( self::post_exists( $post ) ) {
-
-			// Load the post if necessary.
-			if ( is_int( $post ) ) {
-				$post = self::load( $post );
-			}
-
-			// If the post is trashed, we can't reach its edit page, so instead we'll link to the list of trashed posts.
-			if ( $post->post_status === 'trash' ) {
-				$url = admin_url( 'edit.php?post_status=trash&post_type=post' );
-			} else {
-				$url = self::get_edit_url( $post );
-			}
-
-			// Get the link text.
-			$text = ( $override && ! empty( $old_title ) ) ? $old_title : $post->post_title;
-
-			return "<a href='$url' class='wp-logify-post-link'>$text</a>";
-		}
-
-		// The post no longer exists. Construct the 'deleted' span element.
-		$post_id = is_int( $post ) ? $post : $post->ID;
-		$text    = empty( $old_title ) ? "Post $post_id" : $old_title;
-		return "<span class='wp-logify-deleted-object'>$text (deleted)</span>";
-	}
-
-	/**
 	 * Get the HTML for a link to the revision comparison page.
 	 *
 	 * @param ?int $revision_id The ID of the revision.
@@ -530,7 +581,7 @@ class Posts {
 		}
 
 		// Check if the revision exists.
-		if ( self::post_exists( $revision_id ) ) {
+		if ( self::exists( $revision_id ) ) {
 			// Get the URL for the revision comparison page.
 			$url = self::get_revision_url( $revision_id );
 
@@ -611,54 +662,6 @@ class Posts {
 		// Get the last modified datetime.
 		$last_modified_datetime = $wpdb->get_var( $sql );
 		return DateTimes::create_datetime( $last_modified_datetime );
-	}
-
-	/**
-	 * Get the core properties of a post.
-	 *
-	 * @param WP_Post|int $post The post object or ID.
-	 * @return array The core properties of the post.
-	 */
-	public static function get_core_properties( WP_Post|int $post ): array {
-		global $wpdb;
-
-		// Load the post if necessary.
-		if ( is_int( $post ) ) {
-			$post = self::load( $post );
-		}
-
-		// Define the core properties by key.
-		$core_properties = array( 'ID', 'post_type', 'post_author', 'post_title', 'post_status', 'post_date', 'post_modified' );
-
-		// Build the array of properties.
-		$properties = array();
-		foreach ( $core_properties as $key ) {
-
-			// Get the value.
-			switch ( $key ) {
-				case 'post_author':
-					$value = new Object_Reference( 'user', $post->post_author );
-					break;
-
-				case 'post_date':
-					$value = self::get_created_datetime( $post );
-					break;
-
-				case 'post_modified':
-					$value = self::get_last_modified_datetime( $post );
-					break;
-
-				default:
-					// Process database values into correct types.
-					$value = Types::process_database_value( $key, $post->{$key} );
-					break;
-			}
-
-			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->posts, $value );
-		}
-
-		return $properties;
 	}
 
 	/**

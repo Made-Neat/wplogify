@@ -268,7 +268,7 @@ class Users {
 	}
 
 	// =============================================================================================
-	// Methods for getting information about users.
+	// Methods common to all object types.
 
 	/**
 	 * Check if a user exists.
@@ -276,7 +276,7 @@ class Users {
 	 * @param int $user_id The ID of the user.
 	 * @return bool True if the user exists, false otherwise.
 	 */
-	public static function user_exists( int $user_id ): bool {
+	public static function exists( int $user_id ): bool {
 		global $wpdb;
 		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->users, $user_id );
 		$count = (int) $wpdb->get_var( $sql );
@@ -340,6 +340,29 @@ class Users {
 
 		return $properties;
 	}
+
+	/**
+	 * If the user hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param WP_User|int $user The user object or ID.
+	 * @param string      $old_name The old name of the user.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( WP_User|int $user, string $old_name ) {
+		// If the user exists, return a link to their edit page.
+		if ( self::exists( $user ) ) {
+			return self::get_edit_link( $user );
+		}
+
+		// The user no longer exists. Construct the 'deleted' span element.
+		$user_id = is_int( $user ) ? $user : $user->ID;
+		$name    = empty( $old_name ) ? "User $user_id" : $old_name;
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+	}
+
+	// =============================================================================================
+	// Methods for getting information about users.
 
 	/**
 	 * Get the properties of a user to show in the log.
@@ -577,26 +600,6 @@ class Users {
 		// Return the link.
 		$name = self::get_name( $user );
 		return "<a href='$url' class='wp-logify-user-link'>$name</a>";
-	}
-
-	/**
-	 * If the user hasn't been deleted, get a link to its edit page; otherwise, get a span with
-	 * the old title as the link text.
-	 *
-	 * @param WP_User|int $user The user object or ID.
-	 * @param string      $old_name The old name of the user.
-	 * @return string The link or span HTML tag.
-	 */
-	public static function get_tag( WP_User|int $user, string $old_name ) {
-		// If the user exists, return a link to their edit page.
-		if ( self::user_exists( $user ) ) {
-			return self::get_edit_link( $user );
-		}
-
-		// The user no longer exists. Construct the 'deleted' span element.
-		$user_id = is_int( $user ) ? $user : $user->ID;
-		$name    = empty( $old_name ) ? "User $user_id" : $old_name;
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	/**

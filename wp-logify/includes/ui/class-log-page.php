@@ -256,7 +256,7 @@ class Log_Page {
 		// get their details from there.
 
 		// Get some extra details if the user has not been deleted.
-		if ( Users::user_exists( $event->user_id ) ) {
+		if ( Users::exists( $event->user_id ) ) {
 			// Load the user.
 			$user = Users::load( $event->user_id );
 

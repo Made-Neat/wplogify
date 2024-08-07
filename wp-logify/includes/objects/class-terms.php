@@ -158,7 +158,7 @@ class Terms {
 	}
 
 	// =============================================================================================
-	// Methods for getting information about terms.
+	// Methods common to all object types.
 
 	/**
 	 * Check if a term exists.
@@ -166,7 +166,7 @@ class Terms {
 	 * @param int $term_id The ID of the term.
 	 * @return bool True if the term exists, false otherwise.
 	 */
-	public static function term_exists( int $term_id ): bool {
+	public static function exists( int $term_id ): bool {
 		global $wpdb;
 		$sql   = $wpdb->prepare( 'SELECT COUNT(term_id) FROM %i WHERE term_id = %d', $wpdb->terms, $term_id );
 		$count = (int) $wpdb->get_var( $sql );
@@ -186,6 +186,37 @@ class Terms {
 		}
 		return $term;
 	}
+
+	/**
+	 * Extracts and returns a term's core properties for logging.
+	 *
+	 * @param WP_Term|int $term The term object or ID.
+	 * @return array An associative array of a term's core properties.
+	 */
+	public static function get_core_properties( WP_Term|int $term ) {}
+
+	/**
+	 * If the term hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param WP_Term|int $term The term object or ID.
+	 * @param string      $old_name The old name of the term.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( WP_Term|int $term, string $old_name ) {
+		// If the term exists, return a link to its edit page.
+		if ( self::exists( $term ) ) {
+			return self::get_edit_link( $term );
+		}
+
+		// The term no longer exists. Construct the 'deleted' span element.
+		$term_id = is_int( $term ) ? $term : $term->term_id;
+		$name    = empty( $old_name ) ? "Term $term_id" : $old_name;
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+	}
+
+	// =============================================================================================
+	// Methods for getting information about terms.
 
 	/**
 	 * Extracts and returns term properties for logging.
@@ -258,26 +289,6 @@ class Terms {
 
 		// Return the link.
 		return "<a href='$url' class='wp-logify-term-link'>$term->name</a>";
-	}
-
-	/**
-	 * If the term hasn't been deleted, get a link to its edit page; otherwise, get a span with
-	 * the old title as the link text.
-	 *
-	 * @param WP_Term|int $term The term object or ID.
-	 * @param string      $old_name The old name of the term.
-	 * @return string The link or span HTML tag.
-	 */
-	public static function get_tag( WP_Term|int $term, string $old_name ) {
-		// If the term exists, return a link to its edit page.
-		if ( self::term_exists( $term ) ) {
-			return self::get_edit_link( $term );
-		}
-
-		// The term no longer exists. Construct the 'deleted' span element.
-		$term_id = is_int( $term ) ? $term : $term->term_id;
-		$name    = empty( $old_name ) ? "Term $term_id" : $old_name;
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	/**
