@@ -49,6 +49,9 @@
   background-color: #f4f4f4;
   text-align: left;
 }
-.wp-logify-activity-table a.wp-logify-user-link {
+.wp-logify-activity-table a.wp-logify-object-link {
   font-weight: bold;
+}
+.wp-logify-activity-table a.wp-logify-deleted-object {
+  font-style: italic;
 }
