@@ -85,10 +85,35 @@ class Comment_Manager extends Object_Manager {
 	 *
 	 * @param int|string $comment_id The ID of the comment.
 	 * @return array The core properties of the comment.
+	 * @throws Exception If the comment no longer exists.
 	 */
 	public static function get_core_properties( int|string $comment_id ): array {
-		// TODO
-		return array();
+		// Load the comment.
+		$comment = self::load( $comment_id );
+
+		// Handle the case where the comment no longer exists.
+		if ( ! $comment ) {
+			throw new Exception( "Comment $comment_id not found." );
+		}
+
+		// Build the array of properties.
+		$properties = array();
+
+		// ID.
+		Property::update_array( $properties, 'ID', $comment->comment_ID );
+
+		// Comment author.
+		$author = new Object_Reference( 'user', $comment->user_id );
+		Property::update_array( $properties, 'Author', $author );
+
+		// Comment content.
+		Property::update_array( $properties, 'Content', $comment->comment_content );
+
+		// Date.
+		$date = Datetimes::create_datetime( $comment->comment_date );
+		Property::update_array( $properties, 'Date', $date );
+
+		return $properties;
 	}
 
 	/**

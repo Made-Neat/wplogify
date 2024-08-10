@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use Exception;
 use Plugin_Upgrader;
 use WP_Upgrader;
 
@@ -92,11 +93,17 @@ class Plugin_Manager extends Object_Manager {
 	 * Get the core properties of a plugin.
 	 *
 	 * @param int|string $plugin_file The relative path to the main plugin file.
-	 * @return array The core properties of the plugin.
+	 * @return Property[] The core properties of the plugin.
+	 * @throws Exception If the plugin no longer exists.
 	 */
 	public static function get_core_properties( int|string $plugin_file ): array {
 		// Get the plugin data.
 		$plugin = self::load( $plugin_file );
+
+		// Handle the case where the plugin no longer exists.
+		if ( ! $plugin ) {
+			throw new Exception( "Plugin '$plugin_file' not found." );
+		}
 
 		// Collect the core properties.
 		$properties = array();
@@ -142,7 +149,7 @@ class Plugin_Manager extends Object_Manager {
 
 		// Provide a link to the plugin site.
 		if ( $plugin ) {
-			return "<a href='{$plugin['PluginURI']}' class='wp-logify-object-link' target='_blank'>{$plugin['Name']}</a>";
+			return "<a href='{$plugin['PluginURI']}' class='wp-logify-object' target='_blank'>{$plugin['Name']}</a>";
 		}
 
 		// The plugin has been deleted. Construct the 'deleted' span element.
@@ -278,7 +285,7 @@ class Plugin_Manager extends Object_Manager {
 		// Log the event.
 		Logger::log_event(
 			'Plugin Activated',
-			Object_Reference::new_from_plugin( $plugin_data['Name'] ),
+			new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] ),
 			self::$eventmetas
 		);
 	}
@@ -305,7 +312,7 @@ class Plugin_Manager extends Object_Manager {
 		// Log the event.
 		Logger::log_event(
 			'Plugin Deactivated',
-			Object_Reference::new_from_plugin( $plugin_data['Name'] ),
+			new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] ),
 			self::$eventmetas
 		);
 	}
@@ -322,7 +329,7 @@ class Plugin_Manager extends Object_Manager {
 		// Log the event.
 		Logger::log_event(
 			'Plugin Deleted',
-			Object_Reference::new_from_plugin( $plugin_data['Name'] )
+			new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] )
 		);
 	}
 
@@ -339,7 +346,7 @@ class Plugin_Manager extends Object_Manager {
 		// Log the event.
 		Logger::log_event(
 			'Plugin Uninstalled',
-			Object_Reference::new_from_plugin( $plugin_data['Name'] )
+			new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] )
 		);
 	}
 
@@ -370,7 +377,7 @@ class Plugin_Manager extends Object_Manager {
 			// Log the event.
 			Logger::log_event(
 				'Plugin Auto-update Enabled',
-				Object_Reference::new_from_plugin( $plugin_data['Name'] )
+				new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] )
 			);
 		}
 
@@ -388,7 +395,7 @@ class Plugin_Manager extends Object_Manager {
 			// Log the event.
 			Logger::log_event(
 				'Plugin Auto-update Disabled',
-				Object_Reference::new_from_plugin( $plugin_data['Name'] )
+				new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] )
 			);
 		}
 	}

@@ -10,9 +10,10 @@ namespace WP_Logify;
 use Exception;
 
 /**
- * Class WP_Logify\Post_Manager
+ * Class WP_Logify\Object_Manager
  *
- * Provides tracking of events related to application objects (posts, users, terms, plugins, etc.).
+ * Base class for Manager classes, which provide event handlers and utility methods for different
+ * WordPress object types, such as posts, users, terms, plugins, etc.
  */
 abstract class Object_Manager {
 
@@ -74,7 +75,7 @@ abstract class Object_Manager {
 	 * Get the core properties of a object, for logging.
 	 *
 	 * @param int|string $object_key The object key.
-	 * @return Property[] The core properties of the post.
+	 * @return Property[] The core properties of the object.
 	 * @throws Exception If the object doesn't exist.
 	 */
 	abstract public static function get_core_properties( int|string $object_key ): array;

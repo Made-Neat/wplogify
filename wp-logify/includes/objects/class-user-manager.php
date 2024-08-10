@@ -8,6 +8,7 @@
 namespace WP_Logify;
 
 use DateTime;
+use Exception;
 use WP_Query;
 use WP_User;
 
@@ -27,7 +28,7 @@ class User_Manager extends Object_Manager {
 	private const MAX_BREAK_PERIOD = 1200; // 20 minutes
 
 	// =============================================================================================
-	// Hooks.
+	// Implementations of base class methods.
 
 	/**
 	 * Set up hooks for the events we want to log.
@@ -53,6 +54,138 @@ class User_Manager extends Object_Manager {
 
 		// Track update of user metadata.
 		add_action( 'update_user_meta', array( __CLASS__, 'on_update_user_meta' ), 10, 4 );
+	}
+
+	/**
+	 * Check if a user exists.
+	 *
+	 * @param int|string $user_id The ID of the user.
+	 * @return bool True if the user exists, false otherwise.
+	 */
+	public static function exists( int|string $user_id ): bool {
+		global $wpdb;
+		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->users, $user_id );
+		$count = (int) $wpdb->get_var( $sql );
+		return $count > 0;
+	}
+
+	/**
+	 * Get a user by ID.
+	 *
+	 * @param int|string $user_id The ID of the user.
+	 * @return ?WP_User The user object if found, null otherwise.
+	 */
+	public static function load( int|string $user_id ): ?WP_User {
+		// Get the user by ID.
+		$user = get_userdata( $user_id );
+
+		// Return the user or null if it doesn't exist.
+		return $user instanceof WP_User ? $user : null;
+	}
+
+	/**
+	 * Retrieves a name for a given user.
+	 *
+	 * First preference is the display_name, second preference is the user_login, third preference
+	 * is the user_nicename.
+	 *
+	 * @param int|string $user_id The ID of the user.
+	 * @return ?string The username if found, otherwise null.
+	 */
+	public static function get_name( int|string $user_id ): ?string {
+		// Load the user.
+		$user = self::load( $user_id );
+
+		// Handle the case where the user no longer exists.
+		if ( ! $user ) {
+			return null;
+		}
+
+		// First preference is the display name, which is their full name.
+		if ( ! empty( $user->display_name ) ) {
+			return $user->display_name;
+		}
+
+		// If that fails, use their login name.
+		if ( ! empty( $user->user_login ) ) {
+			return $user->user_login;
+		}
+
+		// If that fails, use the nice name.
+		if ( ! empty( $user->user_nicename ) ) {
+			return $user->user_nicename;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the core properties of a user.
+	 *
+	 * @param int|string $user_id The ID of the user.
+	 * @return array The core properties of the user.
+	 * @throws Exception If the user doesn't exist.
+	 */
+	public static function get_core_properties( int|string $user_id ): array {
+		global $wpdb;
+
+		// Load the user.
+		$user = self::load( $user_id );
+
+		// Handle the case where the user no longer exists.
+		if ( ! $user ) {
+			throw new Exception( "User $user_id not found." );
+		}
+
+		// Build the array of properties.
+		$properties = array();
+
+		// ID.
+		Property::update_array( $properties, 'ID', $wpdb->users, (int) $user->ID );
+
+		// Display name.
+		Property::update_array( $properties, 'display_name', $wpdb->users, $user->display_name );
+
+		// User login.
+		Property::update_array( $properties, 'user_login', $wpdb->users, $user->user_login );
+
+		// User email.
+		Property::update_array( $properties, 'user_email', $wpdb->users, self::get_email_link( $user ) );
+
+		// User registered.
+		$user_registered = DateTimes::create_datetime( $user->data->user_registered, 'UTC' );
+		Property::update_array( $properties, 'user_registered', $wpdb->users, $user_registered );
+
+		return $properties;
+	}
+
+	/**
+	 * If the user hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param int|string $user_id The ID of the user.
+	 * @param ?string    $old_name The old name of the user.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( int|string $user_id, ?string $old_name ): string {
+		// Load the user.
+		$user = self::load( $user_id );
+
+		// If the user exists, get a link.
+		if ( $user ) {
+			// Get the user name.
+			$name = self::get_name( $user_id );
+
+			// Get the user edit URL.
+			$url = admin_url( "user-edit.php?user_id=$user_id" );
+
+			// Return the link.
+			return "<a href='$url' class='wp-logify-object'>$name</a>";
+		}
+
+		// The user no longer exists. Construct the 'deleted' span element.
+		$name = $old_name ? $old_name : "User $user_id";
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	// =============================================================================================
@@ -253,100 +386,6 @@ class User_Manager extends Object_Manager {
 	}
 
 	// =============================================================================================
-	// Methods common to all object types.
-
-	/**
-	 * Check if a user exists.
-	 *
-	 * @param int $user_id The ID of the user.
-	 * @return bool True if the user exists, false otherwise.
-	 */
-	public static function exists( int $user_id ): bool {
-		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->users, $user_id );
-		$count = (int) $wpdb->get_var( $sql );
-		return $count > 0;
-	}
-
-	/**
-	 * Get a user by ID.
-	 *
-	 * @param int $user_id The ID of the user.
-	 * @return ?WP_User The user object if found, null otherwise.
-	 */
-	public static function load( int $user_id ): ?WP_User {
-		$user = get_userdata( $user_id );
-		if ( ! $user ) {
-			return null;
-		}
-		return $user;
-	}
-
-	/**
-	 * Get the core properties of a user.
-	 *
-	 * @param WP_User|int $user The user object or ID.
-	 * @return array The core properties of the user.
-	 */
-	public static function get_core_properties( WP_User|int $user ): array {
-		global $wpdb;
-
-		// Load the user if necessary.
-		if ( is_int( $user ) ) {
-			$user = self::load( $user );
-		}
-
-		// Define the core properties by key.
-		$core_properties = array( 'ID', 'display_name', 'user_login', 'user_email', 'user_registered' );
-
-		// Build the array of properties.
-		$properties = array();
-		foreach ( $core_properties as $key ) {
-
-			// Get the value.
-			switch ( $key ) {
-				case 'user_email':
-					$value = self::get_email_link( $user );
-					break;
-
-				case 'user_registered':
-					$value = DateTimes::create_datetime( $user->data->user_registered, 'UTC' );
-					break;
-
-				default:
-					// Process database values into correct types.
-					$value = Types::process_database_value( $key, $user->{$key} );
-					break;
-			}
-
-			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->users, $value );
-		}
-
-		return $properties;
-	}
-
-	/**
-	 * If the user hasn't been deleted, get a link to its edit page; otherwise, get a span with
-	 * the old title as the link text.
-	 *
-	 * @param WP_User|int $user The user object or ID.
-	 * @param string      $old_name The old name of the user.
-	 * @return string The link or span HTML tag.
-	 */
-	public static function get_tag( WP_User|int $user, string $old_name ): string {
-		// If the user exists, return a link to their edit page.
-		if ( self::exists( $user ) ) {
-			return self::get_edit_link( $user );
-		}
-
-		// The user no longer exists. Construct the 'deleted' span element.
-		$user_id = is_int( $user ) ? $user : $user->ID;
-		$name    = empty( $old_name ) ? "User $user_id" : $old_name;
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
-	}
-
-	// =============================================================================================
 	// Methods for getting information about users.
 
 	/**
@@ -391,42 +430,6 @@ class User_Manager extends Object_Manager {
 		}
 
 		return $properties;
-	}
-
-	/**
-	 * Retrieves a name for a given user.
-	 *
-	 * First preference is the display_name, second preference is the user_login, third preference
-	 * is the user_nicename.
-	 *
-	 * @param WP_User|int $user The user object or ID.
-	 * @return string The username if found, otherwise 'Unknown'.
-	 */
-	public static function get_name( WP_User|int $user ) {
-		// Load the user if necessary.
-		if ( is_int( $user ) ) {
-			$user = self::load( $user );
-			if ( ! $user ) {
-				return 'Unknown';
-			}
-		}
-
-		// First preference is the display name, which is their full name.
-		if ( ! empty( $user->display_name ) ) {
-			return $user->display_name;
-		}
-
-		// If that fails, use their login name.
-		if ( ! empty( $user->user_login ) ) {
-			return $user->user_login;
-		}
-
-		// If that fails, use the nice name.
-		if ( ! empty( $user->user_nicename ) ) {
-			return $user->user_nicename;
-		}
-
-		return 'Unknown';
 	}
 
 	/**
@@ -554,37 +557,6 @@ class User_Manager extends Object_Manager {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Get the URL for a user's edit page.
-	 *
-	 * @param WP_User|int $user The user object or ID.
-	 * @return string The edit page URL.
-	 */
-	public static function get_edit_url( WP_User|int $user ) {
-		$user_id = is_int( $user ) ? $user : $user->ID;
-		return admin_url( "user-edit.php?user_id=$user_id" );
-	}
-
-	/**
-	 * Get the HTML for the link to the user's edit page.
-	 *
-	 * @param WP_User|int $user The user object or ID.
-	 * @return string The link HTML tag.
-	 */
-	public static function get_edit_link( WP_User|int $user ) {
-		// Load the user if necessary.
-		if ( is_int( $user ) ) {
-			$user = self::load( $user );
-		}
-
-		// Get the URL for the user's edit page.
-		$url = self::get_edit_url( $user );
-
-		// Return the link.
-		$name = self::get_name( $user );
-		return "<a href='$url' class='wp-logify-user-link'>$name</a>";
 	}
 
 	/**

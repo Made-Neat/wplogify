@@ -95,13 +95,19 @@ class Post_Manager extends Object_Manager {
 	 * Get the core properties of a post.
 	 *
 	 * @param int|string $post_id The ID of the post.
-	 * @return array The core properties of the post.
+	 * @return Property[] The core properties of the post.
+	 * @throws Exception If the post doesn't exist.
 	 */
 	public static function get_core_properties( int|string $post_id ): array {
 		global $wpdb;
 
 		// Load the post.
 		$post = self::load( $post_id );
+
+		// Handle the case where the post doesn't exist.
+		if ( ! $post ) {
+			throw new Exception( "Post $post_id not found." );
+		}
 
 		// Define the core properties by key.
 		$core_properties = array( 'ID', 'post_type', 'post_author', 'post_title', 'post_status', 'post_date', 'post_modified' );
@@ -160,7 +166,7 @@ class Post_Manager extends Object_Manager {
 			}
 
 			// Get the link text.
-			return "<a href='$url' class='wp-logify-object-link'>$post->post_title</a>";
+			return "<a href='$url' class='wp-logify-object'>$post->post_title</a>";
 		}
 
 		// The post no longer exists. Construct the 'deleted' span element.
@@ -528,7 +534,7 @@ class Post_Manager extends Object_Manager {
 		if ( self::exists( $revision_id ) ) {
 			// Get a link to the revision comparison page.
 			$url = admin_url( "revision.php?revision={$revision_id}" );
-			return "<a href='$url' class='wp-logify-object-link'>Compare revisions</a>";
+			return "<a href='$url' class='wp-logify-object'>Compare revisions</a>";
 		}
 
 		// The revision no longer exists. Construct the 'deleted' span element.

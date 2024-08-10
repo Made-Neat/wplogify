@@ -20,7 +20,7 @@ use WP_User;
 class Object_Reference {
 
 	/**
-	 * The type of the object, e.g. 'post', 'user', 'term'.
+	 * The type of the object, e.g. 'post', 'user', 'term', etc.
 	 *
 	 * @var string
 	 */
@@ -29,11 +29,13 @@ class Object_Reference {
 	/**
 	 * The ID of the object.
 	 *
-	 * This will be null for objects identified by their name, e.g. plugins and themes.
+	 * This will be an integer for object types with an integer ID, like posts, users, terms, and
+	 * comments, and a string for those object types identified by a unique string value like a name
+	 * or filename, such as option, plugin, and theme.
 	 *
-	 * @var ?int
+	 * @var null|int|string
 	 */
-	public ?int $id = null;
+	public null|int|string $key = null;
 
 	/**
 	 * The name of the object.
@@ -55,24 +57,24 @@ class Object_Reference {
 	 * Constructor.
 	 *
 	 * @param string           $type The type of the object.
-	 * @param ?int             $id The ID of the object.
+	 * @param null|int|string  $key  The object unique identified (int or string).
 	 * @param null|string|bool $name The name of the object, or a bool to specify setting it
 	 *                               automatically from the object.
 	 *                               - If a string, the name will be assigned this value.
 	 *                               - If true, the name will be extracted from the existing object.
 	 *                               - If null or false, the name won't be set.
 	 */
-	public function __construct( string $type, ?int $id, null|string|bool $name = true ) {
+	public function __construct( string $type, null|int|string $key, null|string|bool $name = true ) {
 		// Set the object type.
 		$this->type = $type;
 
 		// Set the object id.
-		$this->id = $id;
+		$this->key = $key;
 
 		if ( is_string( $name ) ) {
 			$this->name = $name;
 		} elseif ( $name ) {
-			$this->name = $this->load_name();
+			$this->name = $this->get_name();
 		}
 	}
 
@@ -85,98 +87,34 @@ class Object_Reference {
 	 */
 	public static function new_from_wp_object( object $wp_object ): Object_Reference {
 		$type = null;
-		$id   = null;
+		$key  = null;
 		$name = null;
 
 		if ( $wp_object instanceof WP_Post ) {
 			$type = 'post';
-			$id   = $wp_object->ID;
+			$key  = $wp_object->ID;
 			$name = $wp_object->post_title;
 		} elseif ( $wp_object instanceof WP_User ) {
 			$type = 'user';
-			$id   = $wp_object->ID;
+			$key  = $wp_object->ID;
 			$name = User_Manager::get_name( $wp_object );
 		} elseif ( $wp_object instanceof WP_Term ) {
 			$type = 'term';
-			$id   = $wp_object->term_id;
+			$key  = $wp_object->term_id;
 			$name = $wp_object->name;
 		} elseif ( $wp_object instanceof WP_Theme ) {
 			$type = 'theme';
-			$id   = null;
+			$key  = null;
 			$name = $wp_object->name;
 		} elseif ( $wp_object instanceof WP_Comment ) {
 			$type = 'comment';
-			$id   = $wp_object->comment_ID;
-			$name = Comment_Manager::get_title( $wp_object );
+			$key  = $wp_object->comment_ID;
+			$name = Comment_Manager::get_name( $key );
 		} else {
 			throw new Exception( 'Unknown or unsupported object type.' );
 		}
 
-		return new Object_Reference( $type, $id, $name );
-	}
-
-	/**
-	 * Get an object reference for a plugin.
-	 *
-	 * @param string $plugin_name The name of the plugin.
-	 * @return Object_Reference The object reference.
-	 */
-	public static function new_from_plugin( string $plugin_name ): Object_Reference {
-		return new Object_Reference( 'plugin', null, $plugin_name );
-	}
-
-	/**
-	 * Get the class name for the object's type.
-	 */
-	public function get_class(): string {
-		return 'WP_Logify\\' . ucfirst( $this->type ) . 's';
-	}
-
-	/**
-	 * Load the object.
-	 *
-	 * @throws Exception If the object cannot be loaded or if the object type is unknown.
-	 */
-	private function load() {
-		// Check we know which object to load.
-		if ( empty( $this->type ) ) {
-			throw new Exception( 'Cannot load an object without knowing its type.' );
-		}
-
-		// Load the object based on the type.
-		switch ( $this->type ) {
-			case 'post':
-			case 'revision':
-				$this->object = Post_Manager::load( $this->id );
-				return;
-
-			case 'user':
-				$this->object = User_Manager::load( $this->id );
-				return;
-
-			case 'term':
-				$this->object = Term_Manager::load( $this->id );
-				return;
-
-			case 'plugin':
-				$this->object = Plugin_Manager::load( $this->name );
-				return;
-
-			case 'setting':
-				// $this->object = Settings::load( $this->name );
-				return;
-
-			case 'theme':
-				// $this->object = Themes::load( $this->name );
-				return;
-
-			case 'comment':
-				// $this->object = Comment_Manager::load( $this->id );
-				return;
-
-			default:
-				throw new Exception( 'Unknown or unsupported object type.' );
-		}
+		return new Object_Reference( $type, $key, $name );
 	}
 
 	/**
@@ -195,94 +133,67 @@ class Object_Reference {
 	}
 
 	/**
-	 * Get the name or title of the object.
-	 * This only works for object types identified by ID, not those identified by name.
+	 * Get the name of the object manager class for this object, with the additional check that an
+	 * object manager class exists for this object type.
 	 *
-	 * @return string The name or title of the object.
-	 * @throws Exception If this method doesn't work for the specified object type.
+	 * @return string The manager class name.
+	 * @throws Exception If the object type is unknown.
 	 */
-	public function load_name() {
-		// Get the object and check for null.
-		$obj = $this->get_object();
-		if ( $obj === null ) {
-			return 'Unknown';
+	public function get_manager_class_name() {
+		// Get the fully-qualified name of the manager class for this object type.
+		$class = '\WP_Logify\\' . ucfirst( $this->type ) . '_Manager';
+
+		// If the class doesn't exist, throw an exception.
+		if ( ! class_exists( $class ) ) {
+			throw new Exception( "Invalid object type: $this->type" );
 		}
 
-		// Get the name from the object.
-		switch ( $this->type ) {
-			case 'post':
-			case 'revision':
-				return $obj->title;
-
-			case 'user':
-				return User_Manager::get_name( $obj );
-
-			case 'term':
-				return $obj->name;
-
-			case 'plugin':
-				return $obj['Name'];
-
-			// case 'setting':
-
-			// case 'theme':
-
-			case 'comment':
-				return Comment_Manager::get_title( $obj );
-
-			default:
-				throw new Exception( 'Unknown or unsupported object type.' );
-		}
+		return $class;
 	}
 
 	/**
-	 * Gets the link or span element showing the object name.
+	 * Call a method on the manager class for this object.
 	 *
-	 * @return string The HTML for the link or span element.
-	 * @throws Exception If the object type is invalid or the object ID is null.
+	 * @param string $method The method to call.
+	 * @param array  ...$args The arguments to pass to the method.
+	 * @return mixed The result of the method call.
 	 */
-	public function get_tag() {
-		// Generate the link based on the object type.
-		switch ( $this->type ) {
-			case 'post':
-				// Return the post tag.
-				return Post_Manager::get_tag( $this->id, $this->name );
+	private function call_manager_method( string $method, array ...$args ): mixed {
+		// Get the name of the manager class.
+		$manager_class = $this->get_manager_class_name();
 
-			case 'revision':
-				// Return the revision tag.
-				return Post_Manager::get_revision_tag( $this->id );
+		// Call the method on the manager class.
+		return $manager_class::$method( $this->key, ...$args );
+	}
 
-			case 'user':
-				// Return the user tag.
-				return User_Manager::get_tag( $this->id, $this->name );
+	/**
+	 * Check if the object exists.
+	 *
+	 * @return bool True if the object exists, false otherwise.
+	 */
+	private function exists(): bool {
+		// Call the method on the manager class.
+		return $this->call_manager_method( 'exists', $this->key );
+	}
 
-			case 'term':
-				// Return the term tag.
-				return Term_Manager::get_tag( $this->id, $this->name );
+	/**
+	 * Load the object.
+	 *
+	 * @return mixed The object or null if not found.
+	 */
+	private function load(): mixed {
+		// Call the method on the manager class.
+		return $this->call_manager_method( 'load', $this->key );
+	}
 
-			case 'plugin':
-				// Return the plugin tag.
-				return Plugin_Manager::get_tag( $this->name );
-
-			case 'setting':
-				// Return the setting tag.
-				return $this->name;
-
-			case 'theme':
-				// Return the theme tag.
-				return $this->name;
-				// return Themes::get_tag( $this->name );
-
-				// Return a link to the theme.
-				// return "<a href='/wp-admin/theme-editor.php?theme={$theme->stylesheet}'>{$theme->name}</a>";
-
-			case 'comment':
-				// Return the comment tag.
-				return $this->name;
-		}
-
-		// If the object type is invalid, throw an exception.
-		throw new Exception( "Invalid object type: $this->type" );
+	/**
+	 * Get the name or title of the object.
+	 *
+	 * @return string The name or title of the object, or Unknown if not found.
+	 */
+	public function get_name() {
+		// Call the method on the manager class.
+		return $this->call_manager_method( 'get_name', $this->key );
 	}
 
 	/**
@@ -292,34 +203,18 @@ class Object_Reference {
 	 * @throws Exception If the object type is unknown.
 	 */
 	public function get_core_properties(): ?array {
-		switch ( $this->type ) {
-			case 'post':
-				return Post_Manager::get_core_properties( $this->id );
+		// Call the method on the manager class.
+		return $this->call_manager_method( 'get_core_properties', $this->key );
+	}
 
-			case 'user':
-				return User_Manager::get_core_properties( $this->id );
-
-			case 'term':
-				return null;
-				// return Terms::get_core_properties( $this->id );
-
-			case 'plugin':
-				return Plugin_Manager::get_core_properties( $this->name );
-
-			case 'setting':
-				return null;
-				// return Settings::get_core_properties( $this->name );
-
-			case 'theme':
-				return null;
-				// return Themes::get_core_properties( $this->id );
-
-			case 'comment':
-				return null;
-				// return Comment_Manager::get_core_properties( $this->id );
-
-			default:
-				throw new Exception( 'Unknown or unsupported object type.' );
-		}
+	/**
+	 * Gets the link or span element showing the object name.
+	 *
+	 * @return string The HTML for the link or span element.
+	 * @throws Exception If the object type is invalid or the object ID is null.
+	 */
+	public function get_tag() {
+		// Call the method on the manager class.
+		return $this->call_manager_method( 'get_tag', $this->key, $this->name );
 	}
 }

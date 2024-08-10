@@ -7,6 +7,8 @@
 
 namespace WP_Logify;
 
+use Automattic\Jetpack\IdentityCrisis\Exception;
+
 /**
  * Class WP_Logify\Option_Manager
  *
@@ -64,12 +66,18 @@ class Option_Manager extends Object_Manager {
 	 *
 	 * @param int|string $option_name The ID of the option.
 	 * @return array The core properties of the option.
+	 * @throws Exception If the option no longer exists.
 	 */
 	public static function get_core_properties( int|string $option_name ): array {
 		global $wpdb;
 
 		// Load the option.
 		$option_value = self::load( $option_name );
+
+		// Handle the case where the option no longer exists.
+		if ( $option_value === null ) {
+			throw new Exception( "Option '$option_name' not found." );
+		}
 
 		// Build the array of properties.
 		$properties = array();
