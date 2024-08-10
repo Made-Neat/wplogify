@@ -8,7 +8,6 @@
 namespace WP_Logify;
 
 use DateTime;
-use Exception;
 use WP_Query;
 use WP_User;
 
@@ -17,21 +16,7 @@ use WP_User;
  *
  * Provides tracking of events related to users.
  */
-class Users {
-
-	/**
-	 * Array to remember properties between different events.
-	 *
-	 * @var array
-	 */
-	private static $properties = array();
-
-	/**
-	 * Array to remember metadata between different events.
-	 *
-	 * @var array
-	 */
-	private static $eventmetas = array();
+class User_Manager extends Object_Manager {
 
 	/**
 	 * The maximum break period in seconds. If there has been no activity for this period, we'll

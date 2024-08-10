@@ -26,7 +26,7 @@ class Widget {
 	 */
 	public static function add_dashboard_widget() {
 		// Check current user has access.
-		if ( ! Users::current_user_has_role( 'administrator' ) ) {
+		if ( ! User_Manager::current_user_has_role( 'administrator' ) ) {
 			return;
 		}
 

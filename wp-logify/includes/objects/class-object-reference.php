@@ -95,7 +95,7 @@ class Object_Reference {
 		} elseif ( $wp_object instanceof WP_User ) {
 			$type = 'user';
 			$id   = $wp_object->ID;
-			$name = Users::get_name( $wp_object );
+			$name = User_Manager::get_name( $wp_object );
 		} elseif ( $wp_object instanceof WP_Term ) {
 			$type = 'term';
 			$id   = $wp_object->term_id;
@@ -107,7 +107,7 @@ class Object_Reference {
 		} elseif ( $wp_object instanceof WP_Comment ) {
 			$type = 'comment';
 			$id   = $wp_object->comment_ID;
-			$name = Comments::get_title( $wp_object );
+			$name = Comment_Manager::get_title( $wp_object );
 		} else {
 			throw new Exception( 'Unknown or unsupported object type.' );
 		}
@@ -147,19 +147,19 @@ class Object_Reference {
 		switch ( $this->type ) {
 			case 'post':
 			case 'revision':
-				$this->object = Posts::load( $this->id );
+				$this->object = Post_Manager::load( $this->id );
 				return;
 
 			case 'user':
-				$this->object = Users::load( $this->id );
+				$this->object = User_Manager::load( $this->id );
 				return;
 
 			case 'term':
-				$this->object = Terms::load( $this->id );
+				$this->object = Term_Manager::load( $this->id );
 				return;
 
 			case 'plugin':
-				$this->object = Plugins::load( $this->name );
+				$this->object = Plugin_Manager::load( $this->name );
 				return;
 
 			case 'setting':
@@ -171,7 +171,7 @@ class Object_Reference {
 				return;
 
 			case 'comment':
-				// $this->object = Comments::load( $this->id );
+				// $this->object = Comment_Manager::load( $this->id );
 				return;
 
 			default:
@@ -215,7 +215,7 @@ class Object_Reference {
 				return $obj->title;
 
 			case 'user':
-				return Users::get_name( $obj );
+				return User_Manager::get_name( $obj );
 
 			case 'term':
 				return $obj->name;
@@ -228,7 +228,7 @@ class Object_Reference {
 			// case 'theme':
 
 			case 'comment':
-				return Comments::get_title( $obj );
+				return Comment_Manager::get_title( $obj );
 
 			default:
 				throw new Exception( 'Unknown or unsupported object type.' );
@@ -246,23 +246,23 @@ class Object_Reference {
 		switch ( $this->type ) {
 			case 'post':
 				// Return the post tag.
-				return Posts::get_tag( $this->id, $this->name );
+				return Post_Manager::get_tag( $this->id, $this->name );
 
 			case 'revision':
 				// Return the revision tag.
-				return Posts::get_revision_tag( $this->id );
+				return Post_Manager::get_revision_tag( $this->id );
 
 			case 'user':
 				// Return the user tag.
-				return Users::get_tag( $this->id, $this->name );
+				return User_Manager::get_tag( $this->id, $this->name );
 
 			case 'term':
 				// Return the term tag.
-				return Terms::get_tag( $this->id, $this->name );
+				return Term_Manager::get_tag( $this->id, $this->name );
 
 			case 'plugin':
 				// Return the plugin tag.
-				return Plugins::get_tag( $this->name );
+				return Plugin_Manager::get_tag( $this->name );
 
 			case 'setting':
 				// Return the setting tag.
@@ -294,17 +294,17 @@ class Object_Reference {
 	public function get_core_properties(): ?array {
 		switch ( $this->type ) {
 			case 'post':
-				return Posts::get_core_properties( $this->id );
+				return Post_Manager::get_core_properties( $this->id );
 
 			case 'user':
-				return Users::get_core_properties( $this->id );
+				return User_Manager::get_core_properties( $this->id );
 
 			case 'term':
 				return null;
 				// return Terms::get_core_properties( $this->id );
 
 			case 'plugin':
-				return Plugins::get_core_properties( $this->name );
+				return Plugin_Manager::get_core_properties( $this->name );
 
 			case 'setting':
 				return null;
@@ -316,7 +316,7 @@ class Object_Reference {
 
 			case 'comment':
 				return null;
-				// return Comments::get_core_properties( $this->id );
+				// return Comment_Manager::get_core_properties( $this->id );
 
 			default:
 				throw new Exception( 'Unknown or unsupported object type.' );

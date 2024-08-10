@@ -229,12 +229,19 @@ class Types {
 	 * This function takes a key and makes it more readable by converting it to title case and
 	 * replacing underscores with spaces.
 	 *
-	 * @param string $key The key to make readable.
+	 * @param string $key     The key to make readable.
+	 * @param bool   $ucwords Whether to capitalize the first letter of each word.
 	 * @return string The readable key.
 	 */
-	public static function make_key_readable( string $key ): string {
+	public static function make_key_readable( string $key, bool $ucwords = false ): string {
 		// Handle some special, known cases.
 		switch ( $key ) {
+			case 'blogname':
+				return 'Blog name';
+
+			case 'blogdescription':
+				return 'Blog description';
+
 			case 'user_pass':
 				return 'Password';
 
@@ -276,10 +283,21 @@ class Types {
 		}
 		$words = $words2;
 
-		// Convert acronyms to uppercase.
+		// Process the words.
 		foreach ( $words as $i => $word ) {
-			if ( in_array( $word, array( 'guid', 'id', 'ip', 'rss', 'ssl', 'uri', 'url', 'wp' ), true ) ) {
+			// Process height and width abbreviations.
+			if ( $word === 'h' ) {
+				$words[ $i ] = 'height';
+			} elseif ( $word === 'w' ) {
+				$words[ $i ] = 'width';
+			}
+
+			// Make acronyms upper-case.
+			if ( in_array( $word, array( 'gmt', 'guid', 'id', 'ip', 'rss', 'ssl', 'uri', 'url', 'wp' ), true ) ) {
 				$words[ $i ] = strtoupper( $word );
+			} elseif ( $ucwords ) {
+				// Upper-case the first letter of the word if requested.
+				$words[ $i ] = ucfirst( $word );
 			}
 		}
 

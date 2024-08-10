@@ -62,7 +62,7 @@ $recordset    = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 					?>
 					<tr>
 						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->when_happened ) ); ?></td>
-						<td><?php echo Users::get_tag( $event->user_id, $event->user_name ); ?></td>
+						<td><?php echo User_Manager::get_tag( $event->user_id, $event->user_name ); ?></td>
 						<td><?php echo esc_html( $event->event_type ); ?></td>
 						<td><?php echo $event->get_object_tag(); ?></td>
 					</tr>

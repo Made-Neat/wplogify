@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Posts class.
+ * Contains the Post_Manager class.
  *
  * @package WP_Logify
  */
@@ -11,25 +11,14 @@ use Plugin_Upgrader;
 use WP_Upgrader;
 
 /**
- * Class WP_Logify\Posts
+ * Class WP_Logify\Post_Manager
  *
  * Provides tracking of events related to posts.
  */
-class Plugins {
+class Plugin_Manager extends Object_Manager {
 
-	/**
-	 * Array to remember properties between different events.
-	 *
-	 * @var array
-	 */
-	private static $properties = array();
-
-	/**
-	 * Array to remember metadata between different events.
-	 *
-	 * @var array
-	 */
-	private static $eventmetas = array();
+	// =============================================================================================
+	// Implementations of base class methods.
 
 	/**
 	 * Set up hooks for the events we want to log.
@@ -48,6 +37,117 @@ class Plugins {
 
 		// Enabling and disabling auto-updates.
 		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
+	}
+
+	/**
+	 * Check if a plugin exists.
+	 *
+	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @return bool True if the plugin exists, false otherwise.
+	 */
+	public static function exists( int|string $plugin_file ): bool {
+		// Prepend the path to the plugins directory and check if the plugin is there.
+		return file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+	}
+
+	/**
+	 * Get the data for a plugin.
+	 *
+	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @return ?array The plugin data or null if not found.
+	 */
+	public static function load( int|string $plugin_file ): ?array {
+		// Check if the plugin exists.
+		if ( ! self::exists( $plugin_file ) ) {
+			return null;
+		}
+
+		// Load the plugin data.
+		$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
+
+		// Add the file to the array.
+		$plugin['File'] = $plugin_file;
+
+		// Add the slug to the array.
+		$plugin['Slug'] = self::get_slug( $plugin_file );
+
+		return $plugin;
+	}
+
+	/**
+	 * Get the plugin name. This is displayed in the tag.
+	 *
+	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @return string The name, or null if the object could not be found.
+	 */
+	public static function get_name( int|string $plugin_file ): ?string {
+		// Load the plugin.
+		$plugin = self::load( $plugin_file );
+
+		// Return the plugin name.
+		return $plugin['Name'] ?? null;
+	}
+
+	/**
+	 * Get the core properties of a plugin.
+	 *
+	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @return array The core properties of the plugin.
+	 */
+	public static function get_core_properties( int|string $plugin_file ): array {
+		// Get the plugin data.
+		$plugin = self::load( $plugin_file );
+
+		// Collect the core properties.
+		$properties = array();
+
+		// Name. Use the link if there is one.
+		if ( $plugin['PluginURI'] ) {
+			$name = "<a href='{$plugin['PluginURI']}' target='_blank'>{$plugin['Name']}</a>";
+		} else {
+			$name = $plugin['Name'];
+		}
+		Property::update_array( $properties, 'name', null, $name );
+
+		// Slug.
+		Property::update_array( $properties, 'slug', null, $plugin['Slug'] );
+
+		// Version.
+		Property::update_array( $properties, 'version', null, $plugin['Version'] );
+
+		// Author. Use the link if there is one.
+		if ( $plugin['AuthorURI'] ) {
+			$author = "<a href='{$plugin['AuthorURI']}' target='_blank'>{$plugin['AuthorName']}</a>";
+		} else {
+			$author = $plugin['AuthorName'];
+		}
+		Property::update_array( $properties, 'author', null, $author );
+
+		return $properties;
+	}
+
+	/**
+	 * Get the plugin tag.
+	 *
+	 * If the plugin hasn't been deleted, get a link to its web page; otherwise, get a span with
+	 * the name as the link text.
+	 *
+	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @param ?string    $old_name    The name of the plugin at the time of the event.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( int|string $plugin_file, ?string $old_name ): string {
+		// Load the plugin.
+		$plugin = self::load( $plugin_file );
+
+		// Provide a link to the plugin site.
+		if ( $plugin ) {
+			return "<a href='{$plugin['PluginURI']}' class='wp-logify-object-link' target='_blank'>{$plugin['Name']}</a>";
+		}
+
+		// The plugin has been deleted. Construct the 'deleted' span element.
+		$name = $old_name ? $old_name : Types::make_key_readable( self::get_slug( $plugin_file ), true );
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	// =============================================================================================
@@ -291,102 +391,6 @@ class Plugins {
 				Object_Reference::new_from_plugin( $plugin_data['Name'] )
 			);
 		}
-	}
-
-	// =============================================================================================
-	// Methods common to all object types.
-
-	/**
-	 * Check if a plugin exists.
-	 *
-	 * @param string $plugin The plugin to check.
-	 * @return bool True if the plugin exists, false otherwise.
-	 */
-	public static function exists( string $plugin ): bool {
-		// Prepend the path to the plugins directory and check if the plugin is there.
-		return file_exists( WP_PLUGIN_DIR . '/' . $plugin );
-	}
-
-	/**
-	 * Get the data for a plugin.
-	 *
-	 * @param string $plugin_file The plugin file.
-	 * @return ?array The plugin data or null if the plugin isn't found.
-	 */
-	public static function load( string $plugin_file ): ?array {
-		// Check if the plugin exists.
-		if ( ! self::exists( $plugin_file ) ) {
-			return null;
-		}
-
-		// Load the plugin data.
-		$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
-
-		// Add the file to the array.
-		$plugin_data['File'] = $plugin_file;
-
-		// Add the slug to the array.
-		$plugin_data['Slug'] = self::get_slug( $plugin_file );
-
-		return $plugin_data;
-	}
-
-	/**
-	 * Get the core properties of a plugin.
-	 *
-	 * @param string $name The plugin name.
-	 * @return array The core properties of the plugin.
-	 */
-	public static function get_core_properties( string $name ): array {
-		// Get the plugin data.
-		$plugin_data = self::load_by_name( $name );
-
-		// Collect the core properties.
-		$properties = array();
-
-		// Name. Use the link if there is one.
-		if ( $plugin_data['PluginURI'] ) {
-			$name = "<a href='{$plugin_data['PluginURI']}' target='_blank'>{$plugin_data['Name']}</a>";
-		} else {
-			$name = $plugin_data['Name'];
-		}
-		Property::update_array( $properties, 'name', null, $name );
-
-		// Slug.
-		Property::update_array( $properties, 'slug', null, $plugin_data['Slug'] );
-
-		// Version.
-		Property::update_array( $properties, 'version', null, $plugin_data['Version'] );
-
-		// Author. Use the link if there is one.
-		if ( $plugin_data['AuthorURI'] ) {
-			$author = "<a href='{$plugin_data['AuthorURI']}' target='_blank'>{$plugin_data['AuthorName']}</a>";
-		} else {
-			$author = $plugin_data['AuthorName'];
-		}
-		Property::update_array( $properties, 'author', null, $author );
-
-		return $properties;
-	}
-
-	/**
-	 * If the plugin hasn't been deleted, get a link to its web page; otherwise, get a span with
-	 * the name as the link text.
-	 *
-	 * @param string $name The name of the plugin.
-	 * @return string The link or span HTML tag.
-	 */
-	public static function get_tag( string $name ): string {
-		// Check if the plugin exists.
-		$plugin = self::load_by_name( $name );
-
-		// Provide a link to the plugin site.
-		if ( $plugin ) {
-			return "<a href='{$plugin['PluginURI']}' class='wp-logify-post-link' target='_blank'>$name</a>";
-		}
-
-		// The plugin has been deleted. Construct the 'deleted' span element.
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	// =============================================================================================

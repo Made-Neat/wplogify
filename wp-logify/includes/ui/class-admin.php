@@ -46,7 +46,7 @@ class Admin {
 	 * It also ensures the user is an administrator.
 	 */
 	public static function add_admin_menu() {
-		if ( ! Users::current_user_has_role( 'administrator' ) ) {
+		if ( ! User_Manager::current_user_has_role( 'administrator' ) ) {
 			return;
 		}
 
@@ -63,7 +63,7 @@ class Admin {
 	 */
 	public static function add_admin_bar_menu( WP_Admin_Bar $wp_admin_bar ) {
 		// Don't show if the user isn't an admin or if they don't want to see it in the admin bar.
-		if ( ! Users::current_user_has_role( 'administrator' ) || ! Plugin_Settings::get_show_in_admin_bar() ) {
+		if ( ! User_Manager::current_user_has_role( 'administrator' ) || ! Plugin_Settings::get_show_in_admin_bar() ) {
 			return;
 		}
 
@@ -224,8 +224,8 @@ class Admin {
 			);
 
 			// DataTables assets.
-			self::enqueue_style( 'datatables.css', array(), null );
-			self::enqueue_script( 'datatables.js', array( 'jquery' ), null, true );
+			wp_enqueue_style( 'datatables', WP_LOGIFY_PLUGIN_URL . 'assets/datatables/datatables.cssrc', array(), '2.0.8' );
+			wp_enqueue_script( 'datatables', WP_LOGIFY_PLUGIN_URL . 'assets/datatables/datatables.js', array( 'jquery' ), '2.0.8', true );
 		}
 	}
 

@@ -48,7 +48,7 @@ class Logger {
 			$acting_user = wp_get_current_user();
 		} elseif ( is_int( $acting_user ) ) {
 			// If only the user ID for the acting user is specified, load the user object.
-			$acting_user = Users::load( $acting_user );
+			$acting_user = User_Manager::load( $acting_user );
 		}
 
 		// If we don't have a user (i.e. they're anonymous), we don't need to log the event.
@@ -58,7 +58,7 @@ class Logger {
 
 		// If we aren't tracking this user's role, we don't need to log the event.
 		// This shouldn't happen; it should be checked earlier.
-		if ( ! Users::user_has_role( $acting_user, Plugin_Settings::get_roles_to_track() ) ) {
+		if ( ! User_Manager::user_has_role( $acting_user, Plugin_Settings::get_roles_to_track() ) ) {
 			return;
 		}
 
@@ -87,11 +87,11 @@ class Logger {
 		$event                = new Event();
 		$event->when_happened = DateTimes::current_datetime();
 		$event->user_id       = $acting_user->ID;
-		$event->user_name     = Users::get_name( $acting_user );
+		$event->user_name     = User_Manager::get_name( $acting_user );
 		$event->user_role     = implode( ', ', $acting_user->roles );
-		$event->user_ip       = Users::get_ip();
-		$event->user_location = Users::get_location( $event->user_ip );
-		$event->user_agent    = Users::get_user_agent();
+		$event->user_ip       = User_Manager::get_ip();
+		$event->user_location = User_Manager::get_location( $event->user_ip );
+		$event->user_agent    = User_Manager::get_user_agent();
 		$event->event_type    = $event_type;
 		$event->object_type   = $object_ref?->type;
 		$event->object_id     = $object_ref?->id;

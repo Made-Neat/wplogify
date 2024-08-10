@@ -11,28 +11,14 @@ use Exception;
 use WP_Term;
 
 /**
- * Class WP_Logify\Posts
+ * Class WP_Logify\Post_Manager
  *
  * Provides tracking of events related to terms.
  */
-class Terms {
-
-	/**
-	 * Array to remember properties between different events.
-	 *
-	 * @var array
-	 */
-	private static $properties = array();
-
-	/**
-	 * Array to remember metadata between different events.
-	 *
-	 * @var array
-	 */
-	private static $eventmetas = array();
+class Term_Manager extends Object_Manager {
 
 	// =============================================================================================
-	// Hooks.
+	// Implementations of base class methods.
 
 	/**
 	 * Set up hooks for the events we want to log.
@@ -45,6 +31,88 @@ class Terms {
 
 		// // Track changes to term taxonomies.
 		// add_action( 'edit_term_taxonomies', array( __CLASS__, 'on_edit_term_taxonomies' ), 10, 1 );
+	}
+
+	/**
+	 * Check if a term exists.
+	 *
+	 * @param int|string $term_id The ID of the term.
+	 * @return bool True if the term exists, false otherwise.
+	 */
+	public static function exists( int|string $term_id ): bool {
+		global $wpdb;
+		$sql   = $wpdb->prepare( 'SELECT COUNT(term_id) FROM %i WHERE term_id = %d', $wpdb->terms, $term_id );
+		$count = (int) $wpdb->get_var( $sql );
+		return $count > 0;
+	}
+
+	/**
+	 * Get a term by ID.
+	 *
+	 * @param int|string $term_id The ID of the term.
+	 * @return ?WP_Term The term object if it exists, null otherwise.
+	 */
+	public static function load( int|string $term_id ): ?WP_Term {
+		// Load the term.
+		$term = get_term( $term_id );
+
+		// If the term could not be retrieved, return null.
+		if ( ! $term || is_wp_error( $term ) ) {
+			return null;
+		}
+
+		// Return the term.
+		return $term;
+	}
+
+	/**
+	 * Get the name of a term.
+	 *
+	 * @param int|string $term_id The ID of the term.
+	 * @return ?string The name of the term or null if not found.
+	 */
+	public static function get_name( int|string $term_id ): ?string {
+		// Load the term.
+		$term = self::load( $term_id );
+
+		// Return the term name or null if the term doesn't exist.
+		return $term->name ?? null;
+	}
+
+	/**
+	 * Extracts and returns a term's core properties for logging.
+	 *
+	 * @param int|string $term_id The ID of the term.
+	 * @return Property[] An associative array of a term's core properties.
+	 */
+	public static function get_core_properties( int|string $term_id ): array {
+		// Load the term.
+		$term = self::load( $term_id );
+
+		// Start building the properties array.
+		$properties = array();
+
+		// Add the base properties.
+	}
+
+	/**
+	 * If the term hasn't been deleted, get a link to its edit page; otherwise, get a span with
+	 * the old title as the link text.
+	 *
+	 * @param WP_Term|int $term The term object or ID.
+	 * @param ?string     $old_name The old name of the term.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( WP_Term|int $term, ?string $old_name ): string {
+		// If the term exists, return a link to its edit page.
+		if ( self::exists( $term ) ) {
+			return self::get_edit_link( $term );
+		}
+
+		// The term no longer exists. Construct the 'deleted' span element.
+		$term_id = is_int( $term ) ? $term : $term->term_id;
+		$name    = empty( $old_name ) ? "Term $term_id" : $old_name;
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	// =============================================================================================
@@ -155,64 +223,6 @@ class Terms {
 	 */
 	public static function on_edit_term_taxonomies( array $edit_tt_ids ) {
 		// debug( 'on_edit_term_taxonomies', func_get_args() );
-	}
-
-	// =============================================================================================
-	// Methods common to all object types.
-
-	/**
-	 * Check if a term exists.
-	 *
-	 * @param int $term_id The ID of the term.
-	 * @return bool True if the term exists, false otherwise.
-	 */
-	public static function exists( int $term_id ): bool {
-		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(term_id) FROM %i WHERE term_id = %d', $wpdb->terms, $term_id );
-		$count = (int) $wpdb->get_var( $sql );
-		return $count > 0;
-	}
-
-	/**
-	 * Get a term by ID.
-	 *
-	 * @param int $term_id The ID of the term.
-	 * @return ?WP_Term The term object if it exists, null otherwise.
-	 */
-	public static function load( int $term_id ): ?WP_Term {
-		$term = get_term( $term_id );
-		if ( ! $term || is_wp_error( $term ) ) {
-			return null;
-		}
-		return $term;
-	}
-
-	/**
-	 * Extracts and returns a term's core properties for logging.
-	 *
-	 * @param WP_Term|int $term The term object or ID.
-	 * @return array An associative array of a term's core properties.
-	 */
-	public static function get_core_properties( WP_Term|int $term ) {}
-
-	/**
-	 * If the term hasn't been deleted, get a link to its edit page; otherwise, get a span with
-	 * the old title as the link text.
-	 *
-	 * @param WP_Term|int $term The term object or ID.
-	 * @param string      $old_name The old name of the term.
-	 * @return string The link or span HTML tag.
-	 */
-	public static function get_tag( WP_Term|int $term, string $old_name ): string {
-		// If the term exists, return a link to its edit page.
-		if ( self::exists( $term ) ) {
-			return self::get_edit_link( $term );
-		}
-
-		// The term no longer exists. Construct the 'deleted' span element.
-		$term_id = is_int( $term ) ? $term : $term->term_id;
-		$name    = empty( $old_name ) ? "Term $term_id" : $old_name;
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 
 	// =============================================================================================
