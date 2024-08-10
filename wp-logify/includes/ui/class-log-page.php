@@ -322,7 +322,7 @@ class Log_Page {
 		$show_new_vals = false;
 		foreach ( $event->properties as $prop ) {
 			// Check if we want to show the 'After' column.
-			if ( $prop->new_val !== null && $prop->new_val !== '' ) {
+			if ( $prop->new_val !== null ) {
 				$show_new_vals = true;
 				break;
 			}

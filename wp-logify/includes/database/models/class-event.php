@@ -86,14 +86,28 @@ class Event {
 	public ?string $object_type;
 
 	/**
-	 * The ID of the object associated with the event.
+	 * The subtype of object associated with the event.
 	 *
-	 * This will be an integer matching a database primary key in the case of a post, user, term,
-	 * etc., but will be null in the case of a theme or plugin, which are identified by their names.
+	 * For posts, this will be the post type.
+	 * For terms, this will be the taxonomy.
+	 * Other object types may not have subtypes.
 	 *
-	 * @var ?int
+	 * @var ?string
 	 */
-	public ?int $object_id;
+	public ?string $object_subtype;
+
+	/**
+	 * The unique identifier of the object associated with the event.
+	 *
+	 * This will be an integer matching a database primary key in the case of a post, user, term, or
+	 * comment.
+	 * For plugins, it will be the relative path.
+	 * For themes, it will be the theme directory name a.k.a. stylesheet.
+	 * For options, it will be the option name.
+	 *
+	 * @var null|int|string
+	 */
+	public null|int|string $object_key;
 
 	/**
 	 * The name of the object associated with the event.
@@ -188,7 +202,7 @@ class Event {
 		}
 
 		// Construct the object reference and remember it.
-		$this->object_ref = new Object_Reference( $this->object_type, $this->object_id, $this->object_name );
+		$this->object_ref = new Object_Reference( $this->object_type, $this->object_key, $this->object_name );
 
 		return $this->object_ref;
 	}

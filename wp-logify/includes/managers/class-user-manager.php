@@ -346,25 +346,25 @@ class User_Manager extends Object_Manager {
 			$event = Event_Repository::load( $record['event_id'] );
 
 			// Check we have the info we need.
-			if ( $event->has_meta( 'session_start' ) && $event->has_meta( 'session_end' ) ) {
+			if ( $event->has_meta( 'activity_start' ) && $event->has_meta( 'activity_end' ) ) {
 
-				// Extract the current session_end datetime from the event details.
-				$session_start_datetime = $event->get_meta_val( 'session_start' );
-				$session_end_datetime   = $event->get_meta_val( 'session_end' );
+				// Extract the current activity_end datetime from the event details.
+				$activity_start_datetime = $event->get_meta_val( 'activity_start' );
+				$activity_end_datetime   = $event->get_meta_val( 'activity_end' );
 
 				// Get the duration in seconds.
-				$seconds_diff = $now->getTimestamp() - $session_end_datetime->getTimestamp();
+				$seconds_diff = $now->getTimestamp() - $activity_end_datetime->getTimestamp();
 
-				// If the current value for session_end time is less than 10 minutes ago, we'll
-				// assume the current session is continuing, and update the session_end time in the
+				// If the current value for activity_end time is less than 10 minutes ago, we'll
+				// assume the current session is continuing, and update the activity_end time in the
 				// existing log entry to now.
 				if ( $seconds_diff <= self::MAX_BREAK_PERIOD ) {
 					$continuing = true;
 
-					// Update the session_end time and duration.
-					$event->set_meta_val( 'session_end', $now );
+					// Update the activity_end time and duration.
+					$event->set_meta_val( 'activity_end', $now );
 					// This could be calculated, but for now we'll just record the string.
-					$event->set_meta_val( 'session_duration', DateTimes::get_duration_string( $session_start_datetime, $now ) );
+					$event->set_meta_val( 'activity_duration', DateTimes::get_duration_string( $activity_start_datetime, $now ) );
 
 					// Update the event meta data.
 					Event_Repository::save_eventmetas( $event );
@@ -376,9 +376,9 @@ class User_Manager extends Object_Manager {
 		if ( ! $continuing ) {
 
 			// Create the array of eventmetas.
-			Eventmeta::update_array( self::$eventmetas, 'session_start', $now );
-			Eventmeta::update_array( self::$eventmetas, 'session_end', $now );
-			Eventmeta::update_array( self::$eventmetas, 'session_duration', '0 minutes' );
+			Eventmeta::update_array( self::$eventmetas, 'activity_start', $now );
+			Eventmeta::update_array( self::$eventmetas, 'activity_end', $now );
+			Eventmeta::update_array( self::$eventmetas, 'activity_duration', '0 minutes' );
 
 			// Log the event.
 			Logger::log_event( $event_type, $user, self::$eventmetas );
@@ -536,7 +536,7 @@ class User_Manager extends Object_Manager {
 			$user = self::load( $user );
 		}
 
-		// Get the most recent session_end datetime from the wp_logify_events table.
+		// Get the most recent activity_end datetime from the wp_logify_events table.
 		$table_name = Event_Repository::get_table_name();
 		$sql        = $wpdb->prepare(
 			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Active' ORDER BY when_happened DESC LIMIT 1",
@@ -550,9 +550,9 @@ class User_Manager extends Object_Manager {
 			// Create the Event.
 			$event = Event_Repository::load( $record['event_id'] );
 
-			// Return the session_end datetime if set.
-			if ( $event->has_meta( 'session_end' ) ) {
-				return $event->get_meta_val( 'session_end' );
+			// Return the activity_end datetime if set.
+			if ( $event->has_meta( 'activity_end' ) ) {
+				return $event->get_meta_val( 'activity_end' );
 			}
 		}
 

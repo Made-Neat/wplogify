@@ -200,8 +200,9 @@ class Post_Manager extends Object_Manager {
 
 		// If we're updating, the $post variable refers to the new revision rather than the parent post.
 		if ( ! $creating ) {
-			// Record the ID of the new revision.
-			$revision_id = $post_id;
+			// Record the ID and title of the new revision.
+			$revision_id    = $post_id;
+			$revision_title = $post->post_title;
 
 			// Load the parent object.
 			$post_id = $post->post_parent;
@@ -210,7 +211,7 @@ class Post_Manager extends Object_Manager {
 			// Replace changed content with object references.
 			if ( ! empty( self::$properties['post_content'] ) ) {
 				// For the old value, link to the revision (or show a deleted tag).
-				self::$properties['post_content']->val = new Object_Reference( 'revision', $revision_id );
+				self::$properties['post_content']->val = new Object_Reference( 'post', $revision_id, $revision_title );
 				// For the new value, link to the edit page (or show a deleted tag).
 				self::$properties['post_content']->new_val = new Object_Reference( 'post', $post_id, $post->post_title );
 			}

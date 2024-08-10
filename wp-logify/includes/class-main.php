@@ -36,7 +36,7 @@ class Main {
 					$method = $reflection->getMethod( 'init' );
 
 					// Check if the init method is static.
-					if ( $method->isStatic() ) {
+					if ( $method->isStatic() && ! $method->isAbstract() ) {
 						// Call the init method.
 						$method->invoke( null );
 					}

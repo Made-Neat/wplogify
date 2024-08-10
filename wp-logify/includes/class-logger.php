@@ -76,7 +76,7 @@ class Logger {
 			$object_props = array();
 		}
 
-		// Copy across the properties we received.
+		// Copy across any other properties we received.
 		if ( ! empty( $properties ) ) {
 			foreach ( $properties as $prop ) {
 				Property::update_array_from_prop( $object_props, $prop );
@@ -87,14 +87,14 @@ class Logger {
 		$event                = new Event();
 		$event->when_happened = DateTimes::current_datetime();
 		$event->user_id       = $acting_user->ID;
-		$event->user_name     = User_Manager::get_name( $acting_user );
+		$event->user_name     = User_Manager::get_name( $acting_user->ID );
 		$event->user_role     = implode( ', ', $acting_user->roles );
 		$event->user_ip       = User_Manager::get_ip();
 		$event->user_location = User_Manager::get_location( $event->user_ip );
 		$event->user_agent    = User_Manager::get_user_agent();
 		$event->event_type    = $event_type;
 		$event->object_type   = $object_ref?->type;
-		$event->object_id     = $object_ref?->id;
+		$event->object_key    = $object_ref?->key;
 		$event->object_name   = $object_ref?->name;
 		$event->eventmetas    = empty( $eventmetas ) ? null : $eventmetas;
 		$event->properties    = empty( $object_props ) ? null : $object_props;

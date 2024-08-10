@@ -97,7 +97,7 @@ class Object_Reference {
 		} elseif ( $wp_object instanceof WP_User ) {
 			$type = 'user';
 			$key  = $wp_object->ID;
-			$name = User_Manager::get_name( $wp_object );
+			$name = User_Manager::get_name( $key );
 		} elseif ( $wp_object instanceof WP_Term ) {
 			$type = 'term';
 			$key  = $wp_object->term_id;
@@ -158,7 +158,7 @@ class Object_Reference {
 	 * @param array  ...$args The arguments to pass to the method.
 	 * @return mixed The result of the method call.
 	 */
-	private function call_manager_method( string $method, array ...$args ): mixed {
+	private function call_manager_method( string $method, ...$args ): mixed {
 		// Get the name of the manager class.
 		$manager_class = $this->get_manager_class_name();
 
