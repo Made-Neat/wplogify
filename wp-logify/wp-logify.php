@@ -44,13 +44,15 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-eventm
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-property-repository.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-post-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-user-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-term-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-plugin-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-options-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-theme-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-comment-manager.php';
+
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-object-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-post-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-user-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/cmanagers/lass-term-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/cmanagers/lass-plugin-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-option-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-theme-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-comment-manager.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-admin.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-log-page.php';

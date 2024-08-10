@@ -377,7 +377,7 @@ class Plugin_Manager extends Object_Manager {
 			// Log the event.
 			Logger::log_event(
 				'Plugin Auto-update Enabled',
-				new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] )
+				new Object_Reference( 'plugin', $plugin_data['File'], $plugin_data['Name'] )
 			);
 		}
 
@@ -395,7 +395,7 @@ class Plugin_Manager extends Object_Manager {
 			// Log the event.
 			Logger::log_event(
 				'Plugin Auto-update Disabled',
-				new Object_Reference( 'plugin', $plugin_file, $plugin_data['Name'] )
+				new Object_Reference( 'plugin', $plugin_data['File'], $plugin_data['Name'] )
 			);
 		}
 	}

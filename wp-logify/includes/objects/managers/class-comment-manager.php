@@ -88,6 +88,8 @@ class Comment_Manager extends Object_Manager {
 	 * @throws Exception If the comment no longer exists.
 	 */
 	public static function get_core_properties( int|string $comment_id ): array {
+		global $wpdb;
+
 		// Load the comment.
 		$comment = self::load( $comment_id );
 
@@ -100,18 +102,18 @@ class Comment_Manager extends Object_Manager {
 		$properties = array();
 
 		// ID.
-		Property::update_array( $properties, 'ID', $comment->comment_ID );
+		Property::update_array( $properties, 'ID', $wpdb->comments, $comment->comment_ID );
 
 		// Comment author.
 		$author = new Object_Reference( 'user', $comment->user_id );
-		Property::update_array( $properties, 'Author', $author );
+		Property::update_array( $properties, 'Author', $wpdb->comments, $author );
 
 		// Comment content.
-		Property::update_array( $properties, 'Content', $comment->comment_content );
+		Property::update_array( $properties, 'Content', $wpdb->comments, $comment->comment_content );
 
 		// Date.
 		$date = Datetimes::create_datetime( $comment->comment_date );
-		Property::update_array( $properties, 'Date', $date );
+		Property::update_array( $properties, 'Date', $wpdb->comments, $date );
 
 		return $properties;
 	}
@@ -124,7 +126,23 @@ class Comment_Manager extends Object_Manager {
 	 * @return string The link or span HTML tag.
 	 */
 	public static function get_tag( int|string $comment_id, ?string $old_name ): string {
-		// TODO
-		return '':
+		// Load the comment.
+		$comment = self::load( $comment_id );
+
+		// If the comment exists, get a link.
+		if ( $comment ) {
+			// Get the comment name.
+			$name = self::get_name( $comment_id );
+
+			// Get the comment URL.
+			$url = get_comment_link( $comment_id );
+
+			// Return the link.
+			return "<a href='$url' class='wp-logify-object'>$name</a>";
+		}
+
+		// The comment no longer exists. Construct the 'deleted' span element.
+		$name = $old_name ? $old_name : "Comment $comment_id";
+		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
 	}
 }
