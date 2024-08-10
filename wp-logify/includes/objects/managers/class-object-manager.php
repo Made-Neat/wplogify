@@ -12,29 +12,10 @@ use Exception;
 /**
  * Class WP_Logify\Object_Manager
  *
- * Base class for Manager classes, which provide event handlers and utility methods for different
- * WordPress object types, such as posts, users, terms, plugins, etc.
+ * Base class for object wrapper classes such as Post, User, Term, etc., which provide useful
+ * properties methods for different WordPress object types.
  */
 abstract class Object_Manager {
-
-	/**
-	 * Array to remember properties between different events.
-	 *
-	 * @var array
-	 */
-	protected static $properties = array();
-
-	/**
-	 * Array to remember metadata between different events.
-	 *
-	 * @var array
-	 */
-	protected static $eventmetas = array();
-
-	/**
-	 * Set up hooks for the events we want to log.
-	 */
-	abstract public static function init();
 
 	/**
 	 * Check if an object exists.

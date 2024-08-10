@@ -16,17 +16,6 @@ use Exception;
  */
 class Option_Manager extends Object_Manager {
 
-	// =============================================================================================
-	// Implementations of base class methods.
-
-	/**
-	 * Set up hooks for the events we want to log.
-	 */
-	public static function init() {
-		// Track option update.
-		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
-	}
-
 	/**
 	 * Check if an option exists.
 	 *
@@ -113,41 +102,5 @@ class Option_Manager extends Object_Manager {
 
 		// The option no longer exists. Construct the 'deleted' span element.
 		return "<span class='wp-logify-deleted-object'>$option (deleted)</span>";
-	}
-
-	// =============================================================================================
-	// Hooks.
-
-	/**
-	 * Fires immediately before an option value is updated.
-	 *
-	 * @param string $option    Name of the option to update.
-	 * @param mixed  $old_value The old option value.
-	 * @param mixed  $value     The new option value.
-	 */
-	public static function on_update_option( string $option, mixed $old_value, mixed $value ) {
-		global $wpdb;
-
-		// Ignore transient options.
-		if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 ) {
-			return;
-		}
-
-		// Process the values for comparison.
-		$old_val = Types::process_database_value( $option, $old_value );
-		$new_val = Types::process_database_value( $option, $value );
-		if ( $old_val === $new_val ) {
-			return;
-		}
-
-		// Get the properties.
-		$properties = array();
-		Property::update_array( $properties, 'value', $wpdb->options, $old_val, $new_val );
-
-		// Get an object reference.
-		$object_ref = new Object_Reference( 'option', $option, self::get_name( $option ) );
-
-		// Log the event.
-		Logger::log_event( 'Option Updated', $object_ref, null, $properties );
 	}
 }
