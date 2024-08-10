@@ -94,7 +94,7 @@ class Event {
 	 *
 	 * @var ?string
 	 */
-	public ?string $object_subtype;
+	public ?string $object_subtype = null;
 
 	/**
 	 * The unique identifier of the object associated with the event.
@@ -107,7 +107,7 @@ class Event {
 	 *
 	 * @var null|int|string
 	 */
-	public null|int|string $object_key;
+	public null|int|string $object_key = null;
 
 	/**
 	 * The name of the object associated with the event.
@@ -118,21 +118,21 @@ class Event {
 	 *
 	 * @var ?string
 	 */
-	public ?string $object_name;
+	public ?string $object_name = null;
 
 	/**
 	 * Properties relating to the event, including current values ans changes.
 	 *
 	 * @var ?array
 	 */
-	public ?array $properties;
+	public ?array $properties = null;
 
 	/**
 	 * Metadata relating to the event.
 	 *
 	 * @var ?array
 	 */
-	public ?array $eventmetas;
+	public ?array $eventmetas = null;
 
 	/**
 	 * The object.
@@ -140,7 +140,7 @@ class Event {
 	 *
 	 * @var ?object
 	 */
-	private ?object $object;
+	private ?object $object = null;
 
 	/**
 	 * The object reference.
@@ -148,7 +148,7 @@ class Event {
 	 *
 	 * @var ?Object_Reference
 	 */
-	private ?Object_Reference $object_ref;
+	private ?Object_Reference $object_ref = null;
 
 	// =============================================================================================
 	/**

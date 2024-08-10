@@ -192,7 +192,7 @@ class Types {
 
 				// If it's not a list, show the key.
 				if ( ! $is_list ) {
-					$html .= '<th>' . self::make_key_readable( $key2 ) . '</th>';
+					$html .= "<th>$key2</th>";
 				}
 
 				// Show the value.
