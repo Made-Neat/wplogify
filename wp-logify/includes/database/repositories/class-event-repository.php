@@ -256,7 +256,6 @@ class Event_Repository extends Repository {
             user_agent     VARCHAR(255)    NULL,
             event_type     VARCHAR(255)    NOT NULL,
             object_type    VARCHAR(10)     NULL,
-            object_subtype VARCHAR(20)     NULL,
             object_key     VARCHAR(50)     NULL,
             object_name    VARCHAR(100)    NULL,
             PRIMARY KEY (event_id),
@@ -292,20 +291,19 @@ class Event_Repository extends Repository {
 	 * @return Event The new Event object.
 	 */
 	public static function record_to_object( array $record ): Event {
-		$event                 = new Event();
-		$event->id             = (int) $record['event_id'];
-		$event->when_happened  = DateTimes::create_datetime( $record['when_happened'] );
-		$event->user_id        = (int) $record['user_id'];
-		$event->user_name      = $record['user_name'];
-		$event->user_role      = $record['user_role'];
-		$event->user_ip        = $record['user_ip'];
-		$event->user_location  = $record['user_location'];
-		$event->user_agent     = $record['user_agent'];
-		$event->event_type     = $record['event_type'];
-		$event->object_type    = $record['object_type'];
-		$event->object_subtype = $record['object_subtype'];
-		$event->object_key     = Types::process_database_value( 'object_key', $record['object_key'] );
-		$event->object_name    = $record['object_name'];
+		$event                = new Event();
+		$event->id            = (int) $record['event_id'];
+		$event->when_happened = DateTimes::create_datetime( $record['when_happened'] );
+		$event->user_id       = (int) $record['user_id'];
+		$event->user_name     = $record['user_name'];
+		$event->user_role     = $record['user_role'];
+		$event->user_ip       = $record['user_ip'];
+		$event->user_location = $record['user_location'];
+		$event->user_agent    = $record['user_agent'];
+		$event->event_type    = $record['event_type'];
+		$event->object_type   = $record['object_type'];
+		$event->object_key    = Types::process_database_value( 'object_key', $record['object_key'] );
+		$event->object_name   = $record['object_name'];
 		return $event;
 	}
 
@@ -319,18 +317,17 @@ class Event_Repository extends Repository {
 	 */
 	public static function object_to_record( Event $event ): array {
 		return array(
-			'when_happened'  => DateTimes::format_datetime_mysql( $event->when_happened ),
-			'user_id'        => $event->user_id,
-			'user_name'      => $event->user_name,
-			'user_role'      => $event->user_role,
-			'user_ip'        => $event->user_ip,
-			'user_location'  => $event->user_location,
-			'user_agent'     => $event->user_agent,
-			'event_type'     => $event->event_type,
-			'object_type'    => $event->object_type,
-			'object_subtype' => $event->object_subtype,
-			'object_key'     => $event->object_key,
-			'object_name'    => $event->object_name,
+			'when_happened' => DateTimes::format_datetime_mysql( $event->when_happened ),
+			'user_id'       => $event->user_id,
+			'user_name'     => $event->user_name,
+			'user_role'     => $event->user_role,
+			'user_ip'       => $event->user_ip,
+			'user_location' => $event->user_location,
+			'user_agent'    => $event->user_agent,
+			'event_type'    => $event->event_type,
+			'object_type'   => $event->object_type,
+			'object_key'    => $event->object_key,
+			'object_name'   => $event->object_name,
 		);
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Tracker class.
+ * Contains the Object_Tracker class.
  *
  * @package WP_Logify
  */
@@ -8,11 +8,11 @@
 namespace WP_Logify;
 
 /**
- * Class WP_Logify\Tracker
+ * Class WP_Logify\Object_Tracker
  *
- * Base class for object-specific Tracker classes, which provide tracking of events related to objects.
+ * Base class for object-specific tracker classes.
  */
-abstract class Tracker {
+abstract class Object_Tracker {
 
 	/**
 	 * Array to remember properties between different events.

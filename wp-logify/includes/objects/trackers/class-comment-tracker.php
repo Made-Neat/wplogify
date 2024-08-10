@@ -14,7 +14,7 @@ use WP_Comment;
  *
  * Provides tracking of events related to comments.
  */
-class Comment_Tracker extends Tracker {
+class Comment_Tracker extends Object_Tracker {
 
 	/**
 	 * Set up hooks for the events we want to log.

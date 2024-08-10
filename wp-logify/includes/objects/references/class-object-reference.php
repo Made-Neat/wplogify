@@ -155,15 +155,14 @@ class Object_Reference {
 	 * Call a method on the manager class for this object.
 	 *
 	 * @param string $method The method to call.
-	 * @param array  ...$args The arguments to pass to the method.
 	 * @return mixed The result of the method call.
 	 */
-	private function call_manager_method( string $method, ...$args ): mixed {
+	private function call_manager_method( string $method ): mixed {
 		// Get the name of the manager class.
 		$manager_class = $this->get_manager_class_name();
 
 		// Call the method on the manager class.
-		return $manager_class::$method( $this->key, ...$args );
+		return $manager_class::$method( $this->key );
 	}
 
 	/**
@@ -173,7 +172,7 @@ class Object_Reference {
 	 */
 	private function exists(): bool {
 		// Call the method on the manager class.
-		return $this->call_manager_method( 'exists', $this->key );
+		return $this->call_manager_method( 'exists' );
 	}
 
 	/**
@@ -183,7 +182,7 @@ class Object_Reference {
 	 */
 	private function load(): mixed {
 		// Call the method on the manager class.
-		return $this->call_manager_method( 'load', $this->key );
+		return $this->call_manager_method( 'load' );
 	}
 
 	/**
@@ -193,7 +192,7 @@ class Object_Reference {
 	 */
 	public function get_name() {
 		// Call the method on the manager class.
-		return $this->call_manager_method( 'get_name', $this->key );
+		return $this->call_manager_method( 'get_name' );
 	}
 
 	/**
@@ -204,7 +203,7 @@ class Object_Reference {
 	 */
 	public function get_core_properties(): ?array {
 		// Call the method on the manager class.
-		return $this->call_manager_method( 'get_core_properties', $this->key );
+		return $this->call_manager_method( 'get_core_properties' );
 	}
 
 	/**
@@ -214,7 +213,10 @@ class Object_Reference {
 	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
 	public function get_tag() {
+		// Get the name of the manager class.
+		$manager_class = $this->get_manager_class_name();
+
 		// Call the method on the manager class.
-		return $this->call_manager_method( 'get_tag', $this->key, $this->name );
+		return $manager_class::get_tag( $this->key, $this->name );
 	}
 }

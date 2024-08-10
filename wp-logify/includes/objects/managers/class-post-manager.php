@@ -78,36 +78,30 @@ class Post_Manager extends Object_Manager {
 			throw new Exception( "Post $post_id not found." );
 		}
 
-		// Define the core properties by key.
-		$core_properties = array( 'ID', 'post_type', 'post_author', 'post_title', 'post_status', 'post_date', 'post_modified' );
-
 		// Build the array of properties.
 		$properties = array();
-		foreach ( $core_properties as $key ) {
 
-			// Get the value.
-			switch ( $key ) {
-				case 'post_author':
-					$value = new Object_Reference( 'user', $post->post_author );
-					break;
+		// ID.
+		Property::update_array( $properties, 'ID', $wpdb->posts, $post->ID );
 
-				case 'post_date':
-					$value = self::get_created_datetime( $post );
-					break;
+		// Post type.
+		Property::update_array( $properties, 'post_type', $wpdb->posts, $post->post_type );
 
-				case 'post_modified':
-					$value = self::get_last_modified_datetime( $post );
-					break;
+		// Post author.
+		$author = new Object_Reference( 'user', $post->post_author );
+		Property::update_array( $properties, 'post_author', $wpdb->posts, $author );
 
-				default:
-					// Process database values into correct types.
-					$value = Types::process_database_value( $key, $post->{$key} );
-					break;
-			}
+		// Post title.
+		Property::update_array( $properties, 'post_title', $wpdb->posts, $post->post_title );
 
-			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->posts, $value );
-		}
+		// Post status.
+		Property::update_array( $properties, 'post_status', $wpdb->posts, $post->post_status );
+
+		// Post date.
+		Property::update_array( $properties, 'post_date', $wpdb->posts, self::get_created_datetime( $post ) );
+
+		// Post modified.
+		Property::update_array( $properties, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
 
 		return $properties;
 	}
@@ -126,6 +120,14 @@ class Post_Manager extends Object_Manager {
 
 		// If the post exists, get a link.
 		if ( $post ) {
+
+			// Check if it's a revision.
+			if ( wp_is_post_revision( $post_id ) ) {
+				// Get a link to the revision comparison page.
+				$url = admin_url( "revision.php?revision={$post_id}" );
+				return "<a href='$url' class='wp-logify-object'>Compare revisions</a>";
+			}
+
 			// If the post is trashed, we can't reach its edit page, so instead we'll link to the
 			// list of trashed posts.
 			if ( $post->post_status === 'trash' ) {
@@ -145,24 +147,6 @@ class Post_Manager extends Object_Manager {
 
 	// =============================================================================================
 	// Methods for getting information about posts.
-
-	/**
-	 * Get the HTML for a link to the revision comparison page.
-	 *
-	 * @param int $revision_id The ID of the revision.
-	 * @return string The HTML of the link or span tag.
-	 */
-	public static function get_revision_tag( int $revision_id ) {
-		// Check if the revision exists.
-		if ( self::exists( $revision_id ) ) {
-			// Get a link to the revision comparison page.
-			$url = admin_url( "revision.php?revision={$revision_id}" );
-			return "<a href='$url' class='wp-logify-object'>Compare revisions</a>";
-		}
-
-		// The revision no longer exists. Construct the 'deleted' span element.
-		return "<span class='wp-logify-deleted-object'>(Revision deleted)</span>";
-	}
 
 	/**
 	 * Get the singular name of a custom post type.

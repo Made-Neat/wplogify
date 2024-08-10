@@ -14,7 +14,7 @@ use WP_Theme;
  *
  * Provides tracking of events related to themes.
  */
-class Theme_Tracker extends Tracker {
+class Theme_Tracker extends Object_Tracker {
 
 	/**
 	 * Set up hooks for the events we want to log.

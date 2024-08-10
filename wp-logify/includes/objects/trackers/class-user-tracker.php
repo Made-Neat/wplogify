@@ -14,7 +14,7 @@ use WP_User;
  *
  * Provides tracking of events related to users.
  */
-class User_Tracker extends Tracker {
+class User_Tracker extends Object_Tracker {
 
 	/**
 	 * The maximum break period in seconds. If there has been no activity for this period, we'll

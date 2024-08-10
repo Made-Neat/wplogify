@@ -10,7 +10,7 @@ namespace WP_Logify;
 /**
  * Class WP_Logify\Tracker
  */
-class Tracker {
+class Object_Tracker {
 	public static function init() {
 		// Hook into various WordPress actions
 		// User-related hooks
@@ -337,4 +337,4 @@ class Tracker {
 }
 
 // Initialize the tracker
-Tracker::init();
+Object_Tracker::init();

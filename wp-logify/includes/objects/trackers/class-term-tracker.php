@@ -15,7 +15,7 @@ use WP_Term;
  *
  * Provides tracking of events related to terms.
  */
-class Term_Tracker extends Tracker {
+class Term_Tracker extends Object_Tracker {
 
 	/**
 	 * Set up hooks for the events we want to log.

@@ -86,17 +86,6 @@ class Event {
 	public ?string $object_type;
 
 	/**
-	 * The subtype of object associated with the event.
-	 *
-	 * For posts, this will be the post type.
-	 * For terms, this will be the taxonomy.
-	 * Other object types may not have subtypes.
-	 *
-	 * @var ?string
-	 */
-	public ?string $object_subtype = null;
-
-	/**
 	 * The unique identifier of the object associated with the event.
 	 *
 	 * This will be an integer matching a database primary key in the case of a post, user, term, or

@@ -56,11 +56,7 @@ $lighter-grey: #f6f7f7;
         text-align: left;
     }
 
-    a.wp-logify-object {
-        font-weight: bold;
-    }
-
-    a.wp-logify-deleted-object {
+    .wp-logify-deleted-object {
         font-style: italic;
     }
 }

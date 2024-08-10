@@ -14,7 +14,7 @@ use WP_Post;
  *
  * Provides tracking of events related to posts.
  */
-class Post_Tracker extends Tracker {
+class Post_Tracker extends Object_Tracker {
 
 	/**
 	 * Keep track of terms added to a post in a single request.
