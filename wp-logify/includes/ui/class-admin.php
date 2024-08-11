@@ -224,7 +224,7 @@ class Admin {
 			);
 
 			// DataTables assets.
-			wp_enqueue_style( 'datatables', WP_LOGIFY_PLUGIN_URL . 'assets/datatables/datatables.cssrc', array(), '2.0.8' );
+			wp_enqueue_style( 'datatables', WP_LOGIFY_PLUGIN_URL . 'assets/datatables/datatables.css', array(), '2.0.8' );
 			wp_enqueue_script( 'datatables', WP_LOGIFY_PLUGIN_URL . 'assets/datatables/datatables.js', array( 'jquery' ), '2.0.8', true );
 		}
 	}

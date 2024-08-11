@@ -130,6 +130,8 @@ class Plugin_Tracker extends Object_Tracker {
 			Property::update_array( self::$properties, 'version', null, $old_version, $new_version );
 		}
 
+        debug($upgrader);
+
 		// Log the event.
 		Logger::log_event(
 			$event_type,
