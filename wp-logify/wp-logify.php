@@ -45,6 +45,8 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-event-
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-eventmeta-repository.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-property-repository.php';
 
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php';
+
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-object-manager.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-comment-manager.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-option-manager.php';
@@ -53,8 +55,6 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-post-manage
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-term-manager.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-theme-manager.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-user-manager.php';
-
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/references/class-object-reference.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-object-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-comment-tracker.php';
@@ -79,7 +79,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-logger.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-main.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/debug.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/test.php';
+// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/test.php';
 
 // Register plugin hooks.
 add_action( 'plugins_loaded', array( 'WP_Logify\Main', 'init' ) );
