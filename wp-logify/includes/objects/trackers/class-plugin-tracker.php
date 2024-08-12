@@ -75,12 +75,15 @@ class Plugin_Tracker extends Object_Tracker {
 			return;
 		}
 
+		// Get the plugin name and load the plugin.
+		$plugin_name = $upgrader->new_plugin_data['Name'];
+		$plugin      = Plugin_Manager::load_by_name( $plugin_name );
+
 		// If the result is null, the plugin was not installed or updated, so we won't log anything.
 		if ( $upgrader->result === null ) {
 
 			// The user may be downgrading the plugin, so let's store the current plugin verison in
 			// the options.
-			$plugin = Plugin_Manager::load_by_name( $upgrader->new_plugin_data['Name'] );
 			if ( $plugin ) {
 				$version_key = $plugin['Name'] . ' version';
 				$old_version = $plugin['Version'] ?? null;
@@ -110,7 +113,7 @@ class Plugin_Tracker extends Object_Tracker {
 			}
 
 			// See if the old version was stored in the options.
-			$version_key = $upgrader->new_plugin_data['Name'] . ' version';
+			$version_key = $plugin_name . ' version';
 			$old_version = get_option( $version_key );
 
 			// Remove the option, as we don't need it anymore.
@@ -122,22 +125,22 @@ class Plugin_Tracker extends Object_Tracker {
 			$verb        = 'Upgraded';
 			$old_version = $upgrader->skin->plugin_info['Version'] ?? null;
 		}
+
 		$event_type = "Plugin $verb";
 
 		// If we have both the old and new versions, show this.
+		$properties  = array();
 		$new_version = $upgrader->new_plugin_data['Version'] ?? null;
 		if ( $old_version && $new_version && $old_version !== $new_version ) {
-			Property::update_array( self::$properties, 'version', null, $old_version, $new_version );
+			Property::update_array( $properties, 'version', null, $old_version, $new_version );
 		}
-
-        debug($upgrader);
 
 		// Log the event.
 		Logger::log_event(
 			$event_type,
-			new Object_Reference( 'plugin', $upgrader->new_plugin_data['Slug'], $upgrader->new_plugin_data['Name'] ),
+			new Object_Reference( 'plugin', $plugin['File'], $plugin_name ),
 			null,
-			self::$properties
+			$properties
 		);
 	}
 

@@ -8,8 +8,6 @@
 namespace WP_Logify;
 
 use Exception;
-use Plugin_Upgrader;
-use WP_Upgrader;
 
 /**
  * Class WP_Logify\Post_Manager
