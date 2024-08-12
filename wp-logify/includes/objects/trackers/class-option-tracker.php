@@ -33,9 +33,9 @@ class Option_Tracker extends Object_Tracker {
 		global $wpdb;
 
 		// Ignore transient options.
-		if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 ) {
-			return;
-		}
+		// if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 ) {
+		// return;
+		// }
 
 		// Process the values for comparison.
 		$old_val = Types::process_database_value( $option, $old_value );
