@@ -78,10 +78,10 @@
   background-color: hsl(60, 100%, 92%);
 }
 #wp-logify-activity-log .wp-logify-object-type-term {
-  background-color: hsl(300, 100%, 95%);
+  background-color: hsl(0, 100%, 95%);
 }
 #wp-logify-activity-log .wp-logify-object-type-term.shown, #wp-logify-activity-log .wp-logify-object-type-term:hover {
-  background-color: hsl(300, 100%, 92%);
+  background-color: hsl(0, 100%, 92%);
 }
 #wp-logify-activity-log .wp-logify-object-type-plugin {
   background-color: hsl(120, 100%, 95%);

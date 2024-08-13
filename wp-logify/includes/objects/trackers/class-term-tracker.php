@@ -21,13 +21,9 @@ class Term_Tracker extends Object_Tracker {
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
-		// CRUD operations.
-		// add_action( 'created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
-		// add_action( 'edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
-		// add_action( 'pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
-
-		// // Track changes to term taxonomies.
-		// add_action( 'edit_term_taxonomies', array( __CLASS__, 'on_edit_term_taxonomies' ), 10, 1 );
+		add_action( 'created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
+		add_action( 'edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
+		add_action( 'pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
 	}
 
 	// =============================================================================================
@@ -46,7 +42,8 @@ class Term_Tracker extends Object_Tracker {
 		$term = Term_Utility::load( $term_id );
 
 		// Get the event type.
-		$event_type = ucwords( $taxonomy ) . ' Created';
+		$taxonomy_name = Term_Utility::get_taxonomy_singular_name( $taxonomy );
+		$event_type    = "$taxonomy_name Created";
 
 		// Log the event.
 		Logger::log_event( $event_type, $term );
@@ -73,6 +70,13 @@ class Term_Tracker extends Object_Tracker {
 			$new_val = Types::process_database_value( $key, $args[ $key ] );
 
 			if ( ! Types::are_equal( $val, $new_val ) ) {
+
+				// For parent, change to object references.
+				if ( $key === 'parent' ) {
+					$val     = $val ? new Object_Reference( 'term', $val ) : null;
+					$new_val = $new_val ? new Object_Reference( 'term', $new_val ) : null;
+				}
+
 				// Update the property's before and after values.
 				Property::update_array( self::$properties, $key, $wpdb->terms, $val, $new_val );
 
@@ -83,7 +87,8 @@ class Term_Tracker extends Object_Tracker {
 
 		if ( $changed ) {
 			// Get the event type.
-			$event_type = ucwords( $taxonomy ) . ' Updated';
+			$taxonomy_name = Term_Utility::get_taxonomy_singular_name( $taxonomy );
+			$event_type    = "$taxonomy_name Updated";
 
 			// Log the event.
 			Logger::log_event( $event_type, $term, null, self::$properties );
@@ -101,15 +106,11 @@ class Term_Tracker extends Object_Tracker {
 		global $wpdb;
 
 		// Get the term.
-		$term = get_term( $term_id, $taxonomy );
-
-		// Handle error if the term could not be retrieved.
-		if ( is_wp_error( $term ) ) {
-			throw new Exception( "Failed to retrieve term with ID $term_id in taxonomy $taxonomy." );
-		}
+		$term = Term_Utility::load( $term_id );
 
 		// Get the event type.
-		$event_type = ucwords( $taxonomy ) . ' Deleted';
+		$taxonomy_name = Term_Utility::get_taxonomy_singular_name( $taxonomy );
+		$event_type    = "$taxonomy_name Deleted";
 
 		// Find all posts tagged with this term, in case we need to restore the term.
 		$post_ids = get_objects_in_term( $term_id, $taxonomy );
@@ -119,22 +120,14 @@ class Term_Tracker extends Object_Tracker {
 			throw new Exception( "Failed to retrieve posts with term ID $term_id in taxonomy $taxonomy." );
 		}
 
-		// The function returns an array of strings for some reason, so let's convert them to ints.
-		$post_ids = array_map( fn( $post_id ) => (int) $post_id, $post_ids );
+		// Convert the array of post IDs to an array of Object_Reference objects.
+		$post_ids = array_map( fn( $post_id ) => new Object_Reference( 'post', $post_id ), $post_ids );
 
 		// Add to properties.
-		Property::update_array( self::$properties, 'attached_posts', $wpdb->terms, $post_ids );
+		$metas = array();
+		Eventmeta::update_array( $metas, 'attached_posts', $post_ids );
 
 		// Log the event.
-		Logger::log_event( $event_type, $term, null, self::$properties );
-	}
-
-	/**
-	 * Track the edit of a term.
-	 *
-	 * @param array $edit_tt_ids An array of term taxonomy IDs for the given term.
-	 */
-	public static function on_edit_term_taxonomies( array $edit_tt_ids ) {
-		// debug( 'on_edit_term_taxonomies', func_get_args() );
+		Logger::log_event( $event_type, $term, $metas );
 	}
 }

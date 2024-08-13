@@ -122,8 +122,8 @@ class Types {
 	/**
 	 * Check if two values are equal by value and type.
 	 *
-	 * Solves the problem of two object references being considered unequal when they refer to different
-	 * objects with equal property values.
+	 * Solves the problem of two object references being considered unequal when they refer to
+	 * different objects with equal property values.
 	 *
 	 * @param mixed $value1 The first value.
 	 * @param mixed $value2 The second value.
@@ -179,6 +179,11 @@ class Types {
 
 		// Expand arrays into mini-tables.
 		if ( is_array( $value ) ) {
+
+			// Handle empty arrays.
+			if ( count( $value ) === 0 ) {
+				return 'None';
+			}
 
 			// Start the table.
 			$html = "<table>\n";

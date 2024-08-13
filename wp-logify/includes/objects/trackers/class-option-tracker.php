@@ -32,10 +32,10 @@ class Option_Tracker extends Object_Tracker {
 	public static function on_update_option( string $option, mixed $old_value, mixed $value ) {
 		global $wpdb;
 
-		// Ignore transient options.
-		// if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 ) {
-		// return;
-		// }
+		// Ignore certain options that clutter the log.
+		if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 || $option === 'wp_user_roles' ) {
+			return;
+		}
 
 		// Process the values for comparison.
 		$old_val = Types::process_database_value( $option, $old_value );
