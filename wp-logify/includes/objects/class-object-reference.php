@@ -79,13 +79,13 @@ class Object_Reference {
 	}
 
 	/**
-	 * Create a new Object_Reference from a WordPress object.
+	 * Create a new Object_Reference from a WordPress object or (in the case of plugins) array.
 	 *
-	 * @param object $wp_object The WordPress object.
+	 * @param object|array $wp_object The WordPress object or array.
 	 * @return self The new Object_Reference.
 	 * @throws Exception If the object type is unknown or unsupported.
 	 */
-	public static function new_from_wp_object( object $wp_object ): Object_Reference {
+	public static function new_from_wp_object( object|array $wp_object ): Object_Reference {
 		$type = null;
 		$key  = null;
 		$name = null;
@@ -97,7 +97,7 @@ class Object_Reference {
 		} elseif ( $wp_object instanceof WP_User ) {
 			$type = 'user';
 			$key  = $wp_object->ID;
-			$name = User_Manager::get_name( $key );
+			$name = User_Utility::get_name( $key );
 		} elseif ( $wp_object instanceof WP_Term ) {
 			$type = 'term';
 			$key  = $wp_object->term_id;
@@ -109,7 +109,11 @@ class Object_Reference {
 		} elseif ( $wp_object instanceof WP_Comment ) {
 			$type = 'comment';
 			$key  = $wp_object->comment_ID;
-			$name = Comment_Manager::get_name( $key );
+			$name = Comment_Utility::get_name( $key );
+		} elseif ( is_array( $wp_object ) ) {
+			$type = 'plugin';
+			$key  = $wp_object['Slug'];
+			$name = $wp_object['Name'];
 		} else {
 			throw new Exception( 'Unknown or unsupported object type.' );
 		}
@@ -133,15 +137,15 @@ class Object_Reference {
 	}
 
 	/**
-	 * Get the name of the object manager class for this object, with the additional check that an
-	 * object manager class exists for this object type.
+	 * Get the name of the utility class for this object, with the additional check that it
+	 * actually exists.
 	 *
-	 * @return string The manager class name.
+	 * @return string The utility class name.
 	 * @throws Exception If the object type is unknown.
 	 */
-	public function get_manager_class_name() {
-		// Get the fully-qualified name of the manager class for this object type.
-		$class = '\WP_Logify\\' . ucfirst( $this->type ) . '_Manager';
+	public function get_utility_class_name() {
+		// Get the fully-qualified name of the utility class for this object type.
+		$class = '\WP_Logify\\' . ucfirst( $this->type ) . '_Utility';
 
 		// If the class doesn't exist, throw an exception.
 		if ( ! class_exists( $class ) ) {
@@ -152,17 +156,17 @@ class Object_Reference {
 	}
 
 	/**
-	 * Call a method on the manager class for this object.
+	 * Call a method on the utility class for this object.
 	 *
 	 * @param string $method The method to call.
 	 * @return mixed The result of the method call.
 	 */
-	private function call_manager_method( string $method ): mixed {
-		// Get the name of the manager class.
-		$manager_class = $this->get_manager_class_name();
+	private function call_utility_method( string $method ): mixed {
+		// Get the name of the utility class.
+		$utility_class = $this->get_utility_class_name();
 
-		// Call the method on the manager class.
-		return $manager_class::$method( $this->key );
+		// Call the method on the utility class.
+		return $utility_class::$method( $this->key );
 	}
 
 	/**
@@ -171,8 +175,8 @@ class Object_Reference {
 	 * @return bool True if the object exists, false otherwise.
 	 */
 	private function exists(): bool {
-		// Call the method on the manager class.
-		return $this->call_manager_method( 'exists' );
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'exists' );
 	}
 
 	/**
@@ -181,8 +185,8 @@ class Object_Reference {
 	 * @return mixed The object or null if not found.
 	 */
 	private function load(): mixed {
-		// Call the method on the manager class.
-		return $this->call_manager_method( 'load' );
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'load' );
 	}
 
 	/**
@@ -191,8 +195,8 @@ class Object_Reference {
 	 * @return string The name or title of the object, or Unknown if not found.
 	 */
 	public function get_name() {
-		// Call the method on the manager class.
-		return $this->call_manager_method( 'get_name' );
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'get_name' );
 	}
 
 	/**
@@ -202,8 +206,8 @@ class Object_Reference {
 	 * @throws Exception If the object type is unknown.
 	 */
 	public function get_core_properties(): ?array {
-		// Call the method on the manager class.
-		return $this->call_manager_method( 'get_core_properties' );
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'get_core_properties' );
 	}
 
 	/**
@@ -213,10 +217,10 @@ class Object_Reference {
 	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
 	public function get_tag() {
-		// Get the name of the manager class.
-		$manager_class = $this->get_manager_class_name();
+		// Get the name of the utility class.
+		$utility_class = $this->get_utility_class_name();
 
-		// Call the method on the manager class.
-		return $manager_class::get_tag( $this->key, $this->name );
+		// Call the method on the utility class.
+		return $utility_class::get_tag( $this->key, $this->name );
 	}
 }

@@ -17,7 +17,7 @@ use WP_User;
  *
  * Provides tracking of events related to users.
  */
-class User_Manager extends Object_Manager {
+class User_Utility extends Object_Utility {
 
 	// =============================================================================================
 	// Implementations of base class methods.
@@ -149,9 +149,13 @@ class User_Manager extends Object_Manager {
 			return "<a href='$url' class='wp-logify-object'>$name</a>";
 		}
 
+		// Make a backup name.
+		if ( ! $old_name ) {
+			$old_name = "User $user_id";
+		}
+
 		// The user no longer exists. Construct the 'deleted' span element.
-		$name = $old_name ? $old_name : "User $user_id";
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
 	}
 
 	// =============================================================================================

@@ -73,7 +73,7 @@ class Post_Tracker extends Object_Tracker {
 
 			// Load the parent object.
 			$post_id = $post->post_parent;
-			$post    = Post_Manager::load( $post_id );
+			$post    = Post_Utility::load( $post_id );
 
 			// Replace changed content with object references.
 			if ( ! empty( self::$properties['post_content'] ) ) {
@@ -88,7 +88,7 @@ class Post_Tracker extends Object_Tracker {
 		$created = $creating || $post->post_status === 'auto-draft';
 
 		// Get the event type.
-		$event_type = Post_Manager::get_post_type_singular_name( $post->post_type ) . ( $created ? ' Created' : ' Updated' );
+		$event_type = Post_Utility::get_post_type_singular_name( $post->post_type ) . ( $created ? ' Created' : ' Updated' );
 
 		// Log the event.
 		Logger::log_event( $event_type, $post, null, self::$properties );
@@ -106,7 +106,7 @@ class Post_Tracker extends Object_Tracker {
 		global $wpdb;
 
 		// Record the current last modified date.
-		Property::update_array( self::$properties, 'post_modified', $wpdb->posts, Post_Manager::get_last_modified_datetime( $post_id ) );
+		Property::update_array( self::$properties, 'post_modified', $wpdb->posts, Post_Utility::get_last_modified_datetime( $post_id ) );
 	}
 
 	/**
@@ -134,7 +134,7 @@ class Post_Tracker extends Object_Tracker {
 
 			// Special handling for the last modified datetime.
 			if ( $key === 'post_modified' ) {
-				$new_val = Post_Manager::get_last_modified_datetime( $post_id );
+				$new_val = Post_Utility::get_last_modified_datetime( $post_id );
 			} else {
 				$new_val = Types::process_database_value( $key, $post_after->{$key} );
 			}
@@ -202,8 +202,8 @@ class Post_Tracker extends Object_Tracker {
 		debug( 'on_transition_post_status' );
 
 		// Get the event type.
-		$post_type  = Post_Manager::get_post_type_singular_name( $post->post_type );
-		$verb       = Post_Manager::get_status_transition_verb( $old_status, $new_status );
+		$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
+		$verb       = Post_Utility::get_status_transition_verb( $old_status, $new_status );
 		$event_type = "$post_type $verb";
 
 		// Update the properties to correctly show the status change.
@@ -236,7 +236,7 @@ class Post_Tracker extends Object_Tracker {
 		debug( 'on_before_delete_post' );
 
 		// Get the attached terms.
-		$attached_terms = Post_Manager::get_attached_terms( $post_id );
+		$attached_terms = Post_Utility::get_attached_terms( $post_id );
 
 		// If there weren't any, bail.
 		if ( empty( $attached_terms ) ) {
@@ -271,10 +271,10 @@ class Post_Tracker extends Object_Tracker {
 		debug( 'on_delete_post' );
 
 		// Get the event type.
-		$event_type = Post_Manager::get_post_type_singular_name( $post->post_type ) . ' Deleted';
+		$event_type = Post_Utility::get_post_type_singular_name( $post->post_type ) . ' Deleted';
 
 		// Get all the post's properties, including metadata.
-		$props = Post_Manager::get_properties( $post );
+		$props = Post_Utility::get_properties( $post );
 
 		// Log the event.
 		Logger::log_event( $event_type, $post, self::$eventmetas, $props );
@@ -296,7 +296,7 @@ class Post_Tracker extends Object_Tracker {
 		debug( 'on_added_term_relationship' );
 
 		// Remember the newly attached term.
-		$term                                = Term_Manager::get_by_term_taxonomy_id( $tt_id );
+		$term                                = Term_Utility::get_by_term_taxonomy_id( $tt_id );
 		self::$terms[ $taxonomy ]['added'][] = Object_Reference::new_from_wp_object( $term );
 	}
 
@@ -317,7 +317,7 @@ class Post_Tracker extends Object_Tracker {
 
 		// Convert the term_taxonomy IDs to Object_Reference objects.
 		foreach ( $tt_ids as $tt_id ) {
-			$term                                  = Term_Manager::get_by_term_taxonomy_id( $tt_id );
+			$term                                  = Term_Utility::get_by_term_taxonomy_id( $tt_id );
 			self::$terms[ $taxonomy ]['removed'][] = Object_Reference::new_from_wp_object( $term );
 		}
 	}
@@ -364,7 +364,7 @@ class Post_Tracker extends Object_Tracker {
 				}
 
 				// Get the event type.
-				$post_type_name = Post_Manager::get_post_type_singular_name( $post->post_type );
+				$post_type_name = Post_Utility::get_post_type_singular_name( $post->post_type );
 				$event_type     = "$post_type_name $taxonomy_name $verb";
 
 				// Collect eventmetas.

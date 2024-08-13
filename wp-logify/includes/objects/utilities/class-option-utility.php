@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Option_Manager class.
+ * Contains the Option_Utility class.
  *
  * @package WP_Logify
  */
@@ -10,11 +10,11 @@ namespace WP_Logify;
 use Exception;
 
 /**
- * Class WP_Logify\Option_Manager
+ * Class WP_Logify\Option_Utility
  *
  * Provides tracking of events related to options.
  */
-class Option_Manager extends Object_Manager {
+class Option_Utility extends Object_Utility {
 
 	/**
 	 * Check if an option exists.
@@ -100,7 +100,12 @@ class Option_Manager extends Object_Manager {
 			return "<span class='wp-logify-object'>$name</span>";
 		}
 
+		// Make a backup name.
+		if ( ! $old_name ) {
+			$old_name = Types::make_key_readable( $option );
+		}
+
 		// The option no longer exists. Construct the 'deleted' span element.
-		return "<span class='wp-logify-deleted-object'>$option (deleted)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
 	}
 }

@@ -179,7 +179,7 @@ class Log_Page {
 			$item['when_happened'] = "<div>$formatted_datetime ($time_ago)</div>";
 
 			// User details.
-			$user_tag             = User_Manager::get_tag( $event->user_id, $event->user_name );
+			$user_tag             = User_Utility::get_tag( $event->user_id, $event->user_name );
 			$user_role            = esc_html( ucwords( $event->user_role ) );
 			$item['display_name'] = get_avatar( $event->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
@@ -230,7 +230,7 @@ class Log_Page {
 		$html .= "<table class='wp-logify-details-table wp-logify-user-details-table'>\n";
 
 		// User tag.
-		$user_tag = User_Manager::get_tag( $event->user_id, $event->user_name );
+		$user_tag = User_Utility::get_tag( $event->user_id, $event->user_name );
 		$html    .= "<tr><th>User</th><td>$user_tag</td></tr>\n";
 
 		// Role.
@@ -256,21 +256,21 @@ class Log_Page {
 		// get their details from there.
 
 		// Get some extra details if the user has not been deleted.
-		if ( User_Manager::exists( $event->user_id ) ) {
+		if ( User_Utility::exists( $event->user_id ) ) {
 			// Load the user.
-			$user = User_Manager::load( $event->user_id );
+			$user = User_Utility::load( $event->user_id );
 
 			// User email.
 			$user_email = empty( $user->user_email ) ? 'Unknown' : esc_html( $user->user_email );
-			$html      .= '<tr><th>Email</th><td>' . User_Manager::get_email_link( $user_email ) . "</a></td></tr>\n";
+			$html      .= '<tr><th>Email</th><td>' . User_Utility::get_email_link( $user_email ) . "</a></td></tr>\n";
 
 			// Get the last login datetime.
-			$last_login_datetime        = User_Manager::get_last_login_datetime( $event->user_id );
+			$last_login_datetime        = User_Utility::get_last_login_datetime( $event->user_id );
 			$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime ) : 'Unknown';
 			$html                      .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>\n";
 
 			// Get the last active datetime.
-			$last_active_datetime        = User_Manager::get_last_active_datetime( $event->user_id );
+			$last_active_datetime        = User_Utility::get_last_active_datetime( $event->user_id );
 			$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime ) : 'Unknown';
 			$html                       .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>\n";
 		}
@@ -344,7 +344,7 @@ class Log_Page {
 				if ( ! $post_type ) {
 					$post_type = $event->get_object()->post_type;
 				}
-				$object_type_title = Post_Manager::get_post_type_singular_name( $post_type );
+				$object_type_title = Post_Utility::get_post_type_singular_name( $post_type );
 				break;
 
 			case 'term':
@@ -354,7 +354,7 @@ class Log_Page {
 				if ( ! $taxonomy ) {
 					$taxonomy = $event->get_object()->taxonomy;
 				}
-				$object_type_title = Term_Manager::get_taxonomy_singular_name( $taxonomy );
+				$object_type_title = Term_Utility::get_taxonomy_singular_name( $taxonomy );
 				break;
 
 			default:
@@ -427,7 +427,11 @@ class Log_Page {
 				} else {
 					$new_val = Types::value_to_html( $prop->key, $prop->new_val );
 				}
-				$html .= "<td>$new_val</td>";
+
+				// Get the CSS class.
+				$new_value_exists = $prop->new_val != null;
+				$class            = $new_value_exists ? 'wp-logify-value-changed' : 'wp-logify-value-unchanged';
+				$html            .= "<td class='$class'>$new_val</td>";
 			}
 
 			// End row.

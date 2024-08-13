@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Comment_Manager class.
+ * Contains the Comment_Utility class.
  *
  * @package WP_Logify
  */
@@ -11,11 +11,11 @@ use Exception;
 use WP_Comment;
 
 /**
- * Class WP_Logify\Comment_Manager
+ * Class WP_Logify\Comment_Utility
  *
  * Provides tracking of events related to comments.
  */
-class Comment_Manager extends Object_Manager {
+class Comment_Utility extends Object_Utility {
 
 	// =============================================================================================
 	// Implementations of base class methods.
@@ -122,10 +122,10 @@ class Comment_Manager extends Object_Manager {
 	 * Get a comment tag.
 	 *
 	 * @param int|string $comment_id The ID of the comment.
-	 * @param ?string    $old_name   The comment title at the time of the event.
+	 * @param ?string    $old_title  The comment title at the time of the event.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $comment_id, ?string $old_name ): string {
+	public static function get_tag( int|string $comment_id, ?string $old_title ): string {
 		// Load the comment.
 		$comment = self::load( $comment_id );
 
@@ -141,8 +141,12 @@ class Comment_Manager extends Object_Manager {
 			return "<a href='$url' class='wp-logify-object'>$name</a>";
 		}
 
+		// Make a backup title.
+		if ( ! $old_title ) {
+			$old_title = "Comment $comment_id";
+		}
+
 		// The comment no longer exists. Construct the 'deleted' span element.
-		$name = $old_name ? $old_name : "Comment $comment_id";
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_title (deleted)</span>";
 	}
 }

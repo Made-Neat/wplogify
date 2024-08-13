@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Object_Manager class.
+ * Contains the Object_Utility class.
  *
  * @package WP_Logify
  */
@@ -10,12 +10,14 @@ namespace WP_Logify;
 use Exception;
 
 /**
- * Class WP_Logify\Object_Manager
+ * Class WP_Logify\Object_Utility
  *
- * Base class for object wrapper classes such as Post, User, Term, etc., which provide useful
- * properties methods for different WordPress object types.
+ * Base class for object-type-specific utility classes such as Post_Utility, User_Utility, etc.,
+ * which provide a variety of useful methods for different WordPress object types.
+ *
+ * This class specifies the methods that must be implemented by all object utility classes.
  */
-abstract class Object_Manager {
+abstract class Object_Utility {
 
 	/**
 	 * Check if an object exists.

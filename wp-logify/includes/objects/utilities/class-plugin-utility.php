@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Post_Manager class.
+ * Contains the Post_Utility class.
  *
  * @package WP_Logify
  */
@@ -10,11 +10,11 @@ namespace WP_Logify;
 use Exception;
 
 /**
- * Class WP_Logify\Post_Manager
+ * Class WP_Logify\Post_Utility
  *
  * Provides tracking of events related to posts.
  */
-class Plugin_Manager extends Object_Manager {
+class Plugin_Utility extends Object_Utility {
 
 	// =============================================================================================
 	// Implementations of base class methods.
@@ -31,27 +31,15 @@ class Plugin_Manager extends Object_Manager {
 	}
 
 	/**
-	 * Get the data for a plugin.
+	 * Get a plugin by slug.
 	 *
-	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * If the plugin isn't found, null will be returned. An exception will not be thrown.
+	 *
+	 * @param int|string $plugin_slug The slug of the plugin.
 	 * @return ?array The plugin data or null if not found.
 	 */
-	public static function load( int|string $plugin_file ): ?array {
-		// Check if the plugin exists.
-		if ( ! self::exists( $plugin_file ) ) {
-			return null;
-		}
-
-		// Load the plugin data.
-		$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
-
-		// Add the file to the array.
-		$plugin['File'] = $plugin_file;
-
-		// Add the slug to the array.
-		$plugin['Slug'] = self::get_slug( $plugin_file );
-
-		return $plugin;
+	public static function load( int|string $plugin_slug ): ?array {
+		return self::load_by_slug( (string) $plugin_slug );
 	}
 
 	/**
@@ -62,7 +50,7 @@ class Plugin_Manager extends Object_Manager {
 	 */
 	public static function get_name( int|string $plugin_file ): ?string {
 		// Load the plugin.
-		$plugin = self::load( $plugin_file );
+		$plugin = self::load_by_file( $plugin_file );
 
 		// Return the plugin name.
 		return $plugin['Name'] ?? null;
@@ -77,7 +65,7 @@ class Plugin_Manager extends Object_Manager {
 	 */
 	public static function get_core_properties( int|string $plugin_file ): array {
 		// Get the plugin data.
-		$plugin = self::load( $plugin_file );
+		$plugin = self::load_by_file( $plugin_file );
 
 		// Handle the case where the plugin no longer exists.
 		if ( ! $plugin ) {
@@ -124,20 +112,48 @@ class Plugin_Manager extends Object_Manager {
 	 */
 	public static function get_tag( int|string $plugin_file, ?string $old_name ): string {
 		// Load the plugin.
-		$plugin = self::load( $plugin_file );
+		$plugin = self::load_by_file( $plugin_file );
 
 		// Provide a link to the plugin site.
 		if ( $plugin ) {
 			return "<a href='{$plugin['PluginURI']}' class='wp-logify-object' target='_blank'>{$plugin['Name']}</a>";
 		}
 
+		// Make a backup name.
+		if ( ! $old_name ) {
+			$old_name = Types::make_key_readable( self::get_slug( $plugin_file ), true );
+		}
+
 		// The plugin has been deleted. Construct the 'deleted' span element.
-		$name = $old_name ? $old_name : Types::make_key_readable( self::get_slug( $plugin_file ), true );
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
 	}
 
 	// =============================================================================================
-	// Methods for getting information about plugins.
+	// Methods for loading and getting information about plugins.
+
+	/**
+	 * Get the data for a plugin.
+	 *
+	 * @param string $plugin_file The relative path to the main plugin file.
+	 * @return ?array The plugin data or null if not found.
+	 */
+	public static function load_by_file( string $plugin_file ): ?array {
+		// Check if the plugin exists.
+		if ( ! self::exists( $plugin_file ) ) {
+			return null;
+		}
+
+		// Load the plugin data.
+		$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
+
+		// Add the file to the array.
+		$plugin['File'] = $plugin_file;
+
+		// Add the slug to the array.
+		$plugin['Slug'] = self::get_slug( $plugin_file );
+
+		return $plugin;
+	}
 
 	/**
 	 * Get a plugin's data by its name.
@@ -151,12 +167,48 @@ class Plugin_Manager extends Object_Manager {
 
 		// Loop through each plugin and check its text domain.
 		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
-			if ( isset( $plugin_data['Name'] ) && $plugin_data['Name'] === $name ) {
+
+			// Check for a match.
+			if ( $plugin_data['Name'] === $name ) {
+
 				// Add the file to the array.
 				$plugin_data['File'] = $plugin_file;
 
 				// Add the slug to the array.
 				$plugin_data['Slug'] = self::get_slug( $plugin_file );
+
+				return $plugin_data;
+			}
+		}
+
+		// Return null if no plugin is found with the given text domain.
+		return null;
+	}
+
+	/**
+	 * Get a plugin's data by its slug.
+	 *
+	 * @param string $slug The slug of the plugin.
+	 * @return ?array The plugin data or null if the plugin isn't found.
+	 */
+	public static function load_by_slug( string $slug ): ?array {
+		// Get all installed plugins.
+		$all_plugins = get_plugins();
+
+		// Loop through each plugin and check its text domain.
+		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
+
+			// Get the slug.
+			$slug2 = self::get_slug( $plugin_file );
+
+			// Check for a match.
+			if ( $slug === $slug2 ) {
+
+				// Add the file to the array.
+				$plugin_data['File'] = $plugin_file;
+
+				// Add the slug to the array.
+				$plugin_data['Slug'] = $slug2;
 
 				return $plugin_data;
 			}

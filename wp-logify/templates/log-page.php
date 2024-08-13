@@ -21,7 +21,7 @@ namespace WP_Logify;
 				<th>Source IP</th>
 				<th>Event</th>
 				<th>Object</th>
-				<th>Details</th>
+				<!-- <th>Details</th> -->
 			</tr>
 		</thead>
 		<tbody>

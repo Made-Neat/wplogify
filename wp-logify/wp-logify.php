@@ -47,14 +47,14 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-proper
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php';
 
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-object-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-comment-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-option-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-plugin-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-post-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-term-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-theme-manager.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/managers/class-user-manager.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-object-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-comment-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-option-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-plugin-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-post-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-term-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-theme-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-user-utility.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-object-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-comment-tracker.php';

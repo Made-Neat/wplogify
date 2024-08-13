@@ -66,7 +66,7 @@ class User_Tracker extends Object_Tracker {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function on_wp_logout( int $user_id ) {
-		$user = User_Manager::load( $user_id );
+		$user = User_Utility::load( $user_id );
 		Logger::log_event( 'User Logout', $user, acting_user: $user );
 	}
 
@@ -77,7 +77,7 @@ class User_Tracker extends Object_Tracker {
 	 * @param array $userdata The data for the user that was registered.
 	 */
 	public static function on_user_register( int $user_id, array $userdata ) {
-		Logger::log_event( 'User Registered', User_Manager::load( $user_id ) );
+		Logger::log_event( 'User Registered', User_Utility::load( $user_id ) );
 	}
 
 	/**
@@ -91,7 +91,7 @@ class User_Tracker extends Object_Tracker {
 		global $wpdb;
 
 		// Get the user's properties.
-		$properties = User_Manager::get_properties( $user );
+		$properties = User_Utility::get_properties( $user );
 
 		// Get the posts authored by this user.
 		$sql_posts = $wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id );

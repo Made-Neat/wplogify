@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Theme_Manager class.
+ * Contains the Theme_Utility class.
  *
  * @package WP_Logify
  */
@@ -11,11 +11,11 @@ use Exception;
 use WP_Theme;
 
 /**
- * Class WP_Logify\Theme_Manager
+ * Class WP_Logify\Theme_Utility
  *
  * Provides event handlers and utility methods related to themes.
  */
-class Theme_Manager extends Object_Manager {
+class Theme_Utility extends Object_Utility {
 
 	// =============================================================================================
 	// Implementations of base class methods.

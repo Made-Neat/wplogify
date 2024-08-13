@@ -28,12 +28,6 @@ jQuery(($) => {
             { data: "event_type" },
             { data: "object_name" },
             {
-                className: 'details-control',
-                orderable: false,
-                defaultContent: '<span class="wp-logify-show-details">Show</span>',
-                width: '100px'
-            },
-            {
                 data: "object_type",
                 visible: false
             }
@@ -85,8 +79,6 @@ jQuery(($) => {
             // Summary row clicked.
             // console.log('summary row clicked');
             if (row.child.isShown()) {
-                // Update the label on the show/hide button.
-                $tr.find('td.details-control span').text('Show');
                 // Remove the shown class from the summary row.
                 $tr.removeClass('shown');
                 // Hide the child details row.
@@ -97,8 +89,6 @@ jQuery(($) => {
                 let classes = 'wp-logify-details-row wp-logify-object-type-' + row.data().object_type + ' shown';
                 // Show the details row.
                 row.child(row.data().details, classes).show();
-                // Update the label on the show/hide button.
-                $tr.find('td.details-control span').text('Hide');
                 // Add the shown class to the summary row.
                 $tr.addClass('shown');
             }
@@ -106,8 +96,7 @@ jQuery(($) => {
         else {
             // Details row clicked.
             // console.log('details row clicked');
-            // Update the label on the show/hide button.
-            $tr.prev().find('td.details-control span').text('Show');
+
             // Remove the shown class from the summary row.
             $tr.prev().removeClass('shown');
             // Hide the details row.

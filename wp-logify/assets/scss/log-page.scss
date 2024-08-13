@@ -73,13 +73,6 @@ $very-pale-grey: #f7f7f7;
 }
 
 #wp-logify-activity-log {
-    th.details-control {
-        text-align: center;
-    }
-
-    td.details-control {
-        text-align: center;
-    }
 
     .wp-logify-summary-row,
     .wp-logify-details-row {
@@ -225,6 +218,10 @@ $very-pale-grey: #f7f7f7;
 
             td {
                 width: 16rem;
+
+                &.wp-logify-value-unchanged {
+                    background-color: #f7f7f7;
+                }
             }
         }
     }

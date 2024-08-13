@@ -46,7 +46,7 @@ class Admin {
 	 * It also ensures the user is an administrator.
 	 */
 	public static function add_admin_menu() {
-		if ( ! User_Manager::current_user_has_role( 'administrator' ) ) {
+		if ( ! User_Utility::current_user_has_role( 'administrator' ) ) {
 			return;
 		}
 
@@ -63,7 +63,7 @@ class Admin {
 	 */
 	public static function add_admin_bar_menu( WP_Admin_Bar $wp_admin_bar ) {
 		// Don't show if the user isn't an admin or if they don't want to see it in the admin bar.
-		if ( ! User_Manager::current_user_has_role( 'administrator' ) || ! Plugin_Settings::get_show_in_admin_bar() ) {
+		if ( ! User_Utility::current_user_has_role( 'administrator' ) || ! Plugin_Settings::get_show_in_admin_bar() ) {
 			return;
 		}
 

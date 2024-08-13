@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Post_Manager class.
+ * Contains the Post_Utility class.
  *
  * @package WP_Logify
  */
@@ -13,11 +13,11 @@ use WP_Error;
 use WP_Post;
 
 /**
- * Class WP_Logify\Post_Manager
+ * Class WP_Logify\Post_Utility
  *
  * Provides tracking of events related to posts.
  */
-class Post_Manager extends Object_Manager {
+class Post_Utility extends Object_Utility {
 
 	/**
 	 * Check if a post exists.
@@ -140,9 +140,13 @@ class Post_Manager extends Object_Manager {
 			return "<a href='$url' class='wp-logify-object'>$post->post_title</a>";
 		}
 
+		// Make a backup title.
+		if ( ! $old_title ) {
+			$old_title = "Post $post_id";
+		}
+
 		// The post no longer exists. Construct the 'deleted' span element.
-		$title = $old_title ? $old_title : "Post $post_id";
-		return "<span class='wp-logify-deleted-object'>$title (deleted)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_title (deleted)</span>";
 	}
 
 	// =============================================================================================

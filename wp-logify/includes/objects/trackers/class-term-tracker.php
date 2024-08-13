@@ -43,7 +43,7 @@ class Term_Tracker extends Object_Tracker {
 	 */
 	public static function on_created_term( int $term_id, int $tt_id, string $taxonomy, array $args ) {
 		// Load the term.
-		$term = Term_Manager::load( $term_id );
+		$term = Term_Utility::load( $term_id );
 
 		// Get the event type.
 		$event_type = ucwords( $taxonomy ) . ' Created';
@@ -63,7 +63,7 @@ class Term_Tracker extends Object_Tracker {
 		global $wpdb;
 
 		// Load the term.
-		$term = Term_Manager::load( $term_id );
+		$term = Term_Utility::load( $term_id );
 
 		// Compare values.
 		$changed = false;

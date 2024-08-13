@@ -11,11 +11,11 @@ use Exception;
 use WP_Term;
 
 /**
- * Class WP_Logify\Post_Manager
+ * Class WP_Logify\Post_Utility
  *
  * Provides tracking of events related to terms.
  */
-class Term_Manager extends Object_Manager {
+class Term_Utility extends Object_Utility {
 
 	// =============================================================================================
 	// Implementations of base class methods.
@@ -126,9 +126,13 @@ class Term_Manager extends Object_Manager {
 			return "<a href='$url' class='wp-logify-object'>$term->name</a>";
 		}
 
+		// Make a backup name.
+		if ( ! $old_name ) {
+			$old_name = "Term $term_id";
+		}
+
 		// The term no longer exists. Construct the 'deleted' span element.
-		$name = $old_name ? $old_name : "Term $term_id";
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
 	}
 
 	// =============================================================================================
