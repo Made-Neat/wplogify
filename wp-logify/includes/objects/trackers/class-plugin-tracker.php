@@ -77,16 +77,16 @@ class Plugin_Tracker extends Object_Tracker {
 
 		// Get the plugin name and load the plugin.
 		$plugin_name = $upgrader->new_plugin_data['Name'];
-		$plugin_data = Plugin_Utility::load_by_name( $plugin_name );
+		$plugin      = Plugin_Utility::load_by_name( $plugin_name );
 
 		// If the result is null, the plugin was not installed or updated, so we won't log anything.
 		if ( $upgrader->result === null ) {
 
 			// The user may be downgrading the plugin, so let's store the current plugin verison in
 			// the options.
-			if ( $plugin_data ) {
+			if ( $plugin ) {
 				$version_key = $plugin_name . ' version';
-				$old_version = $plugin_data['Version'] ?? null;
+				$old_version = $plugin['Version'] ?? null;
 				if ( $old_version ) {
 					update_option( $version_key, $old_version );
 				}
@@ -136,12 +136,7 @@ class Plugin_Tracker extends Object_Tracker {
 		}
 
 		// Log the event.
-		Logger::log_event(
-			$event_type,
-			Object_Reference::new_from_wp_object( $plugin_data ),
-			null,
-			$properties
-		);
+		Logger::log_event( $event_type, $plugin, null, $properties );
 	}
 
 	/**
@@ -156,19 +151,16 @@ class Plugin_Tracker extends Object_Tracker {
 	 */
 	public static function on_activate_plugin( string $plugin_file, bool $network_wide ) {
 		// Load the plugin.
-		$plugin_data = Plugin_Utility::load_by_file( $plugin_file );
+		$plugin = Plugin_Utility::load_by_file( $plugin_file );
 
 		// If this is a multisite, record if the plugin activation was network-wide.
+		$metas = array();
 		if ( is_multisite() ) {
-			Eventmeta::update_array( self::$eventmetas, 'network_wide', $network_wide );
+			Eventmeta::update_array( $metas, 'network_wide', $network_wide );
 		}
 
 		// Log the event.
-		Logger::log_event(
-			'Plugin Activated',
-			Object_Reference::new_from_wp_object( $plugin_data ),
-			self::$eventmetas
-		);
+		Logger::log_event( 'Plugin Activated', $plugin, $metas );
 	}
 
 	/**
@@ -183,19 +175,16 @@ class Plugin_Tracker extends Object_Tracker {
 	 */
 	public static function on_deactivate_plugin( string $plugin_file, bool $network_deactivating ) {
 		// Load the plugin.
-		$plugin_data = Plugin_Utility::load_by_file( $plugin_file );
+		$plugin = Plugin_Utility::load_by_file( $plugin_file );
 
 		// If this is a multisite, record if the plugin deactivation was network-wide.
+		$metas = array();
 		if ( is_multisite() ) {
-			Eventmeta::update_array( self::$eventmetas, 'network_wide', $network_deactivating );
+			Eventmeta::update_array( $metas, 'network_wide', $network_deactivating );
 		}
 
 		// Log the event.
-		Logger::log_event(
-			'Plugin Deactivated',
-			Object_Reference::new_from_wp_object( $plugin_data ),
-			self::$eventmetas
-		);
+		Logger::log_event( 'Plugin Deactivated', $plugin, $metas );
 	}
 
 	/**
@@ -205,13 +194,10 @@ class Plugin_Tracker extends Object_Tracker {
 	 */
 	public static function on_delete_plugin( string $plugin_file ) {
 		// Load the plugin.
-		$plugin_data = Plugin_Utility::load_by_file( $plugin_file );
+		$plugin = Plugin_Utility::load_by_file( $plugin_file );
 
 		// Log the event.
-		Logger::log_event(
-			'Plugin Deleted',
-			Object_Reference::new_from_wp_object( $plugin_data )
-		);
+		Logger::log_event( 'Plugin Deleted', $plugin );
 	}
 
 	/**
@@ -222,13 +208,10 @@ class Plugin_Tracker extends Object_Tracker {
 	 */
 	public static function on_pre_uninstall_plugin( string $plugin_file, array $uninstallable_plugins ) {
 		// Load the plugin.
-		$plugin_data = Plugin_Utility::load_by_file( $plugin_file );
+		$plugin = Plugin_Utility::load_by_file( $plugin_file );
 
 		// Log the event.
-		Logger::log_event(
-			'Plugin Uninstalled',
-			Object_Reference::new_from_wp_object( $plugin_data )
-		);
+		Logger::log_event( 'Plugin Uninstalled', $plugin );
 	}
 
 	/**
@@ -247,37 +230,31 @@ class Plugin_Tracker extends Object_Tracker {
 		// Log an event for each plugin for which auto-update has been enabled.
 		$enabled = array_diff( $value, $old_value );
 		foreach ( $enabled as $plugin_file ) {
-			// Check the plugin exists.
-			if ( ! Plugin_Utility::exists( $plugin_file ) ) {
+			// Load the plugin.
+			$plugin = Plugin_Utility::load_by_file( $plugin_file );
+
+			// If the plugin wasn't found, don't log the event.
+			if ( ! $plugin ) {
 				continue;
 			}
 
-			// Load the plugin.
-			$plugin_data = Plugin_Utility::load_by_file( $plugin_file );
-
 			// Log the event.
-			Logger::log_event(
-				'Plugin Auto-update Enabled',
-				Object_Reference::new_from_wp_object( $plugin_data )
-			);
+			Logger::log_event( 'Plugin Auto-update Enabled', $plugin );
 		}
 
 		// Log an event for each plugin for which auto-update has been enabled.
 		$disabled = array_diff( $old_value, $value );
 		foreach ( $disabled as $plugin_file ) {
-			// Check the plugin exists.
-			if ( ! Plugin_Utility::exists( $plugin_file ) ) {
+			// Load the plugin.
+			$plugin = Plugin_Utility::load_by_file( $plugin_file );
+
+			// If the plugin wasn't found, don't log the event.
+			if ( ! $plugin ) {
 				continue;
 			}
 
-			// Load the plugin.
-			$plugin_data = Plugin_Utility::load_by_file( $plugin_file );
-
 			// Log the event.
-			Logger::log_event(
-				'Plugin Auto-update Disabled',
-				Object_Reference::new_from_wp_object( $plugin_data )
-			);
+			Logger::log_event( 'Plugin Auto-update Disabled', $plugin );
 		}
 	}
 }

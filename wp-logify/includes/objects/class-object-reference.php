@@ -79,13 +79,16 @@ class Object_Reference {
 	}
 
 	/**
-	 * Create a new Object_Reference from a WordPress object or (in the case of plugins) array.
+	 * Create a new Object_Reference from:
+	 *   - a WordPress object
+	 *   - an array, in the case of plugins
+	 *   - a string, in the case of options
 	 *
-	 * @param object|array $wp_object The WordPress object or array.
+	 * @param object|array|string $wp_object The WordPress object, array, or string.
 	 * @return self The new Object_Reference.
 	 * @throws Exception If the object type is unknown or unsupported.
 	 */
-	public static function new_from_wp_object( object|array $wp_object ): Object_Reference {
+	public static function new_from_wp_object( object|array|string $wp_object ): Object_Reference {
 		$type = null;
 		$key  = null;
 		$name = null;
@@ -114,6 +117,10 @@ class Object_Reference {
 			$type = 'plugin';
 			$key  = $wp_object['Slug'];
 			$name = $wp_object['Name'];
+		} elseif ( is_string( $wp_object ) ) {
+			$type = 'option';
+			$key  = $wp_object;
+			$name = Option_Utility::get_name( $wp_object );
 		} else {
 			throw new Exception( 'Unknown or unsupported object type.' );
 		}

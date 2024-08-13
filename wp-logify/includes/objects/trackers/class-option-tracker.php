@@ -48,10 +48,7 @@ class Option_Tracker extends Object_Tracker {
 		$properties = array();
 		Property::update_array( $properties, 'value', $wpdb->options, $old_val, $new_val );
 
-		// Get an object reference.
-		$object_ref = new Object_Reference( 'option', $option, Option_Utility::get_name( $option ) );
-
 		// Log the event.
-		Logger::log_event( 'Option Updated', $object_ref, null, $properties );
+		Logger::log_event( 'Option Updated', $option, null, $properties );
 	}
 }

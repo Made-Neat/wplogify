@@ -25,16 +25,16 @@ class Logger {
 	/**
 	 * Logs an event to the database.
 	 *
-	 * @param string           $event_type  The type of event.
-	 * @param ?object          $wp_object   The object the event is about.
-	 * @param ?array           $eventmetas  The event metadata.
-	 * @param ?array           $properties  The event properties.
-	 * @param null|WP_User|int $acting_user The use object or ID of the user who performed the action, or null for the current user.
+	 * @param string                   $event_type  The type of event.
+	 * @param null|object|array|string $wp_object   The object the event is about (this will be an array for plugins, string for options).
+	 * @param ?array                   $eventmetas  The event metadata.
+	 * @param ?array                   $properties  The event properties.
+	 * @param null|WP_User|int         $acting_user The use object or ID of the user who performed the action, or null for the current user.
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function log_event(
 		string $event_type,
-		?object $wp_object,
+		null|object|array|string $wp_object,
 		?array $eventmetas = null,
 		?array $properties = null,
 		null|WP_User|int $acting_user = null

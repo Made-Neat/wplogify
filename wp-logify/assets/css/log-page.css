@@ -127,6 +127,9 @@
   display: inline-block;
   margin-left: 1rem;
 }
+.wp-logify-details .wp-logify-details-section table {
+  border-collapse: collapse;
+}
 .wp-logify-details .wp-logify-details-section h4 {
   margin-bottom: 0.25rem;
 }

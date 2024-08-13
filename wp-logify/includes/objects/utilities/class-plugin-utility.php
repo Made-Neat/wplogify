@@ -22,12 +22,15 @@ class Plugin_Utility extends Object_Utility {
 	/**
 	 * Check if a plugin exists.
 	 *
-	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @param int|string $plugin_slug The plugin's slug.
 	 * @return bool True if the plugin exists, false otherwise.
 	 */
-	public static function exists( int|string $plugin_file ): bool {
-		// Prepend the path to the plugins directory and check if the plugin is there.
-		return file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+	public static function exists( int|string $plugin_slug ): bool {
+		// Try to load the plugin.
+		$plugin = self::load( $plugin_slug );
+
+		// Return true if the plugin was found.
+		return $plugin !== null;
 	}
 
 	/**
@@ -35,22 +38,42 @@ class Plugin_Utility extends Object_Utility {
 	 *
 	 * If the plugin isn't found, null will be returned. An exception will not be thrown.
 	 *
-	 * @param int|string $plugin_slug The slug of the plugin.
+	 * @param int|string $plugin_slug The plugin's slug.
 	 * @return ?array The plugin data or null if not found.
 	 */
 	public static function load( int|string $plugin_slug ): ?array {
-		return self::load_by_slug( (string) $plugin_slug );
+		// Get all installed plugins.
+		$all_plugins = get_plugins();
+
+		// Loop through each plugin and check its text domain.
+		foreach ( $all_plugins as $plugin_file => $plugin ) {
+
+			// Check for a match.
+			if ( self::get_slug( $plugin_file ) === $plugin_slug ) {
+
+				// Add the file to the array.
+				$plugin['File'] = $plugin_file;
+
+				// Add the slug to the array.
+				$plugin['Slug'] = $plugin_slug;
+
+				return $plugin;
+			}
+		}
+
+		// Return null if no plugin is found with the given text domain.
+		return null;
 	}
 
 	/**
 	 * Get the plugin name. This is displayed in the tag.
 	 *
-	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @param int|string $plugin_slug The plugin's slug.
 	 * @return string The name, or null if the object could not be found.
 	 */
-	public static function get_name( int|string $plugin_file ): ?string {
+	public static function get_name( int|string $plugin_slug ): ?string {
 		// Load the plugin.
-		$plugin = self::load_by_file( $plugin_file );
+		$plugin = self::load( $plugin_slug );
 
 		// Return the plugin name.
 		return $plugin['Name'] ?? null;
@@ -59,17 +82,17 @@ class Plugin_Utility extends Object_Utility {
 	/**
 	 * Get the core properties of a plugin.
 	 *
-	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @param int|string $plugin_slug The plugin's slug.
 	 * @return Property[] The core properties of the plugin.
 	 * @throws Exception If the plugin no longer exists.
 	 */
-	public static function get_core_properties( int|string $plugin_file ): array {
+	public static function get_core_properties( int|string $plugin_slug ): array {
 		// Get the plugin data.
-		$plugin = self::load_by_file( $plugin_file );
+		$plugin = self::load( $plugin_slug );
 
 		// Handle the case where the plugin no longer exists.
 		if ( ! $plugin ) {
-			throw new Exception( "Plugin '$plugin_file' not found." );
+			throw new Exception( "Plugin '$plugin_slug' not found." );
 		}
 
 		// Collect the core properties.
@@ -106,13 +129,13 @@ class Plugin_Utility extends Object_Utility {
 	 * If the plugin hasn't been deleted, get a link to its web page; otherwise, get a span with
 	 * the name as the link text.
 	 *
-	 * @param int|string $plugin_file The relative path to the main plugin file.
+	 * @param int|string $plugin_slug The plugin's slug.
 	 * @param ?string    $old_name    The name of the plugin at the time of the event.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $plugin_file, ?string $old_name ): string {
+	public static function get_tag( int|string $plugin_slug, ?string $old_name ): string {
 		// Load the plugin.
-		$plugin = self::load_by_file( $plugin_file );
+		$plugin = self::load( $plugin_slug );
 
 		// Provide a link to the plugin site.
 		if ( $plugin ) {
@@ -121,7 +144,7 @@ class Plugin_Utility extends Object_Utility {
 
 		// Make a backup name.
 		if ( ! $old_name ) {
-			$old_name = Types::make_key_readable( self::get_slug( $plugin_file ), true );
+			$old_name = Types::make_key_readable( $plugin_slug, true );
 		}
 
 		// The plugin has been deleted. Construct the 'deleted' span element.
@@ -138,13 +161,19 @@ class Plugin_Utility extends Object_Utility {
 	 * @return ?array The plugin data or null if not found.
 	 */
 	public static function load_by_file( string $plugin_file ): ?array {
-		// Check if the plugin exists.
-		if ( ! self::exists( $plugin_file ) ) {
+		// Check if the plugin file exists.
+		$plugin_path = WP_PLUGIN_DIR . '/' . $plugin_file;
+		if ( ! file_exists( $plugin_path ) ) {
 			return null;
 		}
 
 		// Load the plugin data.
-		$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_file );
+		$plugin = get_plugin_data( $plugin_path );
+
+		// Check it loaded ok.
+		if ( empty( $plugin['Name'] ) ) {
+			return null;
+		}
 
 		// Add the file to the array.
 		$plugin['File'] = $plugin_file;
@@ -158,59 +187,26 @@ class Plugin_Utility extends Object_Utility {
 	/**
 	 * Get a plugin's data by its name.
 	 *
-	 * @param string $name The name domain of the plugin.
+	 * @param string $plugin_name The name of the plugin.
 	 * @return ?array The plugin data or null if the plugin isn't found.
 	 */
-	public static function load_by_name( string $name ): ?array {
+	public static function load_by_name( string $plugin_name ): ?array {
 		// Get all installed plugins.
 		$all_plugins = get_plugins();
 
 		// Loop through each plugin and check its text domain.
-		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
+		foreach ( $all_plugins as $plugin_file => $plugin ) {
 
 			// Check for a match.
-			if ( $plugin_data['Name'] === $name ) {
+			if ( $plugin['Name'] === $plugin_name ) {
 
 				// Add the file to the array.
-				$plugin_data['File'] = $plugin_file;
+				$plugin['File'] = $plugin_file;
 
 				// Add the slug to the array.
-				$plugin_data['Slug'] = self::get_slug( $plugin_file );
+				$plugin['Slug'] = self::get_slug( $plugin_file );
 
-				return $plugin_data;
-			}
-		}
-
-		// Return null if no plugin is found with the given text domain.
-		return null;
-	}
-
-	/**
-	 * Get a plugin's data by its slug.
-	 *
-	 * @param string $slug The slug of the plugin.
-	 * @return ?array The plugin data or null if the plugin isn't found.
-	 */
-	public static function load_by_slug( string $slug ): ?array {
-		// Get all installed plugins.
-		$all_plugins = get_plugins();
-
-		// Loop through each plugin and check its text domain.
-		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
-
-			// Get the slug.
-			$slug2 = self::get_slug( $plugin_file );
-
-			// Check for a match.
-			if ( $slug === $slug2 ) {
-
-				// Add the file to the array.
-				$plugin_data['File'] = $plugin_file;
-
-				// Add the slug to the array.
-				$plugin_data['Slug'] = $slug2;
-
-				return $plugin_data;
+				return $plugin;
 			}
 		}
 
