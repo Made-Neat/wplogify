@@ -273,7 +273,7 @@ class Types {
 		}
 
 		// Convert snake-case or kebab-case keys into words.
-		$words = array_filter( preg_split( '/[-_]+/', $key ) );
+		$words = array_filter( preg_split( '/[-_ ]+/', $key ) );
 
 		// Convert camel-case keys into words.
 		$words2 = array();
@@ -308,5 +308,19 @@ class Types {
 
 		// Convert to readable string.
 		return ucfirst( implode( ' ', $words ) );
+	}
+
+	/**
+	 * Convert a version string (e.g. '1.23.45') to a float.
+	 *
+	 * @param string $version The version string.
+	 * @return float The version as a float.
+	 */
+	public static function version_to_float( string $version ): float {
+		$parts = explode( '.', $version );
+		$major = (int) $parts[0];
+		$minor = empty( $parts[1] ) ? 0 : (int) $parts[1];
+		$patch = empty( $parts[2] ) ? 0 : (int) $parts[2];
+		return $major + $minor / 100 + $patch / 10000;
 	}
 }

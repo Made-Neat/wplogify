@@ -107,7 +107,7 @@ class Object_Reference {
 			$name = $wp_object->name;
 		} elseif ( $wp_object instanceof WP_Theme ) {
 			$type = 'theme';
-			$key  = null;
+			$key  = $wp_object->get_stylesheet();
 			$name = $wp_object->name;
 		} elseif ( $wp_object instanceof WP_Comment ) {
 			$type = 'comment';

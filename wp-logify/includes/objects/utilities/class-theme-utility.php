@@ -21,16 +21,6 @@ class Theme_Utility extends Object_Utility {
 	// Implementations of base class methods.
 
 	/**
-	 * Set up hooks for the events we want to log.
-	 */
-	public static function init() {
-		// Theme install.
-		// Theme activate.
-		// Theme deactivate.
-		// Theme uninstall/delete.
-	}
-
-	/**
 	 * Check if a theme exists.
 	 *
 	 * @param int|string $stylesheet The theme's unique identifier.
@@ -91,30 +81,40 @@ class Theme_Utility extends Object_Utility {
 		}
 
 		// Build the array of properties.
-		$properties = array();
+		$props = array();
 
-		// Name.
-		Property::update_array( $properties, 'name', null, $theme->get( 'Name' ) );
+		// Name. Make into a link if the URI is provided.
+		$name = $theme->get( 'Name' );
+		$uri  = $theme->get( 'ThemeURI' );
+		if ( $uri ) {
+			$name = "<a href='$uri' target='_blank'>$name</a>";
+		}
+		Property::update_array( $props, 'name', null, $name );
 
 		// Stylesheet.
-		Property::update_array( $properties, 'stylesheet', null, $theme->get_stylesheet() );
+		Property::update_array( $props, 'stylesheet', null, $theme->get_stylesheet() );
 
-		// Template.
-		Property::update_array( $properties, 'template', null, $theme->get_template() );
+		// Author. Make into a link if the URI is provided.
+		$author_uri = $theme->get( 'AuthorURI' );
+		$author     = $theme->get( 'Author' );
+		if ( $author_uri ) {
+			$author = "<a href='$author_uri ' target='_blank'>$author</a>";
+		}
+		Property::update_array( $props, 'author', null, $author );
 
 		// Version.
-		Property::update_array( $properties, 'version', null, $theme->get( 'Version' ) );
+		Property::update_array( $props, 'version', null, $theme->get( 'Version' ) );
 
-		// Author.
-		$author = new Object_Reference( 'user', $theme->get( 'Author' ) );
-		Property::update_array( $properties, 'author', null, $author );
+		// Status.
+		Property::update_array( $props, 'status', null, $theme->get( 'Status' ) );
 
 		// Parent theme.
 		if ( $theme->get( 'Parent' ) ) {
-			Property::update_array( $properties, 'parent', null, $theme->get( 'Parent' ) );
+			$parent_ref = new Object_Reference( 'theme', $theme->get( 'Parent' ) );
+			Property::update_array( $props, 'parent', null, $parent_ref );
 		}
 
-		return $properties;
+		return $props;
 	}
 
 	/**
@@ -130,20 +130,48 @@ class Theme_Utility extends Object_Utility {
 		// Load the theme.
 		$theme = self::load( $stylesheet );
 
-		// If the theme exists, get a link.
 		if ( $theme ) {
-			// Get the theme name.
+			// Get a link to the theme.
 			$name = $theme->get( 'Name' );
-
-			// Get the theme edit URL.
-			$edit_url = admin_url( 'themes.php?page=theme-editor&file=' . $theme->get_stylesheet() );
-
-			// Return the link.
-			return "<a href='$edit_url' class='wp-logify-object'>$name</a>";
+			$url  = $theme->get( 'ThemeURI' );
+			if ( $url ) {
+				return "<a href='$url' class='wp-logify-object' target='_blank'>$name</a>";
+			} else {
+				return "<span class='wp-logify-object'>$name</span>";
+			}
 		}
 
-		// If the theme doesn't exist, return a span.
-		$name = $old_name ? $old_name : Types::make_key_readable( $stylesheet, true );
-		return "<span class='wp-logify-deleted-object'>$name (deleted)</span>";
+		// Make backup name.
+		if ( ! $old_name ) {
+			$old_name = Types::make_key_readable( $stylesheet, true );
+		}
+
+		// Return a span with the old name.
+		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
+	}
+
+	// =============================================================================================
+	// Additional methods.
+
+	/**
+	 * Load a theme by its name.
+	 *
+	 * @param string $theme_name The name of the theme.
+	 * @return ?WP_Theme The theme object or null if the theme isn't found.
+	 */
+	public static function load_by_name( string $theme_name ): ?WP_Theme {
+		// Get all installed themes.
+		$all_themes = wp_get_themes();
+
+		// Loop through each theme and check its text domain.
+		foreach ( $all_themes as $theme ) {
+			// Check for a match.
+			if ( $theme->get( 'Name' ) === $theme_name ) {
+				return $theme;
+			}
+		}
+
+		// Return null if no theme is found with the given text domain.
+		return null;
 	}
 }

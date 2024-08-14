@@ -246,7 +246,7 @@ class User_Utility extends Object_Utility {
 		$result = json_decode( $body, true );
 
 		// Construct the location string.
-		if ( $result['status'] === 'success' ) {
+		if ( ! empty( $result['status'] ) && $result['status'] === 'success' ) {
 			$location = array(
 				$result['city'],
 				$result['regionName'],
