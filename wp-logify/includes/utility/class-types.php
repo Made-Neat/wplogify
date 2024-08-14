@@ -182,7 +182,7 @@ class Types {
 
 			// Handle empty arrays.
 			if ( count( $value ) === 0 ) {
-				return 'None';
+				return '(None)';
 			}
 
 			// Start the table.

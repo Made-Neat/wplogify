@@ -109,8 +109,8 @@ class Theme_Utility extends Object_Utility {
 		Property::update_array( $props, 'status', null, $theme->get( 'Status' ) );
 
 		// Parent theme.
-		if ( $theme->get( 'Parent' ) ) {
-			$parent_ref = new Object_Reference( 'theme', $theme->get( 'Parent' ) );
+		if ( $theme->get( 'Template' ) ) {
+			$parent_ref = new Object_Reference( 'theme', $theme->get( 'Template' ) );
 			Property::update_array( $props, 'parent', null, $parent_ref );
 		}
 

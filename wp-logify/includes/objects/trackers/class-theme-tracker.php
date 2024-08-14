@@ -23,8 +23,8 @@ class Theme_Tracker extends Object_Tracker {
 	 */
 	public static function init() {
 		// Load the themes pages.
-		add_action( 'load-themes.php', array( __CLASS__, 'on_load_themes_php' ), 10, 0 );
-		add_action( 'load-theme-install.php', array( __CLASS__, 'on_load_themes_php' ), 10, 0 );
+		add_action( 'load-themes.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
+		add_action( 'load-theme-install.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
 
 		// Theme install and update.
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
@@ -39,7 +39,7 @@ class Theme_Tracker extends Object_Tracker {
 	/**
 	 * Fires when the themes.php page is loaded.
 	 */
-	public static function on_load_themes_php() {
+	public static function on_load_themes_page() {
 		// Store the current version numbers of all the installed themes, which enables us to show
 		// the old version number when a theme is upgraded.
 		$versions = array();
@@ -105,7 +105,7 @@ class Theme_Tracker extends Object_Tracker {
 
 		$props = array();
 
-		// Get the old version.
+		// Get the old version, if it's there.
 		$versions    = get_transient( 'theme-versions' );
 		$old_version = $versions[ $stylesheet ] ?? null;
 
