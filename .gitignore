@@ -81,5 +81,8 @@ downloads/
 # Mysql files
 mysql/
 
-# Testing files
-testing/
+# Documents
+doc/
+
+# Releases
+release/
