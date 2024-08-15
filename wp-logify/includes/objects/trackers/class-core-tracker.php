@@ -45,9 +45,9 @@ class Core_Tracker extends Object_Tracker {
 		$old_version = get_transient( 'wp_logify_core_version' );
 
 		// Get the new version.
-		$new_version = get_bloginfo( 'version' );
+		$new_version = $wp_version; // get_bloginfo( 'version' );
 
-		debug( $wp_version );
+		// debug( $wp_version );
 
 		// Check if this is an upgrade, downgrade, or re-install.
 		$old_version_numeric = Types::version_to_float( $old_version );
@@ -69,6 +69,7 @@ class Core_Tracker extends Object_Tracker {
 		Property::update_array( $props, 'version', null, $old_version, $new_version );
 
 		// Log the event.
-		Logger::log_event( $event_type, null, null, $props );
+		$core_ref = new Object_Reference( 'core', null, null );
+		Logger::log_event( $event_type, $core_ref, null, $props );
 	}
 }
