@@ -234,11 +234,16 @@ class Types {
 	 * This function takes a key and makes it more readable by converting it to title case and
 	 * replacing underscores with spaces.
 	 *
-	 * @param string $key     The key to make readable.
-	 * @param bool   $ucwords Whether to capitalize the first letter of each word.
+	 * @param ?string $key    The key to make readable. Could be null.
+	 * @param bool    $ucwords Whether to capitalize the first letter of each word.
 	 * @return string The readable key.
 	 */
-	public static function make_key_readable( string $key, bool $ucwords = false ): string {
+	public static function make_key_readable( ?string $key, bool $ucwords = false ): string {
+		// Handle null key.
+		if ( $key === null ) {
+			return '';
+		}
+
 		// Handle some special, known cases.
 		switch ( $key ) {
 			case 'blogname':

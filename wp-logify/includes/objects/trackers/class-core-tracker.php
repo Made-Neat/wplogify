@@ -19,19 +19,7 @@ class Core_Tracker extends Object_Tracker {
 	 */
 	public static function init() {
 		// Core update.
-		add_action( 'load-update-core.php', array( __CLASS__, 'on_update_core_page_loaded' ) );
 		add_action( '_core_updated_successfully', array( __CLASS__, 'on_core_updated_successfully' ), 10, 1 );
-	}
-
-	/**
-	 * Fires when wp-admin/update-core.php is loaded.
-	 */
-	public static function on_update_core_page_loaded() {
-		// Get the current version of core.
-		$current_wp_version = get_bloginfo( 'version' );
-
-		// Store it in a transient.
-		set_transient( 'wp_logify_core_version', $current_wp_version );
 	}
 
 	/**
@@ -40,18 +28,12 @@ class Core_Tracker extends Object_Tracker {
 	 * @param string $wp_version The current WordPress version.
 	 */
 	public static function on_core_updated_successfully( string $wp_version ) {
-
 		// Get the old version.
-		$old_version = get_transient( 'wp_logify_core_version' );
-
-		// Get the new version.
-		$new_version = $wp_version; // get_bloginfo( 'version' );
-
-		// debug( $wp_version );
+		$old_version = get_bloginfo( 'version' );
 
 		// Check if this is an upgrade, downgrade, or re-install.
 		$old_version_numeric = Types::version_to_float( $old_version );
-		$new_version_numeric = Types::version_to_float( $new_version );
+		$new_version_numeric = Types::version_to_float( $wp_version );
 
 		if ( $old_version_numeric < $new_version_numeric ) {
 			$verb = 'Upgraded';
@@ -62,14 +44,14 @@ class Core_Tracker extends Object_Tracker {
 		}
 
 		// Get the event type.
-		$event_type = "WordPress Core $verb";
+		$event_type = "Core $verb";
 
 		// Get the properties.
 		$props = array();
-		Property::update_array( $props, 'version', null, $old_version, $new_version );
+		Property::update_array( $props, 'version', null, $old_version, $wp_version );
 
 		// Log the event.
-		$core_ref = new Object_Reference( 'core', null, null );
+		$core_ref = new Object_Reference( 'core', $wp_version );
 		Logger::log_event( $event_type, $core_ref, null, $props );
 	}
 }

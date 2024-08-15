@@ -359,7 +359,7 @@ class Log_Page {
 
 			default:
 				// Default is upper-case-first the object-type (e.g. 'Plugin').
-				$object_type_title = ucfirst( $event->object_type );
+				$object_type_title = Types::make_key_readable( $event->object_type, true );
 		}
 		$html .= "<h4>$object_type_title Details</h4>\n";
 

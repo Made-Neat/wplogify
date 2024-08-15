@@ -49,6 +49,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-object-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-comment-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-core-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-option-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-plugin-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-post-utility.php';
@@ -74,7 +75,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/ui/class-widget.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-datetimes.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-serialization.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-types.php';
-// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-urls.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utility/class-urls.php';
 
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-cron.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/class-logger.php';
