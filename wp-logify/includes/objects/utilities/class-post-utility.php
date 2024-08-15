@@ -128,16 +128,31 @@ class Post_Utility extends Object_Utility {
 				return "<a href='$url' class='wp-logify-object'>Compare revisions</a>";
 			}
 
-			// If the post is trashed, we can't reach its edit page, so instead we'll link to the
-			// list of trashed posts.
-			if ( $post->post_status === 'trash' ) {
-				$url = admin_url( 'edit.php?post_status=trash&post_type=post' );
-			} else {
-				$url = admin_url( "post.php?post=$post_id&action=edit" );
+			// Make a backup title. Some post types don't have titles.
+			$title = $post->post_title;
+			if ( ! $title ) {
+				$post_type = self::get_post_type_singular_name( $post->post_type );
+				$title     = "$post_type $post_id";
 			}
 
-			// Get the link text.
-			return "<a href='$url' class='wp-logify-object'>$post->post_title</a>";
+			// Check if we can provide a link to the post edit page for this post type.
+			$show_ui = in_array( $post->post_type, get_post_types( array( 'show_ui' => true ) ), true );
+
+			if ( $show_ui ) {
+				// If the post is trashed, we can't reach its edit page, so instead we'll link to the
+				// list of trashed posts.
+				if ( $post->post_status === 'trash' ) {
+					$url = admin_url( 'edit.php?post_status=trash&post_type=post' );
+				} else {
+					$url = admin_url( "post.php?post=$post_id&action=edit" );
+				}
+
+				// Get the link text.
+				return "<a href='$url' class='wp-logify-object'>$title</a>";
+			} else {
+				// If the post type doesn't have a UI, we can't link to the edit page.
+				return "<span class='wp-logify-object'>$title</span>";
+			}
 		}
 
 		// Make a backup title.
@@ -156,14 +171,14 @@ class Post_Utility extends Object_Utility {
 	 * Get the singular name of a custom post type.
 	 *
 	 * @param string $post_type The post type.
-	 * @return string The singular name of the post type.
+	 * @return string The singular name of the post type, or a reasonable fallback.
 	 */
 	public static function get_post_type_singular_name( string $post_type ): string {
 		// Get the post type object.
 		$post_type_object = get_post_type_object( $post_type );
 
-		// Return the singular name.
-		return $post_type_object->labels->singular_name;
+		// Return the singular name, or a reasonable fallback.
+		return $post_type_object->labels->singular_name ?? Types::make_key_readable( $post_type, true );
 	}
 
 	/**

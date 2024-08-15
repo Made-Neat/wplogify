@@ -33,9 +33,20 @@ class Option_Tracker extends Object_Tracker {
 		global $wpdb;
 
 		// Ignore certain options that clutter the log.
-		if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 || $option === 'wp_user_roles' ) {
+		if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 || $option === 'wp_user_roles' || $option === 'cron' ) {
 			return;
 		}
+
+		// Check if this option change was triggered by an HTTP request, i.e. more likely to be
+		// caused a user action than programmatic.
+		$contents = file_get_contents( 'php://input' );
+		if ( empty( $contents ) ) {
+			return;
+		}
+
+		// debug( '$option', $option );
+		// debug( '$_POST', $_POST );
+		// debug( "file_get_contents( 'php://input' )", $contents );
 
 		// Process the values for comparison.
 		$old_val = Types::process_database_value( $option, $old_value );

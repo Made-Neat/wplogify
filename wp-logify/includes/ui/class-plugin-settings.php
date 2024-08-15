@@ -155,7 +155,7 @@ class Plugin_Settings {
 			'wp_logify_wp_cron_tracking',
 			array(
 				'type'              => 'boolean',
-				'sanitize_callback' => 'absint',
+				'sanitize_callback' => 'rest_sanitize_boolean',
 				'default'           => self::DEFAULT_WP_CRON_TRACKING,
 			)
 		);

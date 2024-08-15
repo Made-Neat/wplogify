@@ -102,10 +102,10 @@ class Logger {
 		// Save the object.
 		$ok = Event_Repository::save( $event );
 
-		debug( 'EVENT LOGGED: ' . $event_type );
-
-		if ( ! $ok ) {
-			debug( 'Event insert failed.', func_get_args() );
+		if ( $ok ) {
+			debug( 'EVENT LOGGED: ' . $event_type );
+		} else {
+			debug( 'Event logging failed. Here are the args:', func_get_args() );
 		}
 
 		return $ok;

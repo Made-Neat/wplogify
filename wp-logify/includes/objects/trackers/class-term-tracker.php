@@ -43,7 +43,10 @@ class Term_Tracker extends Object_Tracker {
 
 		// Get the event type.
 		$taxonomy_name = Term_Utility::get_taxonomy_singular_name( $taxonomy );
-		$event_type    = "$taxonomy_name Created";
+		if ( $taxonomy_name === 'Theme' ) {
+			$taxonomy_name .= ' Term';
+		}
+		$event_type = "$taxonomy_name Created";
 
 		// Log the event.
 		Logger::log_event( $event_type, $term );

@@ -60,7 +60,7 @@ class Post_Tracker extends Object_Tracker {
 			return;
 		}
 
-		debug( 'on_save_post' );
+		// debug( 'on_save_post' );
 
 		// Check if we're updating or creating.
 		$creating = wp_is_post_revision( $post_id ) === false;
@@ -88,7 +88,8 @@ class Post_Tracker extends Object_Tracker {
 		$created = $creating || $post->post_status === 'auto-draft';
 
 		// Get the event type.
-		$event_type = Post_Utility::get_post_type_singular_name( $post->post_type ) . ( $created ? ' Created' : ' Updated' );
+		$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
+		$event_type = $post_type . ( $created ? ' Created' : ' Updated' );
 
 		// Log the event.
 		Logger::log_event( $event_type, $post, null, self::$properties );
@@ -101,7 +102,7 @@ class Post_Tracker extends Object_Tracker {
 	 * @param array $data    The data for the post.
 	 */
 	public static function on_pre_post_update( int $post_id, array $data, ) {
-		debug( 'on_pre_post_update' );
+		// debug( 'on_pre_post_update' );
 
 		global $wpdb;
 
@@ -118,7 +119,7 @@ class Post_Tracker extends Object_Tracker {
 	 * @param WP_Post $post_before  Post object before the update.
 	 */
 	public static function on_post_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
-		debug( 'on_post_updated' );
+		// debug( 'on_post_updated' );
 
 		global $wpdb;
 
@@ -156,7 +157,7 @@ class Post_Tracker extends Object_Tracker {
 	 * @param mixed  $meta_value The new value of the meta data.
 	 */
 	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
-		debug( 'on_update_post_meta' );
+		// debug( 'on_update_post_meta' );
 
 		global $wpdb;
 
@@ -199,7 +200,7 @@ class Post_Tracker extends Object_Tracker {
 			return;
 		}
 
-		debug( 'on_transition_post_status' );
+		// debug( 'on_transition_post_status' );
 
 		// Get the event type.
 		$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
@@ -233,7 +234,7 @@ class Post_Tracker extends Object_Tracker {
 			return;
 		}
 
-		debug( 'on_before_delete_post' );
+		// debug( 'on_before_delete_post' );
 
 		// Get the attached terms.
 		$attached_terms = Post_Utility::get_attached_terms( $post_id );
@@ -268,7 +269,7 @@ class Post_Tracker extends Object_Tracker {
 			return;
 		}
 
-		debug( 'on_delete_post' );
+		// debug( 'on_delete_post' );
 
 		// Get the event type.
 		$event_type = Post_Utility::get_post_type_singular_name( $post->post_type ) . ' Deleted';
@@ -293,7 +294,7 @@ class Post_Tracker extends Object_Tracker {
 			return;
 		}
 
-		debug( 'on_added_term_relationship' );
+		// debug( 'on_added_term_relationship' );
 
 		// Remember the newly attached term.
 		$term                                = Term_Utility::get_by_term_taxonomy_id( $tt_id );
@@ -313,7 +314,7 @@ class Post_Tracker extends Object_Tracker {
 			return;
 		}
 
-		debug( 'on_deleted_term_relationships' );
+		// debug( 'on_deleted_term_relationships' );
 
 		// Convert the term_taxonomy IDs to Object_Reference objects.
 		foreach ( $tt_ids as $tt_id ) {
@@ -336,7 +337,7 @@ class Post_Tracker extends Object_Tracker {
 			return;
 		}
 
-		debug( 'on_wp_after_insert_post' );
+		// debug( 'on_wp_after_insert_post' );
 
 		// Log the addition or removal of any taxonomy terms.
 		if ( self::$terms ) {
@@ -364,8 +365,8 @@ class Post_Tracker extends Object_Tracker {
 				}
 
 				// Get the event type.
-				$post_type_name = Post_Utility::get_post_type_singular_name( $post->post_type );
-				$event_type     = "$post_type_name $taxonomy_name $verb";
+				$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
+				$event_type = "$post_type $taxonomy_name $verb";
 
 				// Collect eventmetas.
 				$metas = array();

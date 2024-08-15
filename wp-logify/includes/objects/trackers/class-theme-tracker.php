@@ -90,16 +90,48 @@ class Theme_Tracker extends Object_Tracker {
 			return;
 		}
 
-		// Get the theme name and load the theme.
-		$name       = $upgrader->new_theme_data['Name'] ?? null;
-		$theme      = Theme_Utility::load_by_name( $name );
-		$stylesheet = $theme->get_stylesheet();
-
 		// If the result is not an array, it could be a WP_Error or could be null.
 		// Either way, we aren't installing the new plugin on this HTTP request.
 		// Most likely, there is already a version of this theme present, and they attempting an
 		// upgrade, downgrade, or re-install, and WordPress is asking the user what the want to do.
 		if ( ! is_array( $upgrader->result ) ) {
+			return;
+		}
+
+		// debug( '$_POST', $_POST );
+		// debug( '$upgrader->new_theme_data', $upgrader->new_theme_data );
+		// debug( '$upgrader->result', $upgrader->result );
+
+		// Try to load the theme.
+		$theme_loaded = false;
+
+		// Get the theme name.
+		$name = $upgrader->new_theme_data['Name'] ?? null;
+		if ( $name ) {
+			// Load the theme by name.
+			$theme = Theme_Utility::load_by_name( $name );
+			if ( $theme ) {
+				$theme_loaded = true;
+				// Get the stylesheet.
+				$stylesheet = $theme->get_stylesheet();
+			}
+		}
+
+		// If we couldn't load it by name, we can try loading it by stylesheet.
+		if ( ! $theme_loaded && ! empty( $_POST['slug'] ) ) {
+			// Get the theme stylesheet from the $_POST data.
+			$stylesheet = $_POST['slug'];
+
+			// Load the theme by stylesheet.
+			$theme = Theme_Utility::load( $stylesheet );
+			if ( $theme ) {
+				$theme_loaded = true;
+			}
+		}
+
+		// If we couldn't load the theme, we can't log the event.
+		if ( ! $theme_loaded ) {
+			debug( "Couldn't load the theme." );
 			return;
 		}
 
