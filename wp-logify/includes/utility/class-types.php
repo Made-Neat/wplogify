@@ -318,7 +318,7 @@ class Types {
 	 */
 	public static function version_to_float( string $version ): float {
 		$parts = explode( '.', $version );
-		$major = (int) $parts[0];
+		$major = empty( $parts[0] ) ? 0 : (int) $parts[0];
 		$minor = empty( $parts[1] ) ? 0 : (int) $parts[1];
 		$patch = empty( $parts[2] ) ? 0 : (int) $parts[2];
 		return $major + $minor / 100 + $patch / 10000;

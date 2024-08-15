@@ -34,21 +34,42 @@
   padding: 0 8px;
 }
 
-.wp-logify-activity-table {
+#wp-logify-dashboard-table {
   width: 100%;
   border-collapse: collapse;
   border: solid 1px grey;
   margin: 1rem 0;
 }
-.wp-logify-activity-table th,
-.wp-logify-activity-table td {
+#wp-logify-dashboard-table th,
+#wp-logify-dashboard-table td {
   border: 1px solid #ddd;
   padding: 8px;
 }
-.wp-logify-activity-table th {
+#wp-logify-dashboard-table th {
   background-color: #f4f4f4;
   text-align: left;
 }
-.wp-logify-activity-table .wp-logify-deleted-object {
+#wp-logify-dashboard-table .wp-logify-deleted-object {
   font-style: italic;
+}
+#wp-logify-dashboard-table tr.wp-logify-object-type-post {
+  background-color: hsl(210, 100%, 95%);
+}
+#wp-logify-dashboard-table tr.wp-logify-object-type-user {
+  background-color: hsl(60, 100%, 95%);
+}
+#wp-logify-dashboard-table tr.wp-logify-object-type-term {
+  background-color: hsl(0, 100%, 95%);
+}
+#wp-logify-dashboard-table tr.wp-logify-object-type-plugin {
+  background-color: hsl(120, 100%, 95%);
+}
+#wp-logify-dashboard-table tr.wp-logify-object-type-option {
+  background-color: hsl(270, 100%, 95%);
+}
+#wp-logify-dashboard-table tr.wp-logify-object-type-theme {
+  background-color: hsl(30, 100%, 95%);
+}
+#wp-logify-dashboard-table tr.wp-logify-object-type-comment {
+  background-color: hsl(180, 100%, 95%);
 }

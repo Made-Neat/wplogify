@@ -55,7 +55,7 @@ class Theme_Tracker extends Object_Tracker {
 		}
 
 		// Store the theme versions in a transient.
-		set_transient( 'theme-versions', $versions );
+		set_transient( 'theme_versions', $versions );
 	}
 
 	/**
@@ -138,7 +138,7 @@ class Theme_Tracker extends Object_Tracker {
 		$props = array();
 
 		// Get the old version, if it's there.
-		$versions    = get_transient( 'theme-versions' );
+		$versions    = get_transient( 'theme_versions' );
 		$old_version = $versions[ $stylesheet ] ?? null;
 
 		if ( $old_version ) {
@@ -148,12 +148,12 @@ class Theme_Tracker extends Object_Tracker {
 			$new_version = $upgrader->new_theme_data['Version'];
 
 			// Determine if we're upgrading, downgrading, or re-installing.
-			$old_ver = Types::version_to_float( $old_version );
-			$new_ver = Types::version_to_float( $new_version );
+			$old_version_numeric = Types::version_to_float( $old_version );
+			$new_version_numeric = Types::version_to_float( $new_version );
 
-			if ( $old_ver < $new_ver ) {
+			if ( $old_version_numeric < $new_version_numeric ) {
 				$event_type = 'Theme Upgraded';
-			} elseif ( $old_ver > $new_ver ) {
+			} elseif ( $old_version_numeric > $new_version_numeric ) {
 				$event_type = 'Theme Downgraded';
 			} else {
 				$event_type = 'Theme Re-installed';

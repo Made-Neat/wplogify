@@ -45,7 +45,7 @@ $recordset    = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 	</div>
 
 	<!-- Display the last 10 activities in a table -->
-	<table class="wp-logify-activity-table">
+	<table id="wp-logify-dashboard-table">
 		<thead>
 			<tr>
 				<th>Date & Time</th>
@@ -60,10 +60,10 @@ $recordset    = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 				foreach ( $recordset as $record ) :
 					$event = Event_Repository::record_to_object( $record );
 					?>
-					<tr>
-						<td><?php echo esc_html( DateTimes::format_datetime_site( $event->when_happened ) ); ?></td>
+					<tr class="wp-logify-object-type-<?php echo $event->object_type; ?>">
+						<td><?php echo DateTimes::format_datetime_site( $event->when_happened, '<br>' ); ?></td>
 						<td><?php echo User_Utility::get_tag( $event->user_id, $event->user_name ); ?></td>
-						<td><?php echo esc_html( $event->event_type ); ?></td>
+						<td><?php echo esc_html( esc_html( $event->event_type ) ); ?></td>
 						<td><?php echo $event->get_object_tag(); ?></td>
 					</tr>
 				<?php endforeach; ?>

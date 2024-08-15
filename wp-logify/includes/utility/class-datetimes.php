@@ -78,7 +78,7 @@ class DateTimes {
 	 * @param bool            $include_timezone Whether to include the timezone name in the formatted string.
 	 * @return string The formatted datetime string.
 	 */
-	public static function format_datetime_site( DateTime|string $datetime, bool $include_seconds = true, bool $include_timezone = false ): string {
+	public static function format_datetime_site( DateTime|string $datetime, string $separator = ', ', bool $include_seconds = true, bool $include_timezone = false ): string {
 		// Convert string to DateTime if necessary.
 		if ( is_string( $datetime ) ) {
 			$datetime = self::create_datetime( $datetime );
@@ -97,7 +97,7 @@ class DateTimes {
 		}
 
 		// Assemble the result string.
-		$datetime_string = $datetime->format( $time_format ) . ', ' . $datetime->format( $date_format );
+		$datetime_string = $datetime->format( $time_format ) . $separator . $datetime->format( $date_format );
 
 		// Append the time zone name if requested.
 		if ( $include_timezone ) {
