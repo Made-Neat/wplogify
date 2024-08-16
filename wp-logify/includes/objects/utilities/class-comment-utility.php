@@ -99,23 +99,83 @@ class Comment_Utility extends Object_Utility {
 		}
 
 		// Build the array of properties.
-		$properties = array();
-
-		// ID.
-		Property::update_array( $properties, 'ID', $wpdb->comments, $comment->comment_ID );
+		$props = array();
 
 		// Comment author.
-		$author = new Object_Reference( 'user', $comment->user_id );
-		Property::update_array( $properties, 'Author', $wpdb->comments, $author );
-
-		// Comment content.
-		Property::update_array( $properties, 'Content', $wpdb->comments, $comment->comment_content );
+		if ( $comment->user_id ) {
+			$posted_by = new Object_Reference( 'user', $comment->user_id );
+			Property::update_array( $props, 'posted_by', $wpdb->comments, $posted_by );
+		} elseif ( $comment->comment_author ) {
+			Property::update_array( $props, 'comment_author', $wpdb->comments, $comment->comment_author );
+		}
 
 		// Date.
 		$date = Datetimes::create_datetime( $comment->comment_date );
-		Property::update_array( $properties, 'Date', $wpdb->comments, $date );
+		Property::update_array( $props, 'comment_date', $wpdb->comments, $date );
 
-		return $properties;
+		// Status.
+		$status = self::approved_to_status( $comment->comment_approved );
+		Property::update_array( $props, 'status', $wpdb->comments, $status );
+
+		// Post.
+		if ( $comment->comment_post_ID ) {
+			$post = new Object_Reference( 'post', $comment->comment_post_ID );
+			Property::update_array( $props, 'post', $wpdb->comments, $post );
+		}
+
+		// Parent.
+		if ( $comment->comment_parent ) {
+			$parent = new Object_Reference( 'comment', $comment->comment_parent );
+			Property::update_array( $props, 'comment_parent', $wpdb->comments, $parent );
+		}
+
+		return $props;
+	}
+
+	/**
+	 * Get all the properties of a comment.
+	 *
+	 * @param int|WP_Comment $comment The ID of the comment or the comment object.
+	 * @return array The properties of the comment.
+	 * @throws Exception If the comment no longer exists.
+	 */
+	public static function get_properties( int|WP_Comment $comment ): array {
+		global $wpdb;
+
+		// Load the comment if necessary.
+		if ( is_int( $comment ) ) {
+			$comment = self::load( $comment );
+
+			// Handle the case where the comment no longer exists.
+			if ( ! $comment ) {
+				throw new Exception( "Comment $comment not found." );
+			}
+		}
+
+		// Get the comment data as an array.
+		$comment_data = $comment->to_array();
+
+		// Build the array of properties.
+		$props = array();
+		foreach ( $comment_data as $key => $value ) {
+			// Skip a couple we don't need.
+			if ( in_array( $key, array( 'populated_children', 'post_fields' ) ) ) {
+				continue;
+			}
+
+			// Handle children separately.
+			if ( $key === 'children' ) {
+				// Get the children and add them to the properties.
+				$children = self::get_children( $comment->comment_ID );
+				Property::update_array( $props, 'children', $wpdb->comments, $children );
+				continue;
+			}
+
+			// Add the property.
+			Property::update_array( $props, $key, $wpdb->comments, $value );
+		}
+
+		return $props;
 	}
 
 	/**
@@ -148,5 +208,46 @@ class Comment_Utility extends Object_Utility {
 
 		// The comment no longer exists. Construct the 'deleted' span element.
 		return "<span class='wp-logify-deleted-object'>$old_title (deleted)</span>";
+	}
+
+	/**
+	 * Convert the comment_approved value to a status string.
+	 *
+	 * @param string $comment_approved The comment_approved value from the database.
+	 * @return string The status string.
+	 */
+	public static function approved_to_status( string $comment_approved ) {
+		switch ( $comment_approved ) {
+			case '0':
+				return 'unapproved';
+
+			case '1':
+				return 'approved';
+
+			default:
+				return $comment_approved;
+		}
+	}
+
+	/**
+	 * Get the children comments of a comment, as an array of Object_Reference objects.
+	 *
+	 * @param int $comment_id The ID of the comment.
+	 * @return Object_Reference[] The children comments as Object_Reference objects.
+	 */
+	public static function get_children( int $comment_id ): array {
+		global $wpdb;
+
+		// Get the children comment IDs.
+		$sql     = $wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_parent = %d', $wpdb->comments, $comment_id );
+		$results = $wpdb->get_col( $sql );
+
+		// Convert to object references.
+		$results = array_map(
+			fn( $comment_id ) => new Object_Reference( 'comment', (int) $comment_id ),
+			$results
+		);
+
+		return $results;
 	}
 }

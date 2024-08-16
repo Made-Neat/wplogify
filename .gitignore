@@ -54,7 +54,7 @@ wp-config.php
 # Node.js modules
 node_modules/
 
-# Zip files
+# Zip files (plugins, themes, etc.)
 zip/
 *.zip
 
@@ -80,6 +80,7 @@ downloads/
 
 # Mysql files
 mysql/
+data/
 
 # Documents
 doc/

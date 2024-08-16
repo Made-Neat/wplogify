@@ -65,29 +65,17 @@
   border-radius: 3px;
   cursor: pointer;
 }
-#wp-logify-activity-log .wp-logify-object-type-post {
-  background-color: hsl(210, 100%, 95%);
+#wp-logify-activity-log .wp-logify-object-type-comment {
+  background-color: hsl(180, 100%, 95%);
 }
-#wp-logify-activity-log .wp-logify-object-type-post.shown, #wp-logify-activity-log .wp-logify-object-type-post:hover {
-  background-color: hsl(210, 100%, 92%);
+#wp-logify-activity-log .wp-logify-object-type-comment.shown, #wp-logify-activity-log .wp-logify-object-type-comment:hover {
+  background-color: hsl(180, 100%, 92%);
 }
-#wp-logify-activity-log .wp-logify-object-type-user {
-  background-color: hsl(60, 100%, 95%);
+#wp-logify-activity-log .wp-logify-object-type-core {
+  background-color: hsl(0, 0%, 100%);
 }
-#wp-logify-activity-log .wp-logify-object-type-user.shown, #wp-logify-activity-log .wp-logify-object-type-user:hover {
-  background-color: hsl(60, 100%, 92%);
-}
-#wp-logify-activity-log .wp-logify-object-type-term {
-  background-color: hsl(0, 100%, 95%);
-}
-#wp-logify-activity-log .wp-logify-object-type-term.shown, #wp-logify-activity-log .wp-logify-object-type-term:hover {
-  background-color: hsl(0, 100%, 92%);
-}
-#wp-logify-activity-log .wp-logify-object-type-plugin {
-  background-color: hsl(120, 100%, 95%);
-}
-#wp-logify-activity-log .wp-logify-object-type-plugin.shown, #wp-logify-activity-log .wp-logify-object-type-plugin:hover {
-  background-color: hsl(120, 100%, 92%);
+#wp-logify-activity-log .wp-logify-object-type-core.shown, #wp-logify-activity-log .wp-logify-object-type-core:hover {
+  background-color: hsl(0, 0%, 98%);
 }
 #wp-logify-activity-log .wp-logify-object-type-option {
   background-color: hsl(270, 100%, 95%);
@@ -95,17 +83,35 @@
 #wp-logify-activity-log .wp-logify-object-type-option.shown, #wp-logify-activity-log .wp-logify-object-type-option:hover {
   background-color: hsl(270, 100%, 92%);
 }
+#wp-logify-activity-log .wp-logify-object-type-plugin {
+  background-color: hsl(120, 100%, 95%);
+}
+#wp-logify-activity-log .wp-logify-object-type-plugin.shown, #wp-logify-activity-log .wp-logify-object-type-plugin:hover {
+  background-color: hsl(120, 100%, 92%);
+}
+#wp-logify-activity-log .wp-logify-object-type-post {
+  background-color: hsl(210, 100%, 95%);
+}
+#wp-logify-activity-log .wp-logify-object-type-post.shown, #wp-logify-activity-log .wp-logify-object-type-post:hover {
+  background-color: hsl(210, 100%, 92%);
+}
+#wp-logify-activity-log .wp-logify-object-type-term {
+  background-color: hsl(0, 100%, 95%);
+}
+#wp-logify-activity-log .wp-logify-object-type-term.shown, #wp-logify-activity-log .wp-logify-object-type-term:hover {
+  background-color: hsl(0, 100%, 92%);
+}
 #wp-logify-activity-log .wp-logify-object-type-theme {
   background-color: hsl(30, 100%, 95%);
 }
 #wp-logify-activity-log .wp-logify-object-type-theme.shown, #wp-logify-activity-log .wp-logify-object-type-theme:hover {
   background-color: hsl(30, 100%, 92%);
 }
-#wp-logify-activity-log .wp-logify-object-type-comment {
-  background-color: hsl(180, 100%, 95%);
+#wp-logify-activity-log .wp-logify-object-type-user {
+  background-color: hsl(60, 100%, 95%);
 }
-#wp-logify-activity-log .wp-logify-object-type-comment.shown, #wp-logify-activity-log .wp-logify-object-type-comment:hover {
-  background-color: hsl(180, 100%, 92%);
+#wp-logify-activity-log .wp-logify-object-type-user.shown, #wp-logify-activity-log .wp-logify-object-type-user:hover {
+  background-color: hsl(60, 100%, 92%);
 }
 #wp-logify-activity-log .wp-logify-deleted-object {
   font-style: italic;

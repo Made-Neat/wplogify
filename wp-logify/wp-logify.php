@@ -3,7 +3,7 @@
  * Plugin Name: WP Logify
  * Plugin URI: https://wplogify.com
  * Description: WP Logify features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
- * Version: 1.23
+ * Version: 1.24
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
  * License: GPL2
@@ -33,52 +33,66 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'WP_LOGIFY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WP_LOGIFY_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
+// =================================================================================================
 // Include all include files.
+
+// Database classes.
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/class-database.php';
+
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/models/class-event.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/models/class-eventmeta.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/models/class-property.php';
+
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-repository.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-event-repository.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-eventmeta-repository.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-property-repository.php';
+
+// -------------------------------------------------------------------------------------------------
+// Application object-related classes.
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php';
+
+// Classes for tracking events.
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-object-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-comment-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-core-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-option-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-plugin-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-post-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-term-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-theme-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-user-tracker.php';
+
+// Classes for working with application objects.
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-object-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-comment-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-core-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-option-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-plugin-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-post-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-term-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-theme-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-user-utility.php';
+
+// -------------------------------------------------------------------------------------------------
+// Miscellanous other classes.
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-admin.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-cron.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-database.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-log-page.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-datetimes.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-logger.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-main.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-object-reference.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-plugin-settings.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-serialization.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-types.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-urls.php';
+// require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-urls.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-widget.php';
 
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/models/class-event.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/models/class-eventmeta.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/models/class-property.php';
-
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/repositories/class-repository.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/repositories/class-event-repository.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/repositories/class-eventmeta-repository.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/repositories/class-property-repository.php';
-
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-object-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-comment-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-core-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-option-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-plugin-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-post-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-term-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-theme-tracker.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/trackers/class-user-tracker.php';
-
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-object-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-comment-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-core-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-option-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-plugin-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-post-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-term-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-theme-utility.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/utilities/class-user-utility.php';
-
+// Supporting functions.
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/debug.php';
 // require_once WP_LOGIFY_PLUGIN_DIR . 'includes/test.php';
+
+// =================================================================================================
 
 // Register plugin hooks.
 add_action( 'plugins_loaded', array( 'WP_Logify\Main', 'init' ) );
@@ -86,3 +100,6 @@ register_activation_hook( __FILE__, array( 'WP_Logify\Main', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'WP_Logify\Main', 'deactivate' ) );
 register_uninstall_hook( __FILE__, array( 'WP_Logify\Main', 'uninstall' ) );
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( 'WP_Logify\Main', 'add_action_links' ) );
+
+// Permit fast commenting.
+add_filter( 'comment_flood_filter', '__return_false' );

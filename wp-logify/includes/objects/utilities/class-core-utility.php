@@ -55,31 +55,21 @@ class Core_Utility {
 	}
 
 	/**
-	 * Return HTML referencing core.
+	 * Return a link to the page in the WordPress documentation about the specified version.
 	 *
-	 * @param int|string $version The WordPress core version.
-	 * @param ?string    $old_name   The name of the object at the time of the event.
-	 * @return string The link or span HTML tag.
+	 * @param int|string $version  The WordPress core version.
+	 * @param ?string    $old_name The name of the object at the time of the event.
+	 * @return string The link HTML.
 	 */
 	public static function get_tag( int|string $version, ?string $old_name ): string {
-		// Get the page about the release.
-		$url = Urls::get_wp_release_url( $version );
-
-		// If we couldn't find the release page, fall back to the about page.
-		if ( ! $url ) {
-			$url = admin_url( 'about.php' );
-
-			// The about page doesn't require a target.
-			$target = '';
-		} else {
-			// Open up the release page in a new tab.
-			$target = 'target="_blank"';
-		}
+		// Get the URL to the documentation page about this version.
+		$version_with_hyphens = str_replace( '.', '-', $version );
+		$url                  = "https://wordpress.org/documentation/wordpress-version/version-$version_with_hyphens/";
 
 		// Get the link text.
 		$name = self::get_name( $version );
 
 		// Return the link.
-		return "<a href='$url' class='wp-logify-object' $target>$name</a>";
+		return "<a href='$url' class='wp-logify-object' target='_blank'>$name</a>";
 	}
 }
