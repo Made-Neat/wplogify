@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Users class.
+ * Contains the User_Utility class.
  *
  * @package WP_Logify
  */
@@ -13,7 +13,7 @@ use WP_Query;
 use WP_User;
 
 /**
- * Class WP_Logify\Users
+ * Class WP_Logify\User_Utility
  *
  * Provides tracking of events related to users.
  */

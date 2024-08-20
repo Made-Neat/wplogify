@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Terms class.
+ * Contains the Term_Utility class.
  *
  * @package WP_Logify
  */
@@ -11,7 +11,7 @@ use Exception;
 use WP_Term;
 
 /**
- * Class WP_Logify\Post_Utility
+ * Class WP_Logify\Term_Utility
  *
  * Provides tracking of events related to terms.
  */
@@ -200,19 +200,5 @@ class Term_Utility extends Object_Utility {
 
 		// Return the WP_Term object or false if the term couldn't be found.
 		return ( ! is_wp_error( $term ) && $term ) ? $term : null;
-	}
-
-	/**
-	 * Get the singular name of a taxonomy.
-	 *
-	 * @param string $taxonomy The taxonomy slug.
-	 * @return string The singular name of the taxonomy.
-	 */
-	public static function get_taxonomy_singular_name( string $taxonomy ) {
-		// Get the taxonomy object.
-		$taxonomy_obj = get_taxonomy( $taxonomy );
-
-		// Return the taxonomy singular name.
-		return $taxonomy_obj->labels->singular_name;
 	}
 }

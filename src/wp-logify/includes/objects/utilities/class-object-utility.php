@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Object_Utility class.
+ * Contains the abstract Object_Utility class.
  *
  * @package WP_Logify
  */

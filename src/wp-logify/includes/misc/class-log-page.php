@@ -161,7 +161,8 @@ class Log_Page {
 		// Construct and run the SQL statement.
 		$args        = array_merge( $select_args, $where_args, $limit_args );
 		$results_sql = $wpdb->prepare( "$select $where $order_by $limit", $args );
-		$recordset   = $wpdb->get_results( $results_sql, ARRAY_A );
+		debug_sql( $results_sql );
+		$recordset = $wpdb->get_results( $results_sql, ARRAY_A );
 
 		// -----------------------------------------------------------------------------------------
 		// Construct the data array to return to the client.
@@ -228,6 +229,7 @@ class Log_Page {
 		// Construct the HTML.
 		$html  = "<div class='wp-logify-details-section wp-logify-user-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
+		$html .= "<div class='wp-logify-details-table-wrapper'>\n";
 		$html .= "<table class='wp-logify-details-table wp-logify-user-details-table'>\n";
 
 		// User tag.
@@ -278,6 +280,7 @@ class Log_Page {
 
 		$html .= "</table>\n";
 		$html .= "</div>\n";
+		$html .= "</div>\n";
 
 		return $html;
 	}
@@ -297,12 +300,14 @@ class Log_Page {
 		// Convert eventmetas to a table of key-value pairs.
 		$html  = "<div class='wp-logify-details-section wp-logify-eventmeta-section'>\n";
 		$html .= "<h4>Event Details</h4>\n";
+		$html .= "<div class='wp-logify-details-table-wrapper'>\n";
 		$html .= "<table class='wp-logify-details-table wp-logify-eventmeta-table'>\n";
 		foreach ( $event->eventmetas as $eventmeta ) {
 			$readable_key = Types::make_key_readable( $eventmeta->meta_key );
 			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $eventmeta->meta_key, $eventmeta->meta_value ) . '</td></tr>';
 		}
 		$html .= "</table>\n";
+		$html .= "</div>\n";
 		$html .= "</div>\n";
 		return $html;
 	}
@@ -355,7 +360,7 @@ class Log_Page {
 				if ( ! $taxonomy ) {
 					$taxonomy = $event->get_object()->taxonomy;
 				}
-				$object_type_title = Term_Utility::get_taxonomy_singular_name( $taxonomy );
+				$object_type_title = Taxonomy_Utility::get_singular_name( $taxonomy );
 				break;
 
 			default:
@@ -363,6 +368,9 @@ class Log_Page {
 				$object_type_title = Types::make_key_readable( $event->object_type, true );
 		}
 		$html .= "<h4>$object_type_title Details</h4>\n";
+
+		// Start scrollable wrapper.
+		$html .= "<div class='wp-logify-details-table-wrapper'>\n";
 
 		// Start table.
 		$class = 'wp-logify-properties-table-' . ( $show_new_vals ? 3 : 2 ) . '-column';
@@ -442,6 +450,10 @@ class Log_Page {
 		// End table.
 		$html .= "</table>\n";
 
+		// End scrollable wrapper.
+		$html .= "</div>\n";
+
+		// End section.
 		$html .= "</div>\n";
 
 		return $html;

@@ -20,6 +20,7 @@ class Option_Tracker extends Object_Tracker {
 	public static function init() {
 		// Track option update.
 		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
+		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**
@@ -39,10 +40,10 @@ class Option_Tracker extends Object_Tracker {
 
 		// Check if this option change was triggered by an HTTP request, i.e. more likely to be
 		// caused a user action than programmatic.
-		$contents = file_get_contents( 'php://input' );
-		if ( empty( $contents ) ) {
-			return;
-		}
+		// $contents = file_get_contents( 'php://input' );
+		// if ( empty( $contents ) ) {
+		// return;
+		// }
 
 		// debug( '$option', $option );
 		// debug( '$_POST', $_POST );
@@ -51,15 +52,22 @@ class Option_Tracker extends Object_Tracker {
 		// Process the values for comparison.
 		$old_val = Types::process_database_value( $option, $old_value );
 		$new_val = Types::process_database_value( $option, $value );
-		if ( $old_val === $new_val ) {
-			return;
+
+		// If the value has changed, add the option change to the properties.
+		if ( $old_val !== $new_val ) {
+			Property::update_array( self::$properties, $option, $wpdb->options, $old_val, $new_val );
 		}
+	}
 
-		// Get the properties.
-		$properties = array();
-		Property::update_array( $properties, 'value', $wpdb->options, $old_val, $new_val );
-
-		// Log the event.
-		Logger::log_event( 'Option Updated', $option, null, $properties );
+	/**
+	 * Fires on shutdown, after PHP execution.
+	 */
+	public static function on_shutdown() {
+		// Log the option changes, if there are any.
+		if ( self::$properties ) {
+			$object_ref = new Object_Reference( 'option', null, null );
+			$event_type = 'Option' . ( count( self::$properties ) > 1 ? 's' : '' ) . ' Updated';
+			Logger::log_event( $event_type, $object_ref, null, self::$properties );
+		}
 	}
 }

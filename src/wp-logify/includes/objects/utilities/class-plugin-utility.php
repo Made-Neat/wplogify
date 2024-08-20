@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Post_Utility class.
+ * Contains the Plugin_Utility class.
  *
  * @package WP_Logify
  */
@@ -10,9 +10,9 @@ namespace WP_Logify;
 use Exception;
 
 /**
- * Class WP_Logify\Post_Utility
+ * Class WP_Logify\Plugin_Utility
  *
- * Provides tracking of events related to posts.
+ * Provides tracking of events related to plugins.
  */
 class Plugin_Utility extends Object_Utility {
 

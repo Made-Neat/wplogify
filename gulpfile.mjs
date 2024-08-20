@@ -10,9 +10,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Paths.
-const scssPath = path.join(__dirname, 'wp-logify/assets/scss/**/*.scss');
-const cssPath = path.join(__dirname, 'wp-logify/assets/css');
-const pluginSourcePath = path.join(__dirname, 'wp-logify/**/*');
+const scssPath = path.join(__dirname, 'src/scss/**/*.scss');
+const cssPath = path.join(__dirname, 'src/wp-logify/assets/css');
+const pluginSourcePath = path.join(__dirname, 'src/wp-logify/**/*');
 const pluginDestPath = path.join(__dirname, 'www/wp-content/plugins/wp-logify');
 
 // Debug.

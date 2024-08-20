@@ -270,13 +270,6 @@ class Event {
 	}
 
 	/**
-	 * Add the object's core properties to the event properties.
-	 */
-	// public function set_core_props() {
-	// $this->set_props( $this->get_object_reference()->get_core_properties() );
-	// }
-
-	/**
 	 * Get the current or old value of a property.
 	 *
 	 * @param string $prop_key The property key.

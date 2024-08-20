@@ -8,8 +8,10 @@
 namespace WP_Logify;
 
 use Exception;
+use Throwable;
 use WP_Comment;
 use WP_Post;
+use WP_Taxonomy;
 use WP_Term;
 use WP_Theme;
 use WP_User;
@@ -71,9 +73,11 @@ class Object_Reference {
 		// Set the object id.
 		$this->key = $key;
 
+		// Set the name if provided.
 		if ( is_string( $name ) ) {
 			$this->name = $name;
 		} elseif ( $name ) {
+			// If $name is true, get the name from the object.
 			$this->name = $this->get_name();
 		}
 	}
@@ -93,14 +97,26 @@ class Object_Reference {
 		$key  = null;
 		$name = null;
 
-		if ( $wp_object instanceof WP_Post ) {
+		if ( $wp_object instanceof WP_Comment ) {
+			$type = 'comment';
+			$key  = $wp_object->comment_ID;
+			$name = Comment_Utility::get_name( $key );
+		} elseif ( is_string( $wp_object ) ) {
+			$type = 'option';
+			$key  = $wp_object;
+			$name = Option_Utility::get_name( $wp_object );
+		} elseif ( is_array( $wp_object ) ) {
+			$type = 'plugin';
+			$key  = $wp_object['Slug'];
+			$name = $wp_object['Name'];
+		} elseif ( $wp_object instanceof WP_Post ) {
 			$type = 'post';
 			$key  = $wp_object->ID;
 			$name = $wp_object->post_title;
-		} elseif ( $wp_object instanceof WP_User ) {
-			$type = 'user';
-			$key  = $wp_object->ID;
-			$name = User_Utility::get_name( $key );
+		} elseif ( $wp_object instanceof WP_Taxonomy ) {
+			$type = 'taxonomy';
+			$key  = $wp_object->name;
+			$name = $wp_object->label;
 		} elseif ( $wp_object instanceof WP_Term ) {
 			$type = 'term';
 			$key  = $wp_object->term_id;
@@ -109,18 +125,10 @@ class Object_Reference {
 			$type = 'theme';
 			$key  = $wp_object->get_stylesheet();
 			$name = $wp_object->name;
-		} elseif ( $wp_object instanceof WP_Comment ) {
-			$type = 'comment';
-			$key  = $wp_object->comment_ID;
-			$name = Comment_Utility::get_name( $key );
-		} elseif ( is_array( $wp_object ) ) {
-			$type = 'plugin';
-			$key  = $wp_object['Slug'];
-			$name = $wp_object['Name'];
-		} elseif ( is_string( $wp_object ) ) {
-			$type = 'option';
-			$key  = $wp_object;
-			$name = Option_Utility::get_name( $wp_object );
+		} elseif ( $wp_object instanceof WP_User ) {
+			$type = 'user';
+			$key  = $wp_object->ID;
+			$name = User_Utility::get_name( $key );
 		} else {
 			throw new Exception( 'Unknown or unsupported object type.' );
 		}
@@ -166,14 +174,15 @@ class Object_Reference {
 	 * Call a method on the utility class for this object.
 	 *
 	 * @param string $method The method to call.
+	 * @param mixed  ...$params The parameters to pass to the method.
 	 * @return mixed The result of the method call.
 	 */
-	private function call_utility_method( string $method ): mixed {
+	private function call_utility_method( string $method, mixed ...$params ): mixed {
 		// Get the name of the utility class.
 		$utility_class = $this->get_utility_class_name();
 
 		// Call the method on the utility class.
-		return $utility_class::$method( $this->key );
+		return $utility_class::$method( ...$params );
 	}
 
 	/**
@@ -182,8 +191,12 @@ class Object_Reference {
 	 * @return bool True if the object exists, false otherwise.
 	 */
 	private function exists(): bool {
-		// Call the method on the utility class.
-		return $this->call_utility_method( 'exists' );
+		try {
+			// Call the method on the utility class.
+			return $this->call_utility_method( 'exists', $this->key );
+		} catch ( Throwable $e ) {
+			return false;
+		}
 	}
 
 	/**
@@ -192,8 +205,12 @@ class Object_Reference {
 	 * @return mixed The object or null if not found.
 	 */
 	private function load(): mixed {
-		// Call the method on the utility class.
-		return $this->call_utility_method( 'load' );
+		try {
+			// Call the method on the utility class.
+			return $this->call_utility_method( 'load', $this->key );
+		} catch ( Throwable $e ) {
+			return null;
+		}
 	}
 
 	/**
@@ -202,8 +219,12 @@ class Object_Reference {
 	 * @return string The name or title of the object, or Unknown if not found.
 	 */
 	public function get_name() {
-		// Call the method on the utility class.
-		return $this->call_utility_method( 'get_name' );
+		try {
+			// Call the method on the utility class.
+			return $this->call_utility_method( 'get_name', $this->key );
+		} catch ( Throwable $e ) {
+			return '';
+		}
 	}
 
 	/**
@@ -213,8 +234,12 @@ class Object_Reference {
 	 * @throws Exception If the object type is unknown.
 	 */
 	public function get_core_properties(): ?array {
-		// Call the method on the utility class.
-		return $this->call_utility_method( 'get_core_properties' );
+		try {
+			// Call the method on the utility class.
+			return $this->call_utility_method( 'get_core_properties', $this->key );
+		} catch ( Throwable $e ) {
+			return array();
+		}
 	}
 
 	/**
@@ -224,10 +249,11 @@ class Object_Reference {
 	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
 	public function get_tag() {
-		// Get the name of the utility class.
-		$utility_class = $this->get_utility_class_name();
-
-		// Call the method on the utility class.
-		return $utility_class::get_tag( $this->key, $this->name );
+		try {
+			// Call the method on the utility class.
+			return $this->call_utility_method( 'get_tag', $this->key, $this->name );
+		} catch ( Throwable $e ) {
+			return '';
+		}
 	}
 }

@@ -59,6 +59,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-core-tracke
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-option-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-plugin-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-post-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-taxonomy-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-term-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-theme-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-user-tracker.php';
@@ -70,6 +71,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-core-utili
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-option-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-plugin-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-post-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-taxonomy-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-term-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-theme-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-user-utility.php';

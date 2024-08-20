@@ -26,7 +26,7 @@
   /* Hide default DataTables search box */
 }
 .dataTables_wrapper .dataTables_length select {
-  width: 53px;
+  width: 3.25rem;
 }
 
 #wp-logify-activity-log_length {
@@ -34,7 +34,7 @@
 }
 
 #wp-logify-activity-log_processing {
-  margin-top: -8px;
+  margin-top: -0.5rem;
   background: repeating-linear-gradient(45deg, hsl(200, 66%, 95%), hsl(200, 66%, 95%) 1rem, white 1rem, white 2rem);
   background-size: 200% 200%;
   animation: slide 60s linear infinite;
@@ -62,7 +62,7 @@
   background-color: #eee;
   color: #2271b1;
   padding: 0.25rem 0.5rem;
-  border-radius: 3px;
+  border-radius: 0.25rem;
   cursor: pointer;
 }
 #wp-logify-activity-log .wp-logify-object-type-comment {
@@ -94,6 +94,12 @@
 }
 #wp-logify-activity-log .wp-logify-object-type-post.shown, #wp-logify-activity-log .wp-logify-object-type-post:hover {
   background-color: hsl(210, 100%, 92%);
+}
+#wp-logify-activity-log .wp-logify-object-type-taxonomy {
+  background-color: hsl(300, 100%, 95%);
+}
+#wp-logify-activity-log .wp-logify-object-type-taxonomy.shown, #wp-logify-activity-log .wp-logify-object-type-taxonomy:hover {
+  background-color: hsl(300, 100%, 92%);
 }
 #wp-logify-activity-log .wp-logify-object-type-term {
   background-color: hsl(0, 100%, 95%);
@@ -132,6 +138,11 @@
 .wp-logify-details .wp-logify-details-section {
   display: inline-block;
   margin-left: 1rem;
+  vertical-align: top;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-details-table-wrapper {
+  max-height: 32rem;
+  overflow-y: auto;
 }
 .wp-logify-details .wp-logify-details-section table {
   border-collapse: collapse;

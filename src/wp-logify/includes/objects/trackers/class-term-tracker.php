@@ -42,7 +42,7 @@ class Term_Tracker extends Object_Tracker {
 		$term = Term_Utility::load( $term_id );
 
 		// Get the event type.
-		$taxonomy_name = Term_Utility::get_taxonomy_singular_name( $taxonomy );
+		$taxonomy_name = Taxonomy_Utility::get_singular_name( $taxonomy );
 		if ( $taxonomy_name === 'Theme' ) {
 			$taxonomy_name .= ' Term';
 		}
@@ -90,7 +90,7 @@ class Term_Tracker extends Object_Tracker {
 
 		if ( $changed ) {
 			// Get the event type.
-			$taxonomy_name = Term_Utility::get_taxonomy_singular_name( $taxonomy );
+			$taxonomy_name = Taxonomy_Utility::get_singular_name( $taxonomy );
 			$event_type    = "$taxonomy_name Updated";
 
 			// Log the event.
@@ -112,7 +112,7 @@ class Term_Tracker extends Object_Tracker {
 		$term = Term_Utility::load( $term_id );
 
 		// Get the event type.
-		$taxonomy_name = Term_Utility::get_taxonomy_singular_name( $taxonomy );
+		$taxonomy_name = Taxonomy_Utility::get_singular_name( $taxonomy );
 		$event_type    = "$taxonomy_name Deleted";
 
 		// Find all posts tagged with this term, in case we need to restore the term.
