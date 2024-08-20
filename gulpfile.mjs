@@ -4,6 +4,7 @@ import * as sass from 'sass'
 import path from 'path';
 import { fileURLToPath } from 'url';
 import clean from 'gulp-clean';
+import through2 from 'through2';
 
 // Emulate __dirname for ES Modules.
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +29,16 @@ const sassProcessor = gulpSass(sass);
 gulp.task('sass', function () {
     return gulp.src(scssPath)
         .pipe(sassProcessor().on('error', sassProcessor.logError))
+        .pipe(through2.obj(function (file, _, cb) {
+            // Check if the CSS content is empty
+            if (file.contents.toString().trim()) {
+                // Proceed with writing the file.
+                cb(null, file);
+            } else {
+                // Skip writing the file.
+                cb();
+            }
+        }))
         .pipe(gulp.dest(cssPath));
 });
 

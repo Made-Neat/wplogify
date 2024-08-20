@@ -1,8 +1,5 @@
 @import 'colors';
 
-$light-grey: #dcdcde;
-$lighter-grey: #f6f7f7;
-
 .wp-logify-stats {
     display: flex;
     gap: 0.5rem;
@@ -13,8 +10,8 @@ $lighter-grey: #f6f7f7;
     box-sizing: border-box;
     padding: 0.5rem;
     text-align: center;
-    border: solid 1px $light-grey;
-    background-color: $lighter-grey;
+    border: solid 1px $gray-87;
+    background-color: $gray-97;
 }
 
 .wp-logify-stats-number {
@@ -36,7 +33,7 @@ $lighter-grey: #f6f7f7;
     }
 
     .wp-logify-separator {
-        color: $light-grey;
+        color: $gray-87;
         padding: 0 0.5rem;
     }
 }
@@ -69,7 +66,7 @@ $lighter-grey: #f6f7f7;
         }
 
         &.wp-logify-object-type-core {
-            background-color: $mystic-95;
+            background-color: white;
         }
 
         &.wp-logify-object-type-option {

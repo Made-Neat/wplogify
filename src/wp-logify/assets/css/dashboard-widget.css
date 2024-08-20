@@ -8,8 +8,8 @@
   box-sizing: border-box;
   padding: 0.5rem;
   text-align: center;
-  border: solid 1px #dcdcde;
-  background-color: #f6f7f7;
+  border: solid 1px hsl(0, 0%, 87%);
+  background-color: hsl(0, 0%, 97%);
 }
 
 .wp-logify-stats-number {
@@ -30,7 +30,7 @@
   display: inline;
 }
 .wp-logify-widget-links .wp-logify-separator {
-  color: #dcdcde;
+  color: hsl(0, 0%, 87%);
   padding: 0 0.5rem;
 }
 
@@ -56,7 +56,7 @@
   background-color: hsl(180, 100%, 95%);
 }
 #wp-logify-dashboard-table tr.wp-logify-object-type-core {
-  background-color: hsl(0, 0%, 100%);
+  background-color: white;
 }
 #wp-logify-dashboard-table tr.wp-logify-object-type-option {
   background-color: hsl(270, 100%, 95%);

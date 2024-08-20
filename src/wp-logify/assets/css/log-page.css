@@ -4,11 +4,11 @@
 }
 .table-wp-logify th,
 .table-wp-logify td {
-  border: 1px solid #ddd;
+  border: 1px solid hsl(0, 0%, 87%);
   padding: 0.5rem;
 }
 .table-wp-logify th {
-  background-color: #f7f7f7;
+  background-color: hsl(0, 0%, 97%);
   text-align: left;
 }
 .table-wp-logify th.dt-type-numeric.column-id {
@@ -35,10 +35,10 @@
 
 #wp-logify-activity-log_processing {
   margin-top: -0.5rem;
-  background: repeating-linear-gradient(45deg, hsl(200, 66%, 95%), hsl(200, 66%, 95%) 1rem, white 1rem, white 2rem);
+  background: repeating-linear-gradient(45deg, hsl(202, 100%, 95%), hsl(202, 100%, 95%) 1rem, white 1rem, white 2rem);
   background-size: 200% 200%;
   animation: slide 60s linear infinite;
-  border: solid 1px hsl(200, 66%, 85%);
+  border: solid 1px hsl(202, 100%, 85%);
 }
 
 @keyframes slide {
@@ -59,8 +59,8 @@
   border-color: #bbb;
 }
 #wp-logify-activity-log .wp-logify-show-details {
-  background-color: #eee;
-  color: #2271b1;
+  background-color: hsl(0, 0%, 93%);
+  color: hsl(202, 100%, 34%);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   cursor: pointer;
@@ -72,10 +72,10 @@
   background-color: hsl(180, 100%, 92%);
 }
 #wp-logify-activity-log .wp-logify-object-type-core {
-  background-color: hsl(0, 0%, 100%);
+  background-color: white;
 }
 #wp-logify-activity-log .wp-logify-object-type-core.shown, #wp-logify-activity-log .wp-logify-object-type-core:hover {
-  background-color: hsl(0, 0%, 98%);
+  background-color: hsl(0, 0%, 97%);
 }
 #wp-logify-activity-log .wp-logify-object-type-option {
   background-color: hsl(270, 100%, 95%);
