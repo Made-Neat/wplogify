@@ -33,14 +33,14 @@ class Object_Reference {
 	 *
 	 * This will be an integer for object types with an integer ID, like posts, users, terms, and
 	 * comments, and a string for those object types identified by a unique string value like a name
-	 * or filename, such as option, plugin, and theme.
+	 * or filename, such as taxonomy, plugin, and theme. In the case of options, it will be null.
 	 *
 	 * @var null|int|string
 	 */
 	public null|int|string $key = null;
 
 	/**
-	 * The name of the object.
+	 * The display name or title of the object.
 	 *
 	 * @var ?string
 	 */

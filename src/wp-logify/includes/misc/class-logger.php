@@ -20,7 +20,7 @@ class Logger {
 	/**
 	 * The valid object types for which events can be logged.
 	 */
-	public const VALID_OBJECT_TYPES = array( 'post', 'user', 'term', 'plugin', 'theme', 'setting', 'comment' );
+	public const VALID_OBJECT_TYPES = array( 'comment', 'core', 'option', 'plugin', 'post', 'taxonomy', 'term', 'theme', 'user' );
 
 	/**
 	 * Logs an event to the database.

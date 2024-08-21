@@ -94,6 +94,9 @@ class Log_Page {
 		// Get the search value.
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
+		// Get the object types to show events for.
+		$object_types = isset( $_POST['objectTypes'] ) ? $_POST['objectTypes'] : array();
+
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of events in the database.
 		$total_sql         = $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name );
@@ -105,14 +108,14 @@ class Log_Page {
 		// Select clause.
 		$select_count = 'SELECT COUNT(*) FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
 
-		// Where clause.
-		if ( $search_value === '' ) {
-			$where      = '';
-			$where_args = array();
-		} else {
-			$like_value = '%' . $wpdb->esc_like( $search_value ) . '%';
-			$where      =
-				'WHERE when_happened LIKE %s
+		// Build the where clause.
+		$where_parts = array();
+		$where_args  = array();
+
+		// Filter by search string if specified.
+		if ( $search_value !== '' ) {
+			$where_parts[] =
+				' (when_happened LIKE %s
                     OR user_role LIKE %s
                     OR user_ip LIKE %s
                     OR user_location LIKE %s
@@ -122,26 +125,40 @@ class Log_Page {
                     OR object_name LIKE %s
                     OR user_login LIKE %s
                     OR user_email LIKE %s
-                    OR display_name LIKE %s';
-			$where_args = array(
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
-				$like_value,
+                    OR display_name LIKE %s)';
+			$like_value    = '%' . $wpdb->esc_like( $search_value ) . '%';
+			$where_args    = array_merge(
+				$where_args,
+				array(
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+					$like_value,
+				)
 			);
 		}
 
+		// Filter by object type if specified.
+		if ( array_diff( Logger::VALID_OBJECT_TYPES, $object_types ) ) {
+			$object_type_string = implode( ',', array_map( fn( $object_type ) => "'$object_type'", $object_types ) );
+			$where_parts[]      = " object_type IN ($object_type_string)";
+		}
+
+		// Complete building of the where clause.
+		$where = $where_parts ? ( 'WHERE ' . implode( ' AND ', $where_parts ) ) : '';
+
 		// Construct and run the SQL statement.
-		$select_args          = array( $events_table_name, $user_table_name );
-		$args                 = array_merge( $select_args, $where_args );
-		$filtered_sql         = $wpdb->prepare( "$select_count $where", $args );
+		$select_args  = array( $events_table_name, $user_table_name );
+		$args         = array_merge( $select_args, $where_args );
+		$filtered_sql = $wpdb->prepare( "$select_count $where", $args );
+		// debug_sql( $filtered_sql );
 		$num_filtered_records = (int) $wpdb->get_var( $filtered_sql );
 
 		// -----------------------------------------------------------------------------------------
@@ -161,7 +178,7 @@ class Log_Page {
 		// Construct and run the SQL statement.
 		$args        = array_merge( $select_args, $where_args, $limit_args );
 		$results_sql = $wpdb->prepare( "$select $where $order_by $limit", $args );
-		debug_sql( $results_sql );
+		// debug_sql( $results_sql );
 		$recordset = $wpdb->get_results( $results_sql, ARRAY_A );
 
 		// -----------------------------------------------------------------------------------------

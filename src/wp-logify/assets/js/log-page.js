@@ -1,4 +1,13 @@
 jQuery(($) => {
+
+    let getSelectedObjectTypes = () => {
+        let objectTypes = [];
+        $('#wp-logify-object-type-filter input:checked').each((index, element) => {
+            objectTypes.push(element.value);
+        });
+        return objectTypes;
+    }
+
     let eventsTable = $('#wp-logify-activity-log').DataTable({
         processing: true,
         language: {
@@ -9,6 +18,7 @@ jQuery(($) => {
             url: wpLogifyLogPage.ajaxurl,
             type: "POST",
             data: (d) => {
+                d.objectTypes = getSelectedObjectTypes();
                 d.action = 'wp_logify_fetch_logs';
                 console.log('Sending AJAX request with data:', d);
             },
@@ -115,5 +125,10 @@ jQuery(($) => {
         if (searchTerm.length >= 3 || searchTerm.length === 0) {
             eventsTable.search(searchTerm).draw();
         }
+    });
+
+    // Reload the table when the object type filter changes.
+    $('#wp-logify-object-type-filter input').on('change', () => {
+        eventsTable.ajax.reload();
     });
 });

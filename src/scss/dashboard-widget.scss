@@ -39,14 +39,16 @@
 }
 
 #wp-logify-dashboard-table {
+    @include object-type-colors;
+
     width: 100%;
     border-collapse: collapse;
-    border: solid 1px grey;
+    border: solid 1px $gray-50;
     margin: 1rem 0;
 
     th,
     td {
-        border: 1px solid #ddd;
+        border: 1px solid $gray-87;
         padding: 0.5rem;
     }
 
@@ -57,44 +59,5 @@
 
     .wp-logify-deleted-object {
         font-style: italic;
-    }
-
-    tr {
-
-        &.wp-logify-object-type-comment {
-            background-color: $cyan-95;
-        }
-
-        &.wp-logify-object-type-core {
-            background-color: white;
-        }
-
-        &.wp-logify-object-type-option {
-            background-color: $purple-95;
-        }
-
-        &.wp-logify-object-type-plugin {
-            background-color: $green-95;
-        }
-
-        &.wp-logify-object-type-post {
-            background-color: $blue-95;
-        }
-
-        &.wp-logify-object-type-taxonomy {
-            background-color: $pink-95;
-        }
-
-        &.wp-logify-object-type-term {
-            background-color: $red-95;
-        }
-
-        &.wp-logify-object-type-theme {
-            background-color: $orange-95;
-        }
-
-        &.wp-logify-object-type-user {
-            background-color: $yellow-95;
-        }
     }
 }

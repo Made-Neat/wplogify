@@ -15,7 +15,6 @@
         text-align: left;
     }
 
-
     th.dt-type-numeric.column-id {
         text-align: left;
     }
@@ -46,10 +45,10 @@
 
 #wp-logify-activity-log_processing {
     margin-top: -0.5rem;
-    background: repeating-linear-gradient(45deg, $wp-blue-95, $wp-blue-95 1rem, white 1rem, white 2rem);
+    background: repeating-linear-gradient(45deg, $blue-95, $blue-95 1rem, white 1rem, white 2rem);
     background-size: 200% 200%;
     animation: slide 60s linear infinite;
-    border: solid 1px $wp-blue-85;
+    border: solid 1px $blue-85;
 }
 
 @keyframes slide {
@@ -63,6 +62,7 @@
 }
 
 #wp-logify-activity-log {
+    @include object-type-colors;
 
     .wp-logify-summary-row,
     .wp-logify-details-row {
@@ -72,98 +72,17 @@
 
             >td,
             >th {
-                border-color: #bbb;
+                border-color: $gray-73;
             }
         }
     }
 
     .wp-logify-show-details {
         background-color: $gray-93;
-        color: $wp-blue;
+        color: $blue-33;
         padding: 0.25rem 0.5rem;
         border-radius: 0.25rem;
         cursor: pointer;
-    }
-
-    .wp-logify-object-type-comment {
-        background-color: $cyan-95;
-
-        &.shown,
-        &:hover {
-            background-color: $cyan-92;
-        }
-    }
-
-    .wp-logify-object-type-core {
-        background-color: white;
-
-        &.shown,
-        &:hover {
-            background-color: $gray-97;
-        }
-    }
-
-    .wp-logify-object-type-option {
-        background-color: $purple-95;
-
-        &.shown,
-        &:hover {
-            background-color: $purple-92;
-        }
-    }
-
-    .wp-logify-object-type-plugin {
-        background-color: $green-95;
-
-        &.shown,
-        &:hover {
-            background-color: $green-92;
-        }
-    }
-
-    .wp-logify-object-type-post {
-        background-color: $blue-95;
-
-        &.shown,
-        &:hover {
-            background-color: $blue-92;
-        }
-    }
-
-    .wp-logify-object-type-taxonomy {
-        background-color: $pink-95;
-
-        &.shown,
-        &:hover {
-            background-color: $pink-92;
-        }
-    }
-
-    .wp-logify-object-type-term {
-        background-color: $red-95;
-
-        &.shown,
-        &:hover {
-            background-color: $red-92;
-        }
-    }
-
-    .wp-logify-object-type-theme {
-        background-color: $orange-95;
-
-        &.shown,
-        &:hover {
-            background-color: $orange-92;
-        }
-    }
-
-    .wp-logify-object-type-user {
-        background-color: $yellow-95;
-
-        &.shown,
-        &:hover {
-            background-color: $yellow-92;
-        }
     }
 
     .wp-logify-deleted-object {
@@ -220,7 +139,7 @@
         }
 
         td.wp-logify-value-unchanged {
-            background-color: #f7f7f7;
+            background-color: $gray-97;
         }
     }
 }
@@ -236,6 +155,18 @@
 
     .wp-logify-user-role {
         font-size: 0.9em;
-        color: #555;
+        color: $gray-33;
+    }
+}
+
+#wp-logify-object-type-filter {
+    @include object-type-colors;
+
+    .wp-logify-show-object-type-events {
+        display: inline;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        margin-left: 0.5rem;
     }
 }

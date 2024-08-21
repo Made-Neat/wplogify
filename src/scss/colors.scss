@@ -1,10 +1,8 @@
-$wp-blue: hsl(202, 100%, 34%); // #0073AA;
-$wp-blue-85: hsl(202, 100%, 85%);
-$wp-blue-95: hsl(202, 100%, 95%);
-
 $gray-33: hsl(0, 0%, 33%);
-$gray-93: hsl(0, 0%, 93%);
+$gray-50: hsl(0, 0%, 50%);
+$gray-73: hsl(0, 0%, 73%);
 $gray-87: hsl(0, 0%, 87%);
+$gray-93: hsl(0, 0%, 93%);
 $gray-97: hsl(0, 0%, 97%);
 
 $red-92: hsl(0, 100%, 92%);
@@ -28,6 +26,8 @@ $springgreen-95: hsl(150, 100%, 95%);
 $cyan-92: hsl(180, 100%, 92%);
 $cyan-95: hsl(180, 100%, 95%);
 
+$blue-33: hsl(210, 100%, 33%);
+$blue-85: hsl(210, 100%, 85%);
 $blue-92: hsl(210, 100%, 92%);
 $blue-95: hsl(210, 100%, 95%);
 
@@ -42,3 +42,86 @@ $pink-95: hsl(300, 100%, 95%);
 
 $rose-92: hsl(330, 100%, 92%);
 $rose-95: hsl(330, 100%, 95%);
+
+@mixin object-type-colors {
+    .wp-logify-object-type-comment {
+        background-color: $cyan-95;
+
+        &.shown,
+        &:hover {
+            background-color: $cyan-92;
+        }
+    }
+
+    .wp-logify-object-type-core {
+        background-color: white;
+
+        &.shown,
+        &:hover {
+            background-color: $gray-97;
+        }
+    }
+
+    .wp-logify-object-type-option {
+        background-color: $purple-95;
+
+        &.shown,
+        &:hover {
+            background-color: $purple-92;
+        }
+    }
+
+    .wp-logify-object-type-plugin {
+        background-color: $green-95;
+
+        &.shown,
+        &:hover {
+            background-color: $green-92;
+        }
+    }
+
+    .wp-logify-object-type-post {
+        background-color: $blue-95;
+
+        &.shown,
+        &:hover {
+            background-color: $blue-92;
+        }
+    }
+
+    .wp-logify-object-type-taxonomy {
+        background-color: $pink-95;
+
+        &.shown,
+        &:hover {
+            background-color: $pink-92;
+        }
+    }
+
+    .wp-logify-object-type-term {
+        background-color: $red-95;
+
+        &.shown,
+        &:hover {
+            background-color: $red-92;
+        }
+    }
+
+    .wp-logify-object-type-theme {
+        background-color: $orange-95;
+
+        &.shown,
+        &:hover {
+            background-color: $orange-92;
+        }
+    }
+
+    .wp-logify-object-type-user {
+        background-color: $yellow-95;
+
+        &.shown,
+        &:hover {
+            background-color: $yellow-92;
+        }
+    }
+}
