@@ -39,12 +39,12 @@
 }
 
 #wp-logify-dashboard-table {
-    @include object-type-colors;
-
     width: 100%;
     border-collapse: collapse;
     border: solid 1px $gray-50;
     margin: 1rem 0;
+
+    @include object-type-colors;
 
     th,
     td {

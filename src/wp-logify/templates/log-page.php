@@ -16,14 +16,21 @@ namespace WP_Logify;
 
 		<span>Filter events by object type:</span>
 
-		<?php
-		foreach ( Logger::VALID_OBJECT_TYPES as $object_type ) {
-			echo "<div class='wp-logify-show-object-type-events wp-logify-object-type-$object_type'>\n";
-			echo "<input type='checkbox' id='wp-logify-show-$object_type-events' value='$object_type' checked='checked'>\n";
-			echo "<label for='wp-logify-show-$object_type-events'>$object_type</label>\n";
-			echo "</div>\n";
-		}
-		?>
+		<div class='wp-logify-show-object-type-events wp-logify-object-type-all'>
+			<input type='checkbox' id='wp-logify-show-all-events' value='all' checked='checked'>
+			<label for='wp-logify-show-all-events'>All</label>
+		</div>
+
+		<div id="wp-logify-object-type-checkboxes">
+			<?php
+			foreach ( Logger::VALID_OBJECT_TYPES as $object_type ) {
+				echo "<div class='wp-logify-show-object-type-events wp-logify-object-type-$object_type'>\n";
+				echo "<input type='checkbox' id='wp-logify-show-$object_type-events' value='$object_type' checked='checked'>\n";
+				echo "<label for='wp-logify-show-$object_type-events'>" . ucfirst( $object_type ) . "</label>\n";
+				echo "</div>\n";
+			}
+			?>
+		</div>
 
 	</div>
 

@@ -160,6 +160,8 @@
 }
 
 #wp-logify-object-type-filter {
+    margin-top: 1rem;
+
     @include object-type-colors;
 
     .wp-logify-show-object-type-events {
@@ -168,5 +170,13 @@
         border-radius: 0.25rem;
         cursor: pointer;
         margin-left: 0.5rem;
+
+        label {
+            cursor: inherit;
+        }
     }
+}
+
+#wp-logify-object-type-checkboxes {
+    display: inline;
 }

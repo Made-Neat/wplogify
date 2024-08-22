@@ -95,7 +95,8 @@ class Log_Page {
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
 		// Get the object types to show events for.
-		$object_types = isset( $_POST['objectTypes'] ) ? $_POST['objectTypes'] : array();
+		$object_types = isset( $_COOKIE['object_types'] ) ? json_decode( stripslashes( $_COOKIE['object_types'] ), true ) : Logger::VALID_OBJECT_TYPES;
+		// debug( $object_types );
 
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of events in the database.
@@ -146,7 +147,9 @@ class Log_Page {
 		}
 
 		// Filter by object type if specified.
-		if ( array_diff( Logger::VALID_OBJECT_TYPES, $object_types ) ) {
+		if ( ! $object_types ) {
+			$where_parts[] = ' object_type IS NULL';
+		} elseif ( array_diff( Logger::VALID_OBJECT_TYPES, $object_types ) ) {
 			$object_type_string = implode( ',', array_map( fn( $object_type ) => "'$object_type'", $object_types ) );
 			$where_parts[]      = " object_type IN ($object_type_string)";
 		}

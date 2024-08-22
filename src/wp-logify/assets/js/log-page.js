@@ -1,13 +1,5 @@
 jQuery(($) => {
 
-    let getSelectedObjectTypes = () => {
-        let objectTypes = [];
-        $('#wp-logify-object-type-filter input:checked').each((index, element) => {
-            objectTypes.push(element.value);
-        });
-        return objectTypes;
-    }
-
     let eventsTable = $('#wp-logify-activity-log').DataTable({
         processing: true,
         language: {
@@ -18,7 +10,6 @@ jQuery(($) => {
             url: wpLogifyLogPage.ajaxurl,
             type: "POST",
             data: (d) => {
-                d.objectTypes = getSelectedObjectTypes();
                 d.action = 'wp_logify_fetch_logs';
                 console.log('Sending AJAX request with data:', d);
             },
@@ -127,8 +118,51 @@ jQuery(($) => {
         }
     });
 
-    // Reload the table when the object type filter changes.
-    $('#wp-logify-object-type-filter input').on('change', () => {
+    // Get the selected object types.
+    let getSelectedObjectTypes = () => {
+        let objectTypes = [];
+        $('#wp-logify-object-type-checkboxes input[type="checkbox"]:checked').each((index, element) => {
+            objectTypes.push(element.value);
+        });
+        return objectTypes;
+    }
+
+    // Check if all object types are selected.
+    let allObjectTypesSelected = () => {
+        return $('#wp-logify-object-type-checkboxes input[type="checkbox"]:not(:checked)').length === 0;
+    }
+
+    // Store the selected object types in the cookie and reload the table.
+    let updateCookieAndReload = () => {
+        // Store the selected object types in the cookie.
+        let selectedObjectTypes = getSelectedObjectTypes();
+        console.log(selectedObjectTypes);
+        wpCookies.set('object_types', JSON.stringify(selectedObjectTypes), false, false, false, false);
+
+        // Reload the page.
         eventsTable.ajax.reload();
+    }
+
+    // Reload the table when an object type checkbox is clicked.
+    $('#wp-logify-object-type-checkboxes input').on('change', () => {
+        // Update state of 'All' checkbox to match state of others.
+        $('#wp-logify-show-all-events').prop('checked', allObjectTypesSelected());
+
+        updateCookieAndReload();
     });
+
+    // Setup behaviour of 'All' checkbox.
+    $('#wp-logify-show-all-events').on('click', () => {
+        // If the All checkbox has been checked, check all others.
+        if ($('#wp-logify-show-all-events').is(':checked')) {
+            $('#wp-logify-object-type-checkboxes input').prop('checked', true);
+        }
+        else {
+            // Otherwise, uncheck all others.
+            $('#wp-logify-object-type-checkboxes input').prop('checked', false);
+        }
+
+        updateCookieAndReload();
+    });
+
 });

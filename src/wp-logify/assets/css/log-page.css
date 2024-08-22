@@ -179,6 +179,9 @@
   color: hsl(0, 0%, 33%);
 }
 
+#wp-logify-object-type-filter {
+  margin-top: 1rem;
+}
 #wp-logify-object-type-filter .wp-logify-object-type-comment {
   background-color: hsl(180, 100%, 95%);
 }
@@ -239,4 +242,11 @@
   border-radius: 0.25rem;
   cursor: pointer;
   margin-left: 0.5rem;
+}
+#wp-logify-object-type-filter .wp-logify-show-object-type-events label {
+  cursor: inherit;
+}
+
+#wp-logify-object-type-checkboxes {
+  display: inline;
 }
