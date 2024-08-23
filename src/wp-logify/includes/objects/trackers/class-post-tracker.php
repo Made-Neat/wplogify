@@ -76,6 +76,11 @@ class Post_Tracker {
 			return;
 		}
 
+		// Ignore save events for navigation menu items.
+		if ( $post->post_type === 'nav_menu_item' ) {
+			return;
+		}
+
 		// debug( 'on_save_post' );
 
 		// Check if we're updating or creating.
@@ -216,6 +221,11 @@ class Post_Tracker {
 			return;
 		}
 
+		// Ignore status changes for navigation menu items.
+		if ( $post->post_type === 'nav_menu_item' ) {
+			return;
+		}
+
 		// debug( 'on_transition_post_status', $post->ID, $old_status, $new_status );
 
 		// Get the event type.
@@ -267,9 +277,22 @@ class Post_Tracker {
 			// Get the taxonomy object.
 			$taxonomy_obj = get_taxonomy( $taxonomy );
 
+			// Taxonomy name.
+			if ( count( $term_refs ) === 1 ) {
+				$taxonomy_name = $taxonomy_obj->labels->singular_name;
+				// Just show the one.
+				$term_refs = $term_refs[0];
+			} else {
+				$taxonomy_name = $taxonomy_obj->labels->name;
+			}
+
 			// Create and add the event meta.
-			$meta_key = 'attached_' . strtolower( $taxonomy_obj->labels->name );
-			Eventmeta::update_array( self::$eventmetas, $meta_key, $term_refs );
+			Eventmeta::update_array( self::$eventmetas, $taxonomy_name, $term_refs );
+		}
+
+		// For navigation menu items, get the linked object.
+		if ( $post->post_type === 'nav_menu_item' ) {
+			Post_Utility::add_nav_menu_item_linked_object_to_eventmetas( self::$eventmetas, $post );
 		}
 	}
 
@@ -277,6 +300,7 @@ class Post_Tracker {
 	 * Log the deletion of a post.
 	 *
 	 * This method is called immediately before the post is deleted from the database.
+	 * Relies on on_before_delete_post() being called first.
 	 *
 	 * @param int     $post_id The ID of the post that was deleted.
 	 * @param WP_Post $post The post object that was deleted.
@@ -289,14 +313,20 @@ class Post_Tracker {
 
 		// debug( 'on_delete_post', $post_id );
 
-		// Get the event type.
-		$event_type = Post_Utility::get_post_type_singular_name( $post->post_type ) . ' Deleted';
+		// Handle navigation menu items differently.
+		if ( $post->post_type === 'nav_menu_item' ) {
+			// Log the event.
+			Logger::log_event( 'Item Removed From Navigation Menu', $post, self::$eventmetas );
+		} else {
+			// Get the event type.
+			$event_type = Post_Utility::get_post_type_singular_name( $post->post_type ) . ' Deleted';
 
-		// Get all the post's properties, including metadata.
-		$props = Post_Utility::get_properties( $post );
+			// Get all the post's properties, including metadata.
+			$props = Post_Utility::get_properties( $post );
 
-		// Log the event.
-		Logger::log_event( $event_type, $post, self::$eventmetas, $props );
+			// Log the event.
+			Logger::log_event( $event_type, $post, self::$eventmetas, $props );
+		}
 	}
 
 	/**
@@ -370,10 +400,43 @@ class Post_Tracker {
 				$taxonomy_obj  = get_taxonomy( $taxonomy );
 				$taxonomy_name = ucwords( $total === 1 ? $taxonomy_obj->labels->singular_name : $taxonomy_obj->labels->name );
 
-				// Get the post type name.
-				$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
-				if ( $post_type === 'Navigation Menu Item' ) {
+				// Collect eventmetas.
+				$metas = array();
+
+				// Show the added terms in the eventmetas.
+				if ( $terms_were_added ) {
+					// Convert term IDs to Object_Reference objects.
+					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['added'] );
+					if ( count( $term_refs ) === 1 ) {
+						$term_refs = $term_refs[0];
+					}
+					if ( $post->post_type === 'nav_menu_item' ) {
+						$meta_key = strtolower( $taxonomy_name );
+					} else {
+						$meta_key = 'added_' . strtolower( $taxonomy_name );
+					}
+					Eventmeta::update_array( $metas, $meta_key, $term_refs );
+				}
+
+				// Show the removed terms in the eventmetas.
+				if ( $terms_were_removed ) {
+					// Convert term IDs to Object_Reference objects.
+					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['removed'] );
+					if ( count( $term_refs ) === 1 ) {
+						$term_refs = $term_refs[0];
+					}
+					$meta_key = 'removed_' . strtolower( $taxonomy_name );
+					Eventmeta::update_array( $metas, $meta_key, $term_refs );
+				}
+
+				// Handle navigation menu items differently.
+				if ( $post->post_type === 'nav_menu_item' ) {
 					$post_type = 'Item';
+					// Show the object it links to.
+					Post_Utility::add_nav_menu_item_linked_object_to_eventmetas( $metas, $post );
+				} else {
+					// Get the post type name.
+					$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
 				}
 
 				// Get event type.
@@ -386,25 +449,6 @@ class Post_Tracker {
 				} else {
 					// This shouldn't occur.
 					continue;
-				}
-
-				// Collect eventmetas.
-				$metas = array();
-
-				// Show the added terms in the eventmetas.
-				if ( $terms_were_added ) {
-					// Convert term IDs to Object_Reference objects.
-					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['added'] );
-					$meta_key  = 'added_' . strtolower( $taxonomy_name );
-					Eventmeta::update_array( $metas, $meta_key, $term_refs );
-				}
-
-				// Show the removed terms in the eventmetas.
-				if ( $terms_were_removed ) {
-					// Convert term IDs to Object_Reference objects.
-					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['removed'] );
-					$meta_key  = 'removed_' . strtolower( $taxonomy_name );
-					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
 
 				// Log the event.

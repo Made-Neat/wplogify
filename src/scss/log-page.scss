@@ -116,10 +116,6 @@
             border-collapse: collapse;
 
             >tbody>tr {
-                >th {
-                    width: 12rem;
-                }
-
                 >td {
                     width: 20rem;
                 }
@@ -136,6 +132,18 @@
             td {
                 background-color: white;
             }
+        }
+
+        .wp-logify-user-details-table>tbody>tr>th {
+            width: 8rem;
+        }
+
+        .wp-logify-properties-table>tbody>tr>th {
+            width: 10rem;
+        }
+
+        .wp-logify-eventmeta-table>tbody>tr>th {
+            width: 14rem;
         }
 
         td.wp-logify-value-unchanged {

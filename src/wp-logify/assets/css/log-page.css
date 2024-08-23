@@ -147,9 +147,6 @@
 .wp-logify-details .wp-logify-details-section table {
   border-collapse: collapse;
 }
-.wp-logify-details .wp-logify-details-section table > tbody > tr > th {
-  width: 12rem;
-}
 .wp-logify-details .wp-logify-details-section table > tbody > tr > td {
   width: 20rem;
 }
@@ -161,6 +158,15 @@
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-details-table td {
   background-color: white;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-user-details-table > tbody > tr > th {
+  width: 8rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-properties-table > tbody > tr > th {
+  width: 10rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-eventmeta-table > tbody > tr > th {
+  width: 14rem;
 }
 .wp-logify-details .wp-logify-details-section td.wp-logify-value-unchanged {
   background-color: hsl(0, 0%, 97%);
