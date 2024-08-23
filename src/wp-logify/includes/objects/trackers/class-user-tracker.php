@@ -14,7 +14,7 @@ use WP_User;
  *
  * Provides tracking of events related to users.
  */
-class User_Tracker extends Object_Tracker {
+class User_Tracker {
 
 	/**
 	 * The maximum break period in seconds. If there has been no activity for this period, we'll
@@ -23,6 +23,20 @@ class User_Tracker extends Object_Tracker {
 	 * @var int
 	 */
 	private const MAX_BREAK_PERIOD = 1200; // 20 minutes
+
+	/**
+	 * Array to remember properties between different events.
+	 *
+	 * @var array
+	 */
+	protected static $properties = array();
+
+	/**
+	 * Array to remember metadata between different events.
+	 *
+	 * @var array
+	 */
+	protected static $eventmetas = array();
 
 	/**
 	 * Set up hooks for the events we want to log.

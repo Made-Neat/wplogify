@@ -15,7 +15,14 @@ use WP_Error;
  *
  * Provides tracking of events related to comments.
  */
-class Comment_Tracker extends Object_Tracker {
+class Comment_Tracker {
+
+	/**
+	 * Array to remember properties between different events.
+	 *
+	 * @var array
+	 */
+	protected static $properties = array();
 
 	/**
 	 * Set up hooks for the events we want to log.

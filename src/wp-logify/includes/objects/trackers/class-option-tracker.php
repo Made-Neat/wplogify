@@ -12,7 +12,14 @@ namespace WP_Logify;
  *
  * Provides tracking of events related to options.
  */
-class Option_Tracker extends Object_Tracker {
+class Option_Tracker {
+
+	/**
+	 * Array to remember properties between different events.
+	 *
+	 * @var array
+	 */
+	protected static $properties = array();
 
 	/**
 	 * Set up hooks for the events we want to log.

@@ -15,7 +15,14 @@ use WP_Term;
  *
  * Provides tracking of events related to terms.
  */
-class Term_Tracker extends Object_Tracker {
+class Term_Tracker {
+
+	/**
+	 * Array to remember properties between different events.
+	 *
+	 * @var array
+	 */
+	protected static $properties = array();
 
 	/**
 	 * Set up hooks for the events we want to log.

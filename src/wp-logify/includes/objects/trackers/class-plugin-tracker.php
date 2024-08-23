@@ -15,7 +15,7 @@ use Plugin_Upgrader;
  *
  * Provides tracking of events related to plugins.
  */
-class Plugin_Tracker extends Object_Tracker {
+class Plugin_Tracker {
 
 	/**
 	 * Set up hooks for the events we want to log.

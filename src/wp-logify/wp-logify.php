@@ -53,7 +53,6 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/database/repositories/class-proper
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/class-object-reference.php';
 
 // Classes for tracking events.
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-object-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-comment-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-core-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-option-tracker.php';

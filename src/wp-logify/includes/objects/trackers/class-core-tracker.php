@@ -12,7 +12,7 @@ namespace WP_Logify;
  *
  * Provides tracking of events related to WordPress core.
  */
-class Core_Tracker extends Object_Tracker {
+class Core_Tracker {
 
 	/**
 	 * Set up hooks for the events we want to log.

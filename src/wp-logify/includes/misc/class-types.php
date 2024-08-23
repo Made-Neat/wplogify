@@ -303,7 +303,7 @@ class Types {
 			}
 
 			// Make acronyms upper-case.
-			if ( in_array( $word, array( 'gmt', 'guid', 'id', 'ip', 'rss', 'ssl', 'ui', 'uri', 'url', 'utc', 'wp' ), true ) ) {
+			if ( in_array( $word, array( 'bb', 'fl', 'gmt', 'guid', 'id', 'ip', 'rss', 'ssl', 'ui', 'uri', 'url', 'utc', 'wp' ), true ) ) {
 				$words[ $i ] = strtoupper( $word );
 			} elseif ( $ucwords ) {
 				// Upper-case the first letter of the word if requested.
@@ -327,5 +327,17 @@ class Types {
 		$minor = empty( $parts[1] ) ? 0 : (int) $parts[1];
 		$patch = empty( $parts[2] ) ? 0 : (int) $parts[2];
 		return $major + $minor / 100 + $patch / 10000;
+	}
+
+	/**
+	 * Add a value to an array if it's not already in the array.
+	 *
+	 * @param array $array1 The array to add to.
+	 * @param mixed $value  The value to add.
+	 */
+	public static function array_add_if_new( array &$array1, mixed $value ) {
+		if ( ! in_array( $value, $array1, true ) ) {
+			$array1[] = $value;
+		}
 	}
 }

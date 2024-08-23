@@ -16,7 +16,7 @@ use WP_Upgrader;
  *
  * Provides tracking of events related to themes.
  */
-class Theme_Tracker extends Object_Tracker {
+class Theme_Tracker {
 
 	/**
 	 * Set up hooks for the events we want to log.

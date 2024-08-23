@@ -121,8 +121,15 @@ class Term_Utility extends Object_Utility {
 		$term = self::load( $term_id );
 
 		if ( $term ) {
-			// Constrct a link to the term's edit page.
-			$url = admin_url( "term.php?taxonomy={$term->taxonomy}&tag_ID={$term->term_id}" );
+
+			// Construct a link to the term's edit page.
+			if ( $term->taxonomy === 'nav_menu' ) {
+				$url = admin_url( "nav-menus.php?action=edit&menu=$term_id" );
+			} else {
+				// Categories, tags, perhaps others.
+				$url = admin_url( "term.php?taxonomy={$term->taxonomy}&tag_ID=$term_id" );
+			}
+
 			return "<a href='$url' class='wp-logify-object'>$term->name</a>";
 		}
 
@@ -178,19 +185,33 @@ class Term_Utility extends Object_Utility {
 	}
 
 	/**
-	 * Get a term (as a WP_Term object) from a term_taxonomy_id.
+	 * Get a term ID, given a term_taxonomy_id.
 	 *
 	 * @param int $term_taxonomy_id The term taxonomy ID.
-	 * @return WP_Term|null WP_Term object on success, null on failure.
+	 * @return ?int The term ID on success, null on failure.
 	 */
-	public static function get_by_term_taxonomy_id( $term_taxonomy_id ) {
+	public static function get_term_id_from_term_taxonomy_id( $term_taxonomy_id ) {
 		global $wpdb;
 
 		// Retrieve the term ID from the term_taxonomy_id.
 		$sql     = $wpdb->prepare( 'SELECT term_id FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_taxonomy, $term_taxonomy_id );
 		$term_id = $wpdb->get_var( $sql );
 
-		// If no term ID was found, return false.
+		// Return the term ID or null if the term couldn't be found.
+		return $term_id ? (int) $term_id : null;
+	}
+
+	/**
+	 * Get a WP_Term object, given a term_taxonomy_id.
+	 *
+	 * @param int $term_taxonomy_id The term taxonomy ID.
+	 * @return WP_Term|null WP_Term object on success, null on failure.
+	 */
+	public static function get_by_term_taxonomy_id( $term_taxonomy_id ) {
+		// Get the term ID.
+		$term_id = self::get_term_id_from_term_taxonomy_id( $term_taxonomy_id );
+
+		// If no term ID was found, return null.
 		if ( ! $term_id ) {
 			return null;
 		}
@@ -198,7 +219,7 @@ class Term_Utility extends Object_Utility {
 		// Retrieve the WP_Term object using the term ID.
 		$term = get_term( $term_id );
 
-		// Return the WP_Term object or false if the term couldn't be found.
-		return ( ! is_wp_error( $term ) && $term ) ? $term : null;
+		// Return the WP_Term object or null if the term couldn't be found.
+		return $term instanceof WP_Term ? $term : null;
 	}
 }

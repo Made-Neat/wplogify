@@ -103,6 +103,29 @@ class Post_Utility extends Object_Utility {
 		// Post modified.
 		Property::update_array( $properties, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
 
+		// For navigation menu items, show the linked object.
+		if ( $post->post_type === 'nav_menu_item' ) {
+
+			// Get the menu item type. This will tell us if the menu item links to a post, term, or custom URL.
+			$menu_item_type = get_post_meta( $post->ID, '_menu_item_type', true );
+
+			// If it's a post or term, get a reference to the object.
+			if ( in_array( $menu_item_type, array( 'post_type', 'taxonomy' ) ) ) {
+				$menu_item_object_id = get_post_meta( $post->ID, '_menu_item_object_id', true );
+				$menu_item_object    = get_post_meta( $post->ID, '_menu_item_object', true );
+				if ( $menu_item_object_id && $menu_item_object ) {
+					$object_type = $menu_item_type === 'post_type' ? 'post' : 'term';
+					$object_ref  = new Object_Reference( $object_type, $menu_item_object_id );
+					Property::update_array( $properties, 'linked_' . $menu_item_object, $wpdb->postmeta, $object_ref );
+				}
+			} elseif ( $menu_item_type === 'custom' ) {
+				// Get a link to the custom URL.
+				$menu_item_url = get_post_meta( $post->ID, '_menu_item_url', true );
+				$link          = "<a href='$menu_item_url' target='_blank'>$post->post_title</a>";
+				Property::update_array( $properties, 'linked_website', $wpdb->postmeta, $link );
+			}
+		}
+
 		return $properties;
 	}
 

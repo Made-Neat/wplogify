@@ -14,7 +14,7 @@ use WP_Taxonomy;
  *
  * Provides tracking of events related to taxonomies.
  */
-class Taxonomy_Tracker extends Object_Tracker {
+class Taxonomy_Tracker {
 
 	/**
 	 * Set up hooks for the events we want to log.

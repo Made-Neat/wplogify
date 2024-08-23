@@ -14,7 +14,21 @@ use WP_Post;
  *
  * Provides tracking of events related to posts.
  */
-class Post_Tracker extends Object_Tracker {
+class Post_Tracker {
+
+	/**
+	 * Array to remember properties between different events.
+	 *
+	 * @var array
+	 */
+	protected static $properties = array();
+
+	/**
+	 * Array to remember metadata between different events.
+	 *
+	 * @var array
+	 */
+	protected static $eventmetas = array();
 
 	/**
 	 * Keep track of terms added to a post in a single request.
@@ -288,9 +302,9 @@ class Post_Tracker extends Object_Tracker {
 	/**
 	 * Fires immediately after an object-term relationship is added.
 	 *
-	 * @param int    $post_id Post ID.
-	 * @param int    $tt_id     Term taxonomy ID.
-	 * @param string $taxonomy  Taxonomy slug.
+	 * @param int    $post_id  Post ID.
+	 * @param int    $tt_id    Term taxonomy ID.
+	 * @param string $taxonomy Taxonomy slug.
 	 */
 	public static function on_added_term_relationship( int $post_id, int $tt_id, string $taxonomy ) {
 		// Ignore revisions.
@@ -301,8 +315,8 @@ class Post_Tracker extends Object_Tracker {
 		// debug( 'on_added_term_relationship' );
 
 		// Remember the newly attached term.
-		$term                                = Term_Utility::get_by_term_taxonomy_id( $tt_id );
-		self::$terms[ $taxonomy ]['added'][] = Object_Reference::new_from_wp_object( $term );
+		$term_id = Term_Utility::get_term_id_from_term_taxonomy_id( $tt_id );
+		self::add_term( $taxonomy, 'added', $term_id );
 	}
 
 	/**
@@ -320,10 +334,10 @@ class Post_Tracker extends Object_Tracker {
 
 		// debug( 'on_deleted_term_relationships' );
 
-		// Convert the term_taxonomy IDs to Object_Reference objects.
+		// Remember the removed terms.
 		foreach ( $tt_ids as $tt_id ) {
-			$term                                  = Term_Utility::get_by_term_taxonomy_id( $tt_id );
-			self::$terms[ $taxonomy ]['removed'][] = Object_Reference::new_from_wp_object( $term );
+			$term_id = Term_Utility::get_term_id_from_term_taxonomy_id( $tt_id );
+			self::add_term( $taxonomy, 'removed', $term_id );
 		}
 	}
 
@@ -354,42 +368,65 @@ class Post_Tracker extends Object_Tracker {
 
 				// Get the taxonomy object and name.
 				$taxonomy_obj  = get_taxonomy( $taxonomy );
-				$taxonomy_name = $total === 1 ? $taxonomy_obj->labels->singular_name : $taxonomy_obj->labels->name;
+				$taxonomy_name = ucwords( $total === 1 ? $taxonomy_obj->labels->singular_name : $taxonomy_obj->labels->name );
 
-				// Get event type verb.
+				// Get the post type name.
+				$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
+				if ( $post_type === 'Navigation Menu Item' ) {
+					$post_type = 'Item';
+				}
+
+				// Get event type.
 				if ( $terms_were_added && $terms_were_removed ) {
-					$verb = 'Updated';
+					$event_type = "$post_type $taxonomy_name Updated";
 				} elseif ( $terms_were_added ) {
-					$verb = 'Added';
+					$event_type = "$post_type Added To $taxonomy_name";
 				} elseif ( $terms_were_removed ) {
-					$verb = 'Removed';
+					$event_type = "$post_type Removed From $taxonomy_name";
 				} else {
 					// This shouldn't occur.
 					continue;
 				}
-
-				// Get the event type.
-				$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
-				$event_type = "$post_type $taxonomy_name $verb";
 
 				// Collect eventmetas.
 				$metas = array();
 
 				// Show the added terms in the eventmetas.
 				if ( $terms_were_added ) {
-					$meta_key = 'added_' . strtolower( $taxonomy_name );
-					Eventmeta::update_array( $metas, $meta_key, $term_changes['added'] );
+					// Convert term IDs to Object_Reference objects.
+					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['added'] );
+					$meta_key  = 'added_' . strtolower( $taxonomy_name );
+					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
 
 				// Show the removed terms in the eventmetas.
 				if ( $terms_were_removed ) {
-					$meta_key = 'removed_' . strtolower( $taxonomy_name );
-					Eventmeta::update_array( $metas, $meta_key, $term_changes['removed'] );
+					// Convert term IDs to Object_Reference objects.
+					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['removed'] );
+					$meta_key  = 'removed_' . strtolower( $taxonomy_name );
+					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
 
 				// Log the event.
 				Logger::log_event( $event_type, $post, $metas );
 			}
 		}
+	}
+
+	/**
+	 * Add a term to the list of terms to be logged.
+	 *
+	 * @param string $taxonomy The taxonomy name.
+	 * @param string $change   The change type ('added' or 'removed').
+	 * @param int    $term_id  The term ID.
+	 */
+	public static function add_term( string $taxonomy, string $change, int $term_id ) {
+		// Prepare the array if necessary.
+		if ( ! isset( self::$terms[ $taxonomy ][ $change ] ) ) {
+			self::$terms[ $taxonomy ][ $change ] = array();
+		}
+
+		// Add the term to the array.
+		Types::array_add_if_new( self::$terms[ $taxonomy ][ $change ], $term_id );
 	}
 }
