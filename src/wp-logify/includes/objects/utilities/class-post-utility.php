@@ -19,6 +19,9 @@ use WP_Post;
  */
 class Post_Utility extends Object_Utility {
 
+	// =============================================================================================
+	// Implementations of base class methods.
+
 	/**
 	 * Check if a post exists.
 	 *
@@ -79,41 +82,37 @@ class Post_Utility extends Object_Utility {
 		}
 
 		// Build the array of properties.
-		$properties = array();
+		$props = array();
 
 		// ID.
-		Property::update_array( $properties, 'ID', $wpdb->posts, $post->ID );
+		Property::update_array( $props, 'ID', $wpdb->posts, $post->ID );
 
 		// Post type.
-		Property::update_array( $properties, 'post_type', $wpdb->posts, $post->post_type );
+		Property::update_array( $props, 'post_type', $wpdb->posts, $post->post_type );
 
 		// Post author.
 		$author = new Object_Reference( 'user', $post->post_author );
-		Property::update_array( $properties, 'post_author', $wpdb->posts, $author );
+		Property::update_array( $props, 'post_author', $wpdb->posts, $author );
 
 		// Post title.
-		Property::update_array( $properties, 'post_title', $wpdb->posts, $post->post_title );
+		Property::update_array( $props, 'post_title', $wpdb->posts, $post->post_title );
 
 		// Post status.
-		Property::update_array( $properties, 'post_status', $wpdb->posts, $post->post_status );
+		Property::update_array( $props, 'post_status', $wpdb->posts, $post->post_status );
 
 		// Post date.
-		Property::update_array( $properties, 'post_date', $wpdb->posts, self::get_created_datetime( $post ) );
+		Property::update_array( $props, 'post_date', $wpdb->posts, self::get_created_datetime( $post ) );
 
 		// Post modified.
-		Property::update_array( $properties, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
+		Property::update_array( $props, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
 
-		// // For navigation menu items, show the linked object.
-		// if ( $post->post_type === 'nav_menu_item' ) {
-		// $linked_object = self::get_nav_menu_item_linked_object( $post );
-		// if ( $linked_object['type'] === 'website' ) {
-		// Property::update_array( $properties, 'linked website', $wpdb->postmeta, $linked_object['link'] );
-		// } else {
-		// Property::update_array( $properties, 'linked ' . $linked_object['type'], $wpdb->postmeta, $linked_object['object_ref'] );
-		// }
-		// }
+		// For nav menu items, get the menu item's core properties and merge them into the properties array.
+		if ( $post->post_type === 'nav_menu_item' ) {
+			$nav_menu_item_props = Menu_Utility::get_core_properties( $post_id );
+			$props               = array_merge( $props, $nav_menu_item_props );
+		}
 
-		return $properties;
+		return $props;
 	}
 
 	/**
@@ -130,6 +129,11 @@ class Post_Utility extends Object_Utility {
 
 		// If the post exists, get a link.
 		if ( $post ) {
+
+			// Handle navigation menu items separately.
+			if ( $post->post_type === 'nav_menu_item' ) {
+				return Menu_Utility::get_tag( $post_id, $old_title );
+			}
 
 			// Check if it's a revision.
 			if ( wp_is_post_revision( $post_id ) ) {
@@ -175,7 +179,7 @@ class Post_Utility extends Object_Utility {
 	}
 
 	// =============================================================================================
-	// Methods for getting information about posts.
+	// Additional methods.
 
 	/**
 	 * Get the singular name of a custom post type.
@@ -384,34 +388,6 @@ class Post_Utility extends Object_Utility {
 
 			default:
 				return 'Status Changed';
-		}
-	}
-
-
-	/**
-	 * Get the linked object for a navigation menu item.
-	 *
-	 * @param Eventmeta[] $eventmetas The eventmetas array to add the object reference or link to.
-	 * @param WP_Post     $post       The navigation menu item object (which is a post).
-	 */
-	public static function add_nav_menu_item_linked_object_to_eventmetas( array &$eventmetas, WP_Post $post ) {
-		// Get the menu item type. This will tell us if the menu item links to a post, term, or custom URL.
-		$menu_item_type = get_post_meta( $post->ID, '_menu_item_type', true );
-
-		// If it's a post or term, get a reference to the object.
-		if ( in_array( $menu_item_type, array( 'post_type', 'taxonomy' ), true ) ) {
-			$menu_item_object_id = get_post_meta( $post->ID, '_menu_item_object_id', true );
-			$menu_item_object    = get_post_meta( $post->ID, '_menu_item_object', true );
-			if ( $menu_item_object_id && $menu_item_object ) {
-				$object_type = $menu_item_type === 'post_type' ? 'post' : 'term';
-				$object_ref  = new Object_Reference( $object_type, $menu_item_object_id );
-				Eventmeta::update_array( $eventmetas, "linked $menu_item_object", $object_ref );
-			}
-		} elseif ( $menu_item_type === 'custom' ) {
-			// Get a link to the custom URL.
-			$menu_item_url = get_post_meta( $post->ID, '_menu_item_url', true );
-			$link          = "<a href='$menu_item_url' target='_blank'>$post->post_title</a>";
-			Eventmeta::update_array( $eventmetas, 'linked website', $link );
 		}
 	}
 }

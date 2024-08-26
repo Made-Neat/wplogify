@@ -370,6 +370,10 @@ class Log_Page {
 				if ( ! $post_type ) {
 					$post_type = $event->get_object()->post_type;
 				}
+				// If not, default to 'post'.
+				if ( ! $post_type ) {
+					$post_type = 'post';
+				}
 				$object_type_title = Post_Utility::get_post_type_singular_name( $post_type );
 				break;
 

@@ -16,6 +16,9 @@ use Exception;
  */
 class Option_Utility extends Object_Utility {
 
+	// =============================================================================================
+	// Implementations of base class methods.
+
 	/**
 	 * Check if an option exists.
 	 *
@@ -82,7 +85,7 @@ class Option_Utility extends Object_Utility {
 	}
 
 	/**
-	 * There's no way currently to get a link to an option, so we just return a span either way.
+	 * There's no way to get a link to an option, so we just return a span either way.
 	 *
 	 * If the option isn't present, then the "(deleted)" text will be appended to the name.
 	 *

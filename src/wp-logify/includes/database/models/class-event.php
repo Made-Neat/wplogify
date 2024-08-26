@@ -205,6 +205,19 @@ class Event {
 		// Make sure the object reference has been created.
 		$object_ref = $this->get_object_ref();
 
+		// Handle navigation menu items.
+		if ( $this->object_type === 'post' && ! Post_Utility::exists( $this->object_key ) && key_exists( 'post_type', $this->properties ) ) {
+			$post_type = $this->properties['post_type']->val;
+			if ( $post_type === 'nav_menu_item' && key_exists( 'menu_item_link', $this->eventmetas ) ) {
+				$menu_item_link = $this->eventmetas['menu_item_link']->meta_value;
+				if ( $menu_item_link instanceof Object_Reference ) {
+					return $menu_item_link->get_tag();
+				} else {
+					return $menu_item_link;
+				}
+			}
+		}
+
 		// Return the tag, or empty string if there is no object reference.
 		return $object_ref === null ? '' : $object_ref->get_tag();
 	}

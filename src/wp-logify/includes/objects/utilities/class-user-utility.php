@@ -159,7 +159,7 @@ class User_Utility extends Object_Utility {
 	}
 
 	// =============================================================================================
-	// Methods for getting information about users.
+	// Additional methods.
 
 	/**
 	 * Get the properties of a user to show in the log.

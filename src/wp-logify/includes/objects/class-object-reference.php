@@ -83,16 +83,13 @@ class Object_Reference {
 	}
 
 	/**
-	 * Create a new Object_Reference from:
-	 *   - a WordPress object
-	 *   - an array, in the case of plugins
-	 *   - a string, in the case of options
+	 * Create a new Object_Reference from a WordPress object, or an array, in the case of plugins.
 	 *
-	 * @param object|array|string $wp_object The WordPress object, array, or string.
+	 * @param object|array $wp_object The WordPress object or array.
 	 * @return self The new Object_Reference.
 	 * @throws Exception If the object type is unknown or unsupported.
 	 */
-	public static function new_from_wp_object( object|array|string $wp_object ): Object_Reference {
+	public static function new_from_wp_object( object|array $wp_object ): Object_Reference {
 		$type = null;
 		$key  = null;
 		$name = null;
@@ -101,10 +98,6 @@ class Object_Reference {
 			$type = 'comment';
 			$key  = $wp_object->comment_ID;
 			$name = Comment_Utility::get_name( $key );
-		} elseif ( is_string( $wp_object ) ) {
-			$type = 'option';
-			$key  = $wp_object;
-			$name = Option_Utility::get_name( $wp_object );
 		} elseif ( is_array( $wp_object ) ) {
 			$type = 'plugin';
 			$key  = $wp_object['Slug'];
@@ -218,7 +211,7 @@ class Object_Reference {
 	 *
 	 * @return string The name or title of the object, or Unknown if not found.
 	 */
-	public function get_name() {
+	public function get_name(): string {
 		try {
 			// Call the method on the utility class.
 			return $this->call_utility_method( 'get_name', $this->key );
@@ -248,7 +241,12 @@ class Object_Reference {
 	 * @return string The HTML for the link or span element.
 	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
-	public function get_tag() {
+	public function get_tag(): string {
+		// Handle the case when there is no key (i.e. options).
+		if ( ! $this->key ) {
+			return '';
+		}
+
 		try {
 			// Call the method on the utility class.
 			return $this->call_utility_method( 'get_tag', $this->key, $this->name );

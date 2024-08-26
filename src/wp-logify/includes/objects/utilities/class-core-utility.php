@@ -14,6 +14,9 @@ namespace WP_Logify;
  */
 class Core_Utility {
 
+	// =============================================================================================
+	// Implementations of base class methods.
+
 	/**
 	 * Check if core exists.
 	 *

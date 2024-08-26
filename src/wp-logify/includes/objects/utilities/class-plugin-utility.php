@@ -152,7 +152,7 @@ class Plugin_Utility extends Object_Utility {
 	}
 
 	// =============================================================================================
-	// Methods for loading and getting information about plugins.
+	// Additional methods.
 
 	/**
 	 * Get the data for a plugin.

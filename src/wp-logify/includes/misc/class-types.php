@@ -303,7 +303,7 @@ class Types {
 			}
 
 			// Make acronyms upper-case.
-			if ( in_array( $word, array( 'bb', 'fl', 'gmt', 'guid', 'id', 'ip', 'rss', 'ssl', 'ui', 'uri', 'url', 'utc', 'wp' ), true ) ) {
+			if ( in_array( $word, array( 'bb', 'css', 'fl', 'gmt', 'guid', 'id', 'ip', 'rss', 'ssl', 'ui', 'uri', 'url', 'utc', 'wp' ), true ) ) {
 				$words[ $i ] = strtoupper( $word );
 			} elseif ( $ucwords ) {
 				// Upper-case the first letter of the word if requested.

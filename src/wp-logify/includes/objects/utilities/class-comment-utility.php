@@ -136,6 +136,50 @@ class Comment_Utility extends Object_Utility {
 	}
 
 	/**
+	 * Get a comment tag.
+	 *
+	 * @param int|string $comment_id The ID of the comment.
+	 * @param ?string    $old_title  The comment title at the time of the event.
+	 * @return string The link or span HTML tag.
+	 */
+	public static function get_tag( int|string $comment_id, ?string $old_title ): string {
+		// Load the comment.
+		$comment = self::load( $comment_id );
+
+		// If the comment exists, get a link if possible.
+		if ( $comment ) {
+			// Get the comment name.
+			$title = self::get_name( $comment_id );
+
+			// Get the comment URL. This will vary by comment status.
+			if ( $comment->comment_approved === 'post-trashed' ) {
+				// If the comment is attached to a trashed post, there's no way to link to it.
+				return "<span class='wp-logify-object'>$title</span>";
+			} elseif ( $comment->comment_approved === 'trash' ) {
+				// If the comment is trashed, link to the comment in the trash.
+				$url = admin_url( "edit-comments.php?comment_status=trash#comment-$comment_id" );
+			} else {
+				// Link to the comment edit form.
+				$url = admin_url( "comment.php?action=editcomment&c=$comment_id" );
+			}
+
+			// Return the link.
+			return "<a href='$url' class='wp-logify-object'>$title</a>";
+		}
+
+		// Make a backup title.
+		if ( ! $old_title ) {
+			$old_title = "Comment $comment_id";
+		}
+
+		// The comment no longer exists. Construct the 'deleted' span element.
+		return "<span class='wp-logify-deleted-object'>$old_title (deleted)</span>";
+	}
+
+	// =============================================================================================
+	// Additional methods.
+
+	/**
 	 * Get all the properties of a comment.
 	 *
 	 * @param int|WP_Comment $comment The ID of the comment or the comment object.
@@ -179,47 +223,6 @@ class Comment_Utility extends Object_Utility {
 		}
 
 		return $props;
-	}
-
-	/**
-	 * Get a comment tag.
-	 *
-	 * @param int|string $comment_id The ID of the comment.
-	 * @param ?string    $old_title  The comment title at the time of the event.
-	 * @return string The link or span HTML tag.
-	 */
-	public static function get_tag( int|string $comment_id, ?string $old_title ): string {
-		// Load the comment.
-		$comment = self::load( $comment_id );
-
-		// If the comment exists, get a link if possible.
-		if ( $comment ) {
-			// Get the comment name.
-			$title = self::get_name( $comment_id );
-
-			// Get the comment URL. This will vary by comment status.
-			if ( $comment->comment_approved === 'post-trashed' ) {
-				// If the comment is attached to a trashed post, there's no way to link to it.
-				return "<span class='wp-logify-object'>$title</span>";
-			} elseif ( $comment->comment_approved === 'trash' ) {
-				// If the comment is trashed, link to the comment in the trash.
-				$url = admin_url( "edit-comments.php?comment_status=trash#comment-$comment_id" );
-			} else {
-				// Link to the comment edit form.
-				$url = admin_url( "comment.php?action=editcomment&c=$comment_id" );
-			}
-
-			// Return the link.
-			return "<a href='$url' class='wp-logify-object'>$title</a>";
-		}
-
-		// Make a backup title.
-		if ( ! $old_title ) {
-			$old_title = "Comment $comment_id";
-		}
-
-		// The comment no longer exists. Construct the 'deleted' span element.
-		return "<span class='wp-logify-deleted-object'>$old_title (deleted)</span>";
 	}
 
 	/**

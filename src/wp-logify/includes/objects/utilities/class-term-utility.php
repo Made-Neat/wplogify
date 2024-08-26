@@ -90,14 +90,14 @@ class Term_Utility extends Object_Utility {
 		// ID.
 		Property::update_array( $properties, 'term_id', $wpdb->terms, $term->term_id );
 
+		// Taxonomy.
+		Property::update_array( $properties, 'taxonomy', $wpdb->term_taxonomy, $term->taxonomy );
+
 		// Name.
 		Property::update_array( $properties, 'name', $wpdb->terms, $term->name );
 
 		// Slug.
 		Property::update_array( $properties, 'slug', $wpdb->terms, $term->slug );
-
-		// Taxonomy.
-		Property::update_array( $properties, 'taxonomy', $wpdb->term_taxonomy, $term->taxonomy );
 
 		// Parent.
 		if ( $term->parent ) {
@@ -143,7 +143,7 @@ class Term_Utility extends Object_Utility {
 	}
 
 	// =============================================================================================
-	// Methods for getting information about terms.
+	// Additional methods.
 
 	/**
 	 * Extracts and returns term properties for logging.

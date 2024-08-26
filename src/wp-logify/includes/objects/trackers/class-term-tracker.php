@@ -81,6 +81,16 @@ class Term_Tracker {
 
 			if ( ! Types::are_equal( $val, $new_val ) ) {
 
+				// Ignore the trivial changes that occur whenever a navigation menu is updated.
+				if ( $taxonomy === 'nav_menu' ) {
+					if ( $key === 'filter' && $val === 'raw' && $new_val === 'db' ) {
+						continue;
+					}
+					if ( $key === 'slug' && $new_val === null ) {
+						continue;
+					}
+				}
+
 				// For parent, change to object references.
 				if ( $key === 'parent' ) {
 					$val     = $val ? new Object_Reference( 'term', $val ) : null;

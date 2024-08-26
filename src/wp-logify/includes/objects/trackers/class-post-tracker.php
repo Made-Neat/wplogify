@@ -64,8 +64,8 @@ class Post_Tracker {
 	 * Log the creation and update of a post.
 	 *
 	 * @param int     $post_id The ID of the post being saved.
-	 * @param WP_Post $post The post object.
-	 * @param bool    $update Whether this is an update or a new post.
+	 * @param WP_Post $post    The post object.
+	 * @param bool    $update  Whether this is an update or a new post.
 	 */
 	public static function on_save_post( int $post_id, WP_Post $post, bool $update ) {
 		global $wpdb;
@@ -290,9 +290,14 @@ class Post_Tracker {
 			Eventmeta::update_array( self::$eventmetas, $taxonomy_name, $term_refs );
 		}
 
-		// For navigation menu items, get the linked object.
+		// For navigation menu items, get the menu item details from the post meta data.
+		// We have to do it here, because in on_delete_post() the metadata has already been deleted.
 		if ( $post->post_type === 'nav_menu_item' ) {
-			Post_Utility::add_nav_menu_item_linked_object_to_eventmetas( self::$eventmetas, $post );
+			self::$properties = Menu_Utility::get_core_properties( $post_id );
+
+			// Add the linked object to the eventmeta.
+			$linked_object = Menu_Utility::get_linked_object( $post_id );
+			Eventmeta::update_array( self::$eventmetas, 'menu_item_link', $linked_object );
 		}
 	}
 
@@ -300,10 +305,10 @@ class Post_Tracker {
 	 * Log the deletion of a post.
 	 *
 	 * This method is called immediately before the post is deleted from the database.
-	 * Relies on on_before_delete_post() being called first.
+	 * It relies on on_before_delete_post() being called first, to record attached terms.
 	 *
 	 * @param int     $post_id The ID of the post that was deleted.
-	 * @param WP_Post $post The post object that was deleted.
+	 * @param WP_Post $post    The post object that was deleted.
 	 */
 	public static function on_delete_post( int $post_id, WP_Post $post ) {
 		// Ensure this is not a revision.
@@ -316,7 +321,12 @@ class Post_Tracker {
 		// Handle navigation menu items differently.
 		if ( $post->post_type === 'nav_menu_item' ) {
 			// Log the event.
-			Logger::log_event( 'Item Removed From Navigation Menu', $post, self::$eventmetas );
+			Logger::log_event( 'Item Removed From Navigation Menu', $post, self::$eventmetas, self::$properties );
+
+			// Reset the eventmetas and properties array, as several nav menu items can be deleted
+			// within the same request when a menu is deleted.
+			self::$eventmetas = array();
+			self::$properties = array();
 		} else {
 			// Get the event type.
 			$event_type = Post_Utility::get_post_type_singular_name( $post->post_type ) . ' Deleted';
@@ -432,8 +442,10 @@ class Post_Tracker {
 				// Handle navigation menu items differently.
 				if ( $post->post_type === 'nav_menu_item' ) {
 					$post_type = 'Item';
-					// Show the object it links to.
-					Post_Utility::add_nav_menu_item_linked_object_to_eventmetas( $metas, $post );
+
+					// Add the linked object to the eventmeta.
+					$linked_object = Menu_Utility::get_linked_object( $post_id );
+					Eventmeta::update_array( $metas, 'menu_item_link', $linked_object );
 				} else {
 					// Get the post type name.
 					$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );

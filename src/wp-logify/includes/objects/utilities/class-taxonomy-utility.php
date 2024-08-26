@@ -126,7 +126,7 @@ class Taxonomy_Utility extends Object_Utility {
 	}
 
 	// =============================================================================================
-	// Methods for getting information about taxonomies.
+	// Additional methods.
 
 	/**
 	 * Get the singular name of a taxonomy.
