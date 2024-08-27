@@ -60,7 +60,7 @@ $recordset    = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 				foreach ( $recordset as $record ) :
 					$event = Event_Repository::record_to_object( $record );
 					?>
-					<tr class="wp-logify-object-type-<?php echo $event->object_type; ?>">
+					<tr class="wp-logify-event-row wp-logify-object-type-<?php echo $event->object_type; ?>" data-event-id="<?php echo $event->id; ?>">
 						<td><?php echo DateTimes::format_datetime_site( $event->when_happened, true, '<br>', true ); ?></td>
 						<td><?php echo User_Utility::get_tag( $event->user_id, $event->user_name ); ?></td>
 						<td><?php echo esc_html( esc_html( $event->event_type ) ); ?></td>

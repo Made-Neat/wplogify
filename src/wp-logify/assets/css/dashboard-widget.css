@@ -106,3 +106,6 @@
 #wp-logify-dashboard-table .wp-logify-deleted-object {
   font-style: italic;
 }
+#wp-logify-dashboard-table .wp-logify-event-row {
+  cursor: pointer;
+}

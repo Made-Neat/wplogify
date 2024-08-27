@@ -1,5 +1,10 @@
 jQuery(($) => {
 
+    // Get the event ID from the query string.
+    let urlParams = new URLSearchParams(window.location.search);
+    const eventIdToExpand = urlParams.get('event_id');
+
+    // Set up the datatable.
     let eventsTable = $('#wp-logify-activity-log').DataTable({
         processing: true,
         language: {
@@ -40,7 +45,28 @@ jQuery(($) => {
         // Get the page length from the per_page screen option.
         pageLength: +$('#wp_logify_events_per_page').val(),
         createdRow: (row, data, dataIndex) => {
-            $(row).addClass('wp-logify-summary-row wp-logify-object-type-' + data.object_type);
+            // Get the event ID of this row.
+            const $row = $(row);
+            const eventId = $row.find('td:first-child').text();
+
+            // Add CSS classes to the tr element, and set the event-id.
+            $row.addClass('wp-logify-summary-row wp-logify-object-type-' + data.object_type)
+                .attr('data-event-id', eventId);
+        },
+        drawCallback: function (settings) {
+            // Check if we need to expand a row.
+            if (!eventIdToExpand) {
+                return;
+            }
+
+            // Find the row with this event ID.
+            let $row = $(`tr[data-event-id="${eventIdToExpand}"]`);
+            if ($row.length) {
+                // Expand the details row.
+                showDetailsRow($row);
+                // Scroll the summary and details rows into view.
+                $row.get(0).scrollIntoView({ behavior: 'smooth' });
+            }
         }
     });
 
@@ -48,6 +74,18 @@ jQuery(($) => {
     $('#wp-logify-search-box').on('keyup', function () {
         eventsTable.search(this.value).draw();
     });
+
+    // Show the details row for a given summary row.
+    let showDetailsRow = $tr => {
+        // Get the datatable row object.
+        let row = eventsTable.row($tr);
+        // Add CSS classes to the details row.
+        let classes = 'wp-logify-details-row wp-logify-object-type-' + row.data().object_type + ' shown';
+        // Show the details row.
+        row.child(row.data().details, classes).show();
+        // Add the shown class to the summary row.
+        $tr.addClass('shown');
+    };
 
     // Add event listener for opening and closing details
     eventsTable.on('click', 'tr', function (e) {
@@ -86,12 +124,7 @@ jQuery(($) => {
                 row.child.hide();
             }
             else {
-                // Add CSS classes to the details row.
-                let classes = 'wp-logify-details-row wp-logify-object-type-' + row.data().object_type + ' shown';
-                // Show the details row.
-                row.child(row.data().details, classes).show();
-                // Add the shown class to the summary row.
-                $tr.addClass('shown');
+                showDetailsRow($tr);
             }
         }
         else {

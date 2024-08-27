@@ -198,7 +198,11 @@ class Admin {
 	public static function enqueue_assets( $hook ) {
 		// Dashboard widget.
 		if ( $hook === 'index.php' ) {
+			// Styles.
 			self::enqueue_style( 'dashboard-widget.css' );
+
+			// Scripts.
+			self::enqueue_script( 'dashboard-widget.js', array( 'jquery' ), 'auto', true );
 		}
 
 		// Settings.
