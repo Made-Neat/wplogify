@@ -205,16 +205,11 @@ class Event {
 		// Make sure the object reference has been created.
 		$object_ref = $this->get_object_ref();
 
-		// Handle navigation menu items.
-		if ( $this->object_type === 'post' && ! Post_Utility::exists( $this->object_key ) && key_exists( 'post_type', $this->properties ) ) {
-			$post_type = $this->properties['post_type']->val;
-			if ( $post_type === 'nav_menu_item' && key_exists( 'menu_item_link', $this->eventmetas ) ) {
-				$menu_item_link = $this->eventmetas['menu_item_link']->meta_value;
-				if ( $menu_item_link instanceof Object_Reference ) {
-					return $menu_item_link->get_tag();
-				} else {
-					return $menu_item_link;
-				}
+		// Handle menu items differently.
+		if ( $this->object_is_menu_item() ) {
+			$tag = Menu_Utility::get_tag_from_event( $this );
+			if ( $tag ) {
+				return $tag;
 			}
 		}
 
@@ -418,5 +413,33 @@ class Event {
 
 		// Set the meta value.
 		$this->eventmetas[ $meta_key ] = new Eventmeta( $this->id, $meta_key, $meta_value );
+	}
+
+	/**
+	 * Check if the object associated with the event is a menu item.
+	 *
+	 * @return bool True if the object is a menu item, false otherwise.
+	 */
+	public function object_is_menu_item(): bool {
+		// Check it's a post.
+		if ( $this->object_type !== 'post' ) {
+			return false;
+		}
+
+		// Try to load the post.
+		$post = $this->object_key ? Post_Utility::load( $this->object_key ) : null;
+
+		// If we could load the post, check the post type.
+		if ( $post ) {
+			return $post->post_type === 'nav_menu_item';
+		}
+
+		// If we couldn't load the post (it may have been deleted), check the object properties.
+		if ( isset( $this->properties['post_type']->val ) ) {
+			return $this->properties['post_type']->val === 'nav_menu_item';
+		}
+
+		// It isn't.
+		return false;
 	}
 }

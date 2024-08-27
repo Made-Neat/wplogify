@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use WP_Logify\Event;
 use Exception;
 use WP_Post;
 
@@ -61,8 +62,17 @@ class Menu_Utility extends Object_Utility {
 	 */
 	public static function get_core_properties( int|string $post_id ): array {
 		global $wpdb;
-		$props   = array();
+
+		// Get the menu item details.
 		$details = self::get_menu_item_details( $post_id );
+
+		// If we don't have details, return an empty array.
+		if ( ! $details ) {
+			return array();
+		}
+
+		// Add the menu item details to the properties.
+		$props = array();
 		foreach ( $details as $key => $value ) {
 			Property::update_array( $props, $key, $wpdb->postmeta, $value );
 		}
@@ -80,27 +90,12 @@ class Menu_Utility extends Object_Utility {
 	 * @return string The link HTML.
 	 */
 	public static function get_tag( int|string $post_id, ?string $old_name ): string {
-		// Load the navigation menu item.
-		$post = Post_Utility::load( $post_id );
+		// Get the linked object.
+		$linked_object = self::get_linked_object( $post_id );
 
-		if ( $post ) {
-			// Get the linked object details.
-			$info = self::get_menu_item_details( $post_id );
-
-			switch ( $info['_menu_item_type'] ) {
-				case 'post_type':
-					$post_id    = (int) $info['_menu_item_object_id'];
-					$post_title = get_the_title( $post_id );
-					return Post_Utility::get_tag( $post_id, $post_title );
-
-				case 'taxonomy':
-					$term_id   = (int) $info['_menu_item_object_id'];
-					$term_name = get_term( $term_id )->name;
-					return Term_Utility::get_tag( $term_id, $term_name );
-
-				case 'custom':
-					return self::get_custom_link( $post );
-			}
+		// If we have a linked object, return its tag.
+		if ( $linked_object ) {
+			return Types::value_to_string( $linked_object );
 		}
 
 		// Make a backup title.
@@ -108,7 +103,10 @@ class Menu_Utility extends Object_Utility {
 			$old_name = "Navigation Menu Item $post_id";
 		}
 
-		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
+		// Return a span.
+		return Post_Utility::exists( $post_id )
+			? "<span class='wp-logify-object'>$old_name</span>"
+			: "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
 	}
 
 	// =============================================================================================
@@ -123,6 +121,11 @@ class Menu_Utility extends Object_Utility {
 	public static function get_menu_item_details( int $post_id ): ?array {
 		// Get the meta data for the post.
 		$meta = get_post_meta( $post_id );
+
+		// Make sure we have a menu item type.
+		if ( ! isset( $meta['_menu_item_type'][0] ) ) {
+			return null;
+		}
 
 		// Specify the fields we want according to the menu item type.
 		$menu_item_type = $meta['_menu_item_type'][0];
@@ -162,19 +165,6 @@ class Menu_Utility extends Object_Utility {
 	}
 
 	/**
-	 * For custom URL menu items, return an HTML link.
-	 *
-	 * @param WP_Post $post The navigation menu item object (which is a post).
-	 * @return string The link HTML.
-	 */
-	public static function get_custom_link( WP_Post $post ) {
-		$info      = self::get_menu_item_details( $post->ID );
-		$url       = $info['_menu_item_url'];
-		$link_text = $post->post_title;
-		return "<a href='$url' class='wp-logify-object' target='_blank'>$link_text</a>";
-	}
-
-	/**
 	 * Return a reference to the linked object.
 	 *
 	 * @param int $post_id The post ID of the navigation menu item.
@@ -192,6 +182,11 @@ class Menu_Utility extends Object_Utility {
 		// Get the linked object details.
 		$info = self::get_menu_item_details( $post_id );
 
+		// Check we have a menu item type.
+		if ( empty( $info['_menu_item_type'] ) ) {
+			return null;
+		}
+
 		// Return the linked object.
 		switch ( $info['_menu_item_type'] ) {
 			case 'post_type':
@@ -201,7 +196,37 @@ class Menu_Utility extends Object_Utility {
 				return new Object_Reference( 'term', $info['_menu_item_object_id'] );
 
 			case 'custom':
-				return self::get_custom_link( $post );
+				$url       = $info['_menu_item_url'];
+				$link_text = $post->post_title;
+				return "<a href='$url' class='wp-logify-object' target='_blank'>$link_text</a>";
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the tag for a menu item from an event.
+	 *
+	 * @param Event $event The event.
+	 * @return ?string The tag, or null if not found.
+	 */
+	public static function get_tag_from_event( Event $event ): ?string {
+		// Check we have a post and a post_id.
+		if ( $event->object_type !== 'post' || $event->object_key === null ) {
+			return null;
+		}
+
+		// Try to get the linked object from the post. This will return null if the post has been deleted.
+		$menu_item_link = self::get_linked_object( $event->object_key );
+		if ( $menu_item_link ) {
+			// Convert the linked object to a string.
+			return Types::value_to_string( $menu_item_link );
+		}
+
+		// Try to get the menu_item_link from the event properties.
+		if ( ! empty( $event->eventmetas['menu_item_link']->meta_value ) ) {
+			// Convert the linked object to a string.
+			return Types::value_to_string( $event->eventmetas['menu_item_link']->meta_value );
 		}
 
 		return null;
