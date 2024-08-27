@@ -234,9 +234,9 @@ class User_Tracker {
 					$continuing = true;
 
 					// Update the activity_end time and duration.
-					$event->set_meta_val( 'activity_end', $now );
+					$event->set_meta( 'activity_end', $now );
 					// This could be calculated, but for now we'll just record the string.
-					$event->set_meta_val( 'activity_duration', DateTimes::get_duration_string( $activity_start_datetime, $now ) );
+					$event->set_meta( 'activity_duration', DateTimes::get_duration_string( $activity_start_datetime, $now ) );
 
 					// Update the event meta data.
 					Event_Repository::save_eventmetas( $event );

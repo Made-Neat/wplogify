@@ -9,6 +9,8 @@ namespace WP_Logify;
 
 use DateTime;
 use Exception;
+use InvalidArgumentException;
+use WP_User;
 
 /**
  * This class represents a logged event.
@@ -18,9 +20,9 @@ class Event {
 	/**
 	 * The ID of the event.
 	 *
-	 * @var int
+	 * @var ?int
 	 */
-	public int $id;
+	public ?int $id = null;
 
 	/**
 	 * The date and time of the event in the site time zone, stored as a string.
@@ -147,6 +149,93 @@ class Event {
 	 */
 	public function __construct() {
 		// Empty constructor.
+	}
+
+	/**
+	 * Creates a new event.
+	 *
+	 * @param string            $event_type  The type of event.
+	 * @param null|object|array $wp_object   The WP object the event is about or an array for plugins.
+	 * @param ?array            $eventmetas  The event metadata.
+	 * @param ?array            $properties  The event properties.
+	 * @param null|WP_User|int  $acting_user The use object or ID of the user who performed the action, or null for the current user.
+	 * @throws InvalidArgumentException If the object type is invalid.
+	 */
+	public static function create(
+		string $event_type,
+		null|object|array $wp_object,
+		?array $eventmetas = null,
+		?array $properties = null,
+		null|WP_User|int $acting_user = null
+	) {
+		// If the event is about an object deletion, this is where we'd store the details of the
+		// deleted object in the database. We want to do it before user checking so every object
+		// deletion is tracked regardless of who did it. Then we will definitely have the old name.
+
+		// If the acting user isn't specifid, use the current user.
+		if ( $acting_user === null ) {
+			$acting_user = wp_get_current_user();
+		} elseif ( is_int( $acting_user ) ) {
+			// If only the user ID for the acting user is specified, load the user object.
+			$acting_user = User_Utility::load( $acting_user );
+		}
+
+		// If we don't have a user (i.e. they're anonymous), we don't need to log the event.
+		if ( empty( $acting_user->ID ) ) {
+			return;
+		}
+
+		// If we aren't tracking this user's role, we don't need to log the event.
+		// This shouldn't happen; it should be checked earlier.
+		if ( ! User_Utility::user_has_role( $acting_user, Plugin_Settings::get_roles_to_track() ) ) {
+			return;
+		}
+
+		// Get the object reference.
+		if ( $wp_object === null || $wp_object instanceof Object_Reference ) {
+			$object_ref = $wp_object;
+		} else {
+			$object_ref = Object_Reference::new_from_wp_object( $wp_object );
+		}
+
+		// Get the core properties.
+		if ( $object_ref instanceof Object_Reference ) {
+			$object_props = $object_ref->get_core_properties();
+		} else {
+			$object_props = array();
+		}
+
+		// Copy across any other properties we received.
+		if ( ! empty( $properties ) ) {
+			foreach ( $properties as $prop ) {
+				Property::update_array_from_prop( $object_props, $prop );
+			}
+		}
+
+		// Construct the new Event object.
+		$event                = new Event();
+		$event->when_happened = DateTimes::current_datetime();
+		$event->user_id       = $acting_user->ID;
+		$event->user_name     = User_Utility::get_name( $acting_user->ID );
+		$event->user_role     = implode( ', ', $acting_user->roles );
+		$event->user_ip       = User_Utility::get_ip();
+		$event->user_location = User_Utility::get_location( $event->user_ip );
+		$event->user_agent    = User_Utility::get_user_agent();
+		$event->event_type    = $event_type;
+		$event->object_type   = $object_ref?->type;
+		$event->object_key    = $object_ref?->key;
+		$event->object_name   = $object_ref?->name;
+		$event->eventmetas    = empty( $eventmetas ) ? null : $eventmetas;
+		$event->properties    = empty( $object_props ) ? null : $object_props;
+
+		return $event;
+	}
+
+	/**
+	 * Save the event to the database.
+	 */
+	public function save() {
+		Event_Repository::save( $this );
 	}
 
 	// =============================================================================================
@@ -374,45 +463,23 @@ class Event {
 	}
 
 	/**
-	 * Set an eventmeta.
-	 *
-	 * @param Eventmeta $eventmeta The eventmeta.
-	 */
-	public function set_meta( Eventmeta $eventmeta ) {
-		// Create the eventmeta array if necessary.
-		if ( ! isset( $this->eventmetas ) ) {
-			$this->eventmetas = array();
-		}
-
-		// Set the meta value.
-		$this->eventmetas[ $eventmeta->meta_key ] = $eventmeta;
-	}
-
-	/**
-	 * Set multiple eventmetas.
-	 *
-	 * @param array $metas The eventmetas to set.
-	 */
-	public function set_metas( array $metas ) {
-		foreach ( $metas as $eventmeta ) {
-			$this->set_meta( $eventmeta );
-		}
-	}
-
-	/**
 	 * Set an eventmeta data value.
 	 *
 	 * @param string $meta_key The eventmeta key.
 	 * @param mixed  $meta_value The eventmeta value.
 	 */
-	public function set_meta_val( string $meta_key, mixed $meta_value ) {
+	public function set_meta( string $meta_key, mixed $meta_value ) {
 		// Create the eventmeta array if necessary.
 		if ( ! isset( $this->eventmetas ) ) {
 			$this->eventmetas = array();
 		}
 
-		// Set the meta value.
-		$this->eventmetas[ $meta_key ] = new Eventmeta( $this->id, $meta_key, $meta_value );
+		// Create or update the eventmeta.
+		if ( $this->has_meta( $meta_key ) ) {
+			$this->eventmetas[ $meta_key ]->meta_value = $meta_value;
+		} else {
+			$this->eventmetas[ $meta_key ] = new Eventmeta( $this->id, $meta_key, $meta_value );
+		}
 	}
 
 	/**

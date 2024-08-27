@@ -15,14 +15,14 @@ class Eventmeta {
 	/**
 	 * The ID of the eventmeta record.
 	 *
-	 * @var int
+	 * @var ?int
 	 */
-	public int $id;
+	public ?int $id = null;
 
 	/**
 	 * The ID of the event associated with this metadata.
 	 *
-	 * @var int
+	 * @var ?int
 	 */
 	public ?int $event_id;
 
