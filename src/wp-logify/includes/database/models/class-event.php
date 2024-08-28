@@ -159,6 +159,7 @@ class Event {
 	 * @param ?array            $eventmetas  The event metadata.
 	 * @param ?array            $properties  The event properties.
 	 * @param null|WP_User|int  $acting_user The use object or ID of the user who performed the action, or null for the current user.
+	 * @return ?Event The new event, or null if the user is anonymous or doesn't have a role to track.
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function create(
@@ -167,7 +168,7 @@ class Event {
 		?array $eventmetas = null,
 		?array $properties = null,
 		null|WP_User|int $acting_user = null
-	) {
+	): ?Event {
 		// If the event is about an object deletion, this is where we'd store the details of the
 		// deleted object in the database. We want to do it before user checking so every object
 		// deletion is tracked regardless of who did it. Then we will definitely have the old name.
@@ -182,13 +183,13 @@ class Event {
 
 		// If we don't have a user (i.e. they're anonymous), we don't need to log the event.
 		if ( empty( $acting_user->ID ) ) {
-			return;
+			return null;
 		}
 
 		// If we aren't tracking this user's role, we don't need to log the event.
 		// This shouldn't happen; it should be checked earlier.
 		if ( ! User_Utility::user_has_role( $acting_user, Plugin_Settings::get_roles_to_track() ) ) {
-			return;
+			return null;
 		}
 
 		// Get the object reference.
