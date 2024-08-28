@@ -92,41 +92,33 @@ class Object_Reference {
 	public static function new_from_wp_object( object|array $wp_object ): Object_Reference {
 		$type = null;
 		$key  = null;
-		$name = null;
 
 		if ( $wp_object instanceof WP_Comment ) {
 			$type = 'comment';
 			$key  = $wp_object->comment_ID;
-			$name = Comment_Utility::get_name( $key );
 		} elseif ( is_array( $wp_object ) ) {
 			$type = 'plugin';
 			$key  = $wp_object['Slug'];
-			$name = $wp_object['Name'];
 		} elseif ( $wp_object instanceof WP_Post ) {
 			$type = 'post';
 			$key  = $wp_object->ID;
-			$name = $wp_object->post_title;
 		} elseif ( $wp_object instanceof WP_Taxonomy ) {
 			$type = 'taxonomy';
 			$key  = $wp_object->name;
-			$name = $wp_object->label;
 		} elseif ( $wp_object instanceof WP_Term ) {
 			$type = 'term';
 			$key  = $wp_object->term_id;
-			$name = $wp_object->name;
 		} elseif ( $wp_object instanceof WP_Theme ) {
 			$type = 'theme';
 			$key  = $wp_object->get_stylesheet();
-			$name = $wp_object->name;
 		} elseif ( $wp_object instanceof WP_User ) {
 			$type = 'user';
 			$key  = $wp_object->ID;
-			$name = User_Utility::get_name( $key );
 		} else {
 			throw new Exception( 'Unknown or unsupported object type.' );
 		}
 
-		return new Object_Reference( $type, $key, $name );
+		return new Object_Reference( $type, $key );
 	}
 
 	/**
@@ -183,7 +175,7 @@ class Object_Reference {
 	 *
 	 * @return bool True if the object exists, false otherwise.
 	 */
-	private function exists(): bool {
+	public function exists(): bool {
 		try {
 			// Call the method on the utility class.
 			return $this->call_utility_method( 'exists', $this->key );
@@ -197,7 +189,7 @@ class Object_Reference {
 	 *
 	 * @return mixed The object or null if not found.
 	 */
-	private function load(): mixed {
+	public function load(): mixed {
 		try {
 			// Call the method on the utility class.
 			return $this->call_utility_method( 'load', $this->key );
@@ -209,14 +201,14 @@ class Object_Reference {
 	/**
 	 * Get the name or title of the object.
 	 *
-	 * @return string The name or title of the object, or Unknown if not found.
+	 * @return ?string The name or title of the object, or null if not found.
 	 */
-	public function get_name(): string {
+	public function get_name(): ?string {
 		try {
 			// Call the method on the utility class.
 			return $this->call_utility_method( 'get_name', $this->key );
 		} catch ( Throwable $e ) {
-			return '';
+			return null;
 		}
 	}
 

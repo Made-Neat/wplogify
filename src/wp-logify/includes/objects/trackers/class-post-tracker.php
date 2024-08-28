@@ -321,13 +321,73 @@ class Post_Tracker {
 		// For navigation menu items, get the menu item details from the post meta data.
 		// We have to do it here, because in on_delete_post() the metadata has already been deleted.
 		if ( $post->post_type === 'nav_menu_item' ) {
-			// Add the linked object to the eventmeta.
+
+			// Get the linked object.
 			$linked_object = Menu_Utility::get_linked_object( $post_id );
+
+			// Make sure we have an object name.
+			// This is tricky when the linked object has been deleted already.
+			$object_name = $event->object_name;
+
+			if ( ! $object_name ) {
+				// if the event doesn't have a name, the title should be null or an empty string.
+				$object_name = $post->post_title;
+
+				// If we don't have a post title, try to get the name from the linked object.
+				if ( ! $object_name && $linked_object instanceof Object_Reference ) {
+					$object_name = $linked_object->get_name();
+				}
+
+				// If we couldn't get a name from the linked object then a post, page, or category
+				// was deleted while still linked to a menu. We can look for a Post, Page, or
+				// Category Deleted event occuring in the same HTTP request.
+				if ( ! $object_name ) {
+					// Get the menu item details.
+					$menu_item_details = Menu_Utility::get_menu_item_details( $post_id );
+
+					if ( $menu_item_details ) {
+						// Set a default event type for the simultaneous event.
+						$event_type2 = null;
+
+						// Get the event type for the delete event.
+						// This is a bit of a kludge as it depends on the event type matching, but
+						// it will do for now.
+						if ( $menu_item_details['_menu_item_type'] === 'post_type' ) {
+							$post_type   = $menu_item_details['_menu_item_object'];
+							$event_type2 = Post_Utility::get_post_type_singular_name( $post_type ) . ' Deleted';
+						} elseif ( $menu_item_details['_menu_item_type'] === 'taxonomy' ) {
+							$taxonomy    = $menu_item_details['_menu_item_object'];
+							$event_type2 = Taxonomy_Utility::get_singular_name( $taxonomy ) . ' Deleted';
+						}
+
+						// Look for the simulaneous event.
+						if ( $event_type2 ) {
+							$event2 = Logger::get_current_event_by_event_type( $event_type2 );
+							if ( $event2 ) {
+								// Copy the name.
+								$object_name = $event2->object_name;
+							}
+						}
+					}
+				}
+
+				// If we got a name, copy it to the new event.
+				if ( $object_name ) {
+					$event->object_name = $object_name;
+				}
+			}
+
+			// Set the linked object name if necessary.
+			if ( $linked_object instanceof Object_Reference && ! $linked_object->name && $object_name ) {
+				$linked_object->name = $object_name;
+			}
+
+			// Add the linked object to the eventmeta.
 			$event->set_meta( 'menu_item_link', $linked_object );
 		}
 
 		// Remember the new event.
-		Logger::$current_events[ $event_type ] = $event;
+		Logger::$current_events[] = $event;
 	}
 
 	/**
@@ -351,11 +411,10 @@ class Post_Tracker {
 		$event_type = self::get_delete_event_type( $post->post_type );
 
 		// Get the event.
-		$event = Logger::$current_events[ $event_type ];
+		$event = Logger::get_current_event_by_event_type( $event_type );
 
 		// Check if we have the event. Should be ok.
 		if ( ! $event ) {
-			debug( "Event not found for $event_type" );
 			return;
 		}
 

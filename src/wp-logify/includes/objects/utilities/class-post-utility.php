@@ -52,12 +52,17 @@ class Post_Utility extends Object_Utility {
 	/**
 	 * Get the name of a post.
 	 *
-	 * @param int|string $object_key The ID of the post.
+	 * @param int|string $post_id The ID of the post.
 	 * @return ?string The name of the post or null if the post doesn't exist.
 	 */
-	public static function get_name( int|string $object_key ): ?string {
+	public static function get_name( int|string $post_id ): ?string {
 		// Load the post.
-		$post = self::load( $object_key );
+		$post = self::load( $post_id );
+
+		// Handle menu items separately.
+		if ( $post->post_type === 'nav_menu_item' ) {
+			return Menu_Utility::get_name( $post_id );
+		}
 
 		// Return the post title or null if the post doesn't exist.
 		return $post->post_title ?? null;

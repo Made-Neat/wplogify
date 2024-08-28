@@ -50,6 +50,9 @@ class Logger {
 		// Create the new event.
 		$event = Event::create( $event_type, $wp_object, $eventmetas, $properties, $acting_user );
 
+		// Remember the event.
+		self::$current_events[] = $event;
+
 		// Save the event to the database.
 		$ok = Event_Repository::save( $event );
 
@@ -62,5 +65,20 @@ class Logger {
 
 		// Return the result.
 		return $ok;
+	}
+
+	/**
+	 * Finds the first current event matching the provided event type.
+	 *
+	 * @param string $event_type The type of event.
+	 * @return ?Event The event object, or null if not found.
+	 */
+	public static function get_current_event_by_event_type( string $event_type ): ?Event {
+		foreach ( self::$current_events as $event ) {
+			if ( $event->event_type === $event_type ) {
+				return $event;
+			}
+		}
+		return null;
 	}
 }

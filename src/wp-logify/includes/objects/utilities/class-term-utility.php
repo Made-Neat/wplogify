@@ -85,27 +85,27 @@ class Term_Utility extends Object_Utility {
 		}
 
 		// Start building the properties array.
-		$properties = array();
+		$props = array();
 
 		// ID.
-		Property::update_array( $properties, 'term_id', $wpdb->terms, $term->term_id );
+		Property::update_array( $props, 'term_id', $wpdb->terms, $term->term_id );
 
 		// Taxonomy.
-		Property::update_array( $properties, 'taxonomy', $wpdb->term_taxonomy, $term->taxonomy );
+		Property::update_array( $props, 'taxonomy', $wpdb->term_taxonomy, $term->taxonomy );
 
 		// Name.
-		Property::update_array( $properties, 'name', $wpdb->terms, $term->name );
+		Property::update_array( $props, 'name', $wpdb->terms, $term->name );
 
 		// Slug.
-		Property::update_array( $properties, 'slug', $wpdb->terms, $term->slug );
+		Property::update_array( $props, 'slug', $wpdb->terms, $term->slug );
 
 		// Parent.
 		if ( $term->parent ) {
 			$parent = new Object_Reference( 'term', $term->parent );
-			Property::update_array( $properties, 'parent', $wpdb->term_taxonomy, $parent );
+			Property::update_array( $props, 'parent', $wpdb->term_taxonomy, $parent );
 		}
 
-		return $properties;
+		return $props;
 	}
 
 	/**
@@ -160,7 +160,7 @@ class Term_Utility extends Object_Utility {
 		}
 
 		// Start building the properties array.
-		$properties = array();
+		$props = array();
 
 		// Add the base properties.
 		foreach ( $term as $key => $value ) {
@@ -168,7 +168,7 @@ class Term_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->terms, $value );
+			Property::update_array( $props, $key, $wpdb->terms, $value );
 		}
 
 		// Add the meta properties.
@@ -178,10 +178,10 @@ class Term_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->termmeta, $value );
+			Property::update_array( $props, $key, $wpdb->termmeta, $value );
 		}
 
-		return $properties;
+		return $props;
 	}
 
 	/**
