@@ -65,7 +65,7 @@ class Logger {
 		if ( $ok ) {
 			debug( 'EVENT LOGGED: ' . $event_type );
 		} else {
-			debug( 'Event logging failed. Here are the args:', func_get_args() );
+			debug( 'FAILED TO LOG EVENT. Here are the args:', func_get_args() );
 		}
 
 		// Return the result.

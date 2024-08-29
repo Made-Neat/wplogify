@@ -178,4 +178,27 @@ class Taxonomy_Utility extends Object_Utility {
 
 		return $props;
 	}
+
+	/**
+	 * Get the core properties for the current registered taxonomies.
+	 *
+	 * @return array An associative array of the core properties of the current taxonomies.
+	 */
+	public static function get_current_taxonomies_core_properties(): array {
+		// Get the current taxonomies as objects.
+		$current_taxonomy_objects = get_taxonomies( array(), 'objects' );
+
+		// Convert to an array containing just the core properties we want to show in the log.
+		// Keyed by taxonomy name so we canuse array_diff_key() later.
+		$current_taxonomies = array();
+		foreach ( $current_taxonomy_objects as $taxonomy_obj ) {
+			$current_taxonomies[ $taxonomy_obj->name ] = array(
+				'name'    => $taxonomy_obj->name,
+				'label'   => $taxonomy_obj->label,
+				'show_ui' => $taxonomy_obj->show_ui,
+			);
+		}
+
+		return $current_taxonomies;
+	}
 }

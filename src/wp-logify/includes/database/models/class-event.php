@@ -236,7 +236,15 @@ class Event {
 	 * Save the event to the database.
 	 */
 	public function save() {
-		Event_Repository::save( $this );
+		// Save the event to the database.
+		$ok = Event_Repository::save( $this );
+
+		// Log the result.
+		if ( $ok ) {
+			debug( 'EVENT LOGGED: ' . $this->event_type );
+		} else {
+			debug( 'FAILED TO LOG EVENT: ' . $this->event_type );
+		}
 	}
 
 	// =============================================================================================
