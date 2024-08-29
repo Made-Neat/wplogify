@@ -77,4 +77,15 @@ class Urls {
 		// If no matching link is found.
 		return null;
 	}
+
+	/**
+	 * Generates a link to lookup an IP address.
+	 *
+	 * @param string $ip_address An IP address.
+	 * @return string The HTML link to the IP address lookup page.
+	 */
+	public static function get_ip_link( string $ip_address ): string {
+		$esc_ip = esc_html( $ip_address );
+		return "<a href='https://whatismyipaddress.com/ip/$esc_ip' target='_blank'>$esc_ip</a>";
+	}
 }

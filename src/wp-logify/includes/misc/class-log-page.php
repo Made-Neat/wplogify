@@ -206,7 +206,7 @@ class Log_Page {
 			$item['display_name'] = get_avatar( $event->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 			// Source IP.
-			$item['user_ip'] = '<a href="https://whatismyipaddress.com/ip/' . esc_html( $event->user_ip ) . '" target="_blank">' . esc_html( $event->user_ip ) . '</a>';
+			$item['user_ip'] = Urls::get_ip_link( $event->user_ip );
 
 			// Event type.
 			$item['event_type'] = $event->event_type;
@@ -264,7 +264,8 @@ class Log_Page {
 		$html .= "<tr><th>ID</th><td>$event->user_id</td></tr>";
 
 		// IP address.
-		$html .= '<tr><th>IP address</th><td>' . ( $event->user_ip ?? 'Unknown' ) . "</td></tr>\n";
+		$ip_link = $event->user_ip ? Urls::get_ip_link( $event->user_ip ) : 'Unknown';
+		$html   .= "<tr><th>IP address</th><td>$ip_link</td></tr>\n";
 
 		// User location.
 		$user_location = empty( $event->user_location ) ? 'Unknown' : esc_html( $event->user_location );
