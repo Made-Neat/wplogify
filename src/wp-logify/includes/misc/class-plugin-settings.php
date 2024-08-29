@@ -32,13 +32,6 @@ class Plugin_Settings {
 	private const DEFAULT_DELETE_ON_UNINSTALL = false;
 
 	/**
-	 * The default value for the 'roles to track' setting.
-	 *
-	 * @var array
-	 */
-	private const DEFAULT_ROLES_TO_TRACK = array( 'administrator', 'editor', 'author', 'contributor', 'subscriber' );
-
-	/**
 	 * The default value for the 'show in admin bar' setting.
 	 *
 	 * @var array
@@ -72,6 +65,16 @@ class Plugin_Settings {
 	 * @var bool
 	 */
 	private const DEFAULT_WP_CRON_TRACKING = false;
+
+	/**
+	 * Get the names of all current roles.
+	 * These will be the default value for the 'roles to track' setting.
+	 *
+	 * @return array
+	 */
+	private static function get_roles() {
+		return array_keys( wp_roles()->roles );
+	}
 
 	// ---------------------------------------------------------------------------------------------
 	// Functions associated with action hooks.
@@ -111,7 +114,7 @@ class Plugin_Settings {
 			array(
 				'type'              => 'array',
 				'sanitize_callback' => array( __CLASS__, 'sanitize_roles' ),
-				'default'           => self::DEFAULT_ROLES_TO_TRACK,
+				'default'           => self::get_roles(),
 			)
 		);
 		register_setting(
@@ -234,7 +237,7 @@ class Plugin_Settings {
 	 * @return array The roles to track.
 	 */
 	public static function get_roles_to_track(): array {
-		return get_option( 'wp_logify_roles_to_track', self::DEFAULT_ROLES_TO_TRACK );
+		return get_option( 'wp_logify_roles_to_track', self::get_roles() );
 	}
 
 	/**
