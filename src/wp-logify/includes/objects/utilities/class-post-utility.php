@@ -61,7 +61,7 @@ class Post_Utility extends Object_Utility {
 
 		// Handle menu items separately.
 		if ( $post->post_type === 'nav_menu_item' ) {
-			return Menu_Utility::get_name( $post_id );
+			return Menu_Item_Utility::get_name( $post_id );
 		}
 
 		// Return the post title or null if the post doesn't exist.
@@ -89,6 +89,9 @@ class Post_Utility extends Object_Utility {
 		// Build the array of properties.
 		$props = array();
 
+		// Link.
+		Property::update_array( $props, 'link', $wpdb->posts, Object_Reference::new_from_wp_object( $post ) );
+
 		// ID.
 		Property::update_array( $props, 'ID', $wpdb->posts, $post->ID );
 
@@ -98,9 +101,6 @@ class Post_Utility extends Object_Utility {
 		// Post author.
 		$author = new Object_Reference( 'user', $post->post_author );
 		Property::update_array( $props, 'post_author', $wpdb->posts, $author );
-
-		// Post title.
-		Property::update_array( $props, 'post_title', $wpdb->posts, $post->post_title );
 
 		// Post status.
 		Property::update_array( $props, 'post_status', $wpdb->posts, $post->post_status );
@@ -113,7 +113,7 @@ class Post_Utility extends Object_Utility {
 
 		// For nav menu items, get the menu item's core properties and merge them into the properties array.
 		if ( $post->post_type === 'nav_menu_item' ) {
-			$nav_menu_item_props = Menu_Utility::get_core_properties( $post_id );
+			$nav_menu_item_props = Menu_Item_Utility::get_core_properties( $post_id );
 			$props               = array_merge( $props, $nav_menu_item_props );
 		}
 
@@ -128,7 +128,7 @@ class Post_Utility extends Object_Utility {
 	 * @param ?string    $old_title The fallback title of the post if it's been deleted.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $post_id, ?string $old_title ): string {
+	public static function get_tag( int|string $post_id, ?string $old_title = null ): string {
 		// Load the post.
 		$post = self::load( $post_id );
 
@@ -137,7 +137,7 @@ class Post_Utility extends Object_Utility {
 
 			// Handle navigation menu items separately.
 			if ( $post->post_type === 'nav_menu_item' ) {
-				return Menu_Utility::get_tag( $post_id, $old_title );
+				return Menu_Item_Utility::get_tag( $post_id, $old_title );
 			}
 
 			// Check if it's a revision.

@@ -101,6 +101,9 @@ class Comment_Utility extends Object_Utility {
 		// Build the array of properties.
 		$props = array();
 
+		// Link.
+		Property::update_array( $props, 'link', null, Object_Reference::new_from_wp_object( $comment ) );
+
 		// Comment author.
 		if ( $comment->user_id && User_Utility::exists( $comment->user_id ) ) {
 			$posted_by = new Object_Reference( 'user', $comment->user_id );
@@ -116,9 +119,6 @@ class Comment_Utility extends Object_Utility {
 		// Status.
 		$status = self::approved_to_status( $comment->comment_approved );
 		Property::update_array( $props, 'status', $wpdb->comments, $status );
-
-		// Snippet.
-		Property::update_array( $props, 'snippet', null, self::get_name( $comment_id ) );
 
 		// Post.
 		if ( $comment->comment_post_ID ) {
@@ -138,17 +138,17 @@ class Comment_Utility extends Object_Utility {
 	/**
 	 * Get a comment tag.
 	 *
-	 * @param int|string $comment_id The ID of the comment.
-	 * @param ?string    $old_title  The comment title at the time of the event.
+	 * @param int|string $comment_id  The ID of the comment.
+	 * @param ?string    $old_snippet The comment snippet at the time of the event.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $comment_id, ?string $old_title ): string {
+	public static function get_tag( int|string $comment_id, ?string $old_snippet = null ): string {
 		// Load the comment.
 		$comment = self::load( $comment_id );
 
 		// If the comment exists, get a link if possible.
 		if ( $comment ) {
-			// Get the comment name.
+			// Generate the comment snippet.
 			$title = self::get_name( $comment_id );
 
 			// Get the comment URL. This will vary by comment status.
@@ -168,12 +168,12 @@ class Comment_Utility extends Object_Utility {
 		}
 
 		// Make a backup title.
-		if ( ! $old_title ) {
-			$old_title = "Comment $comment_id";
+		if ( ! $old_snippet ) {
+			$old_snippet = "Comment $comment_id";
 		}
 
 		// The comment no longer exists. Construct the 'deleted' span element.
-		return "<span class='wp-logify-deleted-object'>$old_title (deleted)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_snippet (deleted)</span>";
 	}
 
 	// =============================================================================================

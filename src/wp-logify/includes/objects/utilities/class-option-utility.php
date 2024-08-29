@@ -93,7 +93,7 @@ class Option_Utility extends Object_Utility {
 	 * @param ?string    $old_name The fallback name of the option if it's been deleted (not used).
 	 * @return string The span HTML.
 	 */
-	public static function get_tag( int|string $option, ?string $old_name ): string {
+	public static function get_tag( int|string $option, ?string $old_name = null ): string {
 		// Load the option.
 		$option_value = self::load( $option );
 

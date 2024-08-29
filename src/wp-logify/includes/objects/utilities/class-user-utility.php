@@ -106,11 +106,11 @@ class User_Utility extends Object_Utility {
 		// Build the array of properties.
 		$properties = array();
 
+		// Display name.
+		Property::update_array( $properties, 'display_name', $wpdb->users, Object_Reference::new_from_wp_object( $user ) );
+
 		// ID.
 		Property::update_array( $properties, 'ID', $wpdb->users, (int) $user->ID );
-
-		// Display name.
-		Property::update_array( $properties, 'display_name', $wpdb->users, $user->display_name );
 
 		// User login.
 		Property::update_array( $properties, 'user_login', $wpdb->users, $user->user_login );
@@ -133,7 +133,7 @@ class User_Utility extends Object_Utility {
 	 * @param ?string    $old_name The old name of the user.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $user_id, ?string $old_name ): string {
+	public static function get_tag( int|string $user_id, ?string $old_name = null ): string {
 		// Load the user.
 		$user = self::load( $user_id );
 

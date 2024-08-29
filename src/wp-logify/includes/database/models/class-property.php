@@ -60,14 +60,14 @@ class Property {
 	/**
 	 * Property constructor.
 	 *
-	 * @param string $key        The property name.
-	 * @param string $table_name The name of the database table the property belongs to (e.g.
-	 *                           'posts'), which could be null if the property is unrelated to a
-	 *                           database table.
-	 * @param mixed  $val        The old or current value of the property.
-	 * @param mixed  $new_val    Optional. The new value of the property, if changed.
+	 * @param string  $key        The property name.
+	 * @param ?string $table_name The name of the database table the property belongs to (e.g.
+	 *                            'posts'), which could be null if the property is unrelated to a
+	 *                            database table.
+	 * @param mixed   $val        The old or current value of the property.
+	 * @param mixed   $new_val    Optional. The new value of the property, if changed.
 	 */
-	public function __construct( string $key, ?string $table_name, mixed $val = null, mixed $new_val = null ) {
+	public function __construct( string $key, ?string $table_name = null, mixed $val = null, mixed $new_val = null ) {
 		$this->key        = $key;
 		$this->table_name = $table_name;
 		$this->val        = $val;
@@ -87,10 +87,11 @@ class Property {
 	 */
 	public static function update_array( array &$props, string $key, ?string $table_name, mixed $val, mixed $new_val = null ) {
 		if ( ! key_exists( $key, $props ) ) {
-			$props[ $key ] = new Property( $key, $table_name );
+			$props[ $key ] = new Property( $key );
 		}
-		$props[ $key ]->val     = $val;
-		$props[ $key ]->new_val = $new_val;
+		$props[ $key ]->table_name = $table_name;
+		$props[ $key ]->val        = $val;
+		$props[ $key ]->new_val    = $new_val;
 	}
 
 	/**

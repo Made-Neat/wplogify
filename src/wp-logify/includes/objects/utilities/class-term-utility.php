@@ -87,14 +87,14 @@ class Term_Utility extends Object_Utility {
 		// Start building the properties array.
 		$props = array();
 
+		// Name.
+		Property::update_array( $props, 'name', $wpdb->terms, Object_Reference::new_from_wp_object( $term ) );
+
 		// ID.
 		Property::update_array( $props, 'term_id', $wpdb->terms, $term->term_id );
 
 		// Taxonomy.
 		Property::update_array( $props, 'taxonomy', $wpdb->term_taxonomy, $term->taxonomy );
-
-		// Name.
-		Property::update_array( $props, 'name', $wpdb->terms, $term->name );
 
 		// Slug.
 		Property::update_array( $props, 'slug', $wpdb->terms, $term->slug );
@@ -116,7 +116,7 @@ class Term_Utility extends Object_Utility {
 	 * @param ?string    $old_name The old name of the term.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $term_id, ?string $old_name ): string {
+	public static function get_tag( int|string $term_id, ?string $old_name = null ): string {
 		// Load the term.
 		$term = self::load( $term_id );
 

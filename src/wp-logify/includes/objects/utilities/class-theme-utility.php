@@ -126,7 +126,7 @@ class Theme_Utility extends Object_Utility {
 	 * @param ?string    $old_name   The name of the theme at the time of the event.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $stylesheet, ?string $old_name ): string {
+	public static function get_tag( int|string $stylesheet, ?string $old_name = null ): string {
 		// Load the theme.
 		$theme = self::load( $stylesheet );
 

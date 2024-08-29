@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Menu_Utility class.
+ * Contains the Menu_Item_Utility class.
  *
  * @package WP_Logify
  */
@@ -9,14 +9,13 @@ namespace WP_Logify;
 
 use WP_Logify\Event;
 use Exception;
-use WP_Post;
 
 /**
- * Class WP_Logify\Menu_Utility
+ * Class WP_Logify\Menu_Item_Utility
  *
- * Provides tracking of events related to menus and menu items.
+ * Provides tracking of events related to navigation menu items.
  */
-class Menu_Utility extends Object_Utility {
+class Menu_Item_Utility extends Object_Utility {
 
 	// =============================================================================================
 	// Implementations of base class methods.
@@ -97,8 +96,13 @@ class Menu_Utility extends Object_Utility {
 			return array();
 		}
 
-		// Convert the menu item details to properties.
+		// Build the array of properties.
 		$props = array();
+
+		// Link.
+		Property::update_array( $props, 'link', $wpdb->posts, self::get_linked_object( $post_id ) );
+
+		// Convert the menu item details to properties.
 		foreach ( $details as $key => $value ) {
 			Property::update_array( $props, $key, $wpdb->postmeta, $value );
 		}
@@ -115,7 +119,7 @@ class Menu_Utility extends Object_Utility {
 	 * @param ?string    $old_name The name of the object at the time of the event.
 	 * @return string The link HTML.
 	 */
-	public static function get_tag( int|string $post_id, ?string $old_name ): string {
+	public static function get_tag( int|string $post_id, ?string $old_name = null ): string {
 		// Get the linked object.
 		$linked_object = self::get_linked_object( $post_id );
 
@@ -248,16 +252,16 @@ class Menu_Utility extends Object_Utility {
 		}
 
 		// Try to get the linked object from the post. This will return null if the post has been deleted.
-		$menu_item_link = self::get_linked_object( $event->object_key );
-		if ( $menu_item_link ) {
+		$linked_object = self::get_linked_object( $event->object_key );
+		if ( $linked_object ) {
 			// Convert the linked object to a string.
-			return Types::value_to_string( $menu_item_link );
+			return Types::value_to_string( $linked_object );
 		}
 
-		// Try to get the menu_item_link from the event properties.
-		if ( ! empty( $event->eventmetas['menu_item_link']->meta_value ) ) {
+		// Try to get the link from the event properties.
+		if ( ! empty( $event->properties['link']->val ) ) {
 			// Convert the linked object to a string.
-			return Types::value_to_string( $event->eventmetas['menu_item_link']->meta_value );
+			return Types::value_to_string( $event->properties['link']->val );
 		}
 
 		return null;

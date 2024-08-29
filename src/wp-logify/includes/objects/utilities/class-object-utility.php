@@ -69,8 +69,8 @@ abstract class Object_Utility {
 	 * If it has ben deleted, get a span with the old name or title as the span text.
 	 *
 	 * @param int|string $object_key The object key.
-	 * @param ?string    $old_name   The name of the object at the time of the event.
+	 * @param ?string    $old_name   The name of the object at the time of the event, or null if unknown.
 	 * @return string The link or span HTML tag.
 	 */
-	abstract public static function get_tag( int|string $object_key, ?string $old_name ): string;
+	abstract public static function get_tag( int|string $object_key, ?string $old_name = null ): string;
 }

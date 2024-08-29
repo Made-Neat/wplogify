@@ -297,7 +297,7 @@ class Event {
 
 		// Handle menu items differently.
 		if ( $this->object_is_menu_item() ) {
-			$tag = Menu_Utility::get_tag_from_event( $this );
+			$tag = Menu_Item_Utility::get_tag_from_event( $this );
 			if ( $tag ) {
 				return $tag;
 			}

@@ -307,10 +307,12 @@ class Post_Tracker {
 
 			// Taxonomy name.
 			if ( count( $term_refs ) === 1 ) {
+				// Use the singular name.
 				$taxonomy_name = $taxonomy_obj->labels->singular_name;
 				// Just show the one.
 				$term_refs = $term_refs[0];
 			} else {
+				// Use the plural name.
 				$taxonomy_name = $taxonomy_obj->labels->name;
 			}
 
@@ -323,14 +325,14 @@ class Post_Tracker {
 		if ( $post->post_type === 'nav_menu_item' ) {
 
 			// Get the linked object.
-			$linked_object = Menu_Utility::get_linked_object( $post_id );
+			$linked_object = Menu_Item_Utility::get_linked_object( $post_id );
 
 			// Make sure we have an object name.
 			// This is tricky when the linked object has been deleted already.
 			$object_name = $event->object_name;
 
 			if ( ! $object_name ) {
-				// if the event doesn't have a name, the title should be null or an empty string.
+				// if the event doesn't have a name, the post title should be null or an empty string.
 				$object_name = $post->post_title;
 
 				// If we don't have a post title, try to get the name from the linked object.
@@ -340,18 +342,18 @@ class Post_Tracker {
 
 				// If we couldn't get a name from the linked object then a post, page, or category
 				// was deleted while still linked to a menu. We can look for a Post, Page, or
-				// Category Deleted event occuring in the same HTTP request.
+				// Category Deleted event occuring simultaneously (in the same HTTP request).
 				if ( ! $object_name ) {
 					// Get the menu item details.
-					$menu_item_details = Menu_Utility::get_menu_item_details( $post_id );
+					$menu_item_details = Menu_Item_Utility::get_menu_item_details( $post_id );
 
 					if ( $menu_item_details ) {
 						// Set a default event type for the simultaneous event.
 						$event_type2 = null;
 
 						// Get the event type for the delete event.
-						// This is a bit of a kludge as it depends on the event type matching, but
-						// it will do for now.
+						// This is a bit of a kludge as it depends on the event type matching
+						// exactly, but it will do for now.
 						if ( $menu_item_details['_menu_item_type'] === 'post_type' ) {
 							$post_type   = $menu_item_details['_menu_item_object'];
 							$event_type2 = Post_Utility::get_post_type_singular_name( $post_type ) . ' Deleted';
@@ -371,19 +373,11 @@ class Post_Tracker {
 					}
 				}
 
-				// If we got a name, copy it to the new event.
+				// If we found a name, copy it to the new event.
 				if ( $object_name ) {
 					$event->object_name = $object_name;
 				}
 			}
-
-			// Set the linked object name if necessary.
-			if ( $linked_object instanceof Object_Reference && ! $linked_object->name && $object_name ) {
-				$linked_object->name = $object_name;
-			}
-
-			// Add the linked object to the eventmeta.
-			$event->set_meta( 'menu_item_link', $linked_object );
 		}
 
 		// Remember the new event.
@@ -531,10 +525,6 @@ class Post_Tracker {
 				// Handle navigation menu items differently.
 				if ( $post->post_type === 'nav_menu_item' ) {
 					$post_type = 'Item';
-
-					// Add the linked object to the eventmeta.
-					$linked_object = Menu_Utility::get_linked_object( $post_id );
-					Eventmeta::update_array( $metas, 'menu_item_link', $linked_object );
 				} else {
 					// Get the post type name.
 					$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );

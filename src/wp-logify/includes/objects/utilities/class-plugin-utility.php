@@ -96,21 +96,21 @@ class Plugin_Utility extends Object_Utility {
 		}
 
 		// Collect the core properties.
-		$properties = array();
+		$props = array();
 
-		// Name. Use the link if there is one.
+		// Name or link. Use the link if there is one, otherwise use the name.
 		if ( $plugin['PluginURI'] ) {
-			$name = "<a href='{$plugin['PluginURI']}' target='_blank'>{$plugin['Name']}</a>";
+			$link = "<a href='{$plugin['PluginURI']}' target='_blank'>{$plugin['Name']}</a>";
+			Property::update_array( $props, 'link', null, $link );
 		} else {
-			$name = $plugin['Name'];
+			Property::update_array( $props, 'name', null, $plugin['Name'] );
 		}
-		Property::update_array( $properties, 'name', null, $name );
 
 		// Slug.
-		Property::update_array( $properties, 'slug', null, $plugin['Slug'] );
+		Property::update_array( $props, 'slug', null, $plugin['Slug'] );
 
 		// Version.
-		Property::update_array( $properties, 'version', null, $plugin['Version'] );
+		Property::update_array( $props, 'version', null, $plugin['Version'] );
 
 		// Author. Use the link if there is one.
 		if ( $plugin['AuthorURI'] ) {
@@ -118,9 +118,9 @@ class Plugin_Utility extends Object_Utility {
 		} else {
 			$author = $plugin['AuthorName'];
 		}
-		Property::update_array( $properties, 'author', null, $author );
+		Property::update_array( $props, 'author', null, $author );
 
-		return $properties;
+		return $props;
 	}
 
 	/**
@@ -133,7 +133,7 @@ class Plugin_Utility extends Object_Utility {
 	 * @param ?string    $old_name    The name of the plugin at the time of the event.
 	 * @return string The link or span HTML tag.
 	 */
-	public static function get_tag( int|string $plugin_slug, ?string $old_name ): string {
+	public static function get_tag( int|string $plugin_slug, ?string $old_name = null ): string {
 		// Load the plugin.
 		$plugin = self::load( $plugin_slug );
 

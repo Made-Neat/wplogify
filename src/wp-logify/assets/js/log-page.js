@@ -176,6 +176,13 @@ jQuery(($) => {
         eventsTable.ajax.reload();
     }
 
+    // Initialize the object type checkboxes.
+    let selectedObjectTypes = wpCookies.get('object_types');
+    // console.log(selectedObjectTypes);
+    $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
+        $(element).prop('checked', selectedObjectTypes.includes(element.value));
+    });
+
     // Reload the table when an object type checkbox is clicked.
     $('#wp-logify-object-type-checkboxes input').on('change', () => {
         // Update state of 'All' checkbox to match state of others.

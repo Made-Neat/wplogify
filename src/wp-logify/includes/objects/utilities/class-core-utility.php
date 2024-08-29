@@ -54,7 +54,12 @@ class Core_Utility {
 	 * @return Property[] The core properties of the object.
 	 */
 	public static function get_core_properties( int|string $version ): array {
-		return array();
+		$props = array();
+
+		// Link.
+		Property::update_array( $props, 'link', null, self::get_tag( $version ) );
+
+		return $props;
 	}
 
 	/**
@@ -64,7 +69,7 @@ class Core_Utility {
 	 * @param ?string    $old_name The name of the object at the time of the event.
 	 * @return string The link HTML.
 	 */
-	public static function get_tag( int|string $version, ?string $old_name ): string {
+	public static function get_tag( int|string $version, ?string $old_name = null ): string {
 		// Get the URL to the documentation page about this version.
 		$version_with_hyphens = str_replace( '.', '-', $version );
 		$url                  = "https://wordpress.org/documentation/wordpress-version/version-$version_with_hyphens/";
