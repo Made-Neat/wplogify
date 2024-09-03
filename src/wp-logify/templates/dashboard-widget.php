@@ -51,7 +51,7 @@ $recordset    = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 				<th>Date & Time</th>
 				<th>User</th>
 				<th>Event</th>
-				<th>Object</th>
+				<!-- <th>Object</th> -->
 			</tr>
 		</thead>
 		<tbody>
@@ -64,7 +64,7 @@ $recordset    = $wpdb->get_results( $sql_fetch_10, ARRAY_A );
 						<td><?php echo DateTimes::format_datetime_site( $event->when_happened, true, '<br>', true ); ?></td>
 						<td><?php echo User_Utility::get_tag( $event->user_id, $event->user_name ); ?></td>
 						<td><?php echo esc_html( esc_html( $event->event_type ) ); ?></td>
-						<td><?php echo $event->get_object_tag(); ?></td>
+						<!-- <td><?php // echo $event->get_object_tag(); ?></td> -->
 					</tr>
 				<?php endforeach; ?>
 			<?php else : ?>
