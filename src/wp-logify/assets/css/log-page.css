@@ -103,6 +103,12 @@
 #wp-logify-activity-log .wp-logify-object-type-user.shown, #wp-logify-activity-log .wp-logify-object-type-user:hover {
   background-color: hsl(60, 100%, 92%);
 }
+#wp-logify-activity-log .wp-logify-object-type-widget {
+  background-color: hsl(90, 100%, 95%);
+}
+#wp-logify-activity-log .wp-logify-object-type-widget.shown, #wp-logify-activity-log .wp-logify-object-type-widget:hover {
+  background-color: hsl(90, 100%, 92%);
+}
 #wp-logify-activity-log .wp-logify-summary-row.shown > td,
 #wp-logify-activity-log .wp-logify-summary-row.shown > th, #wp-logify-activity-log .wp-logify-summary-row:hover > td,
 #wp-logify-activity-log .wp-logify-summary-row:hover > th,
@@ -158,6 +164,10 @@
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-details-table td {
   background-color: white;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-details-table th,
+.wp-logify-details .wp-logify-details-section .wp-logify-details-table td {
+  vertical-align: top;
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-user-details-table > tbody > tr > th {
   width: 8rem;
@@ -241,6 +251,12 @@
 }
 #wp-logify-object-type-filter .wp-logify-object-type-user.shown, #wp-logify-object-type-filter .wp-logify-object-type-user:hover {
   background-color: hsl(60, 100%, 92%);
+}
+#wp-logify-object-type-filter .wp-logify-object-type-widget {
+  background-color: hsl(90, 100%, 95%);
+}
+#wp-logify-object-type-filter .wp-logify-object-type-widget.shown, #wp-logify-object-type-filter .wp-logify-object-type-widget:hover {
+  background-color: hsl(90, 100%, 92%);
 }
 #wp-logify-object-type-filter .wp-logify-show-object-type-events {
   display: inline;

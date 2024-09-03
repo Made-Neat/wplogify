@@ -13,7 +13,7 @@ use WP_Taxonomy;
 /**
  * Class WP_Logify\Taxonomy_Utility
  *
- * Provides tracking of events related to taxonomies.
+ * Provides methods for working with taxonomies.
  */
 class Taxonomy_Utility extends Object_Utility {
 

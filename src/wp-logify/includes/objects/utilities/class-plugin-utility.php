@@ -12,7 +12,7 @@ use Exception;
 /**
  * Class WP_Logify\Plugin_Utility
  *
- * Provides tracking of events related to plugins.
+ * Provides methods for working with plugins.
  */
 class Plugin_Utility extends Object_Utility {
 
@@ -51,13 +51,8 @@ class Plugin_Utility extends Object_Utility {
 			// Check for a match.
 			if ( self::get_slug( $plugin_file ) === $plugin_slug ) {
 
-				// Add the file to the array.
-				$plugin['File'] = $plugin_file;
-
-				// Add the slug to the array.
-				$plugin['Slug'] = $plugin_slug;
-
-				return $plugin;
+				// Return the plugin with additional details.
+				return self::add_details( $plugin, $plugin_file );
 			}
 		}
 
@@ -107,7 +102,7 @@ class Plugin_Utility extends Object_Utility {
 		}
 
 		// Slug.
-		Property::update_array( $props, 'slug', null, $plugin['Slug'] );
+		Property::update_array( $props, 'slug', null, $plugin['slug'] );
 
 		// Version.
 		Property::update_array( $props, 'version', null, $plugin['Version'] );
@@ -175,13 +170,8 @@ class Plugin_Utility extends Object_Utility {
 			return null;
 		}
 
-		// Add the file to the array.
-		$plugin['File'] = $plugin_file;
-
-		// Add the slug to the array.
-		$plugin['Slug'] = self::get_slug( $plugin_file );
-
-		return $plugin;
+		// Return the plugin with additional details.
+		return self::add_details( $plugin, $plugin_file );
 	}
 
 	/**
@@ -200,13 +190,8 @@ class Plugin_Utility extends Object_Utility {
 			// Check for a match.
 			if ( $plugin['Name'] === $plugin_name ) {
 
-				// Add the file to the array.
-				$plugin['File'] = $plugin_file;
-
-				// Add the slug to the array.
-				$plugin['Slug'] = self::get_slug( $plugin_file );
-
-				return $plugin;
+				// Return the plugin with additional details.
+				return self::add_details( $plugin, $plugin_file );
 			}
 		}
 
@@ -226,5 +211,25 @@ class Plugin_Utility extends Object_Utility {
 			$slug = basename( $plugin_file, '.php' );
 		}
 		return $slug;
+	}
+
+	/**
+	 * Add details to a plugin array.
+	 *
+	 * @param array  $plugin      The plugin array.
+	 * @param string $plugin_file The plugin file.
+	 * @return array The plugin array with added details.
+	 */
+	public static function add_details( array &$plugin, string $plugin_file ) {
+		// Add the object_type to the array.
+		$plugin['object_type'] = 'plugin';
+
+		// Add the file to the array.
+		$plugin['file'] = $plugin_file;
+
+		// Add the slug to the array.
+		$plugin['slug'] = self::get_slug( $plugin_file );
+
+		return $plugin;
 	}
 }

@@ -73,11 +73,10 @@ namespace WP_Logify;
 				<th scope="row">Delete events log when uninstalling</th>
 				<td><input type="checkbox" name="wp_logify_delete_on_uninstall" value="1" <?php checked( Plugin_Settings::get_delete_on_uninstall(), 1 ); ?> /></td>
 			</tr>
-			<tr valign="top">
-				<th scope="row">Delete all logs now</th>
-				<td><a href="<?php echo esc_url( admin_url( 'admin-post.php?action=wp_logify_reset_logs' ) ); ?>" onclick="return confirm('Are you sure you want to delete all the log records? This action cannot be undone.');">Do it</a></td>
-			</tr>
 		</table>
-		<?php submit_button(); ?>
+		<?php submit_button( name: 'wp-logify-submit-button' ); ?>
+		<div>
+			<a id="wp-logify-delete-logs-button" class="button button-secondary wp-logify-settings-button" href="<?php echo esc_url( admin_url( 'admin-post.php?action=wp_logify_reset_logs' ) ); ?>" onclick="return confirm('Are you sure you want to delete all the log records? This action cannot be undone.');">Delete all logs</a>
+		</div>
 	</form>
 </div>

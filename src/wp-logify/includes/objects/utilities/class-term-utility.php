@@ -13,7 +13,7 @@ use WP_Term;
 /**
  * Class WP_Logify\Term_Utility
  *
- * Provides tracking of events related to terms.
+ * Provides methods for working with terms.
  */
 class Term_Utility extends Object_Utility {
 

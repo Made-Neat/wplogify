@@ -132,6 +132,11 @@
             td {
                 background-color: white;
             }
+
+            th,
+            td {
+                vertical-align: top;
+            }
         }
 
         .wp-logify-user-details-table>tbody>tr>th {

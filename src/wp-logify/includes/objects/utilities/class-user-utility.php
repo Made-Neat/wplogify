@@ -15,7 +15,7 @@ use WP_User;
 /**
  * Class WP_Logify\User_Utility
  *
- * Provides tracking of events related to users.
+ * Provides methods for working with users.
  */
 class User_Utility extends Object_Utility {
 

@@ -19,8 +19,17 @@ class Logger {
 
 	/**
 	 * The valid object types for which events can be logged.
+	 *
+	 * @var string[]
 	 */
-	public const VALID_OBJECT_TYPES = array( 'comment', 'core', 'option', 'plugin', 'post', 'taxonomy', 'term', 'theme', 'user' );
+	public const VALID_OBJECT_TYPES = array( 'comment', 'core', 'option', 'plugin', 'post', 'taxonomy', 'term', 'theme', 'user', 'widget' );
+
+	/**
+	 * The maximum length of an object name.
+	 *
+	 * @var int
+	 */
+	public const MAX_OBJECT_NAME_LENGTH = 50;
 
 	/**
 	 * The current events being logged.

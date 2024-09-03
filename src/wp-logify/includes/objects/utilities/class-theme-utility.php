@@ -13,7 +13,7 @@ use WP_Theme;
 /**
  * Class WP_Logify\Theme_Utility
  *
- * Provides event handlers and utility methods related to themes.
+ * Provides methods for working with themes.
  */
 class Theme_Utility extends Object_Utility {
 

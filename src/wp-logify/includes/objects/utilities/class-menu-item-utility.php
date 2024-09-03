@@ -13,7 +13,7 @@ use Exception;
 /**
  * Class WP_Logify\Menu_Item_Utility
  *
- * Provides tracking of events related to navigation menu items.
+ * Provides methods for working with menu items.
  */
 class Menu_Item_Utility extends Object_Utility {
 

@@ -13,18 +13,12 @@ use WP_Comment;
 /**
  * Class WP_Logify\Comment_Utility
  *
- * Provides tracking of events related to comments.
+ * Provides methods for working with comments.
  */
 class Comment_Utility extends Object_Utility {
 
 	// =============================================================================================
 	// Implementations of base class methods.
-
-	/**
-	 * Set up hooks for the events we want to log.
-	 */
-	public static function init() {
-	}
 
 	/**
 	 * Check if a comment exists.
@@ -68,16 +62,8 @@ class Comment_Utility extends Object_Utility {
 			return null;
 		}
 
-		// Specify a maximum title length.
-		$max_title_length = 50;
-
-		// Check the length.
-		if ( strlen( $comment->comment_content ) <= $max_title_length ) {
-			return $comment->comment_content;
-		}
-
-		// If the comment is too long, truncate it.
-		return substr( $comment->comment_content, 0, $max_title_length - 3 ) . '...';
+		// Get the snippet from the comment content.
+		return Types::get_snippet( $comment->comment_content );
 	}
 
 	/**

@@ -15,7 +15,7 @@ use WP_Post;
 /**
  * Class WP_Logify\Post_Utility
  *
- * Provides tracking of events related to posts.
+ * Provides methods for working with posts.
  */
 class Post_Utility extends Object_Utility {
 

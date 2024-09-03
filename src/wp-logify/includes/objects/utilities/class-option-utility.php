@@ -12,7 +12,7 @@ use Exception;
 /**
  * Class WP_Logify\Option_Utility
  *
- * Provides tracking of events related to options.
+ * Provides methods for working with options.
  */
 class Option_Utility extends Object_Utility {
 

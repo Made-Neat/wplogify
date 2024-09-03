@@ -7,6 +7,32 @@
 
 namespace WP_Logify;
 
+use DateTime;
+
+/**
+ * Convert a variable to a string representation suitable for the debug log.
+ *
+ * @param mixed $value The variable to convert.
+ * @return string The string representation of the variable.
+ */
+function debug_var_to_string( mixed $value ): string {
+	if ( $value === null ) {
+		return 'null';
+	} elseif ( is_string( $value ) ) {
+		return $value;
+	} elseif ( is_bool( $value ) ) {
+		return $value ? 'true' : 'false';
+	} elseif ( is_scalar( $value ) ) {
+		return (string) $value;
+	} elseif ( $value instanceof DateTime ) {
+		return DateTimes::format_datetime_site( $value );
+	} elseif ( is_object( $value ) ) {
+		return get_class( $value ) . ' ' . wp_json_encode( $value, JSON_PRETTY_PRINT );
+	} else {
+		return wp_json_encode( $value, JSON_PRETTY_PRINT );
+	}
+}
+
 /**
  * Dump one or more variables into the error log.
  *
@@ -19,7 +45,7 @@ function debug( ...$args ) {
 	}
 
 	// Convert each argument to a string representation.
-	$strings = array_map( fn( $arg ) => @var_export( $arg, true ), $args );
+	$strings = array_map( fn( $arg ) => debug_var_to_string( $arg ), $args );
 
 	// Log the strings.
 	error_log( implode( ', ', $strings ) );

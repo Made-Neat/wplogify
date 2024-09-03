@@ -62,6 +62,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-taxonomy-tr
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-term-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-theme-tracker.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-user-tracker.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-widget-tracker.php';
 
 // Classes for working with application objects.
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-object-utility.php';
@@ -75,6 +76,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-taxonomy-u
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-term-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-theme-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-user-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-widget-utility.php';
 
 // -------------------------------------------------------------------------------------------------
 // Miscellanous other classes.
@@ -88,7 +90,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-plugin-settings.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-serialization.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-types.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-urls.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-widget.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-dashboard-widget.php';
 
 // Supporting functions.
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/debug.php';

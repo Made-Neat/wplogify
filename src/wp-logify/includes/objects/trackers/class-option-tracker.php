@@ -15,17 +15,17 @@ namespace WP_Logify;
 class Option_Tracker {
 
 	/**
-	 * Array to remember properties between different events.
+	 * Options update event.
 	 *
-	 * @var array
+	 * @var Event
 	 */
-	protected static $properties = array();
+	private static $event;
 
 	/**
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
-		// Track option update.
+		// Track option updates.
 		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
 		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
@@ -41,28 +41,30 @@ class Option_Tracker {
 		global $wpdb;
 
 		// Ignore certain options that clutter the log.
-		if ( strpos( $option, '_transient' ) === 0 || strpos( $option, '_site_transient' ) === 0 || $option === 'wp_user_roles' || $option === 'cron' ) {
+		if ( Types::starts_with( $option, '_transient' ) || Types::starts_with( $option, '_site_transient' ) || $option === 'wp_user_roles' || $option === 'cron' ) {
 			return;
 		}
 
-		// Check if this option change was triggered by an HTTP request, i.e. more likely to be
-		// caused a user action than programmatic.
-		// $contents = file_get_contents( 'php://input' );
-		// if ( empty( $contents ) ) {
-		// return;
-		// }
-
-		// debug( '$option', $option );
-		// debug( '$_POST', $_POST );
-		// debug( "file_get_contents( 'php://input' )", $contents );
+		// Ignore updates to widget-related options, which are handled by Widget_Tracker.
+		if ( Types::starts_with( $option, 'widget_' ) || $option === 'sidebars_widgets' ) {
+			return;
+		}
 
 		// Process the values for comparison.
 		$old_val = Types::process_database_value( $option, $old_value );
 		$new_val = Types::process_database_value( $option, $value );
 
-		// If the value has changed, add the option change to the properties.
+		// If the value has changed, add the option change to the event properties.
 		if ( $old_val !== $new_val ) {
-			Property::update_array( self::$properties, $option, $wpdb->options, $old_val, $new_val );
+
+			// Create the event object to encapsulate option updates, if it doesn't already exist.
+			if ( ! isset( self::$event ) ) {
+				$object_ref  = new Object_Reference( 'option', null, null );
+				self::$event = Event::create( 'Options Updated', $object_ref );
+			}
+
+			// Add the option change to the properties.
+			self::$event->set_prop( $option, $wpdb->options, $old_val, $new_val );
 		}
 	}
 
@@ -70,11 +72,30 @@ class Option_Tracker {
 	 * Fires on shutdown, after PHP execution.
 	 */
 	public static function on_shutdown() {
-		// Log the option changes, if there are any.
-		if ( self::$properties ) {
-			$object_ref = new Object_Reference( 'option', null, null );
-			$event_type = 'Option' . ( count( self::$properties ) > 1 ? 's' : '' ) . ' Updated';
-			Logger::log_event( $event_type, $object_ref, null, self::$properties );
+		// If there is no event to log, return.
+		if ( ! isset( self::$event ) ) {
+			return;
 		}
+
+		// Change the event type to singular if only one option was updated.
+		if ( count( self::$event->properties ) === 1 ) {
+			self::$event->event_type = 'Option Updated';
+		}
+
+		// Get the option names, but limit to 50 characters total.
+		$option_names = '';
+		foreach ( self::$event->properties as $option => $prop ) {
+			$option_names2 = ( $option_names ? ( $option_names . ', ' ) : '' ) . $option;
+			if ( strlen( $option_names2 ) <= Logger::MAX_OBJECT_NAME_LENGTH - 6 ) {
+				$option_names = $option_names2;
+			} else {
+				$option_names .= ', etc.';
+				break;
+			}
+		}
+		self::$event->object_name = $option_names;
+
+		// Log the event.
+		self::$event->save();
 	}
 }

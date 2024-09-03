@@ -43,6 +43,9 @@ $pink-95: hsl(300, 100%, 95%);
 $rose-92: hsl(330, 100%, 92%);
 $rose-95: hsl(330, 100%, 95%);
 
+$danger: #dc3232;
+$danger-hover: lighten($danger, 5%);
+
 @mixin object-type-colors {
     .wp-logify-object-type-comment {
         background-color: $cyan-95;
@@ -122,6 +125,15 @@ $rose-95: hsl(330, 100%, 95%);
         &.shown,
         &:hover {
             background-color: $yellow-92;
+        }
+    }
+
+    .wp-logify-object-type-widget {
+        background-color: $chartreuse-95;
+
+        &.shown,
+        &:hover {
+            background-color: $chartreuse-92;
         }
     }
 }

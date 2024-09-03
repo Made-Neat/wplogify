@@ -94,13 +94,19 @@
 #wp-logify-dashboard-table .wp-logify-object-type-user.shown, #wp-logify-dashboard-table .wp-logify-object-type-user:hover {
   background-color: hsl(60, 100%, 92%);
 }
+#wp-logify-dashboard-table .wp-logify-object-type-widget {
+  background-color: hsl(90, 100%, 95%);
+}
+#wp-logify-dashboard-table .wp-logify-object-type-widget.shown, #wp-logify-dashboard-table .wp-logify-object-type-widget:hover {
+  background-color: hsl(90, 100%, 92%);
+}
 #wp-logify-dashboard-table th,
 #wp-logify-dashboard-table td {
   border: 1px solid hsl(0, 0%, 87%);
   padding: 0.5rem;
 }
 #wp-logify-dashboard-table th {
-  background-color: #f4f4f4;
+  background-color: hsl(0, 0%, 97%);
   text-align: left;
 }
 #wp-logify-dashboard-table .wp-logify-deleted-object {

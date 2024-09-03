@@ -303,7 +303,7 @@ class Types {
 			}
 
 			// Make acronyms upper-case.
-			if ( in_array( $word, array( 'bb', 'css', 'fl', 'gmt', 'guid', 'id', 'ip', 'rss', 'ssl', 'ui', 'uri', 'url', 'utc', 'wp' ), true ) ) {
+			if ( in_array( $word, self::ACRONYMS, true ) ) {
 				$words[ $i ] = strtoupper( $word );
 			} elseif ( $ucwords ) {
 				// Upper-case the first letter of the word if requested.
@@ -340,4 +340,61 @@ class Types {
 			$array1[] = $value;
 		}
 	}
+
+	/**
+	 * Check if a string starts with a prefix.
+	 *
+	 * @param string $str The string to check.
+	 * @param string $prefix The prefix to check for.
+	 * @return bool Whether the string starts with the prefix.
+	 */
+	public static function starts_with( string $str, string $prefix ): bool {
+		return substr( $str, 0, strlen( $prefix ) ) === $prefix;
+	}
+
+	/**
+	 * Get a snippet from a piece of content.
+	 *
+	 * @param string $content The content.
+	 * @return string The snippet of the content.
+	 */
+	public static function get_snippet( string $content ): string {
+		// Strip all HTML tags and excess whitespace from the content.
+		$content = wp_strip_all_tags( $content, true );
+
+		// If the content is short enough, return it as is.
+		if ( strlen( $content ) <= Logger::MAX_OBJECT_NAME_LENGTH ) {
+			return $content;
+		}
+
+		// Otherwise, truncate it.
+		return substr( $content, 0, Logger::MAX_OBJECT_NAME_LENGTH - 3 ) . '...';
+	}
+
+	/**
+	 *  List of acronyms that should be upper-case.
+	 *
+	 * @var array
+	 */
+	private const ACRONYMS = array(
+		'bb',
+		'css',
+		'fl',
+		'flac',
+		'gmt',
+		'guid',
+		'id',
+		'ip',
+		'm4a',
+		'mp3',
+		'ogg',
+		'rss',
+		'ssl',
+		'ui',
+		'uri',
+		'url',
+		'utc',
+		'wav',
+		'wp',
+	);
 }

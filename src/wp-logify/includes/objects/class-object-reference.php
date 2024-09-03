@@ -15,6 +15,7 @@ use WP_Taxonomy;
 use WP_Term;
 use WP_Theme;
 use WP_User;
+use WP_Widget;
 
 /**
  * Represents a reference to an WordPress object that can be created, updated, or deleted.
@@ -31,9 +32,10 @@ class Object_Reference {
 	/**
 	 * The ID of the object.
 	 *
-	 * This will be an integer for object types with an integer ID, like posts, users, terms, and
-	 * comments, and a string for those object types identified by a unique string value like a name
-	 * or filename, such as taxonomy, plugin, and theme. In the case of options, it will be null.
+	 * This will be:
+	 * - an integer for object types with an integer ID, like posts, users, terms, and comments
+	 * - a string for object types identified by a string key, like taxonomies, plugins, themes, and widgets
+	 * - null for options
 	 *
 	 * @var null|int|string
 	 */
@@ -96,9 +98,6 @@ class Object_Reference {
 		if ( $wp_object instanceof WP_Comment ) {
 			$type = 'comment';
 			$key  = $wp_object->comment_ID;
-		} elseif ( is_array( $wp_object ) ) {
-			$type = 'plugin';
-			$key  = $wp_object['Slug'];
 		} elseif ( $wp_object instanceof WP_Post ) {
 			$type = 'post';
 			$key  = $wp_object->ID;
@@ -114,7 +113,24 @@ class Object_Reference {
 		} elseif ( $wp_object instanceof WP_User ) {
 			$type = 'user';
 			$key  = $wp_object->ID;
-		} else {
+		} elseif ( $wp_object instanceof WP_Widget ) {
+			$type = 'widget';
+			$key  = $wp_object->id;
+		} elseif ( is_array( $wp_object ) ) {
+			// An array could be a plugin or a widget, which we can identify by the object_type key.
+			$type = $wp_object['object_type'];
+			switch ( $type ) {
+				case 'plugin':
+					$key = $wp_object['slug'];
+					break;
+
+				case 'widget':
+					$key = $wp_object['widget_id'];
+					break;
+			}
+		}
+
+		if ( ! $key ) {
 			throw new Exception( 'Unknown or unsupported object type.' );
 		}
 
@@ -215,15 +231,20 @@ class Object_Reference {
 	/**
 	 * Get the core properties of the object.
 	 *
-	 * @return array The core properties of the object.
+	 * @return ?array The core properties of the object or null if not found.
 	 * @throws Exception If the object type is unknown.
 	 */
 	public function get_core_properties(): ?array {
+		// Handle the case when there is no key (i.e. options).
+		if ( ! $this->key ) {
+			return null;
+		}
+
 		try {
 			// Call the method on the utility class.
 			return $this->call_utility_method( 'get_core_properties', $this->key );
 		} catch ( Throwable $e ) {
-			return array();
+			return null;
 		}
 	}
 
@@ -236,7 +257,7 @@ class Object_Reference {
 	public function get_tag(): string {
 		// Handle the case when there is no key (i.e. options).
 		if ( ! $this->key ) {
-			return '';
+			return (string) $this->name;
 		}
 
 		try {

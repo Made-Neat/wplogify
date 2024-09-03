@@ -1,3 +1,5 @@
+@import 'colors';
+
 .wrap .wp-logify-settings-table {
     width: 100%;
 
@@ -9,4 +11,22 @@
 .wp-logify-settings-radio {
     display: block;
     margin: 0.5rem 0;
+}
+
+#wp-logify-delete-logs-button {
+    background-color: $danger;
+    border-color: $danger;
+    color: white;
+    box-shadow: 0 0 0 1px $danger;
+    width: 110px;
+
+    &:hover {
+        background-color: $danger-hover;
+        border-color: $danger-hover;
+        box-shadow: 0 0 0 1px $danger-hover;
+    }
+}
+
+#wp-logify-submit-button {
+    width: 110px;
 }

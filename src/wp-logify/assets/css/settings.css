@@ -9,3 +9,20 @@
   display: block;
   margin: 0.5rem 0;
 }
+
+#wp-logify-delete-logs-button {
+  background-color: #dc3232;
+  border-color: #dc3232;
+  color: white;
+  box-shadow: 0 0 0 1px #dc3232;
+  width: 110px;
+}
+#wp-logify-delete-logs-button:hover {
+  background-color: #e04848;
+  border-color: #e04848;
+  box-shadow: 0 0 0 1px #e04848;
+}
+
+#wp-logify-submit-button {
+  width: 110px;
+}

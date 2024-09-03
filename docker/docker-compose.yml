@@ -20,14 +20,13 @@ services:
       WORDPRESS_DEBUG: 1
       TZ: Australia/Brisbane
       WORDPRESS_CONFIG_EXTRA: |
-        define( 'WP_HOME', 'http://wplogify.localhost:8080' );
-        define( 'WP_SITEURL', 'http://wplogify.localhost:8080' );
+        define( 'WP_HOME', 'http://wplogify.localhost:8083' );
+        define( 'WP_SITEURL', 'http://wplogify.localhost:8083' );
         define( 'WP_DEBUG_DISPLAY', false );
         define( 'WP_DEBUG_LOG', true );
         define( 'WP_ENVIRONMENT_TYPE', 'local' );
     volumes:
       - ../www:/var/www/html
-      - ../wp-logify:/var/www/html/wp-content/plugins/wp-logify
       - ../log/php:/var/log
 
   nginx:
@@ -40,10 +39,9 @@ services:
     networks:
       - wplogify-network
     ports:
-      - "8080:80"
+      - "8083:80"
     volumes:
       - ../www:/var/www/html
-      - ../wp-logify:/var/www/html/wp-content/plugins/wp-logify
       - ../log/nginx:/var/log/nginx
 
   mysql:

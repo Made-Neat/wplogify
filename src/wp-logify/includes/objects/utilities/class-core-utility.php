@@ -10,7 +10,7 @@ namespace WP_Logify;
 /**
  * Class WP_Logify\Core_Utility
  *
- * Provides tracking of events related to WordPress core.
+ * Provides methods for working with WordPress core.
  */
 class Core_Utility {
 

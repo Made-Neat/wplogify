@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Widget class.
+ * Contains the Dashboard_Widget class.
  *
  * @package WP_Logify
  */
@@ -12,7 +12,7 @@ use WP_User;
 /**
  * Contains methods relating to the dashboard widget.
  */
-class Widget {
+class Dashboard_Widget {
 
 	/**
 	 * Initializes the class.
