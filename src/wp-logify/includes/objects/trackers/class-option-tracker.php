@@ -41,12 +41,12 @@ class Option_Tracker {
 		global $wpdb;
 
 		// Ignore certain options that clutter the log.
-		if ( Types::starts_with( $option, '_transient' ) || Types::starts_with( $option, '_site_transient' ) || $option === 'wp_user_roles' || $option === 'cron' ) {
+		if ( Strings::starts_with( $option, '_transient' ) || Strings::starts_with( $option, '_site_transient' ) || $option === 'wp_user_roles' || $option === 'cron' ) {
 			return;
 		}
 
 		// Ignore updates to widget-related options, which are handled by Widget_Tracker.
-		if ( Types::starts_with( $option, 'widget_' ) || $option === 'sidebars_widgets' ) {
+		if ( Strings::starts_with( $option, 'widget_' ) || $option === 'sidebars_widgets' ) {
 			return;
 		}
 

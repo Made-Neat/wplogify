@@ -32,8 +32,8 @@ class Core_Tracker {
 		$old_version = get_bloginfo( 'version' );
 
 		// Check if this is an upgrade, downgrade, or re-install.
-		$old_version_numeric = Types::version_to_float( $old_version );
-		$new_version_numeric = Types::version_to_float( $wp_version );
+		$old_version_numeric = Strings::version_to_float( $old_version );
+		$new_version_numeric = Strings::version_to_float( $wp_version );
 
 		if ( $old_version_numeric < $new_version_numeric ) {
 			$verb = 'Upgraded';

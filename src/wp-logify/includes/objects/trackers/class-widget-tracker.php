@@ -47,7 +47,7 @@ class Widget_Tracker {
 	 */
 	public static function on_update_option( $option, $old_option_value, $new_option_value ) {
 		// We're only interested in widget options.
-		if ( ! Types::starts_with( $option, 'widget_' ) ) {
+		if ( ! Strings::starts_with( $option, 'widget_' ) ) {
 			return;
 		}
 
@@ -57,7 +57,7 @@ class Widget_Tracker {
 		// Look for widget updates or deletions.
 		foreach ( $old_option_value as $widget_number => $widget ) {
 			// Ignore non-integer keys like '_multiwidget'.
-			if ( ! is_int( $widget_number ) && ! Types::looks_like_int( $widget_number ) ) {
+			if ( ! is_int( $widget_number ) && ! Strings::looks_like_int( $widget_number ) ) {
 				continue;
 			}
 
@@ -94,22 +94,12 @@ class Widget_Tracker {
 					$old_widget_value = $old_widget[ $key ] ?? null;
 					$new_widget_value = $new_widget[ $key ] ?? null;
 
-					// Strip tags from content.
-					if ( $key === 'content' ) {
-						$old_widget_value = wp_strip_all_tags( $old_widget_value, true );
-						$new_widget_value = wp_strip_all_tags( $new_widget_value, true );
-					}
-
 					// Compare.
 					if ( $old_widget_value !== $new_widget_value ) {
 						// Set the property.
 						self::$events[ $widget_id ]->set_prop( $key, null, $old_widget_value, $new_widget_value );
 					}
 				}
-
-				// Look for changes to block name.
-
-				// debug( self::$events[ $widget_id ] );
 			}
 		}
 	}
@@ -129,7 +119,7 @@ class Widget_Tracker {
 		}
 
 		// We're only interested in widget options.
-		if ( ! Types::starts_with( $option, 'widget_' ) ) {
+		if ( ! Strings::starts_with( $option, 'widget_' ) ) {
 			return;
 		}
 
@@ -141,7 +131,7 @@ class Widget_Tracker {
 		// Look for widget additions.
 		foreach ( $new_option_value as $widget_number => $widget ) {
 			// Ignore non-integer keys like '_multiwidget'.
-			if ( ! is_int( $widget_number ) && ! Types::looks_like_int( $widget_number ) ) {
+			if ( ! is_int( $widget_number ) && ! Strings::looks_like_int( $widget_number ) ) {
 				continue;
 			}
 

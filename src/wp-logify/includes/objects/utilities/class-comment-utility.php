@@ -63,7 +63,7 @@ class Comment_Utility extends Object_Utility {
 		}
 
 		// Get the snippet from the comment content.
-		return Types::get_snippet( $comment->comment_content );
+		return Strings::get_snippet( $comment->comment_content );
 	}
 
 	/**

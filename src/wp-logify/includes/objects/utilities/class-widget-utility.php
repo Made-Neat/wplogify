@@ -79,7 +79,7 @@ class Widget_Utility extends Object_Utility {
 
 		// Use a snippet of the widget content if set.
 		if ( ! empty( $widget['content'] ) ) {
-			return Types::get_snippet( $widget['content'] );
+			return Strings::get_snippet( $widget['content'] );
 		}
 
 		// Fallback to the widget ID.
@@ -125,7 +125,8 @@ class Widget_Utility extends Object_Utility {
 
 		// Content.
 		if ( ! empty( $widget['content'] ) ) {
-			Property::update_array( $props, 'content', null, wp_strip_all_tags( $widget['content'], true ) );
+			// Property::update_array( $props, 'content', null, wp_strip_all_tags( $widget['content'], true ) );
+			Property::update_array( $props, 'content', null, $widget['content'] );
 		}
 
 		// Area.

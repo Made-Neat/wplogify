@@ -324,7 +324,7 @@ class Log_Page {
 		$html .= "<div class='wp-logify-details-table-wrapper'>\n";
 		$html .= "<table class='wp-logify-details-table wp-logify-eventmeta-table'>\n";
 		foreach ( $event->eventmetas as $eventmeta ) {
-			$readable_key = Types::make_key_readable( $eventmeta->meta_key );
+			$readable_key = Strings::make_key_readable( $eventmeta->meta_key );
 			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $eventmeta->meta_key, $eventmeta->meta_value ) . '</td></tr>';
 		}
 		$html .= "</table>\n";
@@ -390,7 +390,7 @@ class Log_Page {
 
 			default:
 				// Default is upper-case-first the object-type (e.g. 'Plugin').
-				$object_type_title = Types::make_key_readable( $event->object_type, true );
+				$object_type_title = Strings::make_key_readable( $event->object_type, true );
 		}
 		$html .= "<h4>$object_type_title Details</h4>\n";
 
@@ -440,7 +440,7 @@ class Log_Page {
 					}
 				}
 			} else {
-				$key = Types::make_key_readable( $prop->key );
+				$key = Strings::make_key_readable( $prop->key );
 			}
 			$html .= "<th>$key</th>";
 

@@ -562,6 +562,6 @@ class Post_Tracker {
 		}
 
 		// Add the term to the array.
-		Types::array_add_if_new( self::$terms[ $taxonomy ][ $change ], $term_id );
+		Arrays::add_if_new( self::$terms[ $taxonomy ][ $change ], $term_id );
 	}
 }

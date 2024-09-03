@@ -27,7 +27,7 @@ class Main {
 		foreach ( $classes as $class ) {
 
 			// Check if the class is in the WP_Logify namespace. Ignore the Main class (this class).
-			if ( $class !== 'WP_Logify\\Main' && Types::starts_with( $class, 'WP_Logify\\' ) ) {
+			if ( $class !== 'WP_Logify\\Main' && Strings::starts_with( $class, 'WP_Logify\\' ) ) {
 
 				// Use reflection to check for the init method.
 				$reflection = new ReflectionClass( $class );

@@ -50,7 +50,7 @@ class Option_Utility extends Object_Utility {
 	 * @return ?string A more readable name of the option.
 	 */
 	public static function get_name( int|string $option ): ?string {
-		return Types::make_key_readable( $option );
+		return Strings::make_key_readable( $option );
 	}
 
 	/**
@@ -105,7 +105,7 @@ class Option_Utility extends Object_Utility {
 
 		// Make a backup name.
 		if ( ! $old_name ) {
-			$old_name = Types::make_key_readable( $option );
+			$old_name = Strings::make_key_readable( $option );
 		}
 
 		// The option no longer exists. Construct the 'deleted' span element.

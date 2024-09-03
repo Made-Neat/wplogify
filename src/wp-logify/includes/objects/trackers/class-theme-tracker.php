@@ -148,8 +148,8 @@ class Theme_Tracker {
 			$new_version = $upgrader->new_theme_data['Version'];
 
 			// Determine if we're upgrading, downgrading, or re-installing.
-			$old_version_numeric = Types::version_to_float( $old_version );
-			$new_version_numeric = Types::version_to_float( $new_version );
+			$old_version_numeric = Strings::version_to_float( $old_version );
+			$new_version_numeric = Strings::version_to_float( $new_version );
 
 			if ( $old_version_numeric < $new_version_numeric ) {
 				$event_type = 'Theme Upgraded';
