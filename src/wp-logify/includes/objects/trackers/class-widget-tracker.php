@@ -66,18 +66,18 @@ class Widget_Tracker {
 
 			// Load the widget details from the option values, so we get the extra properties.
 			$old_widget = Widget_Utility::get_from_option( $widget_id, $old_option_value );
-			debug( '$old_widget', $old_widget );
+			// debug( '$old_widget', $old_widget );
 
 			$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 			if ( ! key_exists( $widget_number, $new_option_value ) ) {
 				// The widget is being deleted.
 
-				debug( 'widget deleted', $widget_type, $widget_number, $widget_id, $old_widget );
+				// debug( 'widget deleted', $widget_type, $widget_number, $widget_id, $old_widget );
 
 				// Create the event.
 				self::$events[ $widget_id ] = Event::create( 'Widget Deleted', $old_widget );
-				debug( self::$events[ $widget_id ] );
+				// debug( self::$events[ $widget_id ] );
 			} elseif ( $old_widget !== $new_widget ) {
 				// The widget has been updated.
 
@@ -133,7 +133,7 @@ class Widget_Tracker {
 			return;
 		}
 
-		debug( 'on_updated_option', $option, $old_option_value, $new_option_value );
+		// debug( 'on_updated_option', $option, $old_option_value, $new_option_value );
 
 		// Get the widget type from the option name.
 		$widget_type = substr( $option, strlen( 'widget_' ) );
@@ -154,7 +154,7 @@ class Widget_Tracker {
 				$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 				// Log the event.
-				debug( 'Widget Created', $widget_type, $widget_number, $widget_id, $new_widget );
+				// debug( 'Widget Created', $widget_type, $widget_number, $widget_id, $new_widget );
 				self::$events[ $widget_id ] = Event::create( 'Widget Created', $new_widget );
 			}
 		}
@@ -162,12 +162,15 @@ class Widget_Tracker {
 
 	/**
 	 * Record the widget areas.
+	 *
+	 * @param array $old_sidebars_widgets The old value of the sidebars_widgets option.
+	 * @param array $new_sidebars_widgets The new value of the sidebars_widgets option.
 	 */
-	public static function record_widget_areas( $old_option_value, $new_option_value ) {
+	public static function record_widget_areas( $old_sidebars_widgets, $new_sidebars_widgets ) {
 		// debug( 'record_widget_areas' );
 
 		// Get the old areas.
-		foreach ( $old_option_value as $sidebar_id => $widgets ) {
+		foreach ( $old_sidebars_widgets as $sidebar_id => $widgets ) {
 			// Ignore non-array values.
 			if ( ! is_array( $widgets ) ) {
 				continue;
@@ -180,7 +183,7 @@ class Widget_Tracker {
 		}
 
 		// Get the old areas.
-		foreach ( $new_option_value as $sidebar_id => $widgets ) {
+		foreach ( $new_sidebars_widgets as $sidebar_id => $widgets ) {
 			// Ignore non-array values.
 			if ( ! is_array( $widgets ) ) {
 				continue;
@@ -203,7 +206,7 @@ class Widget_Tracker {
 
 		// Get all the widget_ids.
 		$widget_ids = array_unique( array_merge( array_keys( self::$events ), array_keys( self::$areas ) ) );
-		debug( $widget_ids );
+		// debug( $widget_ids );
 
 		// Loop through the widgets and log any events.
 		foreach ( $widget_ids as $widget_id ) {

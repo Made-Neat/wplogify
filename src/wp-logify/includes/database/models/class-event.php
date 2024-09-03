@@ -234,8 +234,10 @@ class Event {
 
 	/**
 	 * Save the event to the database.
+	 *
+	 * @return bool True if the event was saved successfully, false otherwise.
 	 */
-	public function save() {
+	public function save(): bool {
 		// Save the event to the database.
 		$ok = Event_Repository::save( $this );
 
@@ -245,6 +247,8 @@ class Event {
 		} else {
 			debug( 'FAILED TO LOG EVENT: ' . $this->event_type );
 		}
+
+		return $ok;
 	}
 
 	// =============================================================================================

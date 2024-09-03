@@ -229,17 +229,20 @@ class Widget_Utility extends Object_Utility {
 		// Get the widget.
 		$widget = $option_value[ $widget_number ];
 
-		// Add some extra info to the widget details.
-		$widget = array(
+		// Add some extra details.
+		$widget_extra = array(
 			'object_type' => 'widget',
 			'widget_id'   => $widget_id,
 			'id_base'     => $id_base,
 			'number'      => $widget_number,
-			'name'        => self::get_block_name_from_content( $widget['content'] ),
-			...$widget,
 		);
 
-		return $widget;
+		// Get the block name, or try to.
+		if ( ! empty( $widget['content'] ) ) {
+			$widget_extra['name'] = self::get_block_name_from_content( $widget['content'] );
+		}
+
+		return array_merge( $widget_extra, $widget );
 	}
 
 	/**
@@ -271,11 +274,7 @@ class Widget_Utility extends Object_Utility {
 		// Parse the block content.
 		$blocks = parse_blocks( $widget_content );
 
-		// Check if the block has a name.
-		if ( isset( $blocks[0]['attrs']['metadata']['name'] ) ) {
-			return $blocks[0]['attrs']['metadata']['name'];
-		}
-
-		return null;
+		// Get the name from the metadate of the first block, if set.
+		return $blocks[0]['attrs']['metadata']['name'] ?? null;
 	}
 }

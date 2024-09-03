@@ -67,18 +67,8 @@ class Logger {
 		// Remember the event.
 		self::$current_events[] = $event;
 
-		// Save the event to the database.
-		$ok = Event_Repository::save( $event );
-
-		// Log the result.
-		if ( $ok ) {
-			debug( 'EVENT LOGGED: ' . $event_type );
-		} else {
-			debug( 'FAILED TO LOG EVENT. Here are the args:', func_get_args() );
-		}
-
-		// Return the result.
-		return $ok;
+		// Save the event to the database and return the result.
+		return $event->save();
 	}
 
 	/**
