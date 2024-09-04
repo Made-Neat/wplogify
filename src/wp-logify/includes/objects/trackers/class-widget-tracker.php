@@ -17,14 +17,14 @@ class Widget_Tracker {
 	/**
 	 * Widget events.
 	 *
-	 * @var Event
+	 * @var Event[]
 	 */
 	private static $events = array();
 
 	/**
 	 * Widget areas.
 	 *
-	 * @var Event
+	 * @var array
 	 */
 	private static $areas = array();
 
@@ -46,7 +46,14 @@ class Widget_Tracker {
 	 * @param array  $new_option_value The new option value.
 	 */
 	public static function on_update_option( $option, $old_option_value, $new_option_value ) {
-		// We're only interested in widget options.
+		// Record changes to the widget locations.
+		if ( $option === 'sidebars_widgets' ) {
+			self::record_widget_areas( $old_option_value );
+			self::record_widget_areas( $new_option_value );
+			return;
+		}
+
+		// Beyond this point we're only interested in changes to widget details.
 		if ( ! Strings::starts_with( $option, 'widget_' ) ) {
 			return;
 		}
@@ -77,14 +84,13 @@ class Widget_Tracker {
 
 				// Create the event.
 				self::$events[ $widget_id ] = Event::create( 'Widget Deleted', $old_widget );
-				// debug( self::$events[ $widget_id ] );
 			} elseif ( $old_widget !== $new_widget ) {
 				// The widget has been updated.
 
 				// debug( 'widget updated', $widget_type, $widget_number, $widget_id, $old_widget );
 
-				// Create the event.
-				self::$events[ $widget_id ] = Event::create( 'Widget Updated', $old_widget );
+				// Store the property changes.
+				$props = array();
 
 				// Record the changed widget settings in the event properties.
 				$keys = array_unique( array_merge( array_keys( $old_widget ), array_keys( $new_widget ) ) );
@@ -94,11 +100,22 @@ class Widget_Tracker {
 					$old_widget_value = $old_widget[ $key ] ?? null;
 					$new_widget_value = $new_widget[ $key ] ?? null;
 
+					// Strip tags from content.
+					if ( $key === 'content' ) {
+						$old_widget_value = Strings::strip_tags( $old_widget_value );
+						$new_widget_value = Strings::strip_tags( $new_widget_value );
+					}
+
 					// Compare.
 					if ( $old_widget_value !== $new_widget_value ) {
-						// Set the property.
-						self::$events[ $widget_id ]->set_prop( $key, null, $old_widget_value, $new_widget_value );
+						// Record the property change.
+						Property::update_array( $props, $key, null, $old_widget_value, $new_widget_value );
 					}
+				}
+
+				// If there were property changes, create an event.
+				if ( ! empty( $props ) ) {
+					self::$events[ $widget_id ] = Event::create( 'Widget Updated', $old_widget, null, $props );
 				}
 			}
 		}
@@ -112,13 +129,7 @@ class Widget_Tracker {
 	 * @param array  $new_option_value The new option value.
 	 */
 	public static function on_updated_option( $option, $old_option_value, $new_option_value ) {
-		// For changes to sidebars_widgets, record widget areas.
-		if ( $option === 'sidebars_widgets' ) {
-			self::record_widget_areas( $old_option_value, $new_option_value );
-			return;
-		}
-
-		// We're only interested in widget options.
+		// Beyond this point we're only interested in changes to widget details.
 		if ( ! Strings::starts_with( $option, 'widget_' ) ) {
 			return;
 		}
@@ -143,7 +154,7 @@ class Widget_Tracker {
 				// Load the widget details from the option values, so we get the extra properties.
 				$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
-				// Log the event.
+				// Create the event.
 				// debug( 'Widget Created', $widget_type, $widget_number, $widget_id, $new_widget );
 				self::$events[ $widget_id ] = Event::create( 'Widget Created', $new_widget );
 			}
@@ -153,14 +164,15 @@ class Widget_Tracker {
 	/**
 	 * Record the widget areas.
 	 *
-	 * @param array $old_sidebars_widgets The old value of the sidebars_widgets option.
-	 * @param array $new_sidebars_widgets The new value of the sidebars_widgets option.
+	 * @param array $sidebars_widgets The value of the sidebars_widgets option.
 	 */
-	public static function record_widget_areas( $old_sidebars_widgets, $new_sidebars_widgets ) {
+	public static function record_widget_areas( $sidebars_widgets ) {
 		// debug( 'record_widget_areas' );
 
-		// Get the old areas.
-		foreach ( $old_sidebars_widgets as $sidebar_id => $widgets ) {
+		// Is this the first time recording the widget areas?
+		$first_time = empty( self::$areas );
+
+		foreach ( $sidebars_widgets as $sidebar_id => $widgets ) {
 			// Ignore non-array values.
 			if ( ! is_array( $widgets ) ) {
 				continue;
@@ -168,20 +180,9 @@ class Widget_Tracker {
 
 			// Loop through the widget positions.
 			foreach ( $widgets as $widget_id ) {
-				self::$areas[ $widget_id ]['old'] = $sidebar_id;
-			}
-		}
-
-		// Get the old areas.
-		foreach ( $new_sidebars_widgets as $sidebar_id => $widgets ) {
-			// Ignore non-array values.
-			if ( ! is_array( $widgets ) ) {
-				continue;
-			}
-
-			// Loop through the widget positions.
-			foreach ( $widgets as $widget_id ) {
-				self::$areas[ $widget_id ]['new'] = $sidebar_id;
+				// The first time through, get the old area; after that, get the new one.
+				$key                               = $first_time ? 'old' : 'new';
+				self::$areas[ $widget_id ][ $key ] = $sidebar_id;
 			}
 		}
 	}
@@ -190,21 +191,13 @@ class Widget_Tracker {
 	 * Fires on shutdown, after PHP execution.
 	 */
 	public static function on_shutdown() {
-		// debug( 'on_shutdown' );
 
-		// debug( self::$areas );
-
-		// Get all the widget_ids.
-		$widget_ids = array_unique( array_merge( array_keys( self::$events ), array_keys( self::$areas ) ) );
-		// debug( $widget_ids );
-
-		// Loop through the widgets and log any events.
-		foreach ( $widget_ids as $widget_id ) {
-			// debug( $widget_id, $area );
+		// Update and create events for area changes.
+		foreach ( self::$areas as $widget_id => $area ) {
 
 			// Compare the old and new areas.
-			$old_area = self::$areas[ $widget_id ]['old'] ?? null;
-			$new_area = self::$areas[ $widget_id ]['new'] ?? null;
+			$old_area = $area['old'] ?? null;
+			$new_area = $area['new'] ?? null;
 
 			// Check for an area change.
 			if ( $old_area !== $new_area ) {
@@ -226,28 +219,16 @@ class Widget_Tracker {
 					self::$events[ $widget_id ] = Event::create( $event_type, $widget );
 				}
 
-				// debug( self::$events[ $widget_id ]->event_type, $widget_id );
-
 				// Add the changed area to the properties.
 				$old_area_name = Widget_Utility::get_area_name( $old_area );
 				$new_area_name = Widget_Utility::get_area_name( $new_area );
 				self::$events[ $widget_id ]->set_prop( 'area', null, $old_area_name, $new_area_name );
-
-				// Save the event.
-				self::$events[ $widget_id ]->save();
-
-			} elseif ( isset( self::$events[ $widget_id ] ) ) {
-				// debug( self::$events[ $widget_id ]->event_type, $widget_id );
-
-				// Set the area property if not done already.
-				if ( $old_area && empty( self::$events[ $widget_id ]->get_prop_val['area'] ) ) {
-					$old_area_name = Widget_Utility::get_area_name( $old_area );
-					self::$events[ $widget_id ]->set_prop( 'area', null, $old_area_name );
-				}
-
-				// Save the event.
-				self::$events[ $widget_id ]->save();
 			}
+		}
+
+		// Save the events.
+		foreach ( self::$events as $event ) {
+			$event->save();
 		}
 	}
 }

@@ -63,22 +63,24 @@ class Widget_Utility extends Object_Utility {
 	 * @return ?string A suitable display name for the widget.
 	 */
 	public static function get_name( int|string $widget_id ): ?string {
-		// Check if the widget has a name in the block metadata.
-		$name = self::get_block_name( $widget_id );
-		if ( $name ) {
-			return $name;
-		}
-
 		// Load the widget.
 		$widget = self::load( $widget_id );
 
-		// Use the widget title if set.
+		// Use the title if set.
 		if ( ! empty( $widget['title'] ) ) {
 			return $widget['title'];
 		}
 
-		// Use a snippet of the widget content if set.
+		// Get a name from the content, if set.
 		if ( ! empty( $widget['content'] ) ) {
+
+			// Use the block name if set.
+			$block_details = self::get_block_details( $widget['content'] );
+			if ( ! empty( $block_details['block_name'] ) ) {
+				return $block_details['block_name'];
+			}
+
+			// If no block name, get a snippet.
 			return Strings::get_snippet( $widget['content'] );
 		}
 
@@ -112,38 +114,31 @@ class Widget_Utility extends Object_Utility {
 		// Widget type.
 		Property::update_array( $props, 'type', null, $widget['id_base'] );
 
+		// Block type (block widgets).
+		if ( ! empty( $widget['block_type'] ) ) {
+			Property::update_array( $props, 'block_type', null, $widget['block_type'] );
+		}
+
+		// Block name (block widgets).
+		if ( ! empty( $widget['block_name'] ) ) {
+			Property::update_array( $props, 'block_name', null, $widget['block_name'] );
+		}
+
 		// Title (classic widgets).
 		if ( ! empty( $widget['title'] ) ) {
 			Property::update_array( $props, 'title', null, $widget['title'] );
 		}
 
-		// Name (block widgets).
-		$block_name = self::get_block_name( $widget_id );
-		if ( $block_name ) {
-			Property::update_array( $props, 'name', null, $block_name );
-		}
-
 		// Content.
 		if ( ! empty( $widget['content'] ) ) {
-			// Property::update_array( $props, 'content', null, wp_strip_all_tags( $widget['content'], true ) );
-			Property::update_array( $props, 'content', null, $widget['content'] );
+			$content = Strings::strip_tags( $widget['content'] );
+			if ( $content ) {
+				Property::update_array( $props, 'content', null, $content );
+			}
 		}
 
 		// Area.
-		$area_id   = self::get_area( $widget_id );
-		$area_name = self::get_area_name( $area_id );
-		Property::update_array( $props, 'area', null, $area_name );
-
-		// Any others. May as well show them all.
-		// foreach ( $widget as $key => $value ) {
-		// Skip any we already got.
-		// if ( in_array( $key, array( 'widget_id', 'id_base', 'number', 'object_type', 'title', 'name', 'content', 'area' ) ) ) {
-		// continue;
-		// }
-
-		// Set the property.
-		// Property::update_array( $props, $key, null, $value );
-		// }
+		Property::update_array( $props, 'area', null, $widget['area'] );
 
 		return $props;
 	}
@@ -181,7 +176,7 @@ class Widget_Utility extends Object_Utility {
 	 * Get the widget area (e.g. sidebar, header, footer section) for a given widget ID.
 	 *
 	 * @param string $widget_id The ID of the widget.
-	 * @return ?string The ID of the widget area (sidebar) the widget belongs to, or null if not found.
+	 * @return ?string The ID of the widget area (a.k.a. sidebar) the widget is located in, or null if not found.
 	 */
 	public static function get_area( string $widget_id ): ?string {
 		global $sidebars_widgets;
@@ -202,10 +197,22 @@ class Widget_Utility extends Object_Utility {
 	 * Get the name of a widget area (sidebar) by its ID.
 	 *
 	 * @param ?string $sidebar_id The ID of the widget area.
-	 * @return mixed The name of the widget area or null if not found.
+	 * @return ?string The name of the widget area or null if not found.
 	 */
 	public static function get_area_name( ?string $sidebar_id ): ?string {
+		// Handle empty input.
+		if ( ! $sidebar_id ) {
+			return null;
+		}
+
+		// As 'wp_inactive_widgets' won't be in $wp_registered_sidebars, we need to handle it separately.
+		if ( $sidebar_id === 'wp_inactive_widgets' ) {
+			return 'Inactive Widgets';
+		}
+
 		global $wp_registered_sidebars;
+
+		// If the sidebar ID is in the registered sidebars, get the name.
 		return $wp_registered_sidebars[ $sidebar_id ]['name'] ?? null;
 	}
 
@@ -230,7 +237,7 @@ class Widget_Utility extends Object_Utility {
 		// Get the widget.
 		$widget = $option_value[ $widget_number ];
 
-		// Add some extra details.
+		// Get some extra details.
 		$widget_extra = array(
 			'object_type' => 'widget',
 			'widget_id'   => $widget_id,
@@ -238,44 +245,51 @@ class Widget_Utility extends Object_Utility {
 			'number'      => $widget_number,
 		);
 
-		// Get the block name, or try to.
+		// Get the block type and name, if set.
 		if ( ! empty( $widget['content'] ) ) {
-			$widget_extra['name'] = self::get_block_name_from_content( $widget['content'] );
+			$block_details = self::get_block_details( $widget['content'] );
+			if ( $block_details ) {
+				$widget_extra = array_merge( $widget_extra, $block_details );
+			}
 		}
 
-		return array_merge( $widget_extra, $widget );
+		// Merge the extra details into the widget.
+		$widget = array_merge( $widget_extra, $widget );
+
+		// Get the area.
+		$widget['sidebar_id'] = self::get_area( $widget_id );
+		$widget['area']       = self::get_area_name( $widget['sidebar_id'] );
+
+		return $widget;
 	}
 
 	/**
-	 * Get the name from a block widget.
-	 *
-	 * Note: It's quite likely this will not be set.
-	 *
-	 * @param int|string $widget_id The ID of the widget.
-	 * @return ?string The widget name or null if widget not found or name not set.
-	 */
-	public static function get_block_name( int|string $widget_id ): ?string {
-		// Load the widget.
-		$widget = self::load( $widget_id );
-
-		if ( ! empty( $widget['content'] ) ) {
-			return self::get_block_name_from_content( $widget['content'] );
-		}
-
-		return null;
-	}
-
-	/**
-	 * Get the name from a widget content.
+	 * Get the block details from a widget content.
 	 *
 	 * @param string $widget_content The widget content.
-	 * @return ?string The widget name or null if not set.
+	 * @return ?array The block details or null if no block found.
 	 */
-	public static function get_block_name_from_content( string $widget_content ): ?string {
+	public static function get_block_details( string $widget_content ): ?array {
 		// Parse the block content.
 		$blocks = parse_blocks( $widget_content );
 
-		// Get the name from the metadate of the first block, if set.
-		return $blocks[0]['attrs']['metadata']['name'] ?? null;
+		if ( ! isset( $blocks[0] ) ) {
+			return null;
+		}
+
+		$details = array();
+
+		// Get the block type.
+		$block_type = $blocks[0]['blockName'] ?? null;
+		if ( $block_type ) {
+			// Strip the 'core/' prefix to get the block's basic type.
+			$block_type = str_replace( 'core/', '', $block_type );
+		}
+		$details['block_type'] = $block_type;
+
+		// Get the block name from the metadate of the first block, if set.
+		$details['block_name'] = $blocks[0]['attrs']['metadata']['name'] ?? null;
+
+		return $details;
 	}
 }

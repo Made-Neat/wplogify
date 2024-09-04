@@ -203,13 +203,13 @@ class Strings {
 	/**
 	 * Strip all HTML tags from a string, maintaining sensible whitespace.
 	 *
-	 * @param string $text The text to strip tags from.
-	 * @return string The text with all tags removed.
+	 * @param ?string $text The text to strip tags from. Can be null.
+	 * @return ?string The text with all tags removed, or null, if null was provided.
 	 */
-	public static function strip_tags( string $text ): string {
-		// Handle empty text.
-		if ( empty( $text ) ) {
-			return '';
+	public static function strip_tags( ?string $text ): ?string {
+		// Handle a null or empty string.
+		if ( self::is_null_or_empty_string( $text ) ) {
+			return $text;
 		}
 
 		// Strip script and style tags, and anything inside them. Replace each with single space.
