@@ -364,6 +364,10 @@ class Log_Page {
 				$object_type_title = 'Account';
 				break;
 
+			case 'option':
+				$object_type_title = 'Setting';
+				break;
+
 			case 'post':
 				// Get the post type. It might be in the properties.
 				$post_type = $event->properties['post_type']->val ?? null;
@@ -463,7 +467,7 @@ class Log_Page {
 				}
 
 				// Get the CSS class.
-				$new_value_exists = $prop->new_val != null;
+				$new_value_exists = $prop->new_val !== null;
 				$class            = $new_value_exists ? 'wp-logify-value-changed' : 'wp-logify-value-unchanged';
 				$html            .= "<td class='$class'>$new_val</td>";
 			}

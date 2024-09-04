@@ -10,12 +10,16 @@ namespace WP_Logify;
 /**
  * Class WP_Logify\Option_Tracker
  *
- * Provides tracking of events related to options.
+ * Provides tracking of events related to settings.
+ *
+ * The reason this is called Option_Tracker is because originally we were tracking changes to all
+ * options, not just settings. Settings are options that can be changed by a user via a form, which
+ * are the only options we want to track changes to.
  */
 class Option_Tracker {
 
 	/**
-	 * Options update event.
+	 * Settings update event.
 	 *
 	 * @var Event
 	 */
@@ -33,38 +37,45 @@ class Option_Tracker {
 	/**
 	 * Fires immediately before an option value is updated.
 	 *
-	 * @param string $option    Name of the option to update.
-	 * @param mixed  $old_value The old option value.
-	 * @param mixed  $value     The new option value.
+	 * @param string $option_name Name of the option to update.
+	 * @param mixed  $old_value   The old option value.
+	 * @param mixed  $new_value   The new option value.
 	 */
-	public static function on_update_option( string $option, mixed $old_value, mixed $value ) {
-		global $wpdb;
+	public static function on_update_option( string $option_name, mixed $old_value, mixed $new_value ) {
+		global $wpdb, $wp_registered_settings;
 
-		// Ignore certain options that clutter the log.
-		if ( Strings::starts_with( $option, '_transient' ) || Strings::starts_with( $option, '_site_transient' ) || $option === 'wp_user_roles' || $option === 'cron' ) {
+		// Ignore options that aren't settings.
+		if ( ! Option_Utility::is_setting( $option_name ) ) {
 			return;
 		}
 
-		// Ignore updates to widget-related options, which are handled by Widget_Tracker.
-		if ( Strings::starts_with( $option, 'widget_' ) || $option === 'sidebars_widgets' ) {
-			return;
+		// If this setting is of type boolean, convert the values to boolean.
+		if ( isset( $wp_registered_settings[ $option_name ] ) && $wp_registered_settings[ $option_name ]['type'] === 'boolean' ) {
+			$old_val = rest_sanitize_boolean( $old_value );
+			$new_val = rest_sanitize_boolean( $new_value );
+		} else {
+			// Process the values for comparison.
+			$old_val = Types::process_database_value( $option_name, $old_value );
+			$new_val = Types::process_database_value( $option_name, $new_value );
 		}
 
-		// Process the values for comparison.
-		$old_val = Types::process_database_value( $option, $old_value );
-		$new_val = Types::process_database_value( $option, $value );
-
-		// If the value has changed, add the option change to the event properties.
+		// If the value has changed, add the setting change to the event properties.
 		if ( $old_val !== $new_val ) {
 
-			// Create the event object to encapsulate option updates, if it doesn't already exist.
+			// Create the event object to encapsulate setting updates, if it doesn't already exist.
 			if ( ! isset( self::$event ) ) {
 				$object_ref  = new Object_Reference( 'option', null, null );
-				self::$event = Event::create( 'Options Updated', $object_ref );
+				self::$event = Event::create( 'Settings Updated', $object_ref );
 			}
 
-			// Add the option change to the properties.
-			self::$event->set_prop( $option, $wpdb->options, $old_val, $new_val );
+			// Convert categories to links.
+			if ( Strings::ends_with( $option_name, '_category' ) ) {
+				$old_val = new Object_Reference( 'term', $old_val );
+				$new_val = new Object_Reference( 'term', $new_val );
+			}
+
+			// Add the setting change to the properties.
+			self::$event->set_prop( $option_name, $wpdb->options, $old_val, $new_val );
 		}
 	}
 
@@ -77,12 +88,12 @@ class Option_Tracker {
 			return;
 		}
 
-		// Change the event type to singular if only one option was updated.
+		// Change the event type to singular if only one setting was updated.
 		if ( count( self::$event->properties ) === 1 ) {
-			self::$event->event_type = 'Option Updated';
+			self::$event->event_type = 'Setting Updated';
 		}
 
-		// Get the option names, but limit to 50 characters total.
+		// Get the setting names, but limit to 50 characters total.
 		$option_names = '';
 		foreach ( self::$event->properties as $option => $prop ) {
 			$option_names2 = ( $option_names ? ( $option_names . ', ' ) : '' ) . $option;

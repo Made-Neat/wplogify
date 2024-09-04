@@ -20,21 +20,21 @@ class Plugin_Settings {
 	/**
 	 * The default value for the 'API key' setting.
 	 *
-	 * @var array
+	 * @var string
 	 */
 	private const DEFAULT_API_KEY = '';
 
 	/**
 	 * The default value for the 'delete on uninstall' setting.
 	 *
-	 * @var array
+	 * @var bool
 	 */
 	private const DEFAULT_DELETE_ON_UNINSTALL = false;
 
 	/**
 	 * The default value for the 'show in admin bar' setting.
 	 *
-	 * @var array
+	 * @var bool
 	 */
 	private const DEFAULT_SHOW_IN_ADMIN_BAR = true;
 
@@ -168,6 +168,7 @@ class Plugin_Settings {
 	 * Deletes all settings options for the WP Logify plugin.
 	 */
 	public static function delete_all() {
+		// Options that are registered settings.
 		delete_option( 'wp_logify_api_key' );
 		delete_option( 'wp_logify_delete_on_uninstall' );
 		delete_option( 'wp_logify_roles_to_track' );
@@ -175,6 +176,9 @@ class Plugin_Settings {
 		delete_option( 'wp_logify_keep_period_quantity' );
 		delete_option( 'wp_logify_keep_period_units' );
 		delete_option( 'wp_logify_wp_cron_tracking' );
+
+		// Additional options used by the plugin that aren't settings.
+		delete_option( 'wp_logify_known_taxonomies' );
 	}
 
 	/**

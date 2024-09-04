@@ -22,12 +22,12 @@ class Option_Utility extends Object_Utility {
 	/**
 	 * Check if an option exists.
 	 *
-	 * @param int|string $option The name of the option.
+	 * @param int|string $option_name The name of the option.
 	 * @return bool True if the option exists, false otherwise.
 	 */
-	public static function exists( int|string $option ): bool {
+	public static function exists( int|string $option_name ): bool {
 		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(option_name) FROM %i WHERE option_name = %d', $wpdb->options, $option );
+		$sql   = $wpdb->prepare( 'SELECT COUNT(option_name) FROM %i WHERE option_name = %d', $wpdb->options, $option_name );
 		$count = (int) $wpdb->get_var( $sql );
 		return $count > 0;
 	}
@@ -35,50 +35,50 @@ class Option_Utility extends Object_Utility {
 	/**
 	 * Get a option value.
 	 *
-	 * @param int|string $option The name of the option.
+	 * @param int|string $option_name The name of the option.
 	 * @return mixed The option value or null if not found.
 	 */
-	public static function load( int|string $option ): mixed {
+	public static function load( int|string $option_name ): mixed {
 		// Get the option value, defaulting to null.
-		return get_option( $option, null );
+		return get_option( $option_name, null );
 	}
 
 	/**
 	 * Get a readable name for an option.
 	 *
-	 * @param int|string $option The name of the option.
+	 * @param int|string $option_name The name of the option.
 	 * @return ?string A more readable name of the option.
 	 */
-	public static function get_name( int|string $option ): ?string {
-		return Strings::make_key_readable( $option );
+	public static function get_name( int|string $option_name ): ?string {
+		return Strings::make_key_readable( $option_name );
 	}
 
 	/**
 	 * Get the core properties of a option.
 	 *
-	 * @param int|string $option The option name.
+	 * @param int|string $option_name The option name.
 	 * @return array The core properties of the option.
 	 * @throws Exception If the option no longer exists.
 	 */
-	public static function get_core_properties( int|string $option ): array {
+	public static function get_core_properties( int|string $option_name ): array {
 		global $wpdb;
 
 		// Load the option.
-		$option_value = self::load( $option );
+		$option_value = self::load( $option_name );
 
 		// Handle the case where the option no longer exists.
 		if ( $option_value === null ) {
-			throw new Exception( "Option '$option' not found." );
+			throw new Exception( "Option '$option_name' not found." );
 		}
 
 		// Build the array of properties.
 		$properties = array();
 
 		// Name.
-		Property::update_array( $properties, 'name', $wpdb->options, $option );
+		Property::update_array( $properties, 'name', $wpdb->options, $option_name );
 
 		// Value.
-		$option_value = Types::process_database_value( $option, $option_value );
+		$option_value = Types::process_database_value( $option_name, $option_value );
 		Property::update_array( $properties, 'value', $wpdb->options, $option_value );
 
 		return $properties;
@@ -89,26 +89,55 @@ class Option_Utility extends Object_Utility {
 	 *
 	 * If the option isn't present, then the "(deleted)" text will be appended to the name.
 	 *
-	 * @param int|string $option   The name of the option.
-	 * @param ?string    $old_name The fallback name of the option if it's been deleted (not used).
+	 * @param int|string $option_name The name of the option.
+	 * @param ?string    $old_name    The fallback display name of the option if it's been deleted.
 	 * @return string The span HTML.
 	 */
-	public static function get_tag( int|string $option, ?string $old_name = null ): string {
+	public static function get_tag( int|string $option_name, ?string $old_name = null ): string {
 		// Load the option.
-		$option_value = self::load( $option );
+		$option_value = self::load( $option_name );
 
 		// If the option exists, get a span.
 		if ( $option_value !== null ) {
-			$name = self::get_name( $option );
+			$name = self::get_name( $option_name );
 			return "<span class='wp-logify-object'>$name</span>";
 		}
 
 		// Make a backup name.
 		if ( ! $old_name ) {
-			$old_name = Strings::make_key_readable( $option );
+			$old_name = Strings::make_key_readable( $option_name );
 		}
 
 		// The option no longer exists. Construct the 'deleted' span element.
 		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
+	}
+
+	// =============================================================================================
+	// Additional methods.
+
+	/**
+	 * Check if an option is a registered setting.
+	 *
+	 * @param string $option_name The name of the option.
+	 * @return bool True if the option is a registered setting, false otherwise.
+	 */
+	public static function is_setting( string $option_name ): bool {
+		global $allowed_options, $wp_registered_settings;
+
+		// Check if the option is a WordPress allowed option.
+		if ( is_array( $allowed_options ) ) {
+			foreach ( $allowed_options as $options_group => $options ) {
+				if ( in_array( $option_name, $options, true ) ) {
+					return true;
+				}
+			}
+		}
+
+		// Check if the option is registered as a setting by a plugin.
+		if ( isset( $wp_registered_settings[ $option_name ] ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }

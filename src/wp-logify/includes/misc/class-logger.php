@@ -20,9 +20,12 @@ class Logger {
 	/**
 	 * The valid object types for which events can be logged.
 	 *
+	 * This list is not in alphabetical order because 'option' will be converted to 'Setting' in the
+	 * UI, so the object types will be ordered alphabetically in the UI.
+	 *
 	 * @var string[]
 	 */
-	public const VALID_OBJECT_TYPES = array( 'comment', 'core', 'option', 'plugin', 'post', 'taxonomy', 'term', 'theme', 'user', 'widget' );
+	public const VALID_OBJECT_TYPES = array( 'comment', 'core', 'plugin', 'post', 'option', 'taxonomy', 'term', 'theme', 'user', 'widget' );
 
 	/**
 	 * The maximum length of an object name.

@@ -73,21 +73,15 @@ class Widget_Tracker {
 
 			// Load the widget details from the option values, so we get the extra properties.
 			$old_widget = Widget_Utility::get_from_option( $widget_id, $old_option_value );
-			// debug( '$old_widget', $old_widget );
-
 			$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 			if ( ! key_exists( $widget_number, $new_option_value ) ) {
 				// The widget is being deleted.
 
-				// debug( 'widget deleted', $widget_type, $widget_number, $widget_id, $old_widget );
-
 				// Create the event.
 				self::$events[ $widget_id ] = Event::create( 'Widget Deleted', $old_widget );
 			} elseif ( $old_widget !== $new_widget ) {
-				// The widget has been updated.
-
-				// debug( 'widget updated', $widget_type, $widget_number, $widget_id, $old_widget );
+				// The widget is being updated.
 
 				// Store the property changes.
 				$props = array();
@@ -100,10 +94,14 @@ class Widget_Tracker {
 					$old_widget_value = $old_widget[ $key ] ?? null;
 					$new_widget_value = $new_widget[ $key ] ?? null;
 
-					// Strip tags from content.
 					if ( $key === 'content' ) {
+						// Strip tags from content.
 						$old_widget_value = Strings::strip_tags( $old_widget_value );
 						$new_widget_value = Strings::strip_tags( $new_widget_value );
+					} elseif ( $key === 'nav_menu' ) {
+						// For menus, convert to an object reference.
+						$old_widget_value = empty( $old_widget_value ) ? null : new Object_Reference( 'term', $old_widget_value );
+						$new_widget_value = empty( $new_widget_value ) ? null : new Object_Reference( 'term', $new_widget_value );
 					}
 
 					// Compare.
@@ -134,8 +132,6 @@ class Widget_Tracker {
 			return;
 		}
 
-		// debug( 'on_updated_option', $option, $old_option_value, $new_option_value );
-
 		// Get the widget type from the option name.
 		$widget_type = substr( $option, strlen( 'widget_' ) );
 
@@ -155,7 +151,6 @@ class Widget_Tracker {
 				$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 				// Create the event.
-				// debug( 'Widget Created', $widget_type, $widget_number, $widget_id, $new_widget );
 				self::$events[ $widget_id ] = Event::create( 'Widget Created', $new_widget );
 			}
 		}
@@ -167,8 +162,6 @@ class Widget_Tracker {
 	 * @param array $sidebars_widgets The value of the sidebars_widgets option.
 	 */
 	public static function record_widget_areas( $sidebars_widgets ) {
-		// debug( 'record_widget_areas' );
-
 		// Is this the first time recording the widget areas?
 		$first_time = empty( self::$areas );
 
