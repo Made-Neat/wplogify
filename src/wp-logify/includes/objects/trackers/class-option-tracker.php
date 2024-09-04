@@ -74,6 +74,12 @@ class Option_Tracker {
 				$new_val = new Object_Reference( 'term', $new_val );
 			}
 
+			// Convert privacy page to reference.
+			if ( $option_name === 'wp_page_for_privacy_policy' ) {
+				$old_val = new Object_Reference( 'post', $old_val );
+				$new_val = new Object_Reference( 'post', $new_val );
+			}
+
 			// Add the setting change to the properties.
 			self::$event->set_prop( $option_name, $wpdb->options, $old_val, $new_val );
 		}
