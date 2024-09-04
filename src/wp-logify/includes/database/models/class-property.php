@@ -86,9 +86,12 @@ class Property {
 	 * @param mixed   $new_val    Optional. The new value of the property, if changed.
 	 */
 	public static function update_array( array &$props, string $key, ?string $table_name, mixed $val, mixed $new_val = null ) {
+		// If the key doesn't exist in the array, create a new Property object.
 		if ( ! key_exists( $key, $props ) ) {
 			$props[ $key ] = new Property( $key );
 		}
+
+		// Update the Property object with the new values.
 		$props[ $key ]->table_name = $table_name;
 		$props[ $key ]->val        = $val;
 		$props[ $key ]->new_val    = $new_val;

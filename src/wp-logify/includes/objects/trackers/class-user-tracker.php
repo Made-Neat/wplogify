@@ -29,14 +29,21 @@ class User_Tracker {
 	 *
 	 * @var array
 	 */
-	protected static $properties = array();
+	private static $properties = array();
 
 	/**
 	 * Array to remember metadata between different events.
 	 *
 	 * @var array
 	 */
-	protected static $eventmetas = array();
+	private static $eventmetas = array();
+
+	/**
+	 * User profile update event.
+	 *
+	 * @var Event
+	 */
+	private static $profile_update_event;
 
 	/**
 	 * Set up hooks for the events we want to log.
@@ -60,6 +67,7 @@ class User_Tracker {
 		// User update.
 		add_action( 'profile_update', array( __CLASS__, 'on_profile_update' ), 10, 3 );
 		add_action( 'update_user_meta', array( __CLASS__, 'on_update_user_meta' ), 10, 4 );
+		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**
@@ -135,29 +143,35 @@ class User_Tracker {
 	/**
 	 * User update.
 	 *
-	 * @param int     $user_id       The ID of the user being updated.
-	 * @param WP_User $old_user_data The WP_User object of the user before the update.
-	 * @param array   $userdata      The data for the user after the update.
+	 * @param int     $user_id  The ID of the user being updated.
+	 * @param WP_User $user     The WP_User object of the user before the update.
+	 * @param array   $userdata The data for the user after the update.
 	 */
-	public static function on_profile_update( int $user_id, WP_User $old_user_data, array $userdata ) {
+	public static function on_profile_update( int $user_id, WP_User $user, array $userdata ) {
 		global $wpdb;
 
 		// Compare values and make note of any changes.
-		foreach ( $old_user_data->data as $key => $value ) {
+		foreach ( $user->data as $key => $value ) {
 
 			// Process meta values into correct types.
-			$val     = Types::process_database_value( $key, $value );
+			$old_val = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $userdata[ $key ] );
 
 			// If the value has changed, add the before and after values to the changes array.
-			if ( ! Types::are_equal( $val, $new_val ) ) {
-				Property::update_array( self::$properties, $key, $wpdb->users, $val, $new_val );
+			if ( ! Types::are_equal( $old_val, $new_val ) ) {
+				Property::update_array( self::$properties, $key, $wpdb->users, $old_val, $new_val );
 			}
 		}
 
-		// Log the event if there were any changes.
+		// Add the properties to the event if there were any changes.
 		if ( self::$properties ) {
-			Logger::log_event( 'User Updated', $old_user_data, null, self::$properties );
+			// Create the event if it doesn't already exist.
+			if ( ! self::$profile_update_event ) {
+				self::$profile_update_event = Event::create( 'User Updated', $user );
+			}
+
+			// Update the event with the new properties.
+			self::$profile_update_event->set_props( self::$properties );
 		}
 	}
 
@@ -176,12 +190,20 @@ class User_Tracker {
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
 		// Process meta values into correct types.
-		$val     = Types::process_database_value( $meta_key, $current_value );
+		$old_val = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
 		// If the value has changed, add the before and after values to the changes array.
-		if ( ! Types::are_equal( $val, $new_val ) ) {
-			Property::update_array( self::$properties, $meta_key, $wpdb->usermeta, $val, $new_val );
+		if ( ! Types::are_equal( $old_val, $new_val ) ) {
+
+			// Create the event if it doesn't already exist.
+			if ( ! self::$profile_update_event ) {
+				$user_ref                   = new Object_Reference( 'user', $user_id );
+				self::$profile_update_event = Event::create( 'User Updated', $user_ref );
+			}
+
+			// Update the event with the new property.
+			self::$profile_update_event->set_prop( $meta_key, $wpdb->usermeta, $old_val, $new_val );
 		}
 	}
 
@@ -254,6 +276,16 @@ class User_Tracker {
 
 			// Log the event.
 			Logger::log_event( $event_type, $user, self::$eventmetas );
+		}
+	}
+
+	/**
+	 * Fires on shutdown, after PHP execution.
+	 */
+	public static function on_shutdown() {
+		// Save the profile update event if it exists.
+		if ( self::$profile_update_event ) {
+			self::$profile_update_event->save();
 		}
 	}
 }
