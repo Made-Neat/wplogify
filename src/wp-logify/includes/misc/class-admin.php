@@ -154,11 +154,11 @@ class Admin {
 	 */
 	public static function enqueue_style( $src, $deps = array(), $ver = 'auto', $media = 'all' ): string {
 		// If auto is specified, use the file modified time as the version number.
-		$ver = 'auto' === $ver ? filemtime( WP_LOGIFY_PLUGIN_DIR . "assets/css/$src" ) : $ver;
+		$ver = $ver === 'auto' ? filemtime( WP_LOGIFY_PLUGIN_DIR . $src ) : $ver;
 
 		// Enqueue the script.
 		$handle  = self::filename_to_handle( $src );
-		$src_url = WP_LOGIFY_PLUGIN_URL . "assets/css/$src";
+		$src_url = WP_LOGIFY_PLUGIN_URL . $src;
 		wp_enqueue_style( $handle, $src_url, $deps, $ver, $media );
 
 		// Return the handle.
@@ -179,11 +179,11 @@ class Admin {
 	 */
 	public static function enqueue_script( $src, $deps = array(), $ver = 'auto', $args = array() ): string {
 		// If auto is specified, use the file modified time as the version number.
-		$ver = 'auto' === $ver ? filemtime( WP_LOGIFY_PLUGIN_DIR . "assets/js/$src" ) : $ver;
+		$ver = $ver === 'auto' ? filemtime( WP_LOGIFY_PLUGIN_DIR . $src ) : $ver;
 
 		// Enqueue the script.
 		$handle  = self::filename_to_handle( $src );
-		$src_url = WP_LOGIFY_PLUGIN_URL . "assets/js/$src";
+		$src_url = WP_LOGIFY_PLUGIN_URL . $src;
 		wp_enqueue_script( $handle, $src_url, $deps, $ver, $args );
 
 		// Return the handle.
@@ -199,37 +199,45 @@ class Admin {
 		// Dashboard widget.
 		if ( $hook === 'index.php' ) {
 			// Styles.
-			self::enqueue_style( 'dashboard-widget.css' );
+			self::enqueue_style( 'assets/css/dashboard-widget.css' );
 
 			// Scripts.
-			self::enqueue_script( 'dashboard-widget.js', array( 'jquery' ), 'auto', true );
+			self::enqueue_script( 'assets/js/dashboard-widget.js', array( 'jquery' ), 'auto', true );
 		}
 
 		// Settings.
 		if ( $hook === 'wp-logify_page_wp-logify-settings' ) {
-			self::enqueue_style( 'settings.css' );
+			self::enqueue_style( 'assets/css/settings.css' );
 		}
 
 		// Log page.
 		if ( $hook === 'toplevel_page_wp-logify' ) {
 			// Styles.
-			self::enqueue_style( 'log-page.css' );
+			self::enqueue_style( 'assets/css/log-page.css' );
+
+			// Get the date format to pass to JS.
+			$date_format = DateTimes::convert_php_date_format_to_js( get_option( 'date_format' ) );
 
 			// Scripts.
-			$log_page_script_handle = self::enqueue_script( 'log-page.js', array( 'jquery' ), 'auto', true );
+			$log_page_script_handle = self::enqueue_script( 'assets/js/log-page.js', array( 'jquery' ), 'auto', true );
+
 			// The handle here must match the handle of the JS script to attach to.
-			// So we must remember that the self::enqueue_script() method prepends 'wp-logify-' to the handle.
 			wp_localize_script(
 				$log_page_script_handle,
 				'wpLogifyLogPage',
 				array(
-					'ajaxurl' => admin_url( 'admin-ajax.php' ),
+					'ajaxurl'    => admin_url( 'admin-ajax.php' ),
+					'dateFormat' => $date_format,
 				)
 			);
 
+			// Include jQuery UI datepicker.
+			wp_enqueue_script( 'jquery-ui-datepicker' );
+			self::enqueue_style( 'assets/jquery/jquery-ui.css', array(), '1.14.0' );
+
 			// DataTables assets.
-			wp_enqueue_style( 'datatables', WP_LOGIFY_PLUGIN_URL . 'assets/datatables/datatables.css', array(), '2.0.8' );
-			wp_enqueue_script( 'datatables', WP_LOGIFY_PLUGIN_URL . 'assets/datatables/datatables.js', array( 'jquery' ), '2.0.8', true );
+			self::enqueue_style( 'assets/datatables/datatables.css', array(), '2.0.8' );
+			self::enqueue_script( 'assets/datatables/datatables.js', array( 'jquery' ), '2.0.8', true );
 		}
 	}
 

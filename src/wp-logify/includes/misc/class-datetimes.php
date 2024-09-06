@@ -134,6 +134,18 @@ class DateTimes {
 	}
 
 	/**
+	 * Adds a given number of days to a DateTime.
+	 *
+	 * @param DateTime $datetime The DateTime to add days to.
+	 * @param int      $days The number of days to add.
+	 * @return DateTime A new DateTime object equal to the original DateTime plus the specified number of days.
+	 */
+	public static function add_days( DateTime $datetime, int $days ): DateTime {
+		$datetime2 = clone $datetime;
+		return $datetime2->add( new DateInterval( 'P' . $days . 'D' ) );
+	}
+
+	/**
 	 * Subtracts a given number of hours from a DateTime.
 	 *
 	 * @param DateTime $datetime The DateTime to subtract hours from.
@@ -186,7 +198,7 @@ class DateTimes {
 	 * Return a string showing how long ago the given DateTime was.
 	 *
 	 * @param DateTime $datetime The DateTime to compare with now.
-	 * @return string The
+	 * @return string The string showing how long ago the DateTime was.
 	 */
 	public static function get_ago_string( DateTime $datetime ): string {
 		return human_time_diff( $datetime->getTimestamp() ) . ' ago';
@@ -201,5 +213,36 @@ class DateTimes {
 	public static function set_timezone( DateTime $datetime, string $tz_string ) {
 		$tz = $tz_string === 'site' ? wp_timezone() : new DateTimeZone( $tz_string );
 		$datetime->setTimezone( $tz );
+	}
+
+	/**
+	 * Convert a PHP date format to jQuery datepicker format.
+	 *
+	 * @param string $php_format The PHP date format.
+	 * @return string The corresponding jQuery datepicker format.
+	 */
+	public static function convert_php_date_format_to_js( string $php_format ): string {
+
+		// Mapping from PHP date format to jQuery datepicker format.
+		$replacements = array(
+			// Day.
+			'd' => 'dd',   // Day of the month, 2 digits with leading zeros (01-31)
+			'j' => 'd',    // Day of the month without leading zeros (1-31)
+			'D' => 'D',    // Day of the week, short name (Mon-Sun)
+			'l' => 'DD',   // Day of the week, full name (Monday-Sunday)
+
+			// Month.
+			'm' => 'mm',   // Month, 2 digits with leading zeros (01-12)
+			'n' => 'm',    // Month without leading zeros (1-12)
+			'M' => 'M',    // Short month name (Jan-Dec)
+			'F' => 'MM',   // Full month name (January-December)
+
+			// Year.
+			'Y' => 'yy',   // Year, 4 digits (e.g., 2024)
+			'y' => 'y',    // Year, 2 digits (e.g., 24)
+		);
+
+		// Perform the replacement.
+		return strtr( $php_format, $replacements );
 	}
 }

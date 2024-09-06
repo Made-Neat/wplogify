@@ -20,12 +20,23 @@ class Logger {
 	/**
 	 * The valid object types for which events can be logged.
 	 *
-	 * This list is not in alphabetical order because 'option' will be converted to 'Setting' in the
-	 * UI, so the object types will be ordered alphabetically in the UI.
+	 * This list is in alphabetical order by value.
 	 *
 	 * @var string[]
 	 */
-	public const VALID_OBJECT_TYPES = array( 'comment', 'core', 'plugin', 'post', 'option', 'taxonomy', 'term', 'theme', 'user', 'widget' );
+	public const VALID_OBJECT_TYPES = array(
+		'comment'     => 'Comment',
+		'plugin'      => 'Plugin',
+		'post'        => 'Post',
+		'option'      => 'Setting',
+		'taxonomy'    => 'Taxonomy',
+		'term'        => 'Term',
+		'theme'       => 'Theme',
+		'translation' => 'Translation',
+		'user'        => 'User',
+		'widget'      => 'Widget',
+		'core'        => 'WP Core',
+	);
 
 	/**
 	 * The maximum length of an object name.

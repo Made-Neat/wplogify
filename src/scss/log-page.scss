@@ -177,19 +177,52 @@
 
     @include object-type-colors;
 
-    .wp-logify-show-object-type-events {
-        display: inline;
+    .wp-logify-object-type-filter-item {
+        display: inline-block;
         padding: 0.25rem;
         border-radius: 0.25rem;
         cursor: pointer;
-        margin-left: 0.5rem;
+        margin: 0.5rem 0.5rem 0 0;
+        width: 6rem;
+        border-style: solid;
+        border-width: 1px;
 
         label {
             cursor: inherit;
         }
     }
+
+    .wp-logify-object-type-all {
+        border-color: $gray-87;
+        margin-top: 0.25rem;
+    }
 }
 
 #wp-logify-object-type-checkboxes {
     display: inline;
+}
+
+#wp-logify-log-filters {
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background-color: $gray-97;
+
+    td {
+        width: 400px;
+        padding: 1rem;
+        border: solid 1px $gray-87;
+    }
+
+    .wp-logify-filter-label {
+        margin-bottom: 0.25rem;
+    }
+}
+
+#wp-logify-keyword-filter,
+#wp-logify-post-type-filter,
+#wp-logify-taxonomy-filter,
+#wp-logify-user-filter,
+#wp-logify-role-filter,
+#wp-logify-event-type-filter {
+    width: 20rem;
 }

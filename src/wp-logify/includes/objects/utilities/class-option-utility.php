@@ -138,8 +138,8 @@ class Option_Utility extends Object_Utility {
 			return true;
 		}
 
-		// There are additional settings on the Permalinks and Privacy settings pages, which aren't
-		// included in $allowed_options. Check if the option is one of these.
+		// Check if the option is one of the additional settings on the Permalinks and Privacy
+		// settings pages that (for some reason) aren't included in $allowed_options.
 		$additional_settings = array( 'permalink_structure', 'category_base', 'tag_base', 'wp_page_for_privacy_policy' );
 		if ( in_array( $option_name, $additional_settings, true ) ) {
 			return true;

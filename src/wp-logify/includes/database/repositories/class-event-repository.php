@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use DateTime;
 use InvalidArgumentException;
 
 /**
@@ -329,5 +330,32 @@ class Event_Repository extends Repository {
 			'object_key'    => $event->object_key,
 			'object_name'   => $event->object_name,
 		);
+	}
+
+	// =============================================================================================
+	// Methods for filtering events.
+
+	/**
+	 * Get the earliest date in the events table.
+	 *
+	 * @return ?DateTime
+	 */
+	public static function get_earliest_date(): ?DateTime {
+		global $wpdb;
+		$sql      = 'SELECT MIN(when_happened) FROM ' . self::get_table_name();
+		$min_date = $wpdb->get_var( $sql );
+		return $min_date ? DateTimes::create_datetime( $min_date ) : null;
+	}
+
+	/**
+	 * Get the latst date in the events table.
+	 *
+	 * @return ?DateTime
+	 */
+	public static function get_latest_date(): ?DateTime {
+		global $wpdb;
+		$sql      = 'SELECT MAX(when_happened) FROM ' . self::get_table_name();
+		$max_date = $wpdb->get_var( $sql );
+		return $max_date ? DateTimes::create_datetime( $max_date ) : null;
 	}
 }

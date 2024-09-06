@@ -8,7 +8,7 @@
 namespace WP_Logify;
 
 use DateTime;
-use Exception;
+use DateTimeZone;
 
 /**
  * Class WP_Logify\Log_Page
@@ -95,8 +95,13 @@ class Log_Page {
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
 		// Get the object types to show events for.
-		$object_types = isset( $_COOKIE['object_types'] ) ? json_decode( stripslashes( $_COOKIE['object_types'] ), true ) : Logger::VALID_OBJECT_TYPES;
-		// debug( $object_types );
+		$object_types = isset( $_COOKIE['object_types'] )
+			? json_decode( stripslashes( $_COOKIE['object_types'] ), true )
+			: array_keys( Logger::VALID_OBJECT_TYPES );
+
+		// Get the date range.
+		$start_date = isset( $_COOKIE['start_date'] ) ? wp_unslash( $_COOKIE['start_date'] ) : null;
+		$end_date   = isset( $_COOKIE['end_date'] ) ? wp_unslash( $_COOKIE['end_date'] ) : null;
 
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of events in the database.
@@ -149,9 +154,38 @@ class Log_Page {
 		// Filter by object type if specified.
 		if ( ! $object_types ) {
 			$where_parts[] = ' object_type IS NULL';
-		} elseif ( array_diff( Logger::VALID_OBJECT_TYPES, $object_types ) ) {
+		} elseif ( array_diff( array_keys( Logger::VALID_OBJECT_TYPES ), $object_types ) ) {
 			$object_type_string = implode( ',', array_map( fn( $object_type ) => "'$object_type'", $object_types ) );
 			$where_parts[]      = " object_type IN ($object_type_string)";
+		}
+
+		// Filter by date range if specified.
+		if ( $start_date || $end_date ) {
+			// Get the date format and time zone from the site settings.
+			$date_format = get_option( 'date_format' );
+			$time_zone   = new DateTimeZone( get_option( 'timezone_string' ) );
+
+			// Start date.
+			if ( $start_date ) {
+				// Check the provided string is valid by converting it to a DateTime object.
+				$start_date = DateTime::createFromFormat( $date_format, $start_date, $time_zone );
+				if ( $start_date ) {
+					$where_parts[] = ' when_happened >= %s';
+					$where_args[]  = $start_date->format( 'Y-m-d 00:00:00' );
+				}
+			}
+
+			// End date.
+			if ( $end_date ) {
+				// Check the provided string is valid by converting it to a DateTime object.
+				$end_date = DateTime::createFromFormat( $date_format, $end_date, $time_zone );
+				if ( $end_date ) {
+					// Add a day, and look for events before this.
+					$end_date      = DateTimes::add_days( $end_date, 1 );
+					$where_parts[] = ' when_happened < %s';
+					$where_args[]  = $end_date->format( 'Y-m-d 00:00:00' );
+				}
+			}
 		}
 
 		// Complete building of the where clause.

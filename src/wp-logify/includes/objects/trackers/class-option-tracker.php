@@ -60,7 +60,7 @@ class Option_Tracker {
 		}
 
 		// If the value has changed, add the setting change to the event properties.
-		if ( $old_val !== $new_val ) {
+		if ( ! Types::are_equal( $old_val, $new_val ) ) {
 
 			// Create the event object to encapsulate setting updates, if it doesn't already exist.
 			if ( ! isset( self::$event ) ) {
@@ -68,14 +68,12 @@ class Option_Tracker {
 				self::$event = Event::create( 'Settings Updated', $object_ref );
 			}
 
-			// Convert categories to links.
 			if ( Strings::ends_with( $option_name, '_category' ) ) {
+				// Convert categories to links.
 				$old_val = new Object_Reference( 'term', $old_val );
 				$new_val = new Object_Reference( 'term', $new_val );
-			}
-
-			// Convert privacy page to reference.
-			if ( $option_name === 'wp_page_for_privacy_policy' ) {
+			} elseif ( $option_name === 'wp_page_for_privacy_policy' ) {
+				// Convert privacy page to reference.
 				$old_val = new Object_Reference( 'post', $old_val );
 				$new_val = new Object_Reference( 'post', $new_val );
 			}
@@ -102,7 +100,8 @@ class Option_Tracker {
 		// Get the setting names, but limit to 50 characters total.
 		$option_names = '';
 		foreach ( self::$event->properties as $option => $prop ) {
-			$option_names2 = ( $option_names ? ( $option_names . ', ' ) : '' ) . $option;
+			$readable_option = Strings::make_key_readable( $option );
+			$option_names2   = ( $option_names ? ( $option_names . ', ' ) : '' ) . $readable_option;
 			if ( strlen( $option_names2 ) <= Logger::MAX_OBJECT_NAME_LENGTH - 6 ) {
 				$option_names = $option_names2;
 			} else {

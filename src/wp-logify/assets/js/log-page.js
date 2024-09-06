@@ -169,7 +169,7 @@ jQuery(($) => {
     let updateCookieAndReload = () => {
         // Store the selected object types in the cookie.
         let selectedObjectTypes = getSelectedObjectTypes();
-        console.log(selectedObjectTypes);
+        // console.log(selectedObjectTypes);
         wpCookies.set('object_types', JSON.stringify(selectedObjectTypes), false, false, false, false);
 
         // Reload the page.
@@ -177,32 +177,103 @@ jQuery(($) => {
     }
 
     // Initialize the object type checkboxes.
-    let selectedObjectTypes = wpCookies.get('object_types');
-    // console.log(selectedObjectTypes);
-    $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
-        $(element).prop('checked', selectedObjectTypes.includes(element.value));
-    });
+    let initObjectTypeCheckboxes = () => {
+        // Initialize the object type checkboxes.
+        let selectedObjectTypes = wpCookies.get('object_types');
+        // console.log(selectedObjectTypes);
+        $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
+            $(element).prop('checked', selectedObjectTypes.includes(element.value));
+        });
 
-    // Reload the table when an object type checkbox is clicked.
-    $('#wp-logify-object-type-checkboxes input').on('change', () => {
         // Update state of 'All' checkbox to match state of others.
         $('#wp-logify-show-all-events').prop('checked', allObjectTypesSelected());
+    };
 
+    // Do it now.
+    initObjectTypeCheckboxes();
+
+    // Setup behaviour of object type checkboxes.
+    $('.wp-logify-object-type-filter-item input').on('change', function (event) {
+        // Cancel the default behaviour of the checkbox.
+        event.preventDefault();
+
+        // Click the surrounding div.
+        $(this).parent().click();
+    });
+
+    // Setup behaviour of object type containers (i.e. the coloured divs wrapping the checkbox and label).
+    $('.wp-logify-object-type-filter-item').on('click', function (event) {
+        // Toggle the checkbox.
+        let checkbox = $(this).find('input[type="checkbox"]');
+        let isChecked = checkbox.is(':checked');
+        checkbox.prop('checked', !isChecked);
+        isChecked = !isChecked;
+
+        // If this is the 'All' checkbox, check or uncheck all others.
+        if (checkbox.is('#wp-logify-show-all-events')) {
+            console.log('All checkbox clicked');
+
+            if (isChecked) {
+                // All is checked, so check all others.
+                $('#wp-logify-object-type-checkboxes input').prop('checked', true);
+            }
+            else {
+                // Otherwise, uncheck all others.
+                $('#wp-logify-object-type-checkboxes input').prop('checked', false);
+            }
+        }
+        else {
+            // Update state of 'All' checkbox to match state of others.
+            $('#wp-logify-show-all-events').prop('checked', allObjectTypesSelected());
+        }
+
+        // Update cookies and reload the page.
         updateCookieAndReload();
     });
 
-    // Setup behaviour of 'All' checkbox.
-    $('#wp-logify-show-all-events').on('click', () => {
-        // If the All checkbox has been checked, check all others.
-        if ($('#wp-logify-show-all-events').is(':checked')) {
-            $('#wp-logify-object-type-checkboxes input').prop('checked', true);
-        }
-        else {
-            // Otherwise, uncheck all others.
-            $('#wp-logify-object-type-checkboxes input').prop('checked', false);
+    // Extract the date from a datepicker element.
+    let getDate = element => {
+        var date;
+        try {
+            date = $.datepicker.parseDate(wpLogifyLogPage.dateFormat, element.value);
+            console.log(date);
+        } catch (error) {
+            date = null;
         }
 
-        updateCookieAndReload();
+        return date;
+    };
+
+    // Setup the start datepicker.
+    let startDatePicker = $('#wp-logify-start-date').datepicker({
+        dateFormat: wpLogifyLogPage.dateFormat,
+        onSelect: function (date) {
+            console.log('start date selected:', date);
+            // Update the cookie.
+            wpCookies.set('start_date', date, false, false, false, false);
+
+            // Set the min date of the end datepicker.
+            endDatePicker.datepicker("option", "minDate", getDate(this));
+
+            // Reload the table.
+            eventsTable.ajax.reload();
+        }
+    });
+
+    // Setup the end datepicker.
+    let endDatePicker = $('#wp-logify-end-date').datepicker({
+        dateFormat: wpLogifyLogPage.dateFormat,
+        onSelect: function (date) {
+            console.log('end date selected:', date);
+            // Update the cookie.
+            wpCookies.set('end_date', date, false, false, false, false);
+
+            // Set the max date of the start datepicker.
+            startDatePicker.datepicker("option", "maxDate", getDate(this));
+
+            // Reload the table.
+            eventsTable.ajax.reload();
+        }
     });
 
 });
