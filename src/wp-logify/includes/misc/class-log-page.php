@@ -28,6 +28,12 @@ class Log_Page {
 	 * Display the log page.
 	 */
 	public static function display_log_page() {
+		// Get all the post types.
+		$post_types = Event_Repository::get_post_types();
+
+		// Get all the taxonomies.
+		$taxonomies = Event_Repository::get_taxonomies();
+
 		include WP_LOGIFY_PLUGIN_DIR . 'templates/log-page.php';
 	}
 
@@ -103,6 +109,10 @@ class Log_Page {
 		$start_date = isset( $_COOKIE['start_date'] ) ? wp_unslash( $_COOKIE['start_date'] ) : null;
 		$end_date   = isset( $_COOKIE['end_date'] ) ? wp_unslash( $_COOKIE['end_date'] ) : null;
 
+		// Get the post type and taxonomy.
+		$post_type = isset( $_COOKIE['post_type'] ) ? wp_unslash( $_COOKIE['post_type'] ) : null;
+		$taxonomy  = isset( $_COOKIE['taxonomy'] ) ? wp_unslash( $_COOKIE['taxonomy'] ) : null;
+
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of events in the database.
 		$total_sql         = $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name );
@@ -121,7 +131,7 @@ class Log_Page {
 		// Filter by search string if specified.
 		if ( $search_value !== '' ) {
 			$where_parts[] =
-				' (when_happened LIKE %s
+				'(when_happened LIKE %s
                     OR user_role LIKE %s
                     OR user_ip LIKE %s
                     OR user_location LIKE %s
@@ -151,12 +161,40 @@ class Log_Page {
 			);
 		}
 
-		// Filter by object type if specified.
-		if ( ! $object_types ) {
-			$where_parts[] = ' object_type IS NULL';
-		} elseif ( array_diff( array_keys( Logger::VALID_OBJECT_TYPES ), $object_types ) ) {
-			$object_type_string = implode( ',', array_map( fn( $object_type ) => "'$object_type'", $object_types ) );
-			$where_parts[]      = " object_type IN ($object_type_string)";
+		// Filter by object type and subtype if specified.
+		$all_object_types_selected = empty( array_diff( array_keys( Logger::VALID_OBJECT_TYPES ), $object_types ) );
+		if ( ! $all_object_types_selected || $post_type || $taxonomy ) {
+			// Assemble the OR parts.
+			$or_parts = array();
+
+			// Filter by post type if specified.
+			if ( in_array( 'post', $object_types ) && $post_type ) {
+				// Remove 'post' from object_types.
+				$object_types = array_diff( $object_types, array( 'post' ) );
+				$or_parts[]   = "(object_type = 'post' AND object_subtype = %s)";
+				$where_args[] = $post_type;
+			}
+
+			// Filter by taxonomy if specified.
+			if ( in_array( 'term', $object_types ) && $taxonomy ) {
+				// Remove 'term' from object_types.
+				$object_types = array_diff( $object_types, array( 'term' ) );
+				$or_parts[]   = "(object_type = 'term' AND object_subtype = %s)";
+				$where_args[] = $taxonomy;
+			}
+
+			// Filter by the remaining object types.
+			if ( $object_types ) {
+				$object_type_string = implode( ',', array_map( fn( $object_type ) => "'$object_type'", $object_types ) );
+				$or_parts[]         = "object_type IN ($object_type_string)";
+			}
+
+			// Add the OR parts to the where clause.
+			if ( count( $or_parts ) === 1 ) {
+				$where_parts[] = $or_parts[0];
+			} elseif ( count( $or_parts ) > 1 ) {
+				$where_parts[] = '(' . implode( ' OR ', $or_parts ) . ')';
+			}
 		}
 
 		// Filter by date range if specified.
@@ -170,7 +208,7 @@ class Log_Page {
 				// Check the provided string is valid by converting it to a DateTime object.
 				$start_date = DateTime::createFromFormat( $date_format, $start_date, $time_zone );
 				if ( $start_date ) {
-					$where_parts[] = ' when_happened >= %s';
+					$where_parts[] = 'when_happened >= %s';
 					$where_args[]  = $start_date->format( 'Y-m-d 00:00:00' );
 				}
 			}
@@ -182,7 +220,7 @@ class Log_Page {
 				if ( $end_date ) {
 					// Add a day, and look for events before this.
 					$end_date      = DateTimes::add_days( $end_date, 1 );
-					$where_parts[] = ' when_happened < %s';
+					$where_parts[] = 'when_happened < %s';
 					$where_args[]  = $end_date->format( 'Y-m-d 00:00:00' );
 				}
 			}
@@ -195,7 +233,7 @@ class Log_Page {
 		$select_args  = array( $events_table_name, $user_table_name );
 		$args         = array_merge( $select_args, $where_args );
 		$filtered_sql = $wpdb->prepare( "$select_count $where", $args );
-		// debug_sql( $filtered_sql );
+		debug_sql( $filtered_sql );
 		$num_filtered_records = (int) $wpdb->get_var( $filtered_sql );
 
 		// -----------------------------------------------------------------------------------------

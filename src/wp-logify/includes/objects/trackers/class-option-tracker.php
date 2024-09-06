@@ -92,11 +92,6 @@ class Option_Tracker {
 			return;
 		}
 
-		// Change the event type to singular if only one setting was updated.
-		if ( count( self::$event->properties ) === 1 ) {
-			self::$event->event_type = 'Setting Updated';
-		}
-
 		// Get the setting names, but limit to 50 characters total.
 		$option_names = '';
 		foreach ( self::$event->properties as $option => $prop ) {

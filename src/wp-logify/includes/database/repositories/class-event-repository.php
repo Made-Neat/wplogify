@@ -15,6 +15,16 @@ use InvalidArgumentException;
  */
 class Event_Repository extends Repository {
 
+	/**
+	 * Do initialization tasks.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		self::fix_post_types();
+		self::fix_taxonomies();
+	}
+
 	// =============================================================================================
 	// CRUD methods.
 
@@ -257,6 +267,7 @@ class Event_Repository extends Repository {
             user_agent     VARCHAR(255)    NULL,
             event_type     VARCHAR(255)    NOT NULL,
             object_type    VARCHAR(10)     NULL,
+            object_subtype VARCHAR(50)     NULL,
             object_key     VARCHAR(50)     NULL,
             object_name    VARCHAR(100)    NULL,
             PRIMARY KEY (event_id),
@@ -292,19 +303,20 @@ class Event_Repository extends Repository {
 	 * @return Event The new Event object.
 	 */
 	public static function record_to_object( array $record ): Event {
-		$event                = new Event();
-		$event->id            = (int) $record['event_id'];
-		$event->when_happened = DateTimes::create_datetime( $record['when_happened'] );
-		$event->user_id       = (int) $record['user_id'];
-		$event->user_name     = $record['user_name'];
-		$event->user_role     = $record['user_role'];
-		$event->user_ip       = $record['user_ip'];
-		$event->user_location = $record['user_location'];
-		$event->user_agent    = $record['user_agent'];
-		$event->event_type    = $record['event_type'];
-		$event->object_type   = $record['object_type'];
-		$event->object_key    = Types::process_database_value( 'object_key', $record['object_key'] );
-		$event->object_name   = $record['object_name'];
+		$event                 = new Event();
+		$event->id             = (int) $record['event_id'];
+		$event->when_happened  = DateTimes::create_datetime( $record['when_happened'] );
+		$event->user_id        = (int) $record['user_id'];
+		$event->user_name      = $record['user_name'];
+		$event->user_role      = $record['user_role'];
+		$event->user_ip        = $record['user_ip'];
+		$event->user_location  = $record['user_location'];
+		$event->user_agent     = $record['user_agent'];
+		$event->event_type     = $record['event_type'];
+		$event->object_type    = $record['object_type'];
+		$event->object_subtype = $record['object_subtype'];
+		$event->object_key     = Types::process_database_value( 'object_key', $record['object_key'] );
+		$event->object_name    = $record['object_name'];
 		return $event;
 	}
 
@@ -318,17 +330,18 @@ class Event_Repository extends Repository {
 	 */
 	public static function object_to_record( Event $event ): array {
 		return array(
-			'when_happened' => DateTimes::format_datetime_mysql( $event->when_happened ),
-			'user_id'       => $event->user_id,
-			'user_name'     => $event->user_name,
-			'user_role'     => $event->user_role,
-			'user_ip'       => $event->user_ip,
-			'user_location' => $event->user_location,
-			'user_agent'    => $event->user_agent,
-			'event_type'    => $event->event_type,
-			'object_type'   => $event->object_type,
-			'object_key'    => $event->object_key,
-			'object_name'   => $event->object_name,
+			'when_happened'  => DateTimes::format_datetime_mysql( $event->when_happened ),
+			'user_id'        => $event->user_id,
+			'user_name'      => $event->user_name,
+			'user_role'      => $event->user_role,
+			'user_ip'        => $event->user_ip,
+			'user_location'  => $event->user_location,
+			'user_agent'     => $event->user_agent,
+			'event_type'     => $event->event_type,
+			'object_type'    => $event->object_type,
+			'object_subtype' => $event->object_subtype,
+			'object_key'     => $event->object_key,
+			'object_name'    => $event->object_name,
 		);
 	}
 
@@ -357,5 +370,123 @@ class Event_Repository extends Repository {
 		$sql      = 'SELECT MAX(when_happened) FROM ' . self::get_table_name();
 		$max_date = $wpdb->get_var( $sql );
 		return $max_date ? DateTimes::create_datetime( $max_date ) : null;
+	}
+
+	// =============================================================================================
+	// Methods for setting the object subtype.
+
+	/**
+	 * Look through the events table for any events that have an object type of 'post' but an
+	 * object_subtype of NULL, and set the object_subtype.
+	 */
+	public static function fix_post_types() {
+		global $wpdb;
+
+		// Check in the events table for any events with an object_type of 'post' and a object_subtype of null.
+		$sql     = $wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'post' AND object_subtype IS NULL", self::get_table_name() );
+		$records = $wpdb->get_results( $sql, ARRAY_A );
+		foreach ( $records as $record ) {
+			// Get the post type.
+			$post_type = null;
+			$post      = Post_Utility::load( $record['object_key'] );
+			if ( $post ) {
+				$post_type = $post->post_type;
+			} else {
+				// Look in the properties.
+				$event = self::load( $record['event_id'] );
+				if ( $event->has_prop( 'post_type' ) ) {
+					$post_type = $event->get_prop_val( 'post_type' );
+				}
+			}
+			if ( $post_type ) {
+				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $post_type, $record['event_id'] );
+				// debug( $update_sql );
+				$wpdb->query( $update_sql );
+			}
+		}
+	}
+
+	/**
+	 * Look through the events table for any events that have an object type of 'term' but an
+	 * object_subtype of NULL, and set the object_subtype.
+	 */
+	public static function fix_taxonomies() {
+		global $wpdb;
+
+		// Check in the events table for any events with an object_type of 'term' and a object_subtype of null.
+		$sql     = $wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'term' AND object_subtype IS NULL", self::get_table_name() );
+		$records = $wpdb->get_results( $sql, ARRAY_A );
+		foreach ( $records as $record ) {
+			// Get the taxonomy.
+			$taxonomy = null;
+			$term     = Term_Utility::load( $record['object_key'] );
+			if ( $term ) {
+				$taxonomy = $term->taxonomy;
+			} else {
+				// Look in the properties.
+				$event = self::load( $record['event_id'] );
+				if ( $event->has_prop( 'taxonomy' ) ) {
+					$taxonomy = $event->get_prop_val( 'taxonomy' );
+				}
+			}
+			if ( $taxonomy ) {
+				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $taxonomy, $record['event_id'] );
+				// debug( $update_sql );
+				$wpdb->query( $update_sql );
+			}
+		}
+	}
+
+	// =============================================================================================
+	// Methods for getting the object subtypes.
+
+	/**
+	 * Get the post types that have been used in the events table.
+	 *
+	 * @return array An array with the post types as keys and the singular names as values.
+	 */
+	public static function get_post_types(): array {
+		global $wpdb;
+
+		// Get the post types.
+		$sql        = $wpdb->prepare(
+			"SELECT DISTINCT object_subtype
+            FROM %i WHERE object_type = 'post' AND object_subtype IS NOT NULL",
+			self::get_table_name()
+		);
+		$post_types = $wpdb->get_col( $sql );
+
+		// Construct the array of names.
+		$result = array();
+		foreach ( $post_types as $post_type ) {
+			$result[ $post_type ] = Post_Utility::get_post_type_singular_name( $post_type );
+		}
+		asort( $result );
+		return $result;
+	}
+
+	/**
+	 * Get the taxonomies that have been used in the events table.
+	 *
+	 * @return array An array with the taxonomies as keys and the singular names as values.
+	 */
+	public static function get_taxonomies(): array {
+		global $wpdb;
+
+		// Get the taxonomies.
+		$sql        = $wpdb->prepare(
+			"SELECT DISTINCT object_subtype
+            FROM %i WHERE object_type = 'term' AND object_subtype IS NOT NULL",
+			self::get_table_name()
+		);
+		$taxonomies = $wpdb->get_col( $sql );
+
+		// Construct the array of names.
+		$result = array();
+		foreach ( $taxonomies as $taxonomy ) {
+			$result[ $taxonomy ] = Taxonomy_Utility::get_singular_name( $taxonomy );
+		}
+		asort( $result );
+		return $result;
 	}
 }

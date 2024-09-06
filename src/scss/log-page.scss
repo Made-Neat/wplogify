@@ -1,5 +1,9 @@
 @import 'colors';
 
+.toplevel_page_wp-logify {
+    background-color: $gray-93;
+}
+
 .table-wp-logify {
     width: 100%;
     border-collapse: collapse;
@@ -182,7 +186,7 @@
         padding: 0.25rem;
         border-radius: 0.25rem;
         cursor: pointer;
-        margin: 0.5rem 0.5rem 0 0;
+        margin: 0.25rem 0.5rem 0.25rem 0;
         width: 6rem;
         border-style: solid;
         border-width: 1px;
@@ -194,7 +198,7 @@
 
     .wp-logify-object-type-all {
         border-color: $gray-87;
-        margin-top: 0.25rem;
+        margin-top: 0;
     }
 }
 
@@ -202,15 +206,16 @@
     display: inline;
 }
 
-#wp-logify-log-filters {
+#wp-logify-filters {
     border-collapse: collapse;
-    margin-top: 1rem;
+    margin: 1rem 0;
     background-color: $gray-97;
 
     td {
         width: 400px;
         padding: 1rem;
         border: solid 1px $gray-87;
+        vertical-align: top;
     }
 
     .wp-logify-filter-label {

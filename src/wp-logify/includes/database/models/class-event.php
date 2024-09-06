@@ -10,6 +10,8 @@ namespace WP_Logify;
 use DateTime;
 use Exception;
 use InvalidArgumentException;
+use WP_Post;
+use WP_Term;
 use WP_User;
 
 /**
@@ -86,6 +88,14 @@ class Event {
 	 * @var ?string
 	 */
 	public ?string $object_type;
+
+	/**
+	 * The subtype of the object associated with the event, which will be the post type for posts,
+	 * and the taxonomy for terms.
+	 *
+	 * @var ?string
+	 */
+	public ?string $object_subtype;
 
 	/**
 	 * The unique identifier of the object associated with the event.
@@ -199,6 +209,18 @@ class Event {
 			$object_ref = Object_Reference::new_from_wp_object( $wp_object );
 		}
 
+		// Get the subtype of the object if applicable.
+		$object_type = $object_ref?->type;
+		if ( $object_type === 'post' ) {
+			$post           = $wp_object instanceof WP_Post ? $wp_object : Post_Utility::load( $object_ref->key );
+			$object_subtype = $post->post_type;
+		} elseif ( $object_type === 'term' ) {
+			$term           = $wp_object instanceof WP_Term ? $wp_object : Term_Utility::load( $object_ref->key );
+			$object_subtype = $term->taxonomy;
+		} else {
+			$object_subtype = null;
+		}
+
 		// Get the core properties.
 		if ( $object_ref instanceof Object_Reference ) {
 			$object_props = $object_ref->get_core_properties();
@@ -214,20 +236,21 @@ class Event {
 		}
 
 		// Construct the new Event object.
-		$event                = new Event();
-		$event->when_happened = DateTimes::current_datetime();
-		$event->user_id       = $acting_user->ID;
-		$event->user_name     = User_Utility::get_name( $acting_user->ID );
-		$event->user_role     = implode( ', ', $acting_user->roles );
-		$event->user_ip       = User_Utility::get_ip();
-		$event->user_location = User_Utility::get_location( $event->user_ip );
-		$event->user_agent    = User_Utility::get_user_agent();
-		$event->event_type    = $event_type;
-		$event->object_type   = $object_ref?->type;
-		$event->object_key    = $object_ref?->key;
-		$event->object_name   = $object_ref?->name;
-		$event->eventmetas    = empty( $eventmetas ) ? null : $eventmetas;
-		$event->properties    = empty( $object_props ) ? null : $object_props;
+		$event                 = new Event();
+		$event->when_happened  = DateTimes::current_datetime();
+		$event->user_id        = $acting_user->ID;
+		$event->user_name      = User_Utility::get_name( $acting_user->ID );
+		$event->user_role      = implode( ', ', $acting_user->roles );
+		$event->user_ip        = User_Utility::get_ip();
+		$event->user_location  = User_Utility::get_location( $event->user_ip );
+		$event->user_agent     = User_Utility::get_user_agent();
+		$event->event_type     = $event_type;
+		$event->object_type    = $object_type;
+		$event->object_subtype = $object_subtype;
+		$event->object_key     = $object_ref?->key;
+		$event->object_name    = $object_ref?->name;
+		$event->eventmetas     = empty( $eventmetas ) ? null : $eventmetas;
+		$event->properties     = empty( $object_props ) ? null : $object_props;
 
 		return $event;
 	}

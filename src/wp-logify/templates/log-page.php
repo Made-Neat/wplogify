@@ -13,10 +13,10 @@ namespace WP_Logify;
 	<h1>WP Logify Events Log</h1>
 
 
-	<table id="wp-logify-log-filters">
+	<table id="wp-logify-filters">
 		<tr>
 			<td>
-				<div class="wp-logify-filter-label">Keyword</div>
+				<div class="wp-logify-filter-label">Search</div>
 				<div class="wp-logify-filter">
 					<input type="text" id="wp-logify-keyword-filter" value=""/>    
 				</div>
@@ -33,7 +33,7 @@ namespace WP_Logify;
 
 				<div id="wp-logify-object-type-checkboxes">
 					<?php
-					$i = 0;
+					$i = 1;
 					foreach ( Logger::VALID_OBJECT_TYPES as $object_type => $object_type_display ) {
 						if ( $i % 6 === 0 ) {
 							echo '<br>';
@@ -63,10 +63,12 @@ namespace WP_Logify;
 				<div class="wp-logify-filter-label">Post type</div>
 				<div class="wp-logify-filter">
 					<select id="wp-logify-post-type-filter">
-						<option value="all">All</option>
-						<option value="post">Post</option>
-						<option value="page">Page</option>
-						<option value="nav_menu_item">Menu item</option>
+						<option value="">All</option>
+						<?php
+						foreach ( $post_types as $post_type => $post_type_label ) {
+							echo "<option value='$post_type'>$post_type_label</option>";
+						}
+						?>
 					</select>
 				</div>
 			</td>                
@@ -74,10 +76,12 @@ namespace WP_Logify;
 				<div class="wp-logify-filter-label">Taxonomy</div>
 				<div class="wp-logify-filter">
 					<select id="wp-logify-taxonomy-filter">
-						<option value="all">All</option>
-						<option value="post">Categories</option>
-						<option value="page">Tags</option>
-						<option value="nav_menu">Menus</option>
+						<option value="">All</option>
+						<?php
+						foreach ( $taxonomies as $taxonomy => $taxonomy_label ) {
+							echo "<option value='$taxonomy'>$taxonomy_label</option>";
+						}
+						?>
 					</select>
 				</div>
 			</td>                

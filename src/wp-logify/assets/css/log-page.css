@@ -1,3 +1,7 @@
+.toplevel_page_wp-logify {
+  background-color: hsl(0, 0%, 93%);
+}
+
 .table-wp-logify {
   width: 100%;
   border-collapse: collapse;
@@ -311,7 +315,7 @@
   padding: 0.25rem;
   border-radius: 0.25rem;
   cursor: pointer;
-  margin: 0.5rem 0.5rem 0 0;
+  margin: 0.25rem 0.5rem 0.25rem 0;
   width: 6rem;
   border-style: solid;
   border-width: 1px;
@@ -321,24 +325,25 @@
 }
 #wp-logify-object-type-filter .wp-logify-object-type-all {
   border-color: hsl(0, 0%, 87%);
-  margin-top: 0.25rem;
+  margin-top: 0;
 }
 
 #wp-logify-object-type-checkboxes {
   display: inline;
 }
 
-#wp-logify-log-filters {
+#wp-logify-filters {
   border-collapse: collapse;
-  margin-top: 1rem;
+  margin: 1rem 0;
   background-color: hsl(0, 0%, 97%);
 }
-#wp-logify-log-filters td {
+#wp-logify-filters td {
   width: 400px;
   padding: 1rem;
   border: solid 1px hsl(0, 0%, 87%);
+  vertical-align: top;
 }
-#wp-logify-log-filters .wp-logify-filter-label {
+#wp-logify-filters .wp-logify-filter-label {
   margin-bottom: 0.25rem;
 }
 

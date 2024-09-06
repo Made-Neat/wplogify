@@ -39,7 +39,13 @@ jQuery(($) => {
             }
         ],
         order: [[1, 'desc']],
-        searching: true,
+        // searching: true,
+        layout: {
+            topStart: null,//'search',
+            topEnd: null, //'pageLength',
+            // bottomStart: 'info',
+            // bottomEnd: 'paging'
+        },
         paging: true,
         lengthChange: false,
         // Get the page length from the per_page screen option.
@@ -71,9 +77,9 @@ jQuery(($) => {
     });
 
     // Custom search box
-    $('#wp-logify-search-box').on('keyup', function () {
-        eventsTable.search(this.value).draw();
-    });
+    // $('#wp-logify-search-box').on('keyup', function () {
+    //     eventsTable.search(this.value).draw();
+    // });
 
     // Show the details row for a given summary row.
     let showDetailsRow = $tr => {
@@ -139,7 +145,7 @@ jQuery(($) => {
     });
 
     // Fix search box position.
-    $('.dt-search').parent().removeClass('dt-end');
+    // $('.dt-search').parent().removeClass('dt-end');
 
     // Custom search input handler
     $('#dt-search-0').unbind().on('keyup', function (e) {
@@ -274,6 +280,24 @@ jQuery(($) => {
             // Reload the table.
             eventsTable.ajax.reload();
         }
+    });
+
+    // Set up the post type selector.
+    $('#wp-logify-post-type-filter').on('change', function () {
+        // Update the cookie.
+        wpCookies.set('post_type', this.value, false, false, false, false);
+
+        // Reload the table.
+        eventsTable.ajax.reload();
+    });
+
+    // Set up the taxonomy selector.
+    $('#wp-logify-taxonomy-filter').on('change', function () {
+        // Update the cookie.
+        wpCookies.set('taxonomy', this.value, false, false, false, false);
+
+        // Reload the table.
+        eventsTable.ajax.reload();
     });
 
 });

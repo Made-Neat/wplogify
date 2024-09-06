@@ -305,16 +305,8 @@ class Post_Tracker {
 			// Get the taxonomy object.
 			$taxonomy_obj = get_taxonomy( $taxonomy );
 
-			// Taxonomy name.
-			if ( count( $term_refs ) === 1 ) {
-				// Use the singular name.
-				$taxonomy_name = $taxonomy_obj->labels->singular_name;
-				// Just show the one.
-				$term_refs = $term_refs[0];
-			} else {
-				// Use the plural name.
-				$taxonomy_name = $taxonomy_obj->labels->name;
-			}
+			// Use the plural name.
+			$taxonomy_name = $taxonomy_obj->labels->name;
 
 			// Add the event meta for this taxonomy.
 			$event->set_meta( $taxonomy_name, $term_refs );
@@ -487,11 +479,10 @@ class Post_Tracker {
 				// Get some useful information.
 				$terms_were_added   = empty( $term_changes['added'] ) ? 0 : count( $term_changes['added'] );
 				$terms_were_removed = empty( $term_changes['removed'] ) ? 0 : count( $term_changes['removed'] );
-				$total              = $terms_were_added + $terms_were_removed;
 
 				// Get the taxonomy object and name.
 				$taxonomy_obj  = get_taxonomy( $taxonomy );
-				$taxonomy_name = ucwords( $total === 1 ? $taxonomy_obj->labels->singular_name : $taxonomy_obj->labels->name );
+				$taxonomy_name = $taxonomy_obj->label;
 
 				// Collect eventmetas.
 				$metas = array();
@@ -500,13 +491,10 @@ class Post_Tracker {
 				if ( $terms_were_added ) {
 					// Convert term IDs to Object_Reference objects.
 					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['added'] );
-					if ( count( $term_refs ) === 1 ) {
-						$term_refs = $term_refs[0];
-					}
 					if ( $post->post_type === 'nav_menu_item' ) {
 						$meta_key = strtolower( $taxonomy_name );
 					} else {
-						$meta_key = 'added_' . strtolower( $taxonomy_name );
+						$meta_key = 'added_' . $taxonomy_name;
 					}
 					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
@@ -515,10 +503,7 @@ class Post_Tracker {
 				if ( $terms_were_removed ) {
 					// Convert term IDs to Object_Reference objects.
 					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['removed'] );
-					if ( count( $term_refs ) === 1 ) {
-						$term_refs = $term_refs[0];
-					}
-					$meta_key = 'removed_' . strtolower( $taxonomy_name );
+					$meta_key  = 'removed_' . $taxonomy_name;
 					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
 
