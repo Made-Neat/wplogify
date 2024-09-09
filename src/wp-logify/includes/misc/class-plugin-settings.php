@@ -179,6 +179,7 @@ class Plugin_Settings {
 
 		// Additional options used by the plugin that aren't settings.
 		delete_option( 'wp_logify_known_taxonomies' );
+		delete_option( 'wp_logify_object_subtypes_set' );
 	}
 
 	/**

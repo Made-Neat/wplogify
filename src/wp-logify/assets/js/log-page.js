@@ -167,7 +167,9 @@ jQuery(($) => {
 
         // Object types.
         let selectedObjectTypes = wpCookies.get('object_types');
-        // console.log(selectedObjectTypes);
+        if (selectedObjectTypes) {
+            selectedObjectTypes = JSON.parse(selectedObjectTypes);
+        }
         $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
             let checked = (selectedObjectTypes && typeof selectedObjectTypes === 'object'
                 && element.value in selectedObjectTypes) ? selectedObjectTypes[element.value] : true;

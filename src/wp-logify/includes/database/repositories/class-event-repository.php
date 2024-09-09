@@ -24,6 +24,7 @@ class Event_Repository extends Repository {
 		// Check if the object subtypes have been set already.
 		$object_subtypes_set = get_option( 'wp_logify_object_subtypes_set', false );
 		if ( ! $object_subtypes_set ) {
+			self::maybe_add_column_object_subtype();
 			self::fix_post_types();
 			self::fix_taxonomies();
 			update_option( 'wp_logify_object_subtypes_set', true );
@@ -381,6 +382,24 @@ class Event_Repository extends Repository {
 	// Methods for setting the object subtypes.
 
 	/**
+	 * Add the object_subtypes column to the events table, if it doesn't already exist.
+	 */
+	private static function maybe_add_column_object_subtype() {
+		global $wpdb;
+
+		// Check if the column exists
+		$sql           = $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', self::get_table_name(), 'object_subtype' );
+		$column_exists = $wpdb->get_results( $sql );
+
+		// If the column doesn't exist, add it
+		if ( empty( $column_exists ) ) {
+			$sql = $wpdb->prepare( 'ALTER TABLE %i ADD object_subtype VARCHAR(50)', self::get_table_name() );
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			$wpdb->query( $sql );
+		}
+	}
+
+	/**
 	 * Look through the events table for any events that have an object type of 'post' but an
 	 * object_subtype of NULL, and set the object_subtype.
 	 */
@@ -489,7 +508,13 @@ class Event_Repository extends Repository {
 		// Construct the array of names.
 		$result = array();
 		foreach ( $taxonomies as $taxonomy ) {
-			$result[ $taxonomy ] = Taxonomy_Utility::get_singular_name( $taxonomy );
+			// Get the taxonomy plural name.
+			$name = Taxonomy_Utility::get_name( $taxonomy );
+
+			// If we can't get the name, just use the taxonomy name as a backup.
+			$name ??= Strings::make_key_readable( $taxonomy, true );
+
+			$result[ $taxonomy ] = $name;
 		}
 		asort( $result );
 		return $result;

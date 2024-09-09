@@ -43,18 +43,26 @@ class Taxonomy_Utility extends Object_Utility {
 	}
 
 	/**
-	 * Get a taxonomy's label.
-	 * This is usually plural and starts with an upper-case letter, e.g. 'Categories', 'Tags'.
+	 * Get a taxonomy's plural name.
 	 *
 	 * @param int|string $taxonomy The name (lower-case key) of the taxonomy.
-	 * @return ?string The taxonomy label or null if not found.
+	 * @return ?string The taxonomy plural name or null if not found.
 	 */
 	public static function get_name( int|string $taxonomy ): ?string {
-		// Load the taxonomy object.
-		$taxonomy_obj = self::load( $taxonomy );
+		// Get the taxonomy object.
+		$taxonomy_obj = get_taxonomy( $taxonomy );
 
-		// Return the taxonomy label.
-		return $taxonomy_obj?->label;
+		// Return the taxonomy plural name.
+		// I'm favouring labels->name over label because of WooCommerce, which uses the label
+		// "Categories" for the 'product_cat' taxonomy, which obviously matches the built-in
+		// 'category' taxonomy.
+		if ( $taxonomy_obj->labels->name ) {
+			return ucwords( $taxonomy_obj->labels->name );
+		} elseif ( $taxonomy_obj->label ) {
+			return ucwords( $taxonomy_obj->label );
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -140,8 +148,12 @@ class Taxonomy_Utility extends Object_Utility {
 		// Get the taxonomy object.
 		$taxonomy_obj = get_taxonomy( $taxonomy );
 
-		// Return the taxonomy singular name.
-		return $taxonomy_obj ? $taxonomy_obj->labels->singular_name : null;
+		// Return the taxonomy singular name if found.
+		if ( isset( $taxonomy_obj->labels->singular_name ) ) {
+			return ucwords( $taxonomy_obj->labels->singular_name );
+		} else {
+			return null;
+		}
 	}
 
 	/**
