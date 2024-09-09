@@ -18,9 +18,9 @@ namespace WP_Logify;
 			<td>
 				<div class="wp-logify-filter-label">Search</div>
 				<div class="wp-logify-filter">
-					<input type="text" id="wp-logify-keyword-filter" value=""/>    
+					<input type="text" id="wp-logify-search-filter" value=""/>
 				</div>
-			</td>                
+			</td>
 			<td colspan="2" id="wp-logify-object-type-filter">
 				<div class="wp-logify-filter-label">
 					Object type
@@ -58,7 +58,7 @@ namespace WP_Logify;
 					<span> to </span>
 					<input type="text" id="wp-logify-end-date" value=""/>
 				</div>
-			</td>                
+			</td>
 			<td>
 				<div class="wp-logify-filter-label">Post type</div>
 				<div class="wp-logify-filter">
@@ -71,7 +71,7 @@ namespace WP_Logify;
 						?>
 					</select>
 				</div>
-			</td>                
+			</td>
 			<td>
 				<div class="wp-logify-filter-label">Taxonomy</div>
 				<div class="wp-logify-filter">
@@ -84,33 +84,48 @@ namespace WP_Logify;
 						?>
 					</select>
 				</div>
-			</td>                
+			</td>
 		</tr>
-		<tr>    
+		<tr>
 			<td>
 				<div class="wp-logify-filter-label">Event type</div>
 				<div class="wp-logify-filter">
 					<select id="wp-logify-event-type-filter">
-						<option value="all">All</option>
+						<option value="">All</option>
+						<?php
+						foreach ( $event_types as $event_type ) {
+							echo "<option value='$event_type'>$event_type</option>";
+						}
+						?>
 					</select>
 				</div>
-			</td>                
+			</td>
 			<td>
 				<div class="wp-logify-filter-label">User</div>
 				<div class="wp-logify-filter">
 					<select id="wp-logify-user-filter">
-						<option value="all">All</option>
+						<option value="">All</option>
+						<?php
+						foreach ( $users as $user_id => $user_name ) {
+							echo "<option value='$user_id'>$user_name</option>";
+						}
+						?>
 					</select>
 				</div>
-			</td>                
+			</td>
 			<td>
 				<div class="wp-logify-filter-label">Role</div>
 				<div class="wp-logify-filter">
 					<select id="wp-logify-role-filter">
-						<option value="all">All</option>
+						<option value="">All</option>
+						<?php
+						foreach ( $roles as $role ) {
+							echo "<option value='$role'>" . ucwords( $role ) . '</option>';
+						}
+						?>
 					</select>
 				</div>
-			</td>                
+			</td>
 		</tr>
 	</table>
 

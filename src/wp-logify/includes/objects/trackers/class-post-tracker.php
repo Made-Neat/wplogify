@@ -516,16 +516,7 @@ class Post_Tracker {
 				}
 
 				// Get event type.
-				if ( $terms_were_added && $terms_were_removed ) {
-					$event_type = "$post_type $taxonomy_name Updated";
-				} elseif ( $terms_were_added ) {
-					$event_type = "$post_type Added To $taxonomy_name";
-				} elseif ( $terms_were_removed ) {
-					$event_type = "$post_type Removed From $taxonomy_name";
-				} else {
-					// This shouldn't occur.
-					continue;
-				}
+				$event_type = "$post_type $taxonomy_name Updated";
 
 				// Log the event.
 				Logger::log_event( $event_type, $post, $metas );

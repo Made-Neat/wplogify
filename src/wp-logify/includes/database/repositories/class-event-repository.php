@@ -489,4 +489,51 @@ class Event_Repository extends Repository {
 		asort( $result );
 		return $result;
 	}
+
+	/**
+	 * Get all the event types in the events table.
+	 *
+	 * @return array An array of event types..
+	 */
+	public static function get_event_types(): array {
+		global $wpdb;
+
+		// Get the event types.
+		$sql = $wpdb->prepare( 'SELECT DISTINCT event_type FROM %i ORDER BY event_type', self::get_table_name() );
+		return $wpdb->get_col( $sql );
+	}
+
+	/**
+	 * Get all the users in the events table.
+	 */
+	public static function get_users(): array {
+		global $wpdb;
+
+		// Get the users.
+		$sql   = $wpdb->prepare( 'SELECT DISTINCT user_id, user_name FROM %i ORDER BY event_id', self::get_table_name() );
+		$users = $wpdb->get_results( $sql, ARRAY_A );
+
+		// Construct the array of names.
+		$result = array();
+		foreach ( $users as $user ) {
+			$name = User_Utility::get_name( $user['user_id'] );
+			if ( $name === null ) {
+				$name = $user['user_name'];
+			}
+			$result[ $user['user_id'] ] = $name;
+		}
+		debug( $result );
+		return $result;
+	}
+
+	/**
+	 * Get all the roles in the events table.
+	 */
+	public static function get_roles(): array {
+		global $wpdb;
+
+		// Get the roles.
+		$sql = $wpdb->prepare( 'SELECT DISTINCT user_role FROM %i ORDER BY user_role', self::get_table_name() );
+		return $wpdb->get_col( $sql );
+	}
 }

@@ -34,6 +34,15 @@ class Log_Page {
 		// Get all the taxonomies.
 		$taxonomies = Event_Repository::get_taxonomies();
 
+		// Get all the event types.
+		$event_types = Event_Repository::get_event_types();
+
+		// Get all the users.
+		$users = Event_Repository::get_users();
+
+		// Get all the roles.
+		$roles = Event_Repository::get_roles();
+
 		include WP_LOGIFY_PLUGIN_DIR . 'templates/log-page.php';
 	}
 
@@ -101,9 +110,13 @@ class Log_Page {
 		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
 
 		// Get the object types to show events for.
-		$object_types = isset( $_COOKIE['object_types'] )
-			? json_decode( stripslashes( $_COOKIE['object_types'] ), true )
-			: array_keys( Logger::VALID_OBJECT_TYPES );
+		$valid_object_types = array_keys( Logger::VALID_OBJECT_TYPES );
+		if ( ! empty( $_COOKIE['object_types'] ) ) {
+			$selected_object_types = json_decode( stripslashes( $_COOKIE['object_types'] ), true );
+			$object_types          = array_keys( array_filter( $selected_object_types ) );
+		} else {
+			$object_types = $valid_object_types;
+		}
 
 		// Get the date range.
 		$start_date = isset( $_COOKIE['start_date'] ) ? wp_unslash( $_COOKIE['start_date'] ) : null;
@@ -112,6 +125,15 @@ class Log_Page {
 		// Get the post type and taxonomy.
 		$post_type = isset( $_COOKIE['post_type'] ) ? wp_unslash( $_COOKIE['post_type'] ) : null;
 		$taxonomy  = isset( $_COOKIE['taxonomy'] ) ? wp_unslash( $_COOKIE['taxonomy'] ) : null;
+
+		// Get the event type.
+		$event_type = isset( $_COOKIE['event_type'] ) ? wp_unslash( $_COOKIE['event_type'] ) : null;
+
+		// Get the user.
+		$user_id = isset( $_COOKIE['user_id'] ) ? wp_unslash( $_COOKIE['user_id'] ) : null;
+
+		// Get the role.
+		$role = isset( $_COOKIE['role'] ) ? wp_unslash( $_COOKIE['role'] ) : null;
 
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of events in the database.
@@ -162,7 +184,7 @@ class Log_Page {
 		}
 
 		// Filter by object type and subtype if specified.
-		$all_object_types_selected = empty( array_diff( array_keys( Logger::VALID_OBJECT_TYPES ), $object_types ) );
+		$all_object_types_selected = empty( array_diff( $valid_object_types, $object_types ) );
 		if ( ! $all_object_types_selected || $post_type || $taxonomy ) {
 			// Assemble the OR parts.
 			$or_parts = array();
@@ -187,6 +209,8 @@ class Log_Page {
 			if ( $object_types ) {
 				$object_type_string = implode( ',', array_map( fn( $object_type ) => "'$object_type'", $object_types ) );
 				$or_parts[]         = "object_type IN ($object_type_string)";
+			} else {
+				$or_parts[] = 'object_type IS NULL';
 			}
 
 			// Add the OR parts to the where clause.
@@ -224,6 +248,24 @@ class Log_Page {
 					$where_args[]  = $end_date->format( 'Y-m-d 00:00:00' );
 				}
 			}
+		}
+
+		// Filter by event type if specified.
+		if ( $event_type ) {
+			$where_parts[] = 'event_type = %s';
+			$where_args[]  = $event_type;
+		}
+
+		// Filter by user if specified.
+		if ( $user_id ) {
+			$where_parts[] = 'user_id = %d';
+			$where_args[]  = $user_id;
+		}
+
+		// Filter by role if specified.
+		if ( $role ) {
+			$where_parts[] = 'user_role = %s';
+			$where_args[]  = $role;
 		}
 
 		// Complete building of the where clause.

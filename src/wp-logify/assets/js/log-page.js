@@ -76,11 +76,6 @@ jQuery(($) => {
         }
     });
 
-    // Custom search box
-    // $('#wp-logify-search-box').on('keyup', function () {
-    //     eventsTable.search(this.value).draw();
-    // });
-
     // Show the details row for a given summary row.
     let showDetailsRow = $tr => {
         // Get the datatable row object.
@@ -122,7 +117,6 @@ jQuery(($) => {
 
         if (isSummaryRow) {
             // Summary row clicked.
-            // console.log('summary row clicked');
             if (row.child.isShown()) {
                 // Remove the shown class from the summary row.
                 $tr.removeClass('shown');
@@ -135,8 +129,6 @@ jQuery(($) => {
         }
         else {
             // Details row clicked.
-            // console.log('details row clicked');
-
             // Remove the shown class from the summary row.
             $tr.prev().removeClass('shown');
             // Hide the details row.
@@ -144,24 +136,23 @@ jQuery(($) => {
         }
     });
 
-    // Fix search box position.
-    // $('.dt-search').parent().removeClass('dt-end');
+    // Setup behaviour for the search box.
+    $('#wp-logify-search-filter').on('keyup', function () {
+        // Remember the search string.
+        let searchString = this.value;
+        wpCookies.set('search', searchString, false, false, false, false);
 
-    // Custom search input handler
-    $('#dt-search-0').unbind().on('keyup', function (e) {
-        var searchTerm = this.value;
-
-        // Check if the length of the search term is at least 3 characters, or none.
-        if (searchTerm.length >= 3 || searchTerm.length === 0) {
-            eventsTable.search(searchTerm).draw();
+        // If there are 3 or more characters in the field, or 0, search.
+        if (searchString.length >= 3 || searchString.length === 0) {
+            eventsTable.search(searchString).draw();
         }
     });
 
     // Get the selected object types.
     let getSelectedObjectTypes = () => {
-        let objectTypes = [];
-        $('#wp-logify-object-type-checkboxes input[type="checkbox"]:checked').each((index, element) => {
-            objectTypes.push(element.value);
+        let objectTypes = {};
+        $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
+            objectTypes[element.value] = element.checked;
         });
         return objectTypes;
     }
@@ -171,32 +162,52 @@ jQuery(($) => {
         return $('#wp-logify-object-type-checkboxes input[type="checkbox"]:not(:checked)').length === 0;
     }
 
-    // Store the selected object types in the cookie and reload the table.
-    let updateCookieAndReload = () => {
-        // Store the selected object types in the cookie.
-        let selectedObjectTypes = getSelectedObjectTypes();
-        // console.log(selectedObjectTypes);
-        wpCookies.set('object_types', JSON.stringify(selectedObjectTypes), false, false, false, false);
+    // Initialize the search filters from the cookies.
+    let initSearchForm = () => {
+        // Search string.
+        let search = wpCookies.get('search');
+        $('#wp-logify-search-filter').val(search);
 
-        // Reload the page.
-        eventsTable.ajax.reload();
-    }
-
-    // Initialize the object type checkboxes.
-    let initObjectTypeCheckboxes = () => {
-        // Initialize the object type checkboxes.
+        // Object types.
         let selectedObjectTypes = wpCookies.get('object_types');
         // console.log(selectedObjectTypes);
         $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
-            $(element).prop('checked', selectedObjectTypes.includes(element.value));
+            let checked = (selectedObjectTypes && typeof selectedObjectTypes === 'object'
+                && element.value in selectedObjectTypes) ? selectedObjectTypes[element.value] : true;
+            $(element).prop('checked', checked);
         });
-
         // Update state of 'All' checkbox to match state of others.
         $('#wp-logify-show-all-events').prop('checked', allObjectTypesSelected());
+
+        // Dates.
+        let startDate = wpCookies.get('start_date');
+        let endDate = wpCookies.get('end_date');
+        $('#wp-logify-start-date').val(startDate);
+        $('#wp-logify-end-date').val(endDate);
+
+        // Post type.
+        let postType = wpCookies.get('post_type');
+        $('#wp-logify-post-type-filter').val(postType);
+
+        // Taxonomy.
+        let taxonomy = wpCookies.get('taxonomy');
+        $('#wp-logify-taxonomy-filter').val(taxonomy);
+
+        // Event type.
+        let eventType = wpCookies.get('event_type');
+        $('#wp-logify-event-type-filter').val(eventType);
+
+        // User.
+        let user_id = wpCookies.get('user_id');
+        $('#wp-logify-user-filter').val(user_id);
+
+        // Role.
+        let role = wpCookies.get('role');
+        $('#wp-logify-role-filter').val(role);
     };
 
     // Do it now.
-    initObjectTypeCheckboxes();
+    initSearchForm();
 
     // Setup behaviour of object type checkboxes.
     $('.wp-logify-object-type-filter-item input').on('change', function (event) {
@@ -217,8 +228,6 @@ jQuery(($) => {
 
         // If this is the 'All' checkbox, check or uncheck all others.
         if (checkbox.is('#wp-logify-show-all-events')) {
-            console.log('All checkbox clicked');
-
             if (isChecked) {
                 // All is checked, so check all others.
                 $('#wp-logify-object-type-checkboxes input').prop('checked', true);
@@ -233,8 +242,13 @@ jQuery(($) => {
             $('#wp-logify-show-all-events').prop('checked', allObjectTypesSelected());
         }
 
-        // Update cookies and reload the page.
-        updateCookieAndReload();
+        // Update cookie.
+        let selectedObjectTypes = getSelectedObjectTypes();
+        // console.log(selectedObjectTypes);
+        wpCookies.set('object_types', JSON.stringify(selectedObjectTypes), false, false, false, false);
+
+        // Reload the page.
+        eventsTable.ajax.reload();
     });
 
     // Extract the date from a datepicker element.
@@ -300,4 +314,30 @@ jQuery(($) => {
         eventsTable.ajax.reload();
     });
 
+    // Set up the event type selector.
+    $('#wp-logify-event-type-filter').on('change', function () {
+        // Update the cookie.
+        wpCookies.set('event_type', this.value, false, false, false, false);
+
+        // Reload the table.
+        eventsTable.ajax.reload();
+    });
+
+    // Set up the user selector.
+    $('#wp-logify-user-filter').on('change', function () {
+        // Update the cookie.
+        wpCookies.set('user_id', this.value, false, false, false, false);
+
+        // Reload the table.
+        eventsTable.ajax.reload();
+    });
+
+    // Set up the role selector.
+    $('#wp-logify-role-filter').on('change', function () {
+        // Update the cookie.
+        wpCookies.set('role', this.value, false, false, false, false);
+
+        // Reload the table.
+        eventsTable.ajax.reload();
+    });
 });

@@ -315,13 +315,16 @@
   padding: 0.25rem;
   border-radius: 0.25rem;
   cursor: pointer;
-  margin: 0.25rem 0.5rem 0.25rem 0;
+  margin-right: 0.5rem;
   width: 6rem;
   border-style: solid;
   border-width: 1px;
 }
 #wp-logify-object-type-filter .wp-logify-object-type-filter-item label {
   cursor: inherit;
+}
+#wp-logify-object-type-filter .wp-logify-object-type-filter-item:nth-child(-n+6) {
+  margin-bottom: 0.5rem;
 }
 #wp-logify-object-type-filter .wp-logify-object-type-all {
   border-color: hsl(0, 0%, 87%);
@@ -346,8 +349,16 @@
 #wp-logify-filters .wp-logify-filter-label {
   margin-bottom: 0.25rem;
 }
+#wp-logify-filters .hasDatepicker {
+  background-image: url("../images/calendar.png");
+  background-position: right center;
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  padding-right: 0.25rem;
+}
 
-#wp-logify-keyword-filter,
+#wp-logify-search-filter,
 #wp-logify-post-type-filter,
 #wp-logify-taxonomy-filter,
 #wp-logify-user-filter,
