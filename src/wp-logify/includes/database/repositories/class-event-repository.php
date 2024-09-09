@@ -508,13 +508,8 @@ class Event_Repository extends Repository {
 		// Construct the array of names.
 		$result = array();
 		foreach ( $taxonomies as $taxonomy ) {
-			// Get the taxonomy plural name.
-			$name = Taxonomy_Utility::get_name( $taxonomy );
-
-			// If we can't get the name, just use the taxonomy name as a backup.
-			$name ??= Strings::make_key_readable( $taxonomy, true );
-
-			$result[ $taxonomy ] = $name;
+			// Get the taxonomy name.
+			$result[ $taxonomy ] = Taxonomy_Utility::get_singular_name( $taxonomy );
 		}
 		asort( $result );
 		return $result;

@@ -53,9 +53,10 @@ class Taxonomy_Utility extends Object_Utility {
 		$taxonomy_obj = get_taxonomy( $taxonomy );
 
 		// Return the taxonomy plural name.
-		// I'm favouring labels->name over label because of WooCommerce, which uses the label
-		// "Categories" for the 'product_cat' taxonomy, which obviously matches the built-in
-		// 'category' taxonomy.
+		// I'm favouring labels->name over label because of WooCommerce. WooCommerce has a taxonomy
+		// 'product_cat', with a label 'Categories' and a name 'Product categories'. However,
+		// 'Categories' matches the name of the built-in 'category' taxonomy. The same issue exists
+		// with the WooCommerce taxonomy 'product_tag'.
 		if ( $taxonomy_obj->labels->name ) {
 			return ucwords( $taxonomy_obj->labels->name );
 		} elseif ( $taxonomy_obj->label ) {
@@ -148,11 +149,19 @@ class Taxonomy_Utility extends Object_Utility {
 		// Get the taxonomy object.
 		$taxonomy_obj = get_taxonomy( $taxonomy );
 
+		// Handle these WooCommerce taxonomies separately, as they clash with core taxonomy names.
+		if ( $taxonomy === 'product_cat' ) {
+			return 'Product Category';
+		} elseif ( $taxonomy === 'product_tag' ) {
+			return 'Product Tag';
+		}
+
 		// Return the taxonomy singular name if found.
 		if ( isset( $taxonomy_obj->labels->singular_name ) ) {
 			return ucwords( $taxonomy_obj->labels->singular_name );
 		} else {
-			return null;
+			// Create a readable name from the taxonomy key.
+			return Strings::make_key_readable( $taxonomy, true );
 		}
 	}
 
