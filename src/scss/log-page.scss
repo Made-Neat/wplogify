@@ -233,6 +233,21 @@
         background-repeat: no-repeat;
         background-origin: content-box;
         padding-right: 0.25rem;
+        width: 11rem;
+    }
+}
+
+#ui-datepicker-div {
+    .ui-icon-circle-triangle-w {
+        background-image: url('../images/TriangleArrow-Left.svg');
+        background-position: 0.125rem 0.125rem;
+        background-size: 0.75rem 0.75rem;
+    }
+
+    .ui-icon-circle-triangle-e {
+        background-image: url('../images/TriangleArrow-Right.svg');
+        background-position: 0.125rem 0.125rem;
+        background-size: 0.75rem 0.75rem;
     }
 }
 

@@ -39,12 +39,9 @@ jQuery(($) => {
             }
         ],
         order: [[1, 'desc']],
-        // searching: true,
         layout: {
-            topStart: null,//'search',
-            topEnd: null, //'pageLength',
-            // bottomStart: 'info',
-            // bottomEnd: 'paging'
+            topStart: null,
+            topEnd: null,
         },
         paging: true,
         lengthChange: false,

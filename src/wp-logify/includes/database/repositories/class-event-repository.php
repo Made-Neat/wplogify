@@ -21,8 +21,13 @@ class Event_Repository extends Repository {
 	 * @return void
 	 */
 	public static function init() {
-		self::fix_post_types();
-		self::fix_taxonomies();
+		// Check if the object subtypes have been set already.
+		$object_subtypes_set = get_option( 'wp_logify_object_subtypes_set', false );
+		if ( ! $object_subtypes_set ) {
+			self::fix_post_types();
+			self::fix_taxonomies();
+			update_option( 'wp_logify_object_subtypes_set', true );
+		}
 	}
 
 	// =============================================================================================
@@ -373,7 +378,7 @@ class Event_Repository extends Repository {
 	}
 
 	// =============================================================================================
-	// Methods for setting the object subtype.
+	// Methods for setting the object subtypes.
 
 	/**
 	 * Look through the events table for any events that have an object type of 'post' but an
@@ -438,7 +443,7 @@ class Event_Repository extends Repository {
 	}
 
 	// =============================================================================================
-	// Methods for getting the object subtypes.
+	// Methods for getting values for search filters.
 
 	/**
 	 * Get the post types that have been used in the events table.
@@ -509,20 +514,35 @@ class Event_Repository extends Repository {
 	public static function get_users(): array {
 		global $wpdb;
 
-		// Get the users.
-		$sql   = $wpdb->prepare( 'SELECT DISTINCT user_id, user_name FROM %i ORDER BY event_id', self::get_table_name() );
+		// Get the acting users.
+		$sql   = $wpdb->prepare( 'SELECT DISTINCT user_id, user_name FROM %i ORDER BY event_id DESC', self::get_table_name() );
 		$users = $wpdb->get_results( $sql, ARRAY_A );
 
-		// Construct the array of names.
+		// Construct the array of user IDs and names.
 		$result = array();
 		foreach ( $users as $user ) {
-			$name = User_Utility::get_name( $user['user_id'] );
+			$user_id = $user['user_id'];
+
+			// Check if we already have this user. It's possible, if their display name has changed.
+			if ( key_exists( $user_id, $result ) ) {
+				continue;
+			}
+
+			// Get the user's name.
+			$name = User_Utility::get_name( $user_id );
+
+			// If we can't get the name (e.g. they were deleted), use the user_name from the events table.
 			if ( $name === null ) {
 				$name = $user['user_name'];
 			}
-			$result[ $user['user_id'] ] = $name;
+
+			// Add the user to the result array.
+			$result[ $user_id ] = $name;
 		}
-		debug( $result );
+
+		// Sort the array by user name.
+		asort( $result );
+
 		return $result;
 	}
 
