@@ -55,11 +55,12 @@ class Logger {
 	/**
 	 * Logs an event to the database.
 	 *
-	 * @param string            $event_type  The type of event.
-	 * @param null|object|array $wp_object   The WP object the event is about, or an array for plugins.
-	 * @param ?array            $eventmetas  The event metadata.
-	 * @param ?array            $properties  The event properties.
-	 * @param null|WP_User|int  $acting_user The use object or ID of the user who performed the action, or null for the current user.
+	 * @param string                                   $event_type  The type of event.
+	 * @param null|object|array                        $wp_object   The WP object the event is about, or an array for plugins.
+	 * @param ?array                                   $eventmetas  The event metadata.
+	 * @param ?array                                   $properties  The event properties.
+	 * @param null|int|string|WP_User|Object_Reference $acting_user The user who performed the action, or null for the current user.
+	 *                                                              This can be a user ID, username, WP_User object, or Object_Reference.
 	 * @return bool True if the event was logged successfully, false otherwise.
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
@@ -68,7 +69,7 @@ class Logger {
 		null|object|array $wp_object,
 		?array $eventmetas = null,
 		?array $properties = null,
-		null|WP_User|int $acting_user = null
+		null|int|string|WP_User|Object_Reference $acting_user = null
 	): bool {
 		// Create the new event.
 		$event = Event::create( $event_type, $wp_object, $eventmetas, $properties, $acting_user );

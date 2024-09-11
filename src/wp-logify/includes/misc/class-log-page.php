@@ -257,15 +257,15 @@ class Log_Page {
 		}
 
 		// Filter by user if specified.
-		if ( $user_id ) {
+		if ( $user_id !== '' && $user_id !== null ) {
 			$where_parts[] = 'user_id = %d';
 			$where_args[]  = $user_id;
 		}
 
 		// Filter by role if specified.
 		if ( $role ) {
-			$where_parts[] = 'user_role = %s';
-			$where_args[]  = $role;
+			$where_parts[] = 'user_role LIKE %s';
+			$where_args[]  = '%' . $wpdb->esc_like( $role ) . '%';
 		}
 
 		// Complete building of the where clause.
@@ -316,7 +316,7 @@ class Log_Page {
 
 			// User details.
 			$user_tag             = User_Utility::get_tag( $event->user_id, $event->user_name );
-			$user_role            = esc_html( ucwords( $event->user_role ) );
+			$user_role            = esc_html( ucwords( $event->user_role ?? 'none' ) );
 			$item['display_name'] = get_avatar( $event->user_id, 32 ) . " <div class='wp-logify-user-info'>$user_tag<br><span class='wp-logify-user-role'>$user_role</span></div>";
 
 			// Source IP.
@@ -355,11 +355,6 @@ class Log_Page {
 	 * @return string The formatted user details as an HTML table.
 	 */
 	public static function format_user_details( Event $event ): string {
-		// Handle the case where the user ID is empty. Should never happen.
-		if ( empty( $event->user_id ) ) {
-			return '';
-		}
-
 		// Construct the HTML.
 		$html  = "<div class='wp-logify-details-section wp-logify-user-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";

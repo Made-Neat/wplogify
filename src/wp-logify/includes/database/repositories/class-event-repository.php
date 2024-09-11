@@ -548,12 +548,16 @@ class Event_Repository extends Repository {
 				continue;
 			}
 
-			// Get the user's name.
-			$name = User_Utility::get_name( $user_id );
+			if ( $user_id ) {
+				// Get the user's name.
+				$name = User_Utility::get_name( $user_id );
 
-			// If we can't get the name (e.g. they were deleted), use the user_name from the events table.
-			if ( $name === null ) {
-				$name = $user['user_name'];
+				// If we can't get the name (e.g. they were deleted), use the user_name from the events table.
+				if ( $name === null ) {
+					$name = $user['user_name'];
+				}
+			} else {
+				$name = 'Unknown';
 			}
 
 			// Add the user to the result array.
@@ -573,7 +577,15 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the roles.
-		$sql = $wpdb->prepare( 'SELECT DISTINCT user_role FROM %i ORDER BY user_role', self::get_table_name() );
-		return $wpdb->get_col( $sql );
+		$sql   = $wpdb->prepare( 'SELECT DISTINCT user_role FROM %i ORDER BY user_role', self::get_table_name() );
+		$roles = $wpdb->get_col( $sql );
+
+		// Put 'none' at the start.
+		if ( in_array( 'none', $roles ) ) {
+			$roles = array_diff( $roles, array( 'none' ) );
+			array_unshift( $roles, 'none' );
+		}
+
+		return $roles;
 	}
 }

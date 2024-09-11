@@ -129,21 +129,32 @@ class User_Utility extends Object_Utility {
 	 * If the user hasn't been deleted, get a link to its edit page; otherwise, get a span with
 	 * the old title as the link text.
 	 *
-	 * @param int|string $user_id The ID of the user.
-	 * @param ?string    $old_name The old name of the user.
+	 * @param int|string $user_id  The ID of the user.
+	 * @param ?string    $old_name The username at the time of the event.
 	 * @return string The link or span HTML tag.
 	 */
 	public static function get_tag( int|string $user_id, ?string $old_name = null ): string {
 		// Load the user.
-		$user = self::load( $user_id );
+		$user = $user_id ? self::load( $user_id ) : null;
+
+		// Try to load the user by email or username if it wasn't found.
+		if ( ! $user ) {
+			if ( Strings::looks_like_email( $old_name ) ) {
+				// Load by email.
+				$user = self::load_user_by_email( $old_name );
+			} else {
+				// Load by username.
+				$user = self::load_user_by_username( $old_name );
+			}
+		}
 
 		// If the user exists, get a link.
 		if ( $user ) {
-			// Get the user name.
-			$name = self::get_name( $user_id );
+			// Get the name.
+			$name = self::get_name( $user->ID );
 
 			// Get the user edit URL.
-			$url = admin_url( "user-edit.php?user_id=$user_id" );
+			$url = admin_url( "user-edit.php?user_id={$user->ID}" );
 
 			// Return the link.
 			return "<a href='$url' class='wp-logify-object'>$name</a>";
@@ -154,12 +165,34 @@ class User_Utility extends Object_Utility {
 			$old_name = "User $user_id";
 		}
 
-		// The user no longer exists. Construct the 'deleted' span element.
-		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
+		// The user no longer exists. Construct the 'unknown' span element.
+		return "<span class='wp-logify-deleted-object'>$old_name (unknown)</span>";
 	}
 
 	// =============================================================================================
 	// Additional methods.
+
+	/**
+	 * Load a user by username.
+	 *
+	 * @param string $username The username of the user.
+	 * @return ?WP_User The user object if found, null otherwise.
+	 */
+	public static function load_user_by_username( string $username ): ?WP_User {
+		$user = get_user_by( 'login', $username );
+		return $user ? $user : null;
+	}
+
+	/**
+	 * Load a user by email address.
+	 *
+	 * @param string $email The email address of the user.
+	 * @return ?WP_User The user object if found, null otherwise.
+	 */
+	public static function load_user_by_email( string $email ) {
+		$user = get_user_by( 'email', $email );
+		return $user ? $user : null;
+	}
 
 	/**
 	 * Get the properties of a user to show in the log.
@@ -382,6 +415,80 @@ class User_Utility extends Object_Utility {
 		}
 
 		return $object_references;
+	}
+
+	/**
+	 * Given a user object, ID, or username, get the user data required to log an event.
+	 *
+	 * This doesn't necessarily have to be a valid user; it could be one that is deleted or unknown.
+	 *
+	 * If no user is specified, return null.
+	 *
+	 * @param null|int|string|Object_Reference|WP_User $user
+	 * @return ?array Array with the user's id, name, and roles.
+	 */
+	public static function get_user_data( null|int|string|Object_Reference|WP_User $user ): ?array {
+		// Default values for the user data.
+		$user_id    = 0;
+		$user_name  = '';
+		$user_roles = array( 'none' );
+
+		// Extract the user information from the provided value.
+		if ( $user === null ) {
+			// If no user is specified, default to the current user.
+			$user = wp_get_current_user();
+		} elseif ( is_int( $user ) || ( is_string( $user ) && Strings::looks_like_int( $user ) ) ) {
+			// Given a user ID, load the user object.
+			$user_id = (int) $user;
+			if ( $user_id > 0 ) {
+				$user = self::load( $user_id );
+			}
+		} elseif ( is_string( $user ) && $user !== '' ) {
+			// If a string is provided (which is not an integer), it will be either the login name
+			// or email address. Try to load the user.
+			$user_name = $user;
+			if ( Strings::looks_like_email( $user_name ) ) {
+				$user = self::load_user_by_email( $user_name );
+			} else {
+				$user = self::load_user_by_username( $user_name );
+			}
+		} elseif ( $user instanceof Object_Reference ) {
+			// If an Object_Reference is given, get the user ID and name, and try to load the user
+			// object.
+
+			// If the object type is not user, this is invalid.
+			if ( $user->type !== 'user' ) {
+				throw new Exception( "Invalid object type: '{$user->type}'" );
+			}
+
+			$user_id   = (int) $user->key;
+			$user_name = $user->name ?? '';
+			if ( $user_id > 0 ) {
+				$user = self::load( $user_id );
+			}
+		}
+
+		// If we have a WP_User object, extract the desired info.
+		if ( $user instanceof WP_User ) {
+			$user_id    = (int) $user->ID;
+			$user_name  = self::get_name( $user_id );
+			$user_roles = $user->roles;
+		}
+
+		// If we don't have a username or ID at this point, we don't have anything.
+		if ( ! $user_name && ! $user_id ) {
+			debug( 'No user found. Neither the username or user id is known.' );
+			return null;
+		}
+
+		// Return the user data.
+		return array(
+			'id'     => $user_id,
+			'name'   => $user_name,
+			'roles'  => $user_roles,
+			'ref'    => new Object_Reference( 'user', $user_id, $user_name ),
+			'object' => $user instanceof WP_User ? $user : null,
+		);
 	}
 
 	// =============================================================================================

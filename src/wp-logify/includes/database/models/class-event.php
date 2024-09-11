@@ -34,7 +34,7 @@ class Event {
 	public DateTime $when_happened;
 
 	/**
-	 * The ID of the user who did the action.
+	 * The ID of the user who did the action. Will be 0 for an anonymous user.
 	 *
 	 * @var int
 	 */
@@ -48,7 +48,7 @@ class Event {
 	public string $user_name;
 
 	/**
-	 * The role of the user.
+	 * The role of the user. Will be 'none' for an anonymous user.
 	 *
 	 * @var string
 	 */
@@ -59,7 +59,7 @@ class Event {
 	 *
 	 * @var string
 	 */
-	public string $user_ip;
+	public ?string $user_ip;
 
 	/**
 	 * The location of the user.
@@ -164,12 +164,13 @@ class Event {
 	/**
 	 * Creates a new event.
 	 *
-	 * @param string            $event_type  The type of event.
-	 * @param null|object|array $wp_object   The WP object the event is about or an array for plugins.
-	 * @param ?array            $eventmetas  The event metadata.
-	 * @param ?array            $properties  The event properties.
-	 * @param null|WP_User|int  $acting_user The use object or ID of the user who performed the action, or null for the current user.
-	 * @return ?Event The new event, or null if the user is anonymous or doesn't have a role to track.
+	 * @param string                                   $event_type  The type of event.
+	 * @param null|object|array                        $wp_object   The WP object the event is about or an array for plugins.
+	 * @param ?array                                   $eventmetas  The event metadata.
+	 * @param ?array                                   $properties  The event properties.
+	 * @param null|int|string|WP_User|Object_Reference $acting_user The user who performed the action, or null for the current user.
+	 *                                                              This can be a user ID, username, WP_User object, or Object_Reference.
+	 * @return ?Event The new event, or null if the user is anonymous or doesn't have a tracked role.
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function create(
@@ -177,28 +178,24 @@ class Event {
 		null|object|array $wp_object,
 		?array $eventmetas = null,
 		?array $properties = null,
-		null|WP_User|int $acting_user = null
+		null|int|string|WP_User|Object_Reference $acting_user = null
 	): ?Event {
 		// If the event is about an object deletion, this is where we'd store the details of the
 		// deleted object in the database. We want to do it before user checking so every object
 		// deletion is tracked regardless of who did it. Then we will definitely have the old name.
 
-		// If the acting user isn't specifid, use the current user.
-		if ( $acting_user === null ) {
-			$acting_user = wp_get_current_user();
-		} elseif ( is_int( $acting_user ) ) {
-			// If only the user ID for the acting user is specified, load the user object.
-			$acting_user = User_Utility::load( $acting_user );
-		}
+		// Get the acting user data.
+		$user_data = User_Utility::get_user_data( $acting_user );
 
-		// If we don't have a user (i.e. they're anonymous), we don't need to log the event.
-		if ( empty( $acting_user->ID ) ) {
+		// If we don't have any user info, we don't need to log the event.
+		if ( ! $user_data ) {
+			debug( 'Acting user not found.' );
 			return null;
 		}
 
 		// If we aren't tracking this user's role, we don't need to log the event.
-		// This shouldn't happen; it should be checked earlier.
-		if ( ! User_Utility::user_has_role( $acting_user, Plugin_Settings::get_roles_to_track() ) ) {
+		if ( $user_data['object'] !== null && ! User_Utility::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() ) ) {
+			debug( "Acting user doesn't have a role that is being tracked." );
 			return null;
 		}
 
@@ -238,9 +235,9 @@ class Event {
 		// Construct the new Event object.
 		$event                 = new Event();
 		$event->when_happened  = DateTimes::current_datetime();
-		$event->user_id        = $acting_user->ID;
-		$event->user_name      = User_Utility::get_name( $acting_user->ID );
-		$event->user_role      = implode( ', ', $acting_user->roles );
+		$event->user_id        = $user_data['id'];
+		$event->user_name      = $user_data['name'];
+		$event->user_role      = implode( ', ', $user_data['roles'] );
 		$event->user_ip        = User_Utility::get_ip();
 		$event->user_location  = User_Utility::get_location( $event->user_ip );
 		$event->user_agent     = User_Utility::get_user_agent();

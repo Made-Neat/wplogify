@@ -159,6 +159,30 @@ jQuery(($) => {
         return $('#wp-logify-object-type-checkboxes input[type="checkbox"]:not(:checked)').length === 0;
     }
 
+    // Get a value from a cookie; then, in the specified select list, select the option with the
+    // matching value if present, otherwise select the option with the empty string value.
+    let selectCookieValue = (selectId, cookieName) => {
+        // Get the cookie value.
+        let value = wpCookies.get(cookieName);
+
+        // Get the select element.
+        let $select = $(selectId);
+
+        // Get the option element with the matching value, if present.
+        let $option = typeof value === 'string' ? $select.find(`option[value='${value}']`) : null;
+
+        // Check if the option element with the matching value exists.
+        if ($option && $option.length) {
+            // If it does, select the post type.
+            $option.prop('selected', true);
+        } else {
+            // If not, select the 'All' option.
+            $select.val('');
+            // Update the cookie to match.
+            wpCookies.set(cookieName, '', false, false, false, false);
+        }
+    }
+
     // Initialize the search filters from the cookies.
     let initSearchForm = () => {
         // Search string.
@@ -172,41 +196,37 @@ jQuery(($) => {
         }
         $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
             let checked = (selectedObjectTypes && typeof selectedObjectTypes === 'object'
-                && element.value in selectedObjectTypes) ? selectedObjectTypes[element.value] : true;
+                && element.value in selectedObjectTypes) ? !!selectedObjectTypes[element.value] : true;
             $(element).prop('checked', checked);
         });
         // Update state of 'All' checkbox to match state of others.
         $('#wp-logify-show-all-events').prop('checked', allObjectTypesSelected());
 
-        // Dates.
+        // Start date.
         let startDate = wpCookies.get('start_date');
-        let endDate = wpCookies.get('end_date');
         $('#wp-logify-start-date').val(startDate);
+        $('#wp-logify-end-date').datepicker("option", "minDate", startDate);
+
+        // End date.
+        let endDate = wpCookies.get('end_date');
         $('#wp-logify-end-date').val(endDate);
+        $('#wp-logify-start-date').datepicker("option", "maxDate", endDate);
 
         // Post type.
-        let postType = wpCookies.get('post_type');
-        $('#wp-logify-post-type-filter').val(postType);
+        selectCookieValue('#wp-logify-post-type-filter', 'post_type');
 
         // Taxonomy.
-        let taxonomy = wpCookies.get('taxonomy');
-        $('#wp-logify-taxonomy-filter').val(taxonomy);
+        selectCookieValue('#wp-logify-taxonomy-filter', 'taxonomy');
 
         // Event type.
-        let eventType = wpCookies.get('event_type');
-        $('#wp-logify-event-type-filter').val(eventType);
+        selectCookieValue('#wp-logify-event-type-filter', 'event_type');
 
         // User.
-        let user_id = wpCookies.get('user_id');
-        $('#wp-logify-user-filter').val(user_id);
+        selectCookieValue('#wp-logify-user-filter', 'user_id');
 
         // Role.
-        let role = wpCookies.get('role');
-        $('#wp-logify-role-filter').val(role);
+        selectCookieValue('#wp-logify-role-filter', 'role');
     };
-
-    // Do it now.
-    initSearchForm();
 
     // Setup behaviour of object type checkboxes.
     $('.wp-logify-object-type-filter-item input').on('change', function (event) {
@@ -267,7 +287,8 @@ jQuery(($) => {
     let startDatePicker = $('#wp-logify-start-date').datepicker({
         dateFormat: wpLogifyLogPage.dateFormat,
         onSelect: function (date) {
-            console.log('start date selected:', date);
+            // console.log('start date selected:', date);
+
             // Update the cookie.
             wpCookies.set('start_date', date, false, false, false, false);
 
@@ -283,7 +304,8 @@ jQuery(($) => {
     let endDatePicker = $('#wp-logify-end-date').datepicker({
         dateFormat: wpLogifyLogPage.dateFormat,
         onSelect: function (date) {
-            console.log('end date selected:', date);
+            // console.log('end date selected:', date);
+
             // Update the cookie.
             wpCookies.set('end_date', date, false, false, false, false);
 
@@ -339,4 +361,7 @@ jQuery(($) => {
         // Reload the table.
         eventsTable.ajax.reload();
     });
+
+    // Initialize the search form.
+    initSearchForm();
 });

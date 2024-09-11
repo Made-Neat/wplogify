@@ -3,7 +3,7 @@
  * Plugin Name: WP Logify
  * Plugin URI: https://wplogify.com
  * Description: WP Logify features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
- * Version: 1.40
+ * Version: 1.42
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
  * License: GPL2
@@ -83,8 +83,9 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-widget-uti
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-admin.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-arrays.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-cron.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-log-page.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-dashboard-widget.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-datetimes.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-log-page.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-logger.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-main.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-plugin-settings.php';
@@ -92,7 +93,6 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-serialization.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-strings.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-types.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-urls.php';
-require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-dashboard-widget.php';
 
 // Supporting functions.
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/debug.php';

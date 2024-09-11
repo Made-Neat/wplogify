@@ -255,8 +255,8 @@ class Object_Reference {
 	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
 	public function get_tag(): string {
-		// Handle the case when there is no key (i.e. options).
-		if ( ! $this->key ) {
+		// Handle options differently.
+		if ( ! $this->key && $this->type === 'option' ) {
 			return (string) $this->name;
 		}
 

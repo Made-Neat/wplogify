@@ -63,6 +63,17 @@ class Strings {
 	}
 
 	/**
+	 * Check if a string looks like an email address.
+	 *
+	 * @param string $value The value to check.
+	 * @return bool Whether the value looks like an email address.
+	 */
+	public static function looks_like_email( string $value ): bool {
+		// Use PHP's built-in filter to validate email.
+		return filter_var( $value, FILTER_VALIDATE_EMAIL ) !== false;
+	}
+
+	/**
 	 * Check if a value is null or an empty string.
 	 *
 	 * @param mixed $value The value to check.

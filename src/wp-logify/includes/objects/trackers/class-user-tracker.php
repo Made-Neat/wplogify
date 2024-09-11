@@ -7,6 +7,7 @@
 
 namespace WP_Logify;
 
+use WP_Error;
 use WP_User;
 
 /**
@@ -51,6 +52,7 @@ class User_Tracker {
 	public static function init() {
 		// User login.
 		add_action( 'wp_login', array( __CLASS__, 'on_wp_login' ), 10, 2 );
+		add_action( 'wp_login_failed', array( __CLASS__, 'on_wp_login_failed' ), 10, 2 );
 
 		// User logout.
 		add_action( 'wp_logout', array( __CLASS__, 'on_wp_logout' ), 10, 1 );
@@ -78,6 +80,25 @@ class User_Tracker {
 	 */
 	public static function on_wp_login( string $user_login, WP_User $user ) {
 		Logger::log_event( 'User Login', $user, acting_user: $user );
+	}
+
+	/**
+	 * Fires after a user login has failed.
+	 *
+	 * @param string   $username Username or email address.
+	 * @param WP_Error $error    A WP_Error object with the authentication failure details.
+	 */
+	public static function on_wp_login_failed( string $username, WP_Error $error ) {
+		// Create an object reference for the possibly unknown user.
+		$user_data = User_Utility::get_user_data( $username );
+		$event     = Event::create( 'Failed Login', $user_data['ref'], null, null, $user_data['ref'] );
+
+		// Store the reason for the login failure in the event metadata.
+		$event->set_meta( 'error_code', $error->get_error_code() );
+		$event->set_meta( 'error_message', Strings::strip_tags( $error->get_error_message() ) );
+
+		// Log the event.
+		$event->save();
 	}
 
 	/**
@@ -157,21 +178,24 @@ class User_Tracker {
 			$old_val = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $userdata[ $key ] );
 
-			// If the value has changed, add the before and after values to the changes array.
+			// If the value has changed, add the before and after values to the properties.
 			if ( ! Types::are_equal( $old_val, $new_val ) ) {
-				Property::update_array( self::$properties, $key, $wpdb->users, $old_val, $new_val );
-			}
-		}
 
-		// Add the properties to the event if there were any changes.
-		if ( self::$properties ) {
-			// Create the event if it doesn't already exist.
-			if ( ! self::$profile_update_event ) {
-				self::$profile_update_event = Event::create( 'User Updated', $user );
-			}
+				// Create the event if it doesn't already exist.
+				if ( ! self::$profile_update_event ) {
+					// Note, the event will not be created if the current user isn't logged in or if the
+					// current user has a role that isn't being tracked.
+					self::$profile_update_event = Event::create( 'User Updated', $user );
 
-			// Update the event with the new properties.
-			self::$profile_update_event->set_props( self::$properties );
+					// If no event was created, no need to log an event.
+					if ( ! self::$profile_update_event ) {
+						return;
+					}
+				}
+
+				// Add the property.
+				self::$profile_update_event->set_prop( $key, $wpdb->users, $old_val, $new_val );
+			}
 		}
 	}
 
@@ -186,23 +210,40 @@ class User_Tracker {
 	public static function on_update_user_meta( int $meta_id, int $user_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
 
+		// Ignore changes to session tokens.
+		if ( $meta_key === 'session_tokens' ) {
+			return;
+		}
+
 		// Get the current value.
-		$current_value = get_user_meta( $user_id, $meta_key, true );
+		$current_value = get_user_meta( $user_id, $meta_key );
+
+		// In theory both values should be arrays or both should be scalars.
+		if ( ! is_array( $meta_value ) && is_array( $current_value ) ) {
+			$current_value = $current_value[0];
+		}
 
 		// Process meta values into correct types.
 		$old_val = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
-		// If the value has changed, add the before and after values to the changes array.
+		// If the value has changed, add the before and after values to the properties array.
 		if ( ! Types::are_equal( $old_val, $new_val ) ) {
 
 			// Create the event if it doesn't already exist.
 			if ( ! self::$profile_update_event ) {
+				// Note, the event will not be created if the current user isn't logged in or if the
+				// current user has a role that isn't being tracked.
 				$user_ref                   = new Object_Reference( 'user', $user_id );
 				self::$profile_update_event = Event::create( 'User Updated', $user_ref );
+
+				// If no event was created, no need to log an event.
+				if ( ! self::$profile_update_event ) {
+					return;
+				}
 			}
 
-			// Update the event with the new property.
+			// If we have an event, add the new property.
 			self::$profile_update_event->set_prop( $meta_key, $wpdb->usermeta, $old_val, $new_val );
 		}
 	}
