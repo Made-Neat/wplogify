@@ -95,6 +95,7 @@ class Object_Reference {
 		$type = null;
 		$key  = null;
 
+		// Get the object type and key, based on the type of the provided object.
 		if ( $wp_object instanceof WP_Comment ) {
 			$type = 'comment';
 			$key  = $wp_object->comment_ID;
@@ -127,11 +128,12 @@ class Object_Reference {
 				case 'widget':
 					$key = $wp_object['widget_id'];
 					break;
-			}
-		}
 
-		if ( ! $key ) {
-			throw new Exception( 'Unknown or unsupported object type.' );
+				default:
+					throw new Exception( "Unknown or unsupported object type: $type" );
+			}
+		} else {
+			throw new Exception( 'Unknown or unsupported object type: ' . get_class( $wp_object ) );
 		}
 
 		return new Object_Reference( $type, $key );

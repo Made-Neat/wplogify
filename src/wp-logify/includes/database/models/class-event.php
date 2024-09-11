@@ -102,7 +102,7 @@ class Event {
 	 *
 	 * This will be an integer matching a database primary key in the case of a post, user, term, or
 	 * comment.
-	 * For plugins, it will be the relative path.
+	 * For plugins, it will be the slug.
 	 * For themes, it will be the theme directory name a.k.a. stylesheet.
 	 * For options, it will be the option name.
 	 *
@@ -164,12 +164,12 @@ class Event {
 	/**
 	 * Creates a new event.
 	 *
-	 * @param string                                   $event_type  The type of event.
-	 * @param null|object|array                        $wp_object   The WP object the event is about or an array for plugins.
-	 * @param ?array                                   $eventmetas  The event metadata.
-	 * @param ?array                                   $properties  The event properties.
-	 * @param null|int|string|WP_User|Object_Reference $acting_user The user who performed the action, or null for the current user.
-	 *                                                              This can be a user ID, username, WP_User object, or Object_Reference.
+	 * @param string                            $event_type  The type of event.
+	 * @param null|object|array                 $wp_object   The WP object the event is about or an array for plugins.
+	 * @param ?array                            $eventmetas  The event metadata.
+	 * @param ?array                            $properties  The event properties.
+	 * @param null|int|WP_User|Object_Reference $acting_user The user who performed the action, or null for the current user.
+	 *                                                       This can be a user ID, WP_User object, or Object_Reference.
 	 * @return ?Event The new event, or null if the user is anonymous or doesn't have a tracked role.
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
@@ -178,7 +178,7 @@ class Event {
 		null|object|array $wp_object,
 		?array $eventmetas = null,
 		?array $properties = null,
-		null|int|string|WP_User|Object_Reference $acting_user = null
+		null|int|WP_User|Object_Reference $acting_user = null
 	): ?Event {
 		// If the event is about an object deletion, this is where we'd store the details of the
 		// deleted object in the database. We want to do it before user checking so every object
@@ -187,15 +187,15 @@ class Event {
 		// Get the acting user data.
 		$user_data = User_Utility::get_user_data( $acting_user );
 
-		// If we don't have any user info, we don't need to log the event.
-		if ( ! $user_data ) {
-			debug( 'Acting user not found.' );
-			return null;
-		}
-
 		// If we aren't tracking this user's role, we don't need to log the event.
-		if ( $user_data['object'] !== null && ! User_Utility::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() ) ) {
-			debug( "Acting user doesn't have a role that is being tracked." );
+		if (
+			$event_type !== Logger::EVENT_TYPE_FAILED_LOGIN
+			&& (
+				! $user_data['object']
+				|| ! User_Utility::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() )
+			)
+		) {
+			debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
 			return null;
 		}
 
@@ -206,7 +206,7 @@ class Event {
 			$object_ref = Object_Reference::new_from_wp_object( $wp_object );
 		}
 
-		// Get the subtype of the object if applicable.
+		// Get the object subtype if applicable.
 		$object_type = $object_ref?->type;
 		if ( $object_type === 'post' ) {
 			$post           = $wp_object instanceof WP_Post ? $wp_object : Post_Utility::load( $object_ref->key );
@@ -225,7 +225,7 @@ class Event {
 			$object_props = array();
 		}
 
-		// Copy across any other properties we received.
+		// Include any other properties we received.
 		if ( ! empty( $properties ) ) {
 			foreach ( $properties as $prop ) {
 				Property::update_array_from_prop( $object_props, $prop );

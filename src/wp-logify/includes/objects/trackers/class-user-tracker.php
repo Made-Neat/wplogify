@@ -26,13 +26,6 @@ class User_Tracker {
 	private const MAX_BREAK_PERIOD = 1200; // 20 minutes
 
 	/**
-	 * Array to remember properties between different events.
-	 *
-	 * @var array
-	 */
-	private static $properties = array();
-
-	/**
 	 * Array to remember metadata between different events.
 	 *
 	 * @var array
@@ -79,7 +72,7 @@ class User_Tracker {
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
 	public static function on_wp_login( string $user_login, WP_User $user ) {
-		Logger::log_event( 'User Login', $user, acting_user: $user );
+		Logger::log_event( 'User Login', $user, null, null, $user );
 	}
 
 	/**
@@ -89,11 +82,15 @@ class User_Tracker {
 	 * @param WP_Error $error    A WP_Error object with the authentication failure details.
 	 */
 	public static function on_wp_login_failed( string $username, WP_Error $error ) {
-		// Create an object reference for the possibly unknown user.
-		$user_data = User_Utility::get_user_data( $username );
-		$event     = Event::create( 'Failed Login', $user_data['ref'], null, null, $user_data['ref'] );
+		// Create the event.
+		$user_ref = new Object_Reference( 'user', null, null );
+		$event    = Event::create( Logger::EVENT_TYPE_FAILED_LOGIN, $user_ref );
+		if ( ! $event ) {
+			return;
+		}
 
-		// Store the reason for the login failure in the event metadata.
+		// Store deatils of the login failure in the event metadata.
+		$event->set_meta( 'username_entered', $username );
 		$event->set_meta( 'error_code', $error->get_error_code() );
 		$event->set_meta( 'error_message', Strings::strip_tags( $error->get_error_message() ) );
 

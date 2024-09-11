@@ -134,6 +134,11 @@ class User_Utility extends Object_Utility {
 	 * @return string The link or span HTML tag.
 	 */
 	public static function get_tag( int|string $user_id, ?string $old_name = null ): string {
+		// Unknown user.
+		if ( ! $user_id && ! $old_name ) {
+			return "<span class='wp-logify-deleted-object'>Unknown</span>";
+		}
+
 		// Load the user.
 		$user = $user_id ? self::load( $user_id ) : null;
 
@@ -166,7 +171,7 @@ class User_Utility extends Object_Utility {
 		}
 
 		// The user no longer exists. Construct the 'unknown' span element.
-		return "<span class='wp-logify-deleted-object'>$old_name (unknown)</span>";
+		return "<span class='wp-logify-deleted-object'>$old_name (deleted)</span>";
 	}
 
 	// =============================================================================================
@@ -431,7 +436,7 @@ class User_Utility extends Object_Utility {
 		// Default values for the user data.
 		$user_id    = 0;
 		$user_name  = '';
-		$user_roles = array( 'none' );
+		$user_roles = array();
 
 		// Extract the user information from the provided value.
 		if ( $user === null ) {
@@ -471,21 +476,15 @@ class User_Utility extends Object_Utility {
 		// If we have a WP_User object, extract the desired info.
 		if ( $user instanceof WP_User ) {
 			$user_id    = (int) $user->ID;
-			$user_name  = self::get_name( $user_id );
+			$user_name  = self::get_name( $user_id ) ?? '';
 			$user_roles = $user->roles;
-		}
-
-		// If we don't have a username or ID at this point, we don't have anything.
-		if ( ! $user_name && ! $user_id ) {
-			debug( 'No user found. Neither the username or user id is known.' );
-			return null;
 		}
 
 		// Return the user data.
 		return array(
 			'id'     => $user_id,
 			'name'   => $user_name,
-			'roles'  => $user_roles,
+			'roles'  => empty( $user_roles ) ? array( 'none' ) : $user_roles,
 			'ref'    => new Object_Reference( 'user', $user_id, $user_name ),
 			'object' => $user instanceof WP_User ? $user : null,
 		);
