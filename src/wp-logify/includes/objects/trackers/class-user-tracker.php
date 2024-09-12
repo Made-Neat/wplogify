@@ -213,14 +213,9 @@ class User_Tracker {
 		}
 
 		// Get the current value.
-		$current_value = get_user_meta( $user_id, $meta_key );
+		$current_value = get_user_meta( $user_id, $meta_key, true );
 
-		// In theory both values should be arrays or both should be scalars.
-		if ( ! is_array( $meta_value ) && is_array( $current_value ) ) {
-			$current_value = $current_value[0];
-		}
-
-		// Process meta values into correct types.
+		// Process values into the correct types.
 		$old_val = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 

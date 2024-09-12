@@ -28,21 +28,19 @@ class Log_Page {
 	 * Display the log page.
 	 */
 	public static function display_log_page() {
-		// Get all the post types.
-		$post_types = Event_Repository::get_post_types();
+		if ( ! Access_Control::can_access_log_page() ) {
+			// Disallow access.
+			wp_die( __( 'Sorry, you are not allowed to access this page.', 'wp-logify' ), 403 );
+		}
 
-		// Get all the taxonomies.
-		$taxonomies = Event_Repository::get_taxonomies();
-
-		// Get all the event types.
+		// Get all the data required for the log page.
+		$post_types  = Event_Repository::get_post_types();
+		$taxonomies  = Event_Repository::get_taxonomies();
 		$event_types = Event_Repository::get_event_types();
+		$users       = Event_Repository::get_users();
+		$roles       = Event_Repository::get_roles();
 
-		// Get all the users.
-		$users = Event_Repository::get_users();
-
-		// Get all the roles.
-		$roles = Event_Repository::get_roles();
-
+		// Include the log page template.
 		include WP_LOGIFY_PLUGIN_DIR . 'templates/log-page.php';
 	}
 
@@ -530,55 +528,22 @@ class Log_Page {
 			$html .= '<tr>';
 
 			// Property key.
-			if ( $prop->key === 'wp_capabilities' ) {
-				$key = 'Roles';
-
-				// Get the current or old roles.
-				$roles = array();
-				if ( ! empty( $prop->val ) ) {
-					foreach ( $prop->val as $role => $enabled ) {
-						if ( $enabled ) {
-							$roles[] = ucfirst( $role );
-						}
-					}
-				}
-
-				// Get the new roles.
-				$new_roles = array();
-				if ( ! empty( $prop->new_val ) ) {
-					foreach ( $prop->new_val as $role => $enabled ) {
-						if ( $enabled ) {
-							$new_roles[] = ucfirst( $role );
-						}
-					}
-				}
-			} else {
-				$key = Strings::make_key_readable( $prop->key );
-			}
+			$key   = Strings::make_key_readable( $prop->key );
 			$html .= "<th>$key</th>";
 
 			// Current or old value.
-			if ( $prop->key === 'wp_capabilities' ) {
-				// Show the role(s) without the booleans.
-				$val = Types::value_to_html( $key, $roles );
-			} else {
-				// Default.
-				$val = Types::value_to_html( $prop->key, $prop->val );
-			}
+			$val   = Types::value_to_html( $prop->key, $prop->val );
 			$html .= "<td>$val</td>";
 
 			// New value.
 			if ( $show_new_vals ) {
-				if ( $prop->key === 'wp_capabilities' ) {
-					$new_val = Types::value_to_html( $key, $new_roles );
-				} else {
-					$new_val = Types::value_to_html( $prop->key, $prop->new_val );
-				}
+				$new_val = Types::value_to_html( $prop->key, $prop->new_val );
 
-				// Get the CSS class.
+				// Get the CSS class to show if the value has been changed or not.
 				$new_value_exists = $prop->new_val !== null;
 				$class            = $new_value_exists ? 'wp-logify-value-changed' : 'wp-logify-value-unchanged';
-				$html            .= "<td class='$class'>$new_val</td>";
+
+				$html .= "<td class='$class'>$new_val</td>";
 			}
 
 			// End row.

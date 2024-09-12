@@ -489,34 +489,4 @@ class User_Utility extends Object_Utility {
 			'object' => $user instanceof WP_User ? $user : null,
 		);
 	}
-
-	// =============================================================================================
-	// Permission-related methods.
-
-	/**
-	 * Checks if the user has access based on their roles.
-	 *
-	 * @param WP_User      $user The user to check.
-	 * @param array|string $roles A role or array of roles to check against.
-	 * @return bool Returns true if the user has any of the specified roles, false otherwise.
-	 */
-	public static function user_has_role( WP_User $user, array|string $roles ): bool {
-		if ( is_string( $roles ) ) {
-			// If only a single role is given, check if the user has it.
-			return in_array( $roles, $user->roles, true );
-		} else {
-			// If an array of roles is given, check for overlap.
-			return count( array_intersect( $user->roles, $roles ) ) > 0;
-		}
-	}
-
-	/**
-	 * Checks if the current user has access based on their roles.
-	 *
-	 * @param array|string $roles A role or array of roles to check against.
-	 * @return bool Returns true if the current user has any of the specified roles, false otherwise.
-	 */
-	public static function current_user_has_role( array|string $roles ) {
-		return self::user_has_role( wp_get_current_user(), $roles );
-	}
 }

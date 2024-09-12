@@ -30,11 +30,20 @@ class Admin {
 	 * @return void
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ) );
-		add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_menu' ), 100 );
-		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		// Add the admin menu.
+		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ), 10, 0 );
+
+		// Add the WP Logify menu to the Admin bar.
+		add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_menu' ), 10, 1 );
+
+		// Enqueue the necessary assets for the WP Logify admin pages.
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ), 10, 1 );
+
+		// Add screen options for the WP Logify plugin.
 		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_option' ), 10, 3 );
-		add_action( 'admin_post_wp_logify_reset_logs', array( __CLASS__, 'reset_logs' ) );
+
+		// Add the log reset functionality.
+		add_action( 'admin_post_wp_logify_reset_logs', array( __CLASS__, 'reset_logs' ), 10, 0 );
 	}
 
 	/**
@@ -42,17 +51,23 @@ class Admin {
 	 *
 	 * This method adds the main menu page and submenu pages for the WP Logify plugin
 	 * in the WordPress admin dashboard.
-	 *
-	 * It also ensures the user is an administrator.
 	 */
 	public static function add_admin_menu() {
-		if ( ! User_Utility::current_user_has_role( 'administrator' ) ) {
+		// Check if the user has access to the WP Logify log page.
+		if ( ! Access_Control::can_access_log_page() ) {
 			return;
 		}
 
-		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ), 'dashicons-list-view' );
-		add_submenu_page( 'wp-logify', 'View Log', 'View Log', 'manage_options', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ) );
+		// Add the main menu page and submenus.
+		$hook = add_menu_page( 'WP Logify', 'WP Logify', 'read', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ), 'dashicons-list-view' );
+
+		// Log page submenu.
+		add_submenu_page( 'wp-logify', 'View Log', 'View Log', 'read', 'wp-logify', array( 'WP_Logify\Log_Page', 'display_log_page' ) );
+
+		// Settings submenu (only for users with 'manage_options' capability).
 		add_submenu_page( 'wp-logify', 'Settings', 'Settings', 'manage_options', 'wp-logify-settings', array( 'WP_Logify\Plugin_Settings', 'display_settings_page' ) );
+
+		// Add screen options for the log page.
 		add_action( "load-$hook", array( __CLASS__, 'add_screen_options' ) );
 	}
 
@@ -62,8 +77,10 @@ class Admin {
 	 * @param WP_Admin_Bar $wp_admin_bar The Admin bar object.
 	 */
 	public static function add_admin_bar_menu( WP_Admin_Bar $wp_admin_bar ) {
-		// Don't show if the user isn't an admin or if they don't want to see it in the admin bar.
-		if ( ! User_Utility::current_user_has_role( 'administrator' ) || ! Plugin_Settings::get_show_in_admin_bar() ) {
+		// Don't show if the they don't want to see it in the admin bar, or if they don't have access.
+		// If they don't have access to the log page, they also don't have access to the settings page.
+		// (If they did, they could give themselves access to the log page!)
+		if ( ! Plugin_Settings::get_show_in_admin_bar() || ! Access_Control::can_access_log_page() ) {
 			return;
 		}
 
@@ -84,14 +101,17 @@ class Admin {
 			)
 		);
 
-		$wp_admin_bar->add_node(
-			array(
-				'id'     => 'wp-logify-settings',
-				'parent' => 'wp-logify',
-				'title'  => 'Settings',
-				'href'   => admin_url( 'admin.php?page=wp-logify-settings' ),
-			)
-		);
+		// If the user has the manage_options capability, show the settings link.
+		if ( current_user_can( 'manage_options' ) ) {
+			$wp_admin_bar->add_node(
+				array(
+					'id'     => 'wp-logify-settings',
+					'parent' => 'wp-logify',
+					'title'  => 'Settings',
+					'href'   => admin_url( 'admin.php?page=wp-logify-settings' ),
+				)
+			);
+		}
 	}
 
 	/**

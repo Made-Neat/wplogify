@@ -19,7 +19,7 @@ function debug_var_to_string( mixed $value ): string {
 	if ( $value === null ) {
 		return 'null';
 	} elseif ( is_string( $value ) ) {
-		return $value;
+		return '"' . $value . '"';
 	} elseif ( is_bool( $value ) ) {
 		return $value ? 'true' : 'false';
 	} elseif ( is_scalar( $value ) ) {

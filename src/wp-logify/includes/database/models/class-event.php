@@ -192,10 +192,10 @@ class Event {
 			$event_type !== Logger::EVENT_TYPE_FAILED_LOGIN
 			&& (
 				! $user_data['object']
-				|| ! User_Utility::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() )
+				|| ! Access_Control::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() )
 			)
 		) {
-			debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
+			// debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
 			return null;
 		}
 

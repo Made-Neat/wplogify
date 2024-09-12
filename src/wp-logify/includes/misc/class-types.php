@@ -30,11 +30,6 @@ class Types {
 		// Default result is the unaltered value.
 		$result = $value;
 
-		// If the value is an array and there's only one value, reduce the result to that value.
-		if ( is_array( $result ) && count( $result ) === 1 && key_exists( 0, $result ) ) {
-			$result = $result[0];
-		}
-
 		// If the value is a PHP-serialized array, deserialize it.
 		if ( is_string( $result ) && Serialization::try_unserialize( $result, $unserialized_result ) ) {
 			$result = $unserialized_result;

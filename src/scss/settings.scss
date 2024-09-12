@@ -1,11 +1,19 @@
 @import 'colors';
 
+body.wp-logify_page_wp-logify-settings {
+    background-color: $gray-93;
+}
+
 .wrap .wp-logify-settings-table {
     width: 100%;
 
     th {
-        width: 14rem;
+        width: 16rem;
     }
+}
+
+#wp-logify-api-key {
+    width: 20rem;
 }
 
 .wp-logify-settings-radio {
@@ -18,7 +26,6 @@
     border-color: $danger;
     color: white;
     box-shadow: 0 0 0 1px $danger;
-    width: 110px;
 
     &:hover {
         background-color: $danger-hover;
@@ -29,4 +36,27 @@
 
 #wp-logify-submit-button {
     width: 110px;
+}
+
+.wp-logify-settings-group {
+    border: solid 1px $gray-80;
+    border-radius: 0.5rem;
+    width: 40rem;
+    padding: 1rem;
+    background-color: $gray-97;
+    margin-top: 1rem;
+
+    legend {
+        font-size: 1rem;
+        font-weight: bold;
+    }
+}
+
+.wp-logify-role-access-msg {
+    color: $gray-67;
+}
+
+#wp-logify-settings-users {
+    max-height: 8rem;
+    overflow: auto;
 }

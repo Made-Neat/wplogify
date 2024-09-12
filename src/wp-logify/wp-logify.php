@@ -80,6 +80,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-widget-uti
 
 // -------------------------------------------------------------------------------------------------
 // Miscellanous other classes.
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-access-control.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-admin.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-arrays.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-cron.php';

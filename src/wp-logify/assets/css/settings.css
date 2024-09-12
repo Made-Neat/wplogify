@@ -1,8 +1,16 @@
+body.wp-logify_page_wp-logify-settings {
+  background-color: hsl(0, 0%, 93%);
+}
+
 .wrap .wp-logify-settings-table {
   width: 100%;
 }
 .wrap .wp-logify-settings-table th {
-  width: 14rem;
+  width: 16rem;
+}
+
+#wp-logify-api-key {
+  width: 20rem;
 }
 
 .wp-logify-settings-radio {
@@ -15,7 +23,6 @@
   border-color: #dc3232;
   color: white;
   box-shadow: 0 0 0 1px #dc3232;
-  width: 110px;
 }
 #wp-logify-delete-logs-button:hover {
   background-color: #e04848;
@@ -25,4 +32,26 @@
 
 #wp-logify-submit-button {
   width: 110px;
+}
+
+.wp-logify-settings-group {
+  border: solid 1px hsl(0, 0%, 80%);
+  border-radius: 0.5rem;
+  width: 40rem;
+  padding: 1rem;
+  background-color: hsl(0, 0%, 97%);
+  margin-top: 1rem;
+}
+.wp-logify-settings-group legend {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.wp-logify-role-access-msg {
+  color: hsl(0, 0%, 67%);
+}
+
+#wp-logify-settings-users {
+  max-height: 8rem;
+  overflow: auto;
 }

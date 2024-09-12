@@ -12,7 +12,6 @@ namespace WP_Logify;
 <div class="wrap">
 	<h1>WP Logify Events Log</h1>
 
-
 	<table id="wp-logify-filters">
 		<tr>
 			<td>

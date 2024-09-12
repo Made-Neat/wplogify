@@ -26,7 +26,7 @@ class Dashboard_Widget {
 	 */
 	public static function add_dashboard_widget() {
 		// Check current user has access.
-		if ( ! User_Utility::current_user_has_role( 'administrator' ) ) {
+		if ( ! Access_Control::can_access_log_page() ) {
 			return;
 		}
 
