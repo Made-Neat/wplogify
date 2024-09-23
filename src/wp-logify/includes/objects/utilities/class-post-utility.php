@@ -111,6 +111,11 @@ class Post_Utility extends Object_Utility {
 		// Post modified.
 		Property::update_array( $props, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
 
+		// Post content.
+		if ( $post->post_content ) {
+			Property::update_array( $props, 'post_content', $wpdb->posts, Strings::get_snippet( $post->post_content ) );
+		}
+
 		// For nav menu items, get the menu item's core properties and merge them into the properties array.
 		if ( $post->post_type === 'nav_menu_item' ) {
 			$nav_menu_item_props = Menu_Item_Utility::get_core_properties( $post_id );
@@ -271,7 +276,7 @@ class Post_Utility extends Object_Utility {
 			$post = self::load( $post );
 		}
 
-		$properties = array();
+		$props = array();
 
 		// Add the base properties.
 		foreach ( $post as $key => $value ) {
@@ -284,7 +289,7 @@ class Post_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->posts, $value );
+			Property::update_array( $props, $key, $wpdb->posts, $value );
 		}
 
 		// Add the meta properties.
@@ -294,10 +299,10 @@ class Post_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->postmeta, $value );
+			Property::update_array( $props, $key, $wpdb->postmeta, $value );
 		}
 
-		return $properties;
+		return $props;
 	}
 
 	/**
@@ -396,6 +401,58 @@ class Post_Utility extends Object_Utility {
 		}
 	}
 
+	/**
+	 * Get the changes in a post by comparing the before and after versions.
+	 *
+	 * @param WP_Post $post_before The post before the update.
+	 * @param WP_Post $post_after  The post after the update.
+	 * @return Property[] The changes in the post.
+	 */
+	public static function get_changes( WP_Post $post_before, WP_Post $post_after ) {
+		global $wpdb;
+
+		$props = array();
+
+		// Add the base properties.
+		foreach ( $post_before as $key => $value ) {
+			// Skip the dates in the posts table, they're incorrect.
+			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
+				continue;
+			}
+
+			// Process database values into correct types.
+			$val     = Types::process_database_value( $key, $value );
+			$new_val = Types::process_database_value( $key, $post_after->$key );
+
+			// If there is a changed, add the property.
+			if ( ! Types::are_equal( $val, $new_val ) ) {
+				Property::update_array( $props, $key, $wpdb->posts, $val, $new_val );
+			}
+		}
+
+		// Add the meta properties.
+		$postmeta_before = get_post_meta( $post_before->ID );
+		$postmeta_after  = get_post_meta( $post_after->ID );
+
+		// Collect all the keys.
+		$keys = array_unique( array_merge( array_keys( $postmeta_before ), array_keys( $postmeta_after ) ) );
+		debug( $keys );
+
+		// Go through the meta keys looking for changes.
+		foreach ( $keys as $key ) {
+			// Process database values into correct types.
+			$val     = isset( $postmeta_before[ $key ] ) ? Types::process_database_value( $key, $postmeta_before[ $key ] ) : null;
+			$new_val = isset( $postmeta_after[ $key ] ) ? Types::process_database_value( $key, $postmeta_after[ $key ] ) : null;
+
+			// If there is a change, add the property.
+			if ( ! Types::are_equal( $val, $new_val ) ) {
+				Property::update_array( $props, $key, $wpdb->postmeta, $val, $new_val );
+			}
+		}
+
+		return $props;
+	}
+
 	// =============================================================================================
 	// Media-related methods.
 
@@ -431,57 +488,5 @@ class Post_Utility extends Object_Utility {
 			// Otherwise default to 'file'.
 			return 'file';
 		}
-	}
-
-	/**
-	 * Get the changes in a post by comparing the before and after versions.
-	 *
-	 * @param WP_Post $post_before The post before the update.
-	 * @param WP_Post $post_after  The post after the update.
-	 * @return Property[] The changes in the post.
-	 */
-	public static function get_changes( WP_Post $post_before, WP_Post $post_after ) {
-		global $wpdb;
-
-		$properties = array();
-
-		// Add the base properties.
-		foreach ( $post_before as $key => $value ) {
-			// Skip the dates in the posts table, they're incorrect.
-			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
-				continue;
-			}
-
-			// Process database values into correct types.
-			$val     = Types::process_database_value( $key, $value );
-			$new_val = Types::process_database_value( $key, $post_after->$key );
-
-			// If there is a changed, add the property.
-			if ( ! Types::are_equal( $val, $new_val ) ) {
-				Property::update_array( $properties, $key, $wpdb->posts, $val, $new_val );
-			}
-		}
-
-		// Add the meta properties.
-		$postmeta_before = get_post_meta( $post_before->ID );
-		$postmeta_after  = get_post_meta( $post_after->ID );
-
-		// Collect all the keys.
-		$keys = array_unique( array_merge( array_keys( $postmeta_before ), array_keys( $postmeta_after ) ) );
-		debug( $keys );
-
-		// Go through the meta keys looking for changes.
-		foreach ( $keys as $key ) {
-			// Process database values into correct types.
-			$val     = isset( $postmeta_before[ $key ] ) ? Types::process_database_value( $key, $postmeta_before[ $key ] ) : null;
-			$new_val = isset( $postmeta_after[ $key ] ) ? Types::process_database_value( $key, $postmeta_after[ $key ] ) : null;
-
-			// If there is a change, add the property.
-			if ( ! Types::are_equal( $val, $new_val ) ) {
-				Property::update_array( $properties, $key, $wpdb->postmeta, $val, $new_val );
-			}
-		}
-
-		return $properties;
 	}
 }

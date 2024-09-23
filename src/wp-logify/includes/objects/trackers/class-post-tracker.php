@@ -38,6 +38,13 @@ class Post_Tracker {
 	private static array $terms = array();
 
 	/**
+	 * Event for creating or updating a post object.
+	 *
+	 * @var ?Event
+	 */
+	private static ?Event $update_post_event = null;
+
+	/**
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
@@ -60,6 +67,38 @@ class Post_Tracker {
 		add_action( 'deleted_term_relationships', array( __CLASS__, 'on_deleted_term_relationships' ), 10, 3 );
 	}
 
+	// =============================================================================================
+	// Post creation and update
+
+	/**
+	 * Get the update or create post event. If it hasn't been created yet, do it now.
+	 *
+	 * @param string      $event_type_verb The event type verb.
+	 * @param int|WP_Post $post            The post the event is about.
+	 * @return Event The event.
+	 */
+	private static function get_update_post_event( string $event_type_verb, int|WP_Post $post ): Event {
+		// Create the event if not done already.
+		if ( ! self::$update_post_event ) {
+
+			// Load the post if necessary.
+			if ( is_int( $post ) ) {
+				$post = Post_Utility::load( $post );
+			}
+
+			// Get the post type.
+			$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
+
+			// Get the event type.
+			$event_type = "$post_type $event_type_verb";
+
+			// Create the event.
+			self::$update_post_event = Event::create( $event_type, $post );
+		}
+
+		return self::$update_post_event;
+	}
+
 	/**
 	 * Log the creation and update of a post.
 	 *
@@ -75,8 +114,6 @@ class Post_Tracker {
 	 * @param bool    $update  Whether this is an update or a new post.
 	 */
 	public static function on_save_post( int $post_id, WP_Post $post, bool $update ) {
-		global $wpdb;
-
 		// Ignore updates. We track post updates by tracking the creation of revisions, which
 		// enables us to link to the compare revisions page.
 		if ( $update ) {
@@ -88,23 +125,34 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'on_save_post' );
+		debug( 'on_save_post' );
 
-		// Check if we're updating or creating.
+		// Check if we're creating or updating. If this is a revision, we're updating the post.
+		// Otherwise, we're creating a new one.
 		$creating = wp_is_post_revision( $post_id ) === false;
 
-		// If we're updating, the $post variable refers to the new revision rather than the parent post.
+		// If we're updating, the current $post variable refers to the new revision rather than the
+		// parent post. Update $post so we get the right details.
 		if ( ! $creating ) {
-			// Record the ID and title of the new revision.
+			// Record the ID and title of the new revision; we'll use this info in the link, below.
 			$revision_id    = $post_id;
 			$revision_title = $post->post_title;
 
 			// Load the parent object.
 			$post_id = $post->post_parent;
 			$post    = Post_Utility::load( $post_id );
+		}
 
-			// Replace changed content with object references.
-			$prop = Property::get_from_array( self::$properties, 'post_content' );
+		// Get the event type verb.
+		$event_type_verb = $creating || $post->post_status === 'auto-draft' ? 'Created' : 'Updated';
+
+		// Get the event.
+		$event = self::get_update_post_event( $event_type_verb, $post );
+
+		// If updating, and the content has changed, replace the changed content so we aren't
+		// storing huge blocks of text in the properties table.
+		if ( ! $creating ) {
+			$prop = $event->get_prop( 'post_content' );
 			if ( $prop ) {
 				// Show a snippet of the old version.
 				$prop->val = Strings::get_snippet( $prop->val );
@@ -113,32 +161,28 @@ class Post_Tracker {
 			}
 		}
 
-		// Check if we need to use the 'Created' verb.
-		$created = $creating || $post->post_status === 'auto-draft';
-
-		// Get the event type.
-		$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
-		$event_type = $post_type . ( $created ? ' Created' : ' Updated' );
-
 		// Log the event.
-		Logger::log_event( $event_type, $post, null, self::$properties );
+		$event->save();
 	}
 
 	/**
-	 * Make a note of the last modified datetime before the post is updated.
+	 * Record the last modified datetime before the post is updated.
 	 *
-	 * If this event occurs it will be before on_post_updated(), which will be before on_save_post().
+	 * If this event occurs, it will be before on_post_updated(), which will be before on_save_post().
 	 *
 	 * @param int   $post_id The ID of the post being updated.
 	 * @param array $data    The data for the post.
 	 */
 	public static function on_pre_post_update( int $post_id, array $data, ) {
-		// debug( 'on_pre_post_update' );
+		debug( 'on_pre_post_update' );
 
 		global $wpdb;
 
+		// Get the new event.
+		$event = self::get_update_post_event( 'Updated', $post_id );
+
 		// Record the current last modified date.
-		Property::update_array( self::$properties, 'post_modified', $wpdb->posts, Post_Utility::get_last_modified_datetime( $post_id ) );
+		$event->set_prop( 'post_modified', $wpdb->posts, Post_Utility::get_last_modified_datetime( $post_id ) );
 	}
 
 	/**
@@ -152,35 +196,22 @@ class Post_Tracker {
 	 * @param WP_Post $post_before  Post object before the update.
 	 */
 	public static function on_post_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
-		// debug( 'on_post_updated' );
+		debug( 'on_post_updated' );
 
-		// global $wpdb;
+		// Get changes to the post.
+		$props = Post_Utility::get_changes( $post_before, $post_after );
 
-		self::$properties = Post_Utility::get_changes( $post_before, $post_after );
+		// Remove changes to status, which we log separately.
+		Property::remove_from_array( $props, 'post_status' );
 
-		// Add changes.
-		// foreach ( $post_before as $key => $value ) {
-		// Skip the dates in the posts table, they're incorrect.
-		// if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified_gmt' ), true ) ) {
-		// continue;
-		// }
+		// If any changes remain, update the event.
+		if ( ! empty( $props ) ) {
+			// Get the new event.
+			$event = self::get_update_post_event( 'Updated', $post_after );
 
-		// Process old value into the correct type.
-		// $val = Types::process_database_value( $key, $value );
-
-		// Special handling for the last modified datetime.
-		// if ( $key === 'post_modified' ) {
-		// $new_val = Post_Utility::get_last_modified_datetime( $post_id );
-		// } else {
-		// $new_val = Types::process_database_value( $key, $post_after->{$key} );
-		// }
-
-		// Compare old and new values.
-		// if ( ! Types::are_equal( $val, $new_val ) ) {
-		// Record change.
-		// Property::update_array( self::$properties, $key, $wpdb->posts, $val, $new_val );
-		// }
-		// }
+			// Add the changed properties to the event.
+			$event->set_props( $props );
+		}
 	}
 
 	/**
@@ -192,9 +223,14 @@ class Post_Tracker {
 	 * @param mixed  $meta_value The new value of the meta data.
 	 */
 	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
-		debug( 'on_update_post_meta' );
-
 		global $wpdb;
+
+		// Some changes are uninteresting.
+		if ( $meta_key === '_edit_lock' ) {
+			return;
+		}
+
+		debug( 'on_update_post_meta' );
 
 		// Get the current value.
 		$current_value = get_post_meta( $post_id, $meta_key, true );
@@ -203,14 +239,24 @@ class Post_Tracker {
 		$val     = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
-		// Note the change, if any.
+		// If there is any change, update the event.
 		if ( ! Types::are_equal( $val, $new_val ) ) {
-			Property::update_array( self::$properties, $meta_key, $wpdb->postmeta, $val, $new_val );
+			// Get the new event.
+			$event = self::get_update_post_event( 'Updated', $post_id );
+
+			// Update the post meta.
+			$event->set_prop( $meta_key, $wpdb->postmeta, $val, $new_val );
 		}
 	}
 
+	// =============================================================================================
+	// Post status change.
+
 	/**
 	 * Fires when a post is transitioned from one status to another.
+	 *
+	 * We log status changes separately from other changes to the post so we can more easily see
+	 * when posts were published or submitted for review.
 	 *
 	 * @param string  $new_status New post status.
 	 * @param string  $old_status Old post status.
@@ -240,27 +286,35 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'on_transition_post_status', $post->ID, $old_status, $new_status );
+		debug( 'on_transition_post_status', $post->ID, $old_status, $new_status );
+
+		// Get the post type.
+		$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
 
 		// Get the event type.
-		$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
-		$verb       = Post_Utility::get_status_transition_verb( $old_status, $new_status );
-		$event_type = "$post_type $verb";
+		$event_type_verb = Post_Utility::get_status_transition_verb( $old_status, $new_status );
+
+		// Get the event type.
+		$event_type = "$post_type $event_type_verb";
+
+		// Create the event.
+		$event = Event::create( $event_type, $post );
 
 		// Update the properties to correctly show the status change.
-		$props = array();
-		Property::update_array( $props, 'post_status', $wpdb->posts, $old_status, $new_status );
+		$event->set_prop( 'post_status', $wpdb->posts, $old_status, $new_status );
 
-		// If the post is scheduled for the future, let's show this information.
-		$metas = array();
+		// If the post is scheduled for the future, let's include this information.
 		if ( $new_status === 'future' ) {
 			$scheduled_publish_datetime = DateTimes::create_datetime( $post->post_date );
-			Eventmeta::update_array( $metas, 'when_to_publish', $scheduled_publish_datetime );
+			$event->set_meta( 'when_to_publish', $scheduled_publish_datetime );
 		}
 
 		// Log the event.
-		Logger::log_event( $event_type, $post, $metas, $props );
+		$event->save();
 	}
+
+	// =============================================================================================
+	// Post deletion
 
 	/**
 	 * Get the event type for a post deletion.
@@ -292,7 +346,7 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'on_before_delete_post', $post_id );
+		debug( 'on_before_delete_post', $post_id );
 
 		// Get the event type.
 		$event_type = self::get_delete_event_type( $post->post_type );
@@ -394,7 +448,7 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'on_delete_post', $post_id );
+		debug( 'on_delete_post', $post_id );
 
 		// Get the event type.
 		$event_type = self::get_delete_event_type( $post->post_type );
@@ -417,6 +471,9 @@ class Post_Tracker {
 		$event->save();
 	}
 
+	// =============================================================================================
+	// Posts and terms
+
 	/**
 	 * Fires immediately after an object-term relationship is added.
 	 *
@@ -430,7 +487,7 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'on_added_term_relationship' );
+		debug( 'on_added_term_relationship' );
 
 		// Remember the newly attached term.
 		$term_id = Term_Utility::get_term_id_from_term_taxonomy_id( $tt_id );
@@ -450,7 +507,7 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'on_deleted_term_relationships' );
+		debug( 'on_deleted_term_relationships' );
 
 		// Remember the removed terms.
 		foreach ( $tt_ids as $tt_id ) {
@@ -473,7 +530,7 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'on_wp_after_insert_post' );
+		debug( 'on_wp_after_insert_post' );
 
 		// Log the addition or removal of any taxonomy terms.
 		if ( self::$terms ) {

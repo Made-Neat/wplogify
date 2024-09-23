@@ -17,15 +17,18 @@ use WP_Post;
 class Media_Tracker {
 
 	/**
-	 * Array to remember properties between different events.
+	 * Event for creating or updating a media object.
 	 *
-	 * @var array
+	 * @var ?Event
 	 */
-	protected static $properties = array();
+	private static ?Event $update_media_event = null;
 
-	private static $update_media_event = null;
-
-	private static $is_new = false;
+	/**
+	 * If creating or updating a media event.
+	 *
+	 * @var bool
+	 */
+	private static bool $creating = false;
 
 	/**
 	 * Set up hooks for the events we want to log.
@@ -61,7 +64,7 @@ class Media_Tracker {
 		debug( 'on_add_attachment' );
 
 		// We are adding a new attachment.
-		self::$is_new = true;
+		self::$creating = true;
 
 		// Get the media type and event type.
 		$media_type = Post_Utility::get_media_type( $post_id );
@@ -136,7 +139,7 @@ class Media_Tracker {
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
 		// Add the metadata.
-		if ( self::$is_new ) {
+		if ( self::$creating ) {
 			// Log the new value.
 			self::$update_media_event->set_prop( $meta_key, $wpdb->postmeta, $new_val );
 		} else {
@@ -220,7 +223,7 @@ class Media_Tracker {
 	 */
 	public static function on_shutdown() {
 		// Save the media updated or added event, if it exists.
-		if ( self::$update_media_event && ( self::$is_new || self::$update_media_event->num_changed_props() > 0 ) ) {
+		if ( self::$update_media_event && ( self::$creating || self::$update_media_event->num_changed_props() > 0 ) ) {
 			self::$update_media_event->save();
 		}
 	}

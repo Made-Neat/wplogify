@@ -123,4 +123,35 @@ class Property {
 	public static function update_array_from_prop( array &$props, self $prop ) {
 		self::update_array( $props, $prop->key, $prop->table_name, $prop->val, $prop->new_val );
 	}
+
+	/**
+	 * Remove a property in an array of properties, searching by key.
+	 *
+	 * @param array  $props The array of properties to update.
+	 * @param string $key   The key to search for.
+	 * @return bool True if the property was found and removed, otherwise false.
+	 */
+	public static function remove_from_array( array &$props, string $key ): bool {
+		$props2 = array(); // Temporary array to hold properties that do not match the key.
+		$result = false;   // Flag to indicate if the property was found and removed.
+
+		foreach ( $props as $prop ) {
+			if ( $prop->key === $key ) {
+				// Found the property to remove.
+				$result = true;
+				// Do not add it to $props2; this effectively removes it.
+			} else {
+				// Keep the property as it doesn't match the key to remove.
+				$props2[] = $prop;
+			}
+		}
+
+		if ( $result ) {
+			// Update the original $props array with the filtered properties.
+			$props = $props2;
+		}
+
+		// Return true if the property was found and removed; otherwise, return false.
+		return $result;
+	}
 }
