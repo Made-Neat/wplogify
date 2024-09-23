@@ -395,4 +395,93 @@ class Post_Utility extends Object_Utility {
 				return 'Status Changed';
 		}
 	}
+
+	// =============================================================================================
+	// Media-related methods.
+
+	/**
+	 * Get the media type of an attachment post.
+	 *
+	 * Possible results:
+	 * - image
+	 * - audio
+	 * - video
+	 * - file
+	 * - null, if no MIME type is set.
+	 *
+	 * @param int $post_id The ID of the post.
+	 * @return ?string The media type of the attachment, or null if the MIME type isn't set.
+	 */
+	public static function get_media_type( int $post_id ): ?string {
+		// Get the MIME type of the post.
+		$mime_type = get_post_mime_type( $post_id );
+
+		// Check if the MIME type is set.
+		if ( ! $mime_type ) {
+			return null;
+		}
+
+		// Check the base media type (the part before the slash in the MIME type).
+		$mime_parts = explode( '/', $mime_type );
+
+		// Check if the MIME type is an image, audio, or video.
+		if ( in_array( $mime_parts[0], array( 'image', 'audio', 'video' ), true ) ) {
+			return $mime_parts[0];
+		} else {
+			// Otherwise default to 'file'.
+			return 'file';
+		}
+	}
+
+	/**
+	 * Get the changes in a post by comparing the before and after versions.
+	 *
+	 * @param WP_Post $post_before The post before the update.
+	 * @param WP_Post $post_after  The post after the update.
+	 * @return Property[] The changes in the post.
+	 */
+	public static function get_changes( WP_Post $post_before, WP_Post $post_after ) {
+		global $wpdb;
+
+		$properties = array();
+
+		// Add the base properties.
+		foreach ( $post_before as $key => $value ) {
+			// Skip the dates in the posts table, they're incorrect.
+			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt' ), true ) ) {
+				continue;
+			}
+
+			// Process database values into correct types.
+			$val     = Types::process_database_value( $key, $value );
+			$new_val = Types::process_database_value( $key, $post_after->$key );
+
+			// If there is a changed, add the property.
+			if ( ! Types::are_equal( $val, $new_val ) ) {
+				Property::update_array( $properties, $key, $wpdb->posts, $val, $new_val );
+			}
+		}
+
+		// Add the meta properties.
+		$postmeta_before = get_post_meta( $post_before->ID );
+		$postmeta_after  = get_post_meta( $post_after->ID );
+
+		// Collect all the keys.
+		$keys = array_unique( array_merge( array_keys( $postmeta_before ), array_keys( $postmeta_after ) ) );
+		debug( $keys );
+
+		// Go through the meta keys looking for changes.
+		foreach ( $keys as $key ) {
+			// Process database values into correct types.
+			$val     = isset( $postmeta_before[ $key ] ) ? Types::process_database_value( $key, $postmeta_before[ $key ] ) : null;
+			$new_val = isset( $postmeta_after[ $key ] ) ? Types::process_database_value( $key, $postmeta_after[ $key ] ) : null;
+
+			// If there is a change, add the property.
+			if ( ! Types::are_equal( $val, $new_val ) ) {
+				Property::update_array( $properties, $key, $wpdb->postmeta, $val, $new_val );
+			}
+		}
+
+		return $properties;
+	}
 }

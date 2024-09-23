@@ -181,11 +181,21 @@ class Object_Reference {
 	 * @return mixed The result of the method call.
 	 */
 	private function call_utility_method( string $method, mixed ...$params ): mixed {
+		// Handle null key.
+		if ( ! $this->key ) {
+			return null;
+		}
+
 		// Get the name of the utility class.
 		$utility_class = $this->get_utility_class_name();
 
-		// Call the method on the utility class.
-		return $utility_class::$method( ...$params );
+		try {
+			// Call the method on the utility class.
+			return $utility_class::$method( $this->key, ...$params );
+		} catch ( Throwable $e ) {
+			debug( "EXCEPTION calling $utility_class::$method({$this->key})", $e->getMessage() );
+			return null;
+		}
 	}
 
 	/**
@@ -194,12 +204,7 @@ class Object_Reference {
 	 * @return bool True if the object exists, false otherwise.
 	 */
 	public function exists(): bool {
-		try {
-			// Call the method on the utility class.
-			return $this->call_utility_method( 'exists', $this->key );
-		} catch ( Throwable $e ) {
-			return false;
-		}
+		return $this->call_utility_method( 'exists' ) ?? false;
 	}
 
 	/**
@@ -208,12 +213,8 @@ class Object_Reference {
 	 * @return mixed The object or null if not found.
 	 */
 	public function load(): mixed {
-		try {
-			// Call the method on the utility class.
-			return $this->call_utility_method( 'load', $this->key );
-		} catch ( Throwable $e ) {
-			return null;
-		}
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'load' );
 	}
 
 	/**
@@ -222,12 +223,8 @@ class Object_Reference {
 	 * @return ?string The name or title of the object, or null if not found.
 	 */
 	public function get_name(): ?string {
-		try {
-			// Call the method on the utility class.
-			return $this->call_utility_method( 'get_name', $this->key );
-		} catch ( Throwable $e ) {
-			return null;
-		}
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'get_name' );
 	}
 
 	/**
@@ -237,17 +234,8 @@ class Object_Reference {
 	 * @throws Exception If the object type is unknown.
 	 */
 	public function get_core_properties(): ?array {
-		// Handle the case when there is no key (i.e. options).
-		if ( ! $this->key ) {
-			return null;
-		}
-
-		try {
-			// Call the method on the utility class.
-			return $this->call_utility_method( 'get_core_properties', $this->key );
-		} catch ( Throwable $e ) {
-			return null;
-		}
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'get_core_properties' );
 	}
 
 	/**
@@ -257,16 +245,12 @@ class Object_Reference {
 	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
 	public function get_tag(): string {
-		// Handle options differently.
+		// For options, show the option name(s).
 		if ( ! $this->key && $this->type === 'option' ) {
 			return (string) $this->name;
 		}
 
-		try {
-			// Call the method on the utility class.
-			return $this->call_utility_method( 'get_tag', $this->key, $this->name );
-		} catch ( Throwable $e ) {
-			return '';
-		}
+		// Call the method on the utility class.
+		return $this->call_utility_method( 'get_tag', $this->name ) ?? '';
 	}
 }

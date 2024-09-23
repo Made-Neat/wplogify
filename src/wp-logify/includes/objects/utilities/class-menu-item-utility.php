@@ -259,9 +259,10 @@ class Menu_Item_Utility extends Object_Utility {
 		}
 
 		// Try to get the link from the event properties.
-		if ( ! empty( $event->properties['link']->val ) ) {
+		$prop = Property::get_from_array( $event->properties, 'link' );
+		if ( ! empty( $prop->val ) ) {
 			// Convert the linked object to a string.
-			return Types::value_to_string( $event->properties['link']->val );
+			return Types::value_to_string( $prop->val );
 		}
 
 		return null;

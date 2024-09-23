@@ -136,7 +136,7 @@ class User_Utility extends Object_Utility {
 	public static function get_tag( int|string $user_id, ?string $old_name = null ): string {
 		// Unknown user.
 		if ( ! $user_id && ! $old_name ) {
-			return "<span class='wp-logify-deleted-object'>Unknown</span>";
+			return "<span class='wp-logify-object'>Unknown</span>";
 		}
 
 		// Load the user.

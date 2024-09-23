@@ -410,9 +410,11 @@ class Event_Repository extends Repository {
 		$sql     = $wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'post' AND object_subtype IS NULL", self::get_table_name() );
 		$records = $wpdb->get_results( $sql, ARRAY_A );
 		foreach ( $records as $record ) {
+			// Get the post.
+			$post = Post_Utility::load( $record['object_key'] );
+
 			// Get the post type.
 			$post_type = null;
-			$post      = Post_Utility::load( $record['object_key'] );
 			if ( $post ) {
 				$post_type = $post->post_type;
 			} else {
@@ -422,6 +424,8 @@ class Event_Repository extends Repository {
 					$post_type = $event->get_prop_val( 'post_type' );
 				}
 			}
+
+			// Set the object subtype to the post type.
 			if ( $post_type ) {
 				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $post_type, $record['event_id'] );
 				// debug( $update_sql );
@@ -441,9 +445,11 @@ class Event_Repository extends Repository {
 		$sql     = $wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'term' AND object_subtype IS NULL", self::get_table_name() );
 		$records = $wpdb->get_results( $sql, ARRAY_A );
 		foreach ( $records as $record ) {
+			// Get the term.
+			$term = Term_Utility::load( $record['object_key'] );
+
 			// Get the taxonomy.
 			$taxonomy = null;
-			$term     = Term_Utility::load( $record['object_key'] );
 			if ( $term ) {
 				$taxonomy = $term->taxonomy;
 			} else {
@@ -453,6 +459,8 @@ class Event_Repository extends Repository {
 					$taxonomy = $event->get_prop_val( 'taxonomy' );
 				}
 			}
+
+			// Set the object subtype to the taxonomy.
 			if ( $taxonomy ) {
 				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $taxonomy, $record['event_id'] );
 				// debug( $update_sql );
@@ -587,5 +595,24 @@ class Event_Repository extends Repository {
 		}
 
 		return $roles;
+	}
+
+	/**
+	 * Get the most recent event of a given type, caused by a given user.
+	 *
+	 * @param int    $user_id    The ID of the acting user.
+	 * @param string $event_type The event type.
+	 * @return ?Event The most recent event matching the provided arguments.
+	 */
+	public static function get_most_recent_event( int $user_id, string $event_type ): ?Event {
+		global $wpdb;
+		$sql      = $wpdb->prepare(
+			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
+			self::get_table_name(),
+			$user_id,
+			$event_type
+		);
+		$event_id = $wpdb->get_var( $sql );
+		return $event_id ? self::load( $event_id ) : null;
 	}
 }

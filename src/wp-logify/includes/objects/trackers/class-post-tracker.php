@@ -104,11 +104,12 @@ class Post_Tracker {
 			$post    = Post_Utility::load( $post_id );
 
 			// Replace changed content with object references.
-			if ( ! empty( self::$properties['post_content'] ) ) {
-				// For the old value, link to the revision (or show a deleted tag).
-				self::$properties['post_content']->val = new Object_Reference( 'post', $revision_id, $revision_title );
-				// For the new value, link to the edit page (or show a deleted tag).
-				self::$properties['post_content']->new_val = new Object_Reference( 'post', $post_id, $post->post_title );
+			$prop = Property::get_from_array( self::$properties, 'post_content' );
+			if ( $prop ) {
+				// Show a snippet of the old version.
+				$prop->val = Strings::get_snippet( $prop->val );
+				// Link to the revision.
+				$prop->new_val = new Object_Reference( 'post', $revision_id, $revision_title );
 			}
 		}
 
@@ -153,31 +154,33 @@ class Post_Tracker {
 	public static function on_post_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
 		// debug( 'on_post_updated' );
 
-		global $wpdb;
+		// global $wpdb;
+
+		self::$properties = Post_Utility::get_changes( $post_before, $post_after );
 
 		// Add changes.
-		foreach ( $post_before as $key => $value ) {
-			// Skip the dates in the posts table, they're incorrect.
-			if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified_gmt' ), true ) ) {
-				continue;
-			}
+		// foreach ( $post_before as $key => $value ) {
+		// Skip the dates in the posts table, they're incorrect.
+		// if ( in_array( $key, array( 'post_date', 'post_date_gmt', 'post_modified_gmt' ), true ) ) {
+		// continue;
+		// }
 
-			// Process old value into the correct type.
-			$old_val = Types::process_database_value( $key, $value );
+		// Process old value into the correct type.
+		// $val = Types::process_database_value( $key, $value );
 
-			// Special handling for the last modified datetime.
-			if ( $key === 'post_modified' ) {
-				$new_val = Post_Utility::get_last_modified_datetime( $post_id );
-			} else {
-				$new_val = Types::process_database_value( $key, $post_after->{$key} );
-			}
+		// Special handling for the last modified datetime.
+		// if ( $key === 'post_modified' ) {
+		// $new_val = Post_Utility::get_last_modified_datetime( $post_id );
+		// } else {
+		// $new_val = Types::process_database_value( $key, $post_after->{$key} );
+		// }
 
-			// Compare old and new values.
-			if ( ! Types::are_equal( $old_val, $new_val ) ) {
-				// Record change.
-				Property::update_array( self::$properties, $key, $wpdb->posts, $old_val, $new_val );
-			}
-		}
+		// Compare old and new values.
+		// if ( ! Types::are_equal( $val, $new_val ) ) {
+		// Record change.
+		// Property::update_array( self::$properties, $key, $wpdb->posts, $val, $new_val );
+		// }
+		// }
 	}
 
 	/**
@@ -189,7 +192,7 @@ class Post_Tracker {
 	 * @param mixed  $meta_value The new value of the meta data.
 	 */
 	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
-		// debug( 'on_update_post_meta' );
+		debug( 'on_update_post_meta' );
 
 		global $wpdb;
 

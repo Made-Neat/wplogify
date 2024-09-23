@@ -122,16 +122,16 @@ class Event {
 	public ?string $object_name = null;
 
 	/**
-	 * Properties relating to the event, including current values ans changes.
+	 * Properties relating to the event, including current values and changes.
 	 *
-	 * @var ?array
+	 * @var ?Property[]
 	 */
 	public ?array $properties = null;
 
 	/**
 	 * Metadata relating to the event.
 	 *
-	 * @var ?array
+	 * @var ?Eventmeta[]
 	 */
 	public ?array $eventmetas = null;
 
@@ -164,21 +164,21 @@ class Event {
 	/**
 	 * Creates a new event.
 	 *
-	 * @param string                            $event_type  The type of event.
-	 * @param null|object|array                 $wp_object   The WP object the event is about or an array for plugins.
-	 * @param ?array                            $eventmetas  The event metadata.
-	 * @param ?array                            $properties  The event properties.
-	 * @param null|int|WP_User|Object_Reference $acting_user The user who performed the action, or null for the current user.
-	 *                                                       This can be a user ID, WP_User object, or Object_Reference.
+	 * @param string                   $event_type  The type of event.
+	 * @param null|object|array|string $wp_object   The object or object type the event is about.
+	 * @param ?array                   $eventmetas  The event metadata.
+	 * @param ?array                   $properties  The event properties.
+	 * @param null|int|WP_User         $acting_user The user who performed the action. This can be a user ID or WP_User object, or null for the current user.
+	 *
 	 * @return ?Event The new event, or null if the user is anonymous or doesn't have a tracked role.
 	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function create(
 		string $event_type,
-		null|object|array $wp_object,
+		null|object|array|string $wp_object = null,
 		?array $eventmetas = null,
 		?array $properties = null,
-		null|int|WP_User|Object_Reference $acting_user = null
+		null|int|WP_User $acting_user = null
 	): ?Event {
 		// If the event is about an object deletion, this is where we'd store the details of the
 		// deleted object in the database. We want to do it before user checking so every object
@@ -187,21 +187,24 @@ class Event {
 		// Get the acting user data.
 		$user_data = User_Utility::get_user_data( $acting_user );
 
-		// If we aren't tracking this user's role, we don't need to log the event.
+		// If this is not a login event, and we aren't tracking this user's role, we don't need to
+		// log the event.
 		if (
-			$event_type !== Logger::EVENT_TYPE_FAILED_LOGIN
+			! in_array( $event_type, array( 'User Login', 'Failed Login' ) )
 			&& (
 				! $user_data['object']
 				|| ! Access_Control::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() )
 			)
 		) {
-			// debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
+			debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked.", func_get_args() );
 			return null;
 		}
 
 		// Get the object reference.
 		if ( $wp_object === null || $wp_object instanceof Object_Reference ) {
 			$object_ref = $wp_object;
+		} elseif ( is_string( $wp_object ) ) {
+			$object_ref = new Object_Reference( $wp_object, null, null );
 		} else {
 			$object_ref = Object_Reference::new_from_wp_object( $wp_object );
 		}
@@ -269,6 +272,15 @@ class Event {
 		}
 
 		return $ok;
+	}
+
+	/**
+	 * Check if a new event has been saved yet or not.
+	 *
+	 * @return bool True if the event has been saved, false otherwise.
+	 */
+	public function is_saved(): bool {
+		return ! empty( $this->id );
 	}
 
 	// =============================================================================================
@@ -349,7 +361,7 @@ class Event {
 	 * @return bool True if the property exists, false otherwise.
 	 */
 	public function has_prop( string $prop_key ) {
-		return key_exists( $prop_key, $this->properties );
+		return self::get_prop( $prop_key ) !== null;
 	}
 
 	/**
@@ -359,16 +371,16 @@ class Event {
 	 * @return ?Property The property or null if not set.
 	 */
 	public function get_prop( string $prop_key ): ?Property {
-		return empty( $this->properties[ $prop_key ] ) ? null : $this->properties[ $prop_key ];
+		return Property::get_from_array( $this->properties, $prop_key );
 	}
 
 	/**
 	 * Set an event property.
 	 *
-	 * @param string  $prop_key The property key.
+	 * @param string  $prop_key   The property key.
 	 * @param ?string $table_name The table name the property came from.
-	 * @param mixed   $val The old or current value.
-	 * @param mixed   $new_val The new value.
+	 * @param mixed   $val        The old or current value.
+	 * @param mixed   $new_val    The new value.
 	 */
 	public function set_prop( string $prop_key, ?string $table_name, mixed $val, mixed $new_val = null ) {
 		// If the properties array is not set, create it.
@@ -376,16 +388,8 @@ class Event {
 			$this->properties = array();
 		}
 
-		// If the property with this key already exists, update it.
-		if ( self::has_prop( $prop_key ) ) {
-			$prop             = $this->properties[ $prop_key ];
-			$prop->table_name = $table_name;
-			$prop->val        = $val;
-			$prop->new_val    = $new_val;
-		} else {
-			// The property with this key doesn't already exist in the properties array, so create it.
-			$this->properties[ $prop_key ] = new Property( $prop_key, $table_name, $val, $new_val );
-		}
+		// Update the properties array.
+		Property::update_array( $this->properties, $prop_key, $table_name, $val, $new_val );
 	}
 
 	/**
@@ -406,28 +410,28 @@ class Event {
 	 * @return mixed The current or old value.
 	 */
 	public function get_prop_val( string $prop_key ): mixed {
-		// Check if the property exists.
-		if ( ! $this->has_prop( $prop_key ) ) {
-			return null;
-		}
-
-		return $this->properties[ $prop_key ]->val;
+		$prop = $this->get_prop( $prop_key );
+		return $prop->val ?? null;
 	}
 
 	/**
 	 * Set the current or old value of a property.
 	 *
 	 * @param string $prop_key The property key.
-	 * @param mixed  $val The current or old property value.
+	 * @param mixed  $val      The current or old property value.
 	 * @throws Exception If the property with the specified key is not found.
 	 */
 	public function set_prop_val( string $prop_key, mixed $val ) {
-		// Check if the property exists.
-		if ( ! $this->has_prop( $prop_key ) ) {
-			throw new Exception( "Property with key $prop_key not found." );
+		// Try to get the property.
+		$prop = $this->get_prop( $prop_key );
+
+		// If the property is not found, throw an exception.
+		if ( $prop === null ) {
+			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
 		}
 
-		$this->properties[ $prop_key ]->val = $val;
+		// Set the value.
+		$prop->val = $val;
 	}
 
 	/**
@@ -437,28 +441,45 @@ class Event {
 	 * @return mixed The new value of the property.
 	 */
 	public function get_prop_new_val( string $prop_key ): mixed {
-		// Check if the property exists.
-		if ( ! $this->has_prop( $prop_key ) ) {
-			return null;
-		}
-
-		return $this->properties[ $prop_key ]->new_val;
+		$prop = $this->get_prop( $prop_key );
+		return $prop->new_val ?? null;
 	}
 
 	/**
 	 * Set the new value of a property.
 	 *
 	 * @param string $prop_key The property key.
-	 * @param mixed  $new_val The new value of the property.
+	 * @param mixed  $new_val  The new value of the property.
 	 * @throws Exception If the property with the specified key is not found.
 	 */
 	public function set_prop_new_val( string $prop_key, mixed $new_val ) {
-		// Check if the property exists.
-		if ( ! $this->has_prop( $prop_key ) ) {
-			throw new Exception( "Property with key $prop_key not found." );
+		// Try to get the property exists.
+		$prop = $this->get_prop( $prop_key );
+
+		// If the property is not found, throw an exception.
+		if ( $prop === null ) {
+			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
 		}
 
-		$this->properties[ $prop_key ]->new_val = $new_val;
+		// Set the new value.
+		$prop->new_val = $new_val;
+	}
+
+	/**
+	 * Get the number of changed properties.
+	 *
+	 * @return int The number of properties with new values.
+	 */
+	public function num_changed_props(): int {
+		$count = 0;
+
+		foreach ( $this->properties as $prop ) {
+			if ( $prop->new_val !== null ) {
+				++$count;
+			}
+		}
+
+		return $count;
 	}
 
 	// =============================================================================================
@@ -492,7 +513,7 @@ class Event {
 	 */
 	public function get_meta_val( string $meta_key ): mixed {
 		$eventmeta = $this->get_meta( $meta_key );
-		return $eventmeta ? $eventmeta->meta_value : null;
+		return $eventmeta->meta_value ?? null;
 	}
 
 	/**
@@ -535,8 +556,9 @@ class Event {
 		}
 
 		// If we couldn't load the post (it may have been deleted), check the object properties.
-		if ( isset( $this->properties['post_type']->val ) ) {
-			return $this->properties['post_type']->val === 'nav_menu_item';
+		$prop = Property::get_from_array( $this->properties, 'post_type' );
+		if ( isset( $prop->val ) ) {
+			return $prop->val === 'nav_menu_item';
 		}
 
 		// It isn't.

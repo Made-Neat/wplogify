@@ -51,16 +51,16 @@ class Option_Tracker {
 
 		// If this setting is of type boolean, convert the values to boolean.
 		if ( isset( $wp_registered_settings[ $option_name ] ) && $wp_registered_settings[ $option_name ]['type'] === 'boolean' ) {
-			$old_val = rest_sanitize_boolean( $old_value );
+			$val     = rest_sanitize_boolean( $old_value );
 			$new_val = rest_sanitize_boolean( $new_value );
 		} else {
 			// Process the values for comparison.
-			$old_val = Types::process_database_value( $option_name, $old_value );
+			$val     = Types::process_database_value( $option_name, $old_value );
 			$new_val = Types::process_database_value( $option_name, $new_value );
 		}
 
 		// If the value has changed, add the setting change to the event properties.
-		if ( ! Types::are_equal( $old_val, $new_val ) ) {
+		if ( ! Types::are_equal( $val, $new_val ) ) {
 
 			// Create the event object to encapsulate setting updates, if it doesn't already exist.
 			if ( ! isset( self::$event ) ) {
@@ -70,16 +70,16 @@ class Option_Tracker {
 
 			if ( Strings::ends_with( $option_name, '_category' ) ) {
 				// Convert categories to links.
-				$old_val = new Object_Reference( 'term', $old_val );
+				$val     = new Object_Reference( 'term', $val );
 				$new_val = new Object_Reference( 'term', $new_val );
 			} elseif ( $option_name === 'wp_page_for_privacy_policy' ) {
 				// Convert privacy page to reference.
-				$old_val = new Object_Reference( 'post', $old_val );
+				$val     = new Object_Reference( 'post', $val );
 				$new_val = new Object_Reference( 'post', $new_val );
 			}
 
 			// Add the setting change to the properties.
-			self::$event->set_prop( $option_name, $wpdb->options, $old_val, $new_val );
+			self::$event->set_prop( $option_name, $wpdb->options, $val, $new_val );
 		}
 	}
 

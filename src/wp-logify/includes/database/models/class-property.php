@@ -75,9 +75,23 @@ class Property {
 	}
 
 	/**
-	 * Add a property to an array of properties.
+	 * Find a property in an array of properties, searching by key.
 	 *
-	 * NB: the table name will only be set if it is not already set.
+	 * @param array  $props An array of properties to search.
+	 * @param string $key   The key to search for.
+	 * @return ?Property The property object if found, or null if not found.
+	 */
+	public static function get_from_array( array $props, string $key ): ?Property {
+		foreach ( $props as $prop ) {
+			if ( $prop->key === $key ) {
+				return $prop;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Add a property to, or update a property in, an array of properties.
 	 *
 	 * @param array   $props      The array of properties to update.
 	 * @param string  $key        The property key.
@@ -86,15 +100,18 @@ class Property {
 	 * @param mixed   $new_val    Optional. The new value of the property, if changed.
 	 */
 	public static function update_array( array &$props, string $key, ?string $table_name, mixed $val, mixed $new_val = null ) {
-		// If the key doesn't exist in the array, create a new Property object.
-		if ( ! key_exists( $key, $props ) ) {
-			$props[ $key ] = new Property( $key );
-		}
+		// See if the array already contains a property with this key.
+		$prop = self::get_from_array( $props, $key );
 
-		// Update the Property object with the new values.
-		$props[ $key ]->table_name = $table_name;
-		$props[ $key ]->val        = $val;
-		$props[ $key ]->new_val    = $new_val;
+		if ( $prop ) {
+			// If it does, update the Property object with the new values.
+			$prop->table_name = $table_name;
+			$prop->val        = $val;
+			$prop->new_val    = $new_val;
+		} else {
+			// If it doesn't, create a new Property object and add it to the array.
+			$props[] = new Property( $key, $table_name, $val, $new_val );
+		}
 	}
 
 	/**

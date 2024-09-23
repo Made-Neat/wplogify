@@ -92,7 +92,7 @@ class Log_Page {
 		$order_by_columns = array( 'when_happened' );
 		if ( isset( $_POST['order'][0]['column'] ) ) {
 			$column_number = (int) $_POST['order'][0]['column'];
-			if ( array_key_exists( $column_number, $columns ) ) {
+			if ( key_exists( $column_number, $columns ) ) {
 				$order_by_columns = array( $columns[ $column_number ] );
 			}
 		}
@@ -395,6 +395,11 @@ class Log_Page {
 			$user_email = empty( $user->user_email ) ? 'Unknown' : esc_html( $user->user_email );
 			$html      .= '<tr><th>Email</th><td>' . User_Utility::get_email_link( $user_email ) . "</a></td></tr>\n";
 
+			// Get the registration datetime.
+			$registration_datetime        = DateTimes::create_datetime( $user->data->user_registered, 'UTC' );
+			$registration_datetime_string = DateTimes::format_datetime_site( $registration_datetime );
+			$html                        .= "<tr><th>Registered</th><td>$registration_datetime_string</td></tr>\n";
+
 			// Get the last login datetime.
 			$last_login_datetime        = User_Utility::get_last_login_datetime( $event->user_id );
 			$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime ) : 'Unknown';
@@ -477,32 +482,54 @@ class Log_Page {
 
 			case 'post':
 				// Get the post type. It might be in the properties.
-				$post_type = $event->properties['post_type']->val ?? null;
+				$prop      = Property::get_from_array( $event->properties, 'post_type' );
+				$post_type = $prop->val ?? null;
+
 				// If not, we can get it from the post.
 				if ( ! $post_type ) {
-					$post_type = $event->get_object()->post_type;
+					$obj = $event->get_object();
+					if ( ! empty( $obj->post_type ) ) {
+						$post_type = $obj->post_type;
+					}
 				}
-				// If not, default to 'post'.
-				if ( ! $post_type ) {
-					$post_type = 'post';
+
+				// If we have a post type, get the singular name.
+				if ( $post_type ) {
+					$object_type_title = Post_Utility::get_post_type_singular_name( $post_type );
+				} else {
+					// Otherwise, default to 'Post'.
+					$object_type_title = 'Post';
 				}
-				$object_type_title = Post_Utility::get_post_type_singular_name( $post_type );
 				break;
 
 			case 'term':
 				// Get the taxonomy. It might be in the properties.
-				$taxonomy = $event->properties['taxonomy']->val ?? null;
+				$prop     = Property::get_from_array( $event->properties, 'taxonomy' );
+				$taxonomy = $prop->val ?? null;
+
 				// If not, we can get it from the term.
 				if ( ! $taxonomy ) {
-					$taxonomy = $event->get_object()->taxonomy;
+					$obj = $event->get_object();
+					if ( ! empty( $obj->taxonomy ) ) {
+						$taxonomy = $obj->taxonomy;
+					}
 				}
-				$object_type_title = Taxonomy_Utility::get_singular_name( $taxonomy );
+
+				// If we have a taxonomy, get the singular name.
+				if ( $taxonomy ) {
+					$object_type_title = Taxonomy_Utility::get_singular_name( $taxonomy );
+				} else {
+					// Otherwise, default to 'Term'.
+					$object_type_title = 'Term';
+				}
 				break;
 
 			default:
 				// Default is upper-case-first the object-type (e.g. 'Plugin').
 				$object_type_title = Strings::make_key_readable( $event->object_type, true );
+				break;
 		}
+
 		$html .= "<h4>$object_type_title Details</h4>\n";
 
 		// Start scrollable wrapper.

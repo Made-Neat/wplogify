@@ -72,7 +72,12 @@ class User_Tracker {
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
 	public static function on_wp_login( string $user_login, WP_User $user ) {
-		Logger::log_event( 'User Login', $user, null, null, $user );
+		// This event does not require an object, since the acting user *is* the object, but it does
+		// require an object type ('user') in order to be grouped properly.
+		// Also, the acting user must be provided, because there is no current logged in user at the
+		// time this event occurs.
+		$event = Event::create( 'User Login', 'user', null, null, $user );
+		$event->save();
 	}
 
 	/**
@@ -83,11 +88,9 @@ class User_Tracker {
 	 */
 	public static function on_wp_login_failed( string $username, WP_Error $error ) {
 		// Create the event.
-		$user_ref = new Object_Reference( 'user', null, null );
-		$event    = Event::create( Logger::EVENT_TYPE_FAILED_LOGIN, $user_ref );
-		if ( ! $event ) {
-			return;
-		}
+		// This event does not require an object, since the acting user *is* the object, but it does
+		// require an object type ('user') in order to be grouped properly.
+		$event = Event::create( 'Failed Login', 'user' );
 
 		// Store deatils of the login failure in the event metadata.
 		$event->set_meta( 'username_entered', $username );
@@ -104,8 +107,12 @@ class User_Tracker {
 	 * @param int $user_id The ID of the user that logged out.
 	 */
 	public static function on_wp_logout( int $user_id ) {
-		$user = User_Utility::load( $user_id );
-		Logger::log_event( 'User Logout', $user, acting_user: $user );
+		// This event does not require an object, since the acting user *is* the object, but it does
+		// require an object type ('user') in order to be grouped properly.
+		// Also, the acting user must be provided, because there is no current logged in user at the
+		// time this event occurs.
+		$event = Event::create( 'User Logout', 'user', null, null, $user_id );
+		$event->save();
 	}
 
 	/**
@@ -172,11 +179,11 @@ class User_Tracker {
 		foreach ( $user->data as $key => $value ) {
 
 			// Process meta values into correct types.
-			$old_val = Types::process_database_value( $key, $value );
+			$val     = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $userdata[ $key ] );
 
 			// If the value has changed, add the before and after values to the properties.
-			if ( ! Types::are_equal( $old_val, $new_val ) ) {
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 
 				// Create the event if it doesn't already exist.
 				if ( ! self::$profile_update_event ) {
@@ -191,7 +198,7 @@ class User_Tracker {
 				}
 
 				// Add the property.
-				self::$profile_update_event->set_prop( $key, $wpdb->users, $old_val, $new_val );
+				self::$profile_update_event->set_prop( $key, $wpdb->users, $val, $new_val );
 			}
 		}
 	}
@@ -216,11 +223,11 @@ class User_Tracker {
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
 		// Process values into the correct types.
-		$old_val = Types::process_database_value( $meta_key, $current_value );
+		$val     = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
 		// If the value has changed, add the before and after values to the properties array.
-		if ( ! Types::are_equal( $old_val, $new_val ) ) {
+		if ( ! Types::are_equal( $val, $new_val ) ) {
 
 			// Create the event if it doesn't already exist.
 			if ( ! self::$profile_update_event ) {
@@ -236,16 +243,14 @@ class User_Tracker {
 			}
 
 			// If we have an event, add the new property.
-			self::$profile_update_event->set_prop( $meta_key, $wpdb->usermeta, $old_val, $new_val );
+			self::$profile_update_event->set_prop( $meta_key, $wpdb->usermeta, $val, $new_val );
 		}
 	}
 
 	/**
-	 * User activity.
+	 * Log user activity.
 	 */
 	public static function on_wp_loaded() {
-		global $wpdb;
-
 		// Ignore AJAX requests, as it's likely WP doing something and not the user.
 		// The user has probably just left the web page open in the browser while they do something
 		// else.
@@ -253,25 +258,23 @@ class User_Tracker {
 			return;
 		}
 
-		// Prepare some values.
-		$user       = wp_get_current_user();
-		$table_name = Event_Repository::get_table_name();
+		// Get the current user.
+		$user = wp_get_current_user();
+
+		// Don't record activity if the user isn't logged in.
+		if ( ! $user->exists() ) {
+			return;
+		}
+
+		// Prepare event details.
 		$event_type = 'User Active';
 		$now        = DateTimes::current_datetime();
 
 		// Check if this is a new or continuing session.
 		$continuing = false;
-		$sql        = $wpdb->prepare(
-			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
-			$table_name,
-			$user->ID,
-			$event_type
-		);
-		$record     = $wpdb->get_row( $sql, ARRAY_A );
-		if ( $record ) {
-			// Construct the Event object.
-			$event = Event_Repository::load( $record['event_id'] );
 
+		$event = Event_Repository::get_most_recent_event( (int) $user->ID, $event_type );
+		if ( $event ) {
 			// Check we have the info we need.
 			if ( $event->has_meta( 'activity_start' ) && $event->has_meta( 'activity_end' ) ) {
 
@@ -288,27 +291,31 @@ class User_Tracker {
 				if ( $seconds_diff <= self::MAX_BREAK_PERIOD ) {
 					$continuing = true;
 
-					// Update the activity_end time and duration.
+					// Update the activity end time.
 					$event->set_meta( 'activity_end', $now );
+
+					// Update the duration.
 					// This could be calculated, but for now we'll just record the string.
 					$event->set_meta( 'activity_duration', DateTimes::get_duration_string( $activity_start_datetime, $now ) );
 
-					// Update the event meta data.
-					Event_Repository::save_eventmetas( $event );
+					// Save the updated event.
+					$event->save();
 				}
 			}
 		}
 
 		// If we're not continuing an existing session, record the start of a new one.
 		if ( ! $continuing ) {
+			// Create a new activity event.
+			$event = Event::create( $event_type, 'user', null, null, $user );
 
-			// Create the array of eventmetas.
-			Eventmeta::update_array( self::$eventmetas, 'activity_start', $now );
-			Eventmeta::update_array( self::$eventmetas, 'activity_end', $now );
-			Eventmeta::update_array( self::$eventmetas, 'activity_duration', '0 minutes' );
+			// Set the eventmetas.
+			$event->set_meta( 'activity_start', $now );
+			$event->set_meta( 'activity_end', $now );
+			$event->set_meta( 'activity_duration', '0 minutes' );
 
 			// Log the event.
-			Logger::log_event( $event_type, $user, self::$eventmetas );
+			$event->save();
 		}
 	}
 

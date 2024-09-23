@@ -207,19 +207,20 @@ class Strings {
 	 * Get a snippet from a piece of content.
 	 *
 	 * @param string $content The content.
+	 * @param int    $length  The maximum length of the snippet.
 	 * @return string The snippet of the content.
 	 */
-	public static function get_snippet( string $content ): string {
+	public static function get_snippet( string $content, int $length = Logger::MAX_OBJECT_NAME_LENGTH ): string {
 		// Strip all HTML tags and excess whitespace from the content.
 		$content = self::strip_tags( $content );
 
 		// If the content is short enough, return it as is.
-		if ( strlen( $content ) <= Logger::MAX_OBJECT_NAME_LENGTH ) {
+		if ( strlen( $content ) <= $length ) {
 			return $content;
 		}
 
 		// Otherwise, truncate it.
-		return substr( $content, 0, Logger::MAX_OBJECT_NAME_LENGTH - 3 ) . '...';
+		return substr( $content, 0, $length - 3 ) . '...';
 	}
 
 	/**
@@ -285,6 +286,7 @@ class Strings {
 		'url',
 		'utc',
 		'wav',
+		'wc',
 		'wp',
 	);
 }

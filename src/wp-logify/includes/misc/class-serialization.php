@@ -7,7 +7,7 @@
 
 namespace WP_Logify;
 
-use InvalidArgumentException;
+use Throwable;
 
 /**
  * This class provides serialization and unserialization functions.
@@ -50,15 +50,16 @@ class Serialization {
 			return true;
 		}
 
-		// Attempt to unserialize the value.
-		$unserialized_value = @unserialize( $serialized_value );
+		try {
+			// Attempt to unserialize the value.
+			$unserialized_value = @unserialize( $serialized_value );
 
-		// Check if unserialization was successful.
-		if ( $unserialized_value !== false || $serialized_value === 'b:0;' ) {
-			return true;
+			// Check if unserialization was successful.
+			return $unserialized_value !== false || $serialized_value === 'b:0;';
+
+		} catch ( Throwable $e ) {
+			// Unserialization failed.
+			return false;
 		}
-
-		// Unserialization failed.
-		return false;
 	}
 }
