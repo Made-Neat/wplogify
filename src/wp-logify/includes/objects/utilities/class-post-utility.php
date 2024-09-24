@@ -90,7 +90,7 @@ class Post_Utility extends Object_Utility {
 		$props = array();
 
 		// Link.
-		Property::update_array( $props, 'link', $wpdb->posts, Object_Reference::new_from_wp_object( $post ) );
+		Property::update_array( $props, 'link', null, Object_Reference::new_from_wp_object( $post ) );
 
 		// ID.
 		Property::update_array( $props, 'ID', $wpdb->posts, $post->ID );
@@ -111,9 +111,14 @@ class Post_Utility extends Object_Utility {
 		// Post modified.
 		Property::update_array( $props, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
 
-		// Post content.
+		// Post content, only if not empty.
 		if ( $post->post_content ) {
-			Property::update_array( $props, 'post_content', $wpdb->posts, Strings::get_snippet( $post->post_content ) );
+			Property::update_array( $props, 'post_content', $wpdb->posts, Strings::get_snippet( $post->post_content, 100 ) );
+		}
+
+		// Post excerpt, only if not empty.
+		if ( $post->post_excerpt ) {
+			Property::update_array( $props, 'post_excerpt', $wpdb->posts, Strings::get_snippet( $post->post_excerpt, 100 ) );
 		}
 
 		// For nav menu items, get the menu item's core properties and merge them into the properties array.
@@ -451,42 +456,5 @@ class Post_Utility extends Object_Utility {
 		}
 
 		return $props;
-	}
-
-	// =============================================================================================
-	// Media-related methods.
-
-	/**
-	 * Get the media type of an attachment post.
-	 *
-	 * Possible results:
-	 * - image
-	 * - audio
-	 * - video
-	 * - file
-	 * - null, if no MIME type is set.
-	 *
-	 * @param int $post_id The ID of the post.
-	 * @return ?string The media type of the attachment, or null if the MIME type isn't set.
-	 */
-	public static function get_media_type( int $post_id ): ?string {
-		// Get the MIME type of the post.
-		$mime_type = get_post_mime_type( $post_id );
-
-		// Check if the MIME type is set.
-		if ( ! $mime_type ) {
-			return null;
-		}
-
-		// Check the base media type (the part before the slash in the MIME type).
-		$mime_parts = explode( '/', $mime_type );
-
-		// Check if the MIME type is an image, audio, or video.
-		if ( in_array( $mime_parts[0], array( 'image', 'audio', 'video' ), true ) ) {
-			return $mime_parts[0];
-		} else {
-			// Otherwise default to 'file'.
-			return 'file';
-		}
 	}
 }

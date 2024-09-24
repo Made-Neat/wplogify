@@ -31,15 +31,22 @@ class Media_Tracker {
 	private static bool $creating = false;
 
 	/**
+	 * The media type of the object being created or updated.
+	 *
+	 * @var ?string
+	 */
+	private static ?string $media_type;
+
+	/**
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
 		// Add attachment.
 		add_action( 'add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
 		add_action( 'add_post_meta', array( __CLASS__, 'on_add_post_meta' ), 10, 3 );
+		add_action( 'update_post_meta', array( __CLASS__, 'on_update_post_meta' ), 10, 4 );
 		add_action( 'edit_attachment', array( __CLASS__, 'on_edit_attachment' ), 10, 3 );
 		add_action( 'attachment_updated', array( __CLASS__, 'on_attachment_updated' ), 10, 3 );
-		// wp_ajax_save-attachment
 
 		// Media upload.
 		add_action( 'media_upload_image', array( __CLASS__, 'on_media_upload_image' ), 10, 0 );
@@ -52,6 +59,37 @@ class Media_Tracker {
 	}
 
 	/**
+	 * Get the update or create media event. If it hasn't been created yet, do it now.
+	 *
+	 * @param int|WP_Post $post The attachment post the event is about.
+	 * @return Event The event.
+	 */
+	private static function get_update_media_event( int|WP_Post $post ): Event {
+		// Create the event if not done already.
+		if ( ! self::$update_media_event ) {
+
+			// Get the post object and ID.
+			if ( is_int( $post ) ) {
+				$post_id = $post;
+				$post    = Post_Utility::load( $post_id );
+			} else {
+				$post_id = (int) $post->ID;
+			}
+
+			// Get the media type and remember it.
+			self::$media_type = Media_Utility::get_media_type( $post_id );
+
+			// Get the event type.
+			$event_type = ucfirst( self::$media_type ) . ' Updated';
+
+			// Create the event.
+			self::$update_media_event = Event::create( $event_type, $post );
+		}
+
+		return self::$update_media_event;
+	}
+
+	/**
 	 * Fires once an attachment has been added.
 	 *
 	 * NOTE: Not sure if this is actually being triggered. It may depend on how the attachment is added.
@@ -59,41 +97,16 @@ class Media_Tracker {
 	 * @param int $post_id Attachment ID.
 	 */
 	public static function on_add_attachment( int $post_id ) {
-		global $wpdb;
-
 		debug( 'on_add_attachment' );
 
 		// We are adding a new attachment.
 		self::$creating = true;
 
-		// Get the media type and event type.
-		$media_type = Post_Utility::get_media_type( $post_id );
+		// Get the event.
+		$event = self::get_update_media_event( $post_id );
 
-		// If there's no media type, it's not an attachment. Shouldn't happen.
-		if ( ! $media_type ) {
-			return;
-		}
-
-		// Get the event type.
-		$event_type = ucfirst( $media_type ) . ' Added';
-
-		// Check if an event has been created already.
-		if ( ! self::$update_media_event ) {
-			// Create the event.
-			$post                     = Post_Utility::load( $post_id );
-			self::$update_media_event = Event::create( $event_type, $post );
-		} else {
-			// Update the event type.
-			self::$update_media_event->event_type = $event_type;
-
-			// Remove old property values.
-			foreach ( self::$update_media_event->properties as $prop ) {
-				if ( ! $prop->val && $prop->new_val ) {
-					$prop->val     = $prop->new_val;
-					$prop->new_val = null;
-				}
-			}
-		}
+		// Update the event type. If this method is called, we're creating.
+		$event->event_type = ucfirst( self::$media_type ) . ' Added';
 	}
 
 	/**
@@ -118,38 +131,69 @@ class Media_Tracker {
 	public static function on_add_post_meta( int $post_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
 
-		// Get the media type and event type.
-		$media_type = Post_Utility::get_media_type( $post_id );
-
-		// If there's no media type, it's not an attachment.
-		if ( ! $media_type ) {
+		// This method is only for media attachments.
+		if ( get_post_type( $post_id ) !== 'attachment' ) {
 			return;
 		}
 
+		// Some changes are uninteresting.
+		if ( in_array( $meta_key, array( '_edit_lock', '_edit_last' ) ) ) {
+			return;
+		}
+
+		// Get the media type and event type.
+		$media_type = Media_Utility::get_media_type( $post_id );
+
 		debug( 'on_add_post_meta', $media_type );
 
-		// If no event has been created yet, create one now.
-		if ( ! self::$update_media_event ) {
-			$event_type               = ucfirst( $media_type ) . ' Updated';
-			$post                     = Post_Utility::load( $post_id );
-			self::$update_media_event = Event::create( $event_type, $post );
+		// Get the event.
+		$event = self::get_update_media_event( $post_id );
+
+		// Process the database value so it's displayed properly.
+		$val = Types::process_database_value( $meta_key, $meta_value );
+
+		// Add the metadata.
+		$event->set_prop( $meta_key, $wpdb->postmeta, $val );
+	}
+
+	/**
+	 * Track media meta update.
+	 *
+	 * @param int    $meta_id    The ID of the meta data.
+	 * @param int    $post_id    The ID of the post.
+	 * @param string $meta_key   The key of the meta data.
+	 * @param mixed  $meta_value The new value of the meta data.
+	 */
+	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
+		global $wpdb;
+
+		// This method is only for media attachments.
+		if ( get_post_type( $post_id ) !== 'attachment' ) {
+			return;
 		}
+
+		// Some changes are uninteresting.
+		if ( in_array( $meta_key, array( '_edit_lock', '_edit_last' ) ) ) {
+			return;
+		}
+
+		// Get the media type and event type.
+		$media_type = Media_Utility::get_media_type( $post_id );
+
+		debug( 'on_update_post_meta', $media_type );
+
+		// Get the event.
+		$event = self::get_update_media_event( $post_id );
+
+		// Get the current value of this metadata.
+		$current_val = get_post_meta( $post_id, $meta_key, true );
+		$val         = Types::process_database_value( $meta_key, $current_val );
 
 		// Process the database value so it's displayed properly.
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
-		// Add the metadata.
-		if ( self::$creating ) {
-			// Log the new value.
-			self::$update_media_event->set_prop( $meta_key, $wpdb->postmeta, $new_val );
-		} else {
-			// Get the current value of this metadata.
-			$current_val = get_post_meta( $post_id, $meta_key, true );
-			$val         = Types::process_database_value( $meta_key, $current_val );
-
-			// Log the changed value.
-			self::$update_media_event->set_prop( $meta_key, $wpdb->postmeta, $val, $new_val );
-		}
+		// Log the changed value.
+		$event->set_prop( $meta_key, $wpdb->postmeta, $val, $new_val );
 	}
 
 	/**
@@ -158,7 +202,7 @@ class Media_Tracker {
 	 * @param int $post_id Attachment ID.
 	 */
 	public static function on_edit_attachment( int $post_id ) {
-		// debug( 'on_edit_attachment' );
+		debug( 'on_edit_attachment' );
 	}
 
 	/**
@@ -172,7 +216,7 @@ class Media_Tracker {
 		debug( 'on_attachment_updated' );
 
 		// Get the media type and event type.
-		$media_type = Post_Utility::get_media_type( $post_id );
+		$media_type = Media_Utility::get_media_type( $post_id );
 
 		// If there's no media type, it's not an attachment.
 		if ( ! $media_type ) {
@@ -181,24 +225,14 @@ class Media_Tracker {
 
 		debug( 'media type', $media_type );
 
-		// If no event has been created yet, create one now.
-		if ( ! self::$update_media_event ) {
-			$event_type               = ucfirst( $media_type ) . ' Updated';
-			self::$update_media_event = Event::create( $event_type, $post_after );
-		}
+		// Get the event.
+		$event = self::get_update_media_event( $post_id );
 
 		// Get the changes.
 		$properties = Post_Utility::get_changes( $post_before, $post_after );
 
-		// Update the name of the caption property.
-		// TODO This may only be relevant for images, need to test.
-		$prop = Property::get_from_array( $properties, 'post_excerpt' );
-		if ( $prop ) {
-			$prop->key = 'caption';
-		}
-
 		// Add the changes to the event.
-		self::$update_media_event->set_props( $properties );
+		$event->set_props( $properties );
 	}
 
 	public static function on_media_upload_image() {

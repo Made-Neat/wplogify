@@ -231,7 +231,7 @@ class Event {
 		// Include any other properties we received.
 		if ( ! empty( $properties ) ) {
 			foreach ( $properties as $prop ) {
-				Property::update_array_from_prop( $object_props, $prop );
+				Property::add_to_array( $object_props, $prop );
 			}
 		}
 
@@ -381,15 +381,16 @@ class Event {
 	 * @param ?string $table_name The table name the property came from.
 	 * @param mixed   $val        The old or current value.
 	 * @param mixed   $new_val    The new value.
+	 * @return bool True if a new property was created, false if an existing one was updated.
 	 */
-	public function set_prop( string $prop_key, ?string $table_name, mixed $val, mixed $new_val = null ) {
+	public function set_prop( string $prop_key, ?string $table_name, mixed $val, mixed $new_val = null ): bool {
 		// If the properties array is not set, create it.
 		if ( ! isset( $this->properties ) ) {
 			$this->properties = array();
 		}
 
 		// Update the properties array.
-		Property::update_array( $this->properties, $prop_key, $table_name, $val, $new_val );
+		return Property::update_array( $this->properties, $prop_key, $table_name, $val, $new_val );
 	}
 
 	/**
@@ -401,6 +402,28 @@ class Event {
 		foreach ( $props as $prop ) {
 			$this->set_prop( $prop->key, $prop->table_name, $prop->val, $prop->new_val );
 		}
+	}
+
+	/**
+	 * Remove an event property.
+	 *
+	 * @param string $prop_key The key of the property to remove.
+	 * @return ?Property The removed property.
+	 */
+	public function remove_prop( string $prop_key ): ?Property {
+		return Property::remove_from_array( $this->properties, $prop_key );
+	}
+
+	/**
+	 * Add an event property.
+	 *
+	 * If there is already a property with this key, it will be replaced.
+	 *
+	 * @param Property The property to add to the event.
+	 * @return bool True if the new property was added, false if an existing one was replaced.
+	 */
+	public function add_prop( Property $prop ): bool {
+		return Property::add_to_array( $this->properties, $prop );
 	}
 
 	/**

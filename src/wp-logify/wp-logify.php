@@ -69,6 +69,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/trackers/class-widget-trac
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-object-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-comment-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-core-utility.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-media-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-menu-item-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-option-utility.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/objects/utilities/class-plugin-utility.php';

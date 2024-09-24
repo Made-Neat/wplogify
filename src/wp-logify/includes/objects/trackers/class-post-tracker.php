@@ -120,7 +120,7 @@ class Post_Tracker {
 			return;
 		}
 
-		// Ignore save events for navigation menu items.
+		// Ignore navigation menu items.
 		if ( $post->post_type === 'nav_menu_item' ) {
 			return;
 		}
@@ -174,9 +174,9 @@ class Post_Tracker {
 	 * @param array $data    The data for the post.
 	 */
 	public static function on_pre_post_update( int $post_id, array $data, ) {
-		debug( 'on_pre_post_update' );
-
 		global $wpdb;
+
+		debug( 'on_pre_post_update' );
 
 		// Get the new event.
 		$event = self::get_update_post_event( 'Updated', $post_id );
@@ -201,7 +201,7 @@ class Post_Tracker {
 		// Get changes to the post.
 		$props = Post_Utility::get_changes( $post_before, $post_after );
 
-		// Remove changes to status, which we log separately.
+		// Remove any changes to post_status, which we log separately.
 		Property::remove_from_array( $props, 'post_status' );
 
 		// If any changes remain, update the event.
@@ -225,12 +225,17 @@ class Post_Tracker {
 	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
 
-		// Some changes are uninteresting.
-		if ( $meta_key === '_edit_lock' ) {
+		// Don't use this method for media attachments.
+		if ( get_post_type( $post_id ) === 'attachment' ) {
 			return;
 		}
 
-		debug( 'on_update_post_meta' );
+		// Some changes are uninteresting.
+		if ( in_array( $meta_key, array( '_edit_lock', '_edit_last' ) ) ) {
+			return;
+		}
+
+		debug( 'Post_Tracker::on_update_post_meta', func_get_args() );
 
 		// Get the current value.
 		$current_value = get_post_meta( $post_id, $meta_key, true );
@@ -265,6 +270,11 @@ class Post_Tracker {
 	public static function on_transition_post_status( string $new_status, string $old_status, WP_Post $post ) {
 		global $wpdb;
 
+		// Ignore navigation menu items.
+		if ( $post->post_type === 'nav_menu_item' ) {
+			return;
+		}
+
 		// Ensure this is not a revision.
 		if ( wp_is_post_revision( $post ) ) {
 			return;
@@ -278,11 +288,6 @@ class Post_Tracker {
 
 		// Some status changes we don't care about.
 		if ( in_array( $new_status, array( 'auto-draft', 'inherit' ), true ) ) {
-			return;
-		}
-
-		// Ignore status changes for navigation menu items.
-		if ( $post->post_type === 'nav_menu_item' ) {
 			return;
 		}
 
