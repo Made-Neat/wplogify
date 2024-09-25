@@ -181,30 +181,33 @@
 .wp-logify-details .wp-logify-details-section table {
   border-collapse: collapse;
 }
-.wp-logify-details .wp-logify-details-section table > tbody > tr > td {
-  width: 22rem;
+.wp-logify-details .wp-logify-details-section table th,
+.wp-logify-details .wp-logify-details-section table td {
+  vertical-align: top;
 }
 .wp-logify-details .wp-logify-details-section h4 {
   margin-bottom: 0.25rem;
 }
-.wp-logify-details .wp-logify-details-section .wp-logify-details-table {
-  border-collapse: collapse;
-}
-.wp-logify-details .wp-logify-details-section .wp-logify-details-table td {
+.wp-logify-details .wp-logify-details-section .wp-logify-details-table > tbody > tr > td {
   background-color: white;
-}
-.wp-logify-details .wp-logify-details-section .wp-logify-details-table th,
-.wp-logify-details .wp-logify-details-section .wp-logify-details-table td {
-  vertical-align: top;
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-user-details-table > tbody > tr > th {
   width: 8rem;
 }
+.wp-logify-details .wp-logify-details-section .wp-logify-user-details-table > tbody > tr > td {
+  width: 22rem;
+}
 .wp-logify-details .wp-logify-details-section .wp-logify-properties-table > tbody > tr > th {
   width: 14rem;
 }
+.wp-logify-details .wp-logify-details-section .wp-logify-properties-table > tbody > tr > td {
+  width: 24rem;
+}
 .wp-logify-details .wp-logify-details-section .wp-logify-eventmeta-table > tbody > tr > th {
   width: 14rem;
+}
+.wp-logify-details .wp-logify-details-section .wp-logify-eventmeta-table > tbody > tr > td {
+  width: 22rem;
 }
 .wp-logify-details .wp-logify-details-section td.wp-logify-value-unchanged {
   background-color: hsl(0, 0%, 97%);

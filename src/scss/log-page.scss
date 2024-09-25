@@ -119,10 +119,9 @@
         table {
             border-collapse: collapse;
 
-            >tbody>tr {
-                >td {
-                    width: 22rem;
-                }
+            th,
+            td {
+                vertical-align: top;
             }
         }
 
@@ -131,28 +130,47 @@
         }
 
         .wp-logify-details-table {
-            border-collapse: collapse;
-
-            td {
-                background-color: white;
-            }
-
-            th,
-            td {
-                vertical-align: top;
+            >tbody>tr {
+                >td {
+                    background-color: white;
+                }
             }
         }
 
-        .wp-logify-user-details-table>tbody>tr>th {
-            width: 8rem;
+        .wp-logify-user-details-table {
+            >tbody>tr {
+                >th {
+                    width: 8rem;
+                }
+
+                >td {
+                    width: 22rem;
+                }
+            }
         }
 
-        .wp-logify-properties-table>tbody>tr>th {
-            width: 14rem;
+        .wp-logify-properties-table {
+            >tbody>tr {
+                >th {
+                    width: 14rem;
+                }
+
+                >td {
+                    width: 24rem;
+                }
+            }
         }
 
-        .wp-logify-eventmeta-table>tbody>tr>th {
-            width: 14rem;
+        .wp-logify-eventmeta-table {
+            >tbody>tr {
+                >th {
+                    width: 14rem;
+                }
+
+                >td {
+                    width: 22rem;
+                }
+            }
         }
 
         td.wp-logify-value-unchanged {
