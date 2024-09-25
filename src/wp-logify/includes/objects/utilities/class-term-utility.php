@@ -174,6 +174,9 @@ class Term_Utility extends Object_Utility {
 		// Add the meta properties.
 		$termmeta = get_term_meta( $term->term_id );
 		foreach ( $termmeta as $key => $value ) {
+			// Check for single.
+			self::reduce_to_single( $value );
+
 			// Process meta values into correct types.
 			$value = Types::process_database_value( $key, $value );
 

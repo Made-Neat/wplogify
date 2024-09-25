@@ -75,11 +75,15 @@ class Term_Tracker {
 		// Compare values.
 		$changed = false;
 		foreach ( $term->data as $key => $value ) {
-			// Get the old and new values.
+
+			// Process values.
 			$val     = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $args[ $key ] );
 
-			if ( ! Types::are_equal( $val, $new_val ) ) {
+			// Check for difference.
+			$diff = Types::get_diff( $val, $new_val );
+
+			if ( $diff ) {
 
 				// Ignore the trivial changes that occur whenever a navigation menu is updated.
 				if ( $taxonomy === 'nav_menu' ) {

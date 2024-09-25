@@ -178,12 +178,15 @@ class User_Tracker {
 		// Compare values and make note of any changes.
 		foreach ( $user->data as $key => $value ) {
 
-			// Process meta values into correct types.
+			// Process values.
 			$val     = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $userdata[ $key ] );
 
+			// Check for difference.
+			$diff = Types::get_diff( $val, $new_val );
+
 			// If the value has changed, add the before and after values to the properties.
-			if ( ! Types::are_equal( $val, $new_val ) ) {
+			if ( $diff ) {
 
 				// Create the event if it doesn't already exist.
 				if ( ! self::$profile_update_event ) {
@@ -222,12 +225,15 @@ class User_Tracker {
 		// Get the current value.
 		$current_value = get_user_meta( $user_id, $meta_key, true );
 
-		// Process values into the correct types.
+		// Process values.
 		$val     = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
+		// Check for difference.
+		$diff = Types::get_diff( $val, $new_val );
+
 		// If the value has changed, add the before and after values to the properties array.
-		if ( ! Types::are_equal( $val, $new_val ) ) {
+		if ( $diff ) {
 
 			// Create the event if it doesn't already exist.
 			if ( ! self::$profile_update_event ) {

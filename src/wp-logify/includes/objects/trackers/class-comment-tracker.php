@@ -78,18 +78,22 @@ class Comment_Tracker {
 		global $wpdb;
 
 		// Record changes in the properties.
-		foreach ( $comment as $key => $old_value ) {
+		foreach ( $comment as $key => $val ) {
 			// Ignore post fields.
 			if ( $key === 'post_fields' ) {
 				continue;
 			}
 
-			// Compare the old and new values.
-			$old_value = Types::process_database_value( $key, $old_value );
-			$new_value = Types::process_database_value( $key, $commentarr[ $key ] );
+			// Process values.
+			$val     = Types::process_database_value( $key, $val );
+			$new_val = Types::process_database_value( $key, $commentarr[ $key ] );
 
-			if ( ! Types::are_equal( $old_value, $new_value ) ) {
-				Property::update_array( self::$properties, $key, $wpdb->comments, $old_value, $new_value );
+			// Check for difference.
+			$diff = Types::get_diff( $val, $new_val );
+
+			// If there's a difference, update the properties.
+			if ( $diff ) {
+				Property::update_array( self::$properties, $key, $wpdb->comments, $val, $new_val );
 			}
 		}
 

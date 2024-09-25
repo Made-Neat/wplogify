@@ -233,6 +233,9 @@ class User_Utility extends Object_Utility {
 		// Add the meta properties.
 		$usermeta = get_user_meta( $user->ID );
 		foreach ( $usermeta as $key => $value ) {
+			// Check for single.
+			self::reduce_to_single( $value );
+
 			// Process meta values into correct types.
 			$value = Types::process_database_value( $key, $value );
 

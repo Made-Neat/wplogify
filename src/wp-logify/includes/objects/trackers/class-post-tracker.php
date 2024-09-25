@@ -61,7 +61,7 @@ class Post_Tracker {
 		add_action( 'before_delete_post', array( __CLASS__, 'on_before_delete_post' ), 10, 2 );
 		add_action( 'delete_post', array( __CLASS__, 'on_delete_post' ), 10, 2 );
 
-		// Track attachment of terms and posts.
+		// Track linking and unlinking of terms and posts.
 		add_action( 'added_term_relationship', array( __CLASS__, 'on_added_term_relationship' ), 10, 3 );
 		add_action( 'wp_after_insert_post', array( __CLASS__, 'on_wp_after_insert_post' ), 10, 4 );
 		add_action( 'deleted_term_relationships', array( __CLASS__, 'on_deleted_term_relationships' ), 10, 3 );
@@ -244,8 +244,10 @@ class Post_Tracker {
 		$val     = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
-		// If there is any change, update the event.
-		if ( ! Types::are_equal( $val, $new_val ) ) {
+		// Check if the value has changed.
+		$diff = Types::get_diff( $val, $new_val );
+
+		if ( $diff ) {
 			// Get the new event.
 			$event = self::get_update_post_event( 'Updated', $post_id );
 
@@ -339,8 +341,10 @@ class Post_Tracker {
 	/**
 	 * Fires before a post is deleted, at the start of wp_delete_post().
 	 *
-	 * We use this method to create the delete event (without saving it), and record some
-	 * information that won't be available in on_delete_post().
+	 * We use this method to create the delete event (without saving it), and record details that
+	 * won't be available in on_delete_post().
+	 *
+	 * NOTE: This method doesn't get called for media.
 	 *
 	 * @param int     $post_id Post ID.
 	 * @param WP_Post $post    Post object.
@@ -450,6 +454,11 @@ class Post_Tracker {
 	public static function on_delete_post( int $post_id, WP_Post $post ) {
 		// Ensure this is not a revision.
 		if ( wp_is_post_revision( $post ) ) {
+			return;
+		}
+
+		// This method is not for media.
+		if ( $post->post_type === 'attachment' ) {
 			return;
 		}
 

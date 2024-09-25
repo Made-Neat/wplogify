@@ -141,6 +141,15 @@ class Strings {
 
 			case 'post_modified_gmt':
 				return 'Last modified (UTC)';
+
+			case '_wp_attachment_image_alt':
+				return 'Alternative text';
+
+			case '_wp_attached_file':
+				return 'File path';
+
+			case '_wp_attachment_metadata':
+				return 'Attachment metadata';
 		}
 
 		// Convert snake-case or kebab-case keys into words.

@@ -105,7 +105,9 @@ class Widget_Tracker {
 					}
 
 					// Compare.
-					if ( $old_widget_value !== $new_widget_value ) {
+					$diff = Types::get_diff( $old_widget_value, $new_widget_value );
+
+					if ( $diff ) {
 						// Record the property change.
 						Property::update_array( $props, $key, null, $old_widget_value, $new_widget_value );
 					}

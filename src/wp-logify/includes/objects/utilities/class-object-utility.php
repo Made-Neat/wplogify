@@ -19,6 +19,9 @@ use Exception;
  */
 abstract class Object_Utility {
 
+	// =============================================================================================
+	// Abstract methods.
+
 	/**
 	 * Check if an object exists.
 	 *
@@ -73,4 +76,42 @@ abstract class Object_Utility {
 	 * @return string The link or span HTML tag.
 	 */
 	abstract public static function get_tag( int|string $object_key, ?string $old_name = null ): string;
+
+	// =============================================================================================
+	// Concrete methods.
+
+	/**
+	 * Reduce an array to a single value if it contains only one element.
+	 * This is useful for handling metadata values.
+	 *
+	 * @param mixed $value The value to reduce.
+	 */
+	public static function reduce_to_single( mixed &$value ) {
+		if ( is_array( $value ) && count( $value ) === 1 && isset( $value[0] ) ) {
+			$value = $value[0];
+		}
+	}
+
+	/**
+	 * Extract a value from an array of metadata and process into the correct type.
+	 *
+	 * @param array  $metadata Array of metadata.
+	 * @param string $key      The meta key.
+	 * @return mixed The meta value or null if not found.
+	 */
+	public static function extract_meta( array $metadata, string $key ): mixed {
+		// See if the array of metadata contains this key.
+		if ( ! isset( $metadata[ $key ] ) ) {
+			return null;
+		}
+
+		// Get the value.
+		$value = $metadata[ $key ];
+
+		// Check for single.
+		self::reduce_to_single( $value );
+
+		// Process the value into the correct type.
+		return Types::process_database_value( $key, $value );
+	}
 }

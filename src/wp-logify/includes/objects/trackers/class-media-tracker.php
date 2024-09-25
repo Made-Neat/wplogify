@@ -41,7 +41,7 @@ class Media_Tracker {
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
-		// Add attachment.
+		// Add or update media.
 		add_action( 'add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
 		add_action( 'add_post_meta', array( __CLASS__, 'on_add_post_meta' ), 10, 3 );
 		add_action( 'update_post_meta', array( __CLASS__, 'on_update_post_meta' ), 10, 4 );
@@ -53,6 +53,9 @@ class Media_Tracker {
 		add_action( 'media_upload_audio', array( __CLASS__, 'on_media_upload_audio' ), 10, 0 );
 		add_action( 'media_upload_video', array( __CLASS__, 'on_media_upload_video' ), 10, 0 );
 		add_action( 'media_upload_file', array( __CLASS__, 'on_media_upload_file' ), 10, 0 );
+
+		// Delete media.
+		add_action( 'delete_attachment', array( __CLASS__, 'on_delete_attachment' ), 10, 2 );
 
 		// Shutdown.
 		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
@@ -131,18 +134,18 @@ class Media_Tracker {
 	public static function on_add_post_meta( int $post_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
 
-		// This method is only for media attachments.
-		if ( get_post_type( $post_id ) !== 'attachment' ) {
-			return;
-		}
-
 		// Some changes are uninteresting.
 		if ( in_array( $meta_key, array( '_edit_lock', '_edit_last' ) ) ) {
 			return;
 		}
 
-		// Get the media type and event type.
+		// Get the media type.
 		$media_type = Media_Utility::get_media_type( $post_id );
+
+		// This method is only for media.
+		if ( ! $media_type ) {
+			return;
+		}
 
 		debug( 'on_add_post_meta', $media_type );
 
@@ -167,18 +170,18 @@ class Media_Tracker {
 	public static function on_update_post_meta( int $meta_id, int $post_id, string $meta_key, mixed $meta_value ) {
 		global $wpdb;
 
-		// This method is only for media attachments.
-		if ( get_post_type( $post_id ) !== 'attachment' ) {
-			return;
-		}
-
 		// Some changes are uninteresting.
 		if ( in_array( $meta_key, array( '_edit_lock', '_edit_last' ) ) ) {
 			return;
 		}
 
-		// Get the media type and event type.
+		// Get the media type.
 		$media_type = Media_Utility::get_media_type( $post_id );
+
+		// This method is only for media.
+		if ( ! $media_type ) {
+			return;
+		}
 
 		debug( 'on_update_post_meta', $media_type );
 
@@ -187,13 +190,18 @@ class Media_Tracker {
 
 		// Get the current value of this metadata.
 		$current_val = get_post_meta( $post_id, $meta_key, true );
-		$val         = Types::process_database_value( $meta_key, $current_val );
 
-		// Process the database value so it's displayed properly.
+		// Process values.
+		$val     = Types::process_database_value( $meta_key, $current_val );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
-		// Log the changed value.
-		$event->set_prop( $meta_key, $wpdb->postmeta, $val, $new_val );
+		// Check for a difference.
+		$diff = Types::get_diff( $val, $new_val );
+
+		// If there is a change, log the changed value.
+		if ( $diff ) {
+			$event->set_prop( $meta_key, $wpdb->postmeta, $val, $new_val );
+		}
 	}
 
 	/**
@@ -213,17 +221,15 @@ class Media_Tracker {
 	 * @param WP_Post $post_before Post object before the update.
 	 */
 	public static function on_attachment_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
-		debug( 'on_attachment_updated' );
-
-		// Get the media type and event type.
+		// Get the media type.
 		$media_type = Media_Utility::get_media_type( $post_id );
 
-		// If there's no media type, it's not an attachment.
+		// This method is only for media.
 		if ( ! $media_type ) {
 			return;
 		}
 
-		debug( 'media type', $media_type );
+		debug( 'on_attachment_updated', $media_type );
 
 		// Get the event.
 		$event = self::get_update_media_event( $post_id );
@@ -251,6 +257,51 @@ class Media_Tracker {
 	public static function on_media_upload_file() {
 		// $event = Event::create( 'File Upload', );
 	}
+
+	// =============================================================================================
+	// Media deletion.
+
+	/**
+	 * Log the deletion of an attachment.
+	 * This hook is triggered at the start of the deletion process.
+	 *
+	 * @param int     $post_id The ID of the post to be deleted.
+	 * @param WP_Post $post    The post object to be deleted.
+	 */
+	public static function on_delete_attachment( int $post_id, WP_Post $post ) {
+		// This method is only for attachments.
+		if ( get_post_type( $post_id ) !== 'attachment' ) {
+			return;
+		}
+
+		// Get the media type.
+		$media_type = Media_Utility::get_media_type( $post_id );
+
+		// This method is only for media.
+		if ( ! $media_type ) {
+			return;
+		}
+
+		debug( 'on_delete_attachment', $media_type );
+
+		// Get the event type.
+		$event_type = ucfirst( $media_type ) . ' Deleted';
+
+		// Create the event.
+		$event = Event::create( $event_type, $post );
+
+		// Add all the object's properties (including metadata), in case we want to restore it later.
+		// NOTE: This will probably have to change when we update the data model to distinguish
+		// NOTE: between properties we want to show for user information, vs. those we want to keep
+		// NOTE: for undo actions.
+		$event->set_props( Post_Utility::get_properties( $post ) );
+
+		// Save the event to the log.
+		$event->save();
+	}
+
+	// =============================================================================================
+	// Shutdown.
 
 	/**
 	 * Fires on shutdown, after PHP execution.

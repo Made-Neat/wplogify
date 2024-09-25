@@ -59,8 +59,11 @@ class Option_Tracker {
 			$new_val = Types::process_database_value( $option_name, $new_value );
 		}
 
+		// Check for a difference.
+		$diff = Types::get_diff( $val, $new_val );
+
 		// If the value has changed, add the setting change to the event properties.
-		if ( ! Types::are_equal( $val, $new_val ) ) {
+		if ( $diff ) {
 
 			// Create the event object to encapsulate setting updates, if it doesn't already exist.
 			if ( ! isset( self::$event ) ) {

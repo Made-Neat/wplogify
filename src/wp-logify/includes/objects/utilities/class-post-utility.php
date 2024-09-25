@@ -79,7 +79,8 @@ class Post_Utility extends Object_Utility {
 		global $wpdb;
 
 		// Load the post.
-		$post = self::load( $post_id );
+		$post_id = (int) $post_id;
+		$post    = self::load( $post_id );
 
 		// Handle the case where the post doesn't exist.
 		if ( ! $post ) {
@@ -93,7 +94,7 @@ class Post_Utility extends Object_Utility {
 		Property::update_array( $props, 'link', null, Object_Reference::new_from_wp_object( $post ) );
 
 		// ID.
-		Property::update_array( $props, 'ID', $wpdb->posts, $post->ID );
+		Property::update_array( $props, 'ID', $wpdb->posts, $post_id );
 
 		// Post type.
 		Property::update_array( $props, 'post_type', $wpdb->posts, $post->post_type );
@@ -125,6 +126,12 @@ class Post_Utility extends Object_Utility {
 		if ( $post->post_type === 'nav_menu_item' ) {
 			$nav_menu_item_props = Menu_Item_Utility::get_core_properties( $post_id );
 			$props               = array_merge( $props, $nav_menu_item_props );
+		}
+
+		// For images, include the alt text.
+		if ( $post->post_type === 'attachment' && Media_Utility::get_media_type( $post_id ) === 'image' ) {
+			$alt_text = get_post_meta( $post_id, '_wp_attachment_image_alt', true );
+			Property::update_array( $props, '_wp_attachment_image_alt', $wpdb->postmeta, $alt_text );
 		}
 
 		return $props;
@@ -300,6 +307,9 @@ class Post_Utility extends Object_Utility {
 		// Add the meta properties.
 		$postmeta = get_post_meta( $post->ID );
 		foreach ( $postmeta as $key => $value ) {
+			// Check for single.
+			self::reduce_to_single( $value );
+
 			// Process database values into correct types.
 			$value = Types::process_database_value( $key, $value );
 
@@ -425,12 +435,15 @@ class Post_Utility extends Object_Utility {
 				continue;
 			}
 
-			// Process database values into correct types.
+			// Get the before and after values.
 			$val     = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $post_after->$key );
 
-			// If there is a changed, add the property.
-			if ( ! Types::are_equal( $val, $new_val ) ) {
+			// See if the value was changed.
+			$diff = Types::get_diff( $val, $new_val );
+
+			// If so, add the property.
+			if ( $diff ) {
 				Property::update_array( $props, $key, $wpdb->posts, $val, $new_val );
 			}
 		}
@@ -441,16 +454,19 @@ class Post_Utility extends Object_Utility {
 
 		// Collect all the keys.
 		$keys = array_unique( array_merge( array_keys( $postmeta_before ), array_keys( $postmeta_after ) ) );
-		debug( $keys );
+		// debug( $keys );
 
 		// Go through the meta keys looking for changes.
 		foreach ( $keys as $key ) {
-			// Process database values into correct types.
-			$val     = isset( $postmeta_before[ $key ] ) ? Types::process_database_value( $key, $postmeta_before[ $key ] ) : null;
-			$new_val = isset( $postmeta_after[ $key ] ) ? Types::process_database_value( $key, $postmeta_after[ $key ] ) : null;
+			// Get the before and after values.
+			$val     = self::extract_meta( $postmeta_before, $key );
+			$new_val = self::extract_meta( $postmeta_after, $key );
 
-			// If there is a change, add the property.
-			if ( ! Types::are_equal( $val, $new_val ) ) {
+			// See if the value was changed.
+			$diff = Types::get_diff( $val, $new_val );
+
+			// If so, add the property.
+			if ( $diff ) {
 				Property::update_array( $props, $key, $wpdb->postmeta, $val, $new_val );
 			}
 		}
