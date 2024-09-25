@@ -24,13 +24,6 @@ class Media_Tracker {
 	private static ?Event $update_media_event = null;
 
 	/**
-	 * If creating or updating a media event.
-	 *
-	 * @var bool
-	 */
-	private static bool $creating = false;
-
-	/**
 	 * The media type of the object being created or updated.
 	 *
 	 * @var ?string
@@ -45,14 +38,7 @@ class Media_Tracker {
 		add_action( 'add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
 		add_action( 'add_post_meta', array( __CLASS__, 'on_add_post_meta' ), 10, 3 );
 		add_action( 'update_post_meta', array( __CLASS__, 'on_update_post_meta' ), 10, 4 );
-		add_action( 'edit_attachment', array( __CLASS__, 'on_edit_attachment' ), 10, 3 );
 		add_action( 'attachment_updated', array( __CLASS__, 'on_attachment_updated' ), 10, 3 );
-
-		// Media upload.
-		add_action( 'media_upload_image', array( __CLASS__, 'on_media_upload_image' ), 10, 0 );
-		add_action( 'media_upload_audio', array( __CLASS__, 'on_media_upload_audio' ), 10, 0 );
-		add_action( 'media_upload_video', array( __CLASS__, 'on_media_upload_video' ), 10, 0 );
-		add_action( 'media_upload_file', array( __CLASS__, 'on_media_upload_file' ), 10, 0 );
 
 		// Delete media.
 		add_action( 'delete_attachment', array( __CLASS__, 'on_delete_attachment' ), 10, 2 );
@@ -101,9 +87,6 @@ class Media_Tracker {
 	 */
 	public static function on_add_attachment( int $post_id ) {
 		debug( 'on_add_attachment' );
-
-		// We are adding a new attachment.
-		self::$creating = true;
 
 		// Get the event.
 		$event = self::get_update_media_event( $post_id );
@@ -207,15 +190,6 @@ class Media_Tracker {
 	/**
 	 * Fires once an existing attachment has been updated.
 	 *
-	 * @param int $post_id Attachment ID.
-	 */
-	public static function on_edit_attachment( int $post_id ) {
-		debug( 'on_edit_attachment' );
-	}
-
-	/**
-	 * Fires once an existing attachment has been updated.
-	 *
 	 * @param int     $post_id     Post ID.
 	 * @param WP_Post $post_after  Post object following the update.
 	 * @param WP_Post $post_before Post object before the update.
@@ -231,31 +205,19 @@ class Media_Tracker {
 
 		debug( 'on_attachment_updated', $media_type );
 
-		// Get the event.
-		$event = self::get_update_media_event( $post_id );
-
 		// Get the changes.
 		$properties = Post_Utility::get_changes( $post_before, $post_after );
 
+		// If there are no changes, we're done.
+		if ( ! $properties ) {
+			return;
+		}
+
+		// Get the event.
+		$event = self::get_update_media_event( $post_id );
+
 		// Add the changes to the event.
 		$event->set_props( $properties );
-	}
-
-	public static function on_media_upload_image() {
-		debug( 'on_media_upload_image' );
-		// $event = Event::create( 'Image Upload', );
-	}
-
-	public static function on_media_upload_audio() {
-		// $event = Event::create( 'Audio Upload', );
-	}
-
-	public static function on_media_upload_video() {
-		// $event = Event::create( 'Video Upload', );
-	}
-
-	public static function on_media_upload_file() {
-		// $event = Event::create( 'File Upload', );
 	}
 
 	// =============================================================================================
@@ -308,7 +270,7 @@ class Media_Tracker {
 	 */
 	public static function on_shutdown() {
 		// Save the media updated or added event, if it exists.
-		if ( self::$update_media_event && ( self::$creating || self::$update_media_event->num_changed_props() > 0 ) ) {
+		if ( self::$update_media_event ) {
 			self::$update_media_event->save();
 		}
 	}

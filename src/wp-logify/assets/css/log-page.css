@@ -191,6 +191,9 @@
 .wp-logify-details .wp-logify-details-section .wp-logify-details-table > tbody > tr > td {
   background-color: white;
 }
+.wp-logify-details .wp-logify-details-section .wp-logify-details-table > tbody > tr > td.wp-logify-value-unchanged {
+  background-color: hsl(0, 0%, 97%);
+}
 .wp-logify-details .wp-logify-details-section .wp-logify-user-details-table > tbody > tr > th {
   width: 8rem;
 }
@@ -208,9 +211,6 @@
 }
 .wp-logify-details .wp-logify-details-section .wp-logify-eventmeta-table > tbody > tr > td {
   width: 22rem;
-}
-.wp-logify-details .wp-logify-details-section td.wp-logify-value-unchanged {
-  background-color: hsl(0, 0%, 97%);
 }
 
 .wp-logify-user-info {
