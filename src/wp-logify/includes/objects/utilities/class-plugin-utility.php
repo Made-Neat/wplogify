@@ -139,7 +139,7 @@ class Plugin_Utility extends Object_Utility {
 
 		// Make a backup name.
 		if ( ! $old_name ) {
-			$old_name = Strings::make_key_readable( $plugin_slug, true );
+			$old_name = Strings::key_to_label( $plugin_slug, true );
 		}
 
 		// The plugin has been deleted. Construct the 'deleted' span element.

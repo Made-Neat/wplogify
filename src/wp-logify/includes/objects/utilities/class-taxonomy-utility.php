@@ -161,7 +161,7 @@ class Taxonomy_Utility extends Object_Utility {
 			return ucwords( $taxonomy_obj->labels->singular_name );
 		} else {
 			// Create a readable name from the taxonomy key.
-			return Strings::make_key_readable( $taxonomy, true );
+			return Strings::key_to_label( $taxonomy, true );
 		}
 	}
 

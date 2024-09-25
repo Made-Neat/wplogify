@@ -436,8 +436,9 @@ class Log_Page {
 		$html .= "<div class='wp-logify-details-table-wrapper'>\n";
 		$html .= "<table class='wp-logify-details-table wp-logify-eventmeta-table'>\n";
 		foreach ( $event->eventmetas as $eventmeta ) {
-			$readable_key = Strings::make_key_readable( $eventmeta->meta_key );
-			$html        .= "<tr><th>$readable_key</th><td>" . Types::value_to_html( $eventmeta->meta_key, $eventmeta->meta_value ) . '</td></tr>';
+			$label = Strings::key_to_label( $eventmeta->meta_key );
+			$value = Types::value_to_html( $eventmeta->meta_key, $eventmeta->meta_value );
+			$html .= "<tr><th>$label</th><td>$value</td></tr>";
 		}
 		$html .= "</table>\n";
 		$html .= "</div>\n";
@@ -526,7 +527,7 @@ class Log_Page {
 
 			default:
 				// Default is upper-case-first the object-type (e.g. 'Plugin').
-				$object_type_title = Strings::make_key_readable( $event->object_type, true );
+				$object_type_title = Strings::key_to_label( $event->object_type, true );
 				break;
 		}
 
@@ -555,7 +556,7 @@ class Log_Page {
 			$html .= '<tr>';
 
 			// Property key.
-			$key   = Strings::make_key_readable( $prop->key );
+			$key   = Strings::key_to_label( $prop->key );
 			$html .= "<th>$key</th>";
 
 			// Current or old value.

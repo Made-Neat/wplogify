@@ -143,7 +143,7 @@ class Theme_Utility extends Object_Utility {
 
 		// Make backup name.
 		if ( ! $old_name ) {
-			$old_name = Strings::make_key_readable( $stylesheet, true );
+			$old_name = Strings::key_to_label( $stylesheet, true );
 		}
 
 		// Return a span with the old name.

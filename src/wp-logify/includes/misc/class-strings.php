@@ -95,61 +95,26 @@ class Strings {
 	}
 
 	/**
-	 * Make a key readable.
+	 * Convert a key into a readable label.
 	 *
 	 * This function takes a key and makes it more readable by converting it to title case and
 	 * replacing underscores with spaces.
 	 *
-	 * @param ?string $key    The key to make readable. Could be null.
+	 * For some keys, this method doesn't work, so we use a map (KEY_TO_LABEL_EXCEPTIONS).
+	 *
+	 * @param ?string $key     The key to convert. Could be null.
 	 * @param bool    $ucwords Whether to capitalize the first letter of each word.
 	 * @return string The readable key.
 	 */
-	public static function make_key_readable( ?string $key, bool $ucwords = false ): string {
+	public static function key_to_label( ?string $key, bool $ucwords = false ): string {
 		// Handle null key.
 		if ( $key === null ) {
 			return '';
 		}
 
-		// Handle some special, known cases.
-		switch ( $key ) {
-			case 'blogname':
-				return 'Blog name';
-
-			case 'blogdescription':
-				return 'Blog description';
-
-			case 'user_pass':
-				return 'Password';
-
-			case 'user_nicename':
-				return 'Nice name';
-
-			case 'show_admin_bar_front':
-				return 'Show toolbar';
-
-			case 'user registered':
-				return 'Registered (UTC)';
-
-			case 'post_date':
-				return 'Created';
-
-			case 'post_date_gmt':
-				return 'Created (UTC)';
-
-			case 'post_modified':
-				return 'Last modified';
-
-			case 'post_modified_gmt':
-				return 'Last modified (UTC)';
-
-			case '_wp_attachment_image_alt':
-				return 'Alternative text';
-
-			case '_wp_attached_file':
-				return 'File path';
-
-			case '_wp_attachment_metadata':
-				return 'Attachment metadata';
+		// Handle some exceptions for which the normal algorithm doesn't produce a good label.
+		if ( key_exists( $key, self::KEY_TO_LABEL_EXCEPTIONS ) ) {
+			return self::KEY_TO_LABEL_EXCEPTIONS[ $key ];
 		}
 
 		// Convert snake-case or kebab-case keys into words.
@@ -297,5 +262,33 @@ class Strings {
 		'wav',
 		'wc',
 		'wp',
+	);
+
+	/**
+	 * List of keys for which the basic algorithm in key_to_label() doesn't work very well.
+	 *
+	 * We can't expect to capture every such key used in WordPress, but we can update this array as
+	 * we encounter them.
+	 *
+	 * @var array
+	 */
+	private const KEY_TO_LABEL_EXCEPTIONS = array(
+		'_wp_attached_file'        => 'File path',
+		'_wp_attachment_image_alt' => 'Alternative text',
+		'_wp_attachment_metadata'  => 'Attachment metadata',
+		'blogdescription'          => 'Blog description',
+		'blogname'                 => 'Blog name',
+		'channelmode'              => 'Channel mode',
+		'dataformat'               => 'Data format',
+		'fileformat'               => 'File format',
+		'filesize'                 => 'File size',
+		'post_date'                => 'Created',
+		'post_date_gmt'            => 'Created (UTC)',
+		'post_modified'            => 'Last modified',
+		'post_modified_gmt'        => 'Last modified (UTC)',
+		'show_admin_bar_front'     => 'Show toolbar',
+		'user registered'          => 'Registered (UTC)',
+		'user_nicename'            => 'Nice name',
+		'user_pass'                => 'Password',
 	);
 }

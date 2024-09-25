@@ -214,7 +214,7 @@ class Post_Utility extends Object_Utility {
 		$post_type_object = get_post_type_object( $post_type );
 
 		// Return the singular name, or a reasonable fallback.
-		return $post_type_object->labels->singular_name ?? Strings::make_key_readable( $post_type, true );
+		return $post_type_object->labels->singular_name ?? Strings::key_to_label( $post_type, true );
 	}
 
 	/**

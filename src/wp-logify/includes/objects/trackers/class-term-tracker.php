@@ -149,7 +149,7 @@ class Term_Tracker {
 
 		// Show the attached posts in the event meta.
 		// If it's a nav menu, there usually (perhaps always) won't be any attached posts because
-		// the nav menu items are deleted first, so don't worry about showing (None).
+		// the nav menu items are deleted first.
 		$metas = array();
 		if ( $taxonomy !== 'nav_menu' || count( $post_ids ) > 0 ) {
 			Eventmeta::update_array( $metas, 'attached_posts', $post_ids );

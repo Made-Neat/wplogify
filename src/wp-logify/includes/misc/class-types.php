@@ -158,7 +158,7 @@ class Types {
 
 			// Handle empty arrays.
 			if ( count( $value ) === 0 ) {
-				return '(None)';
+				return '';
 			}
 
 			// Start the table.
@@ -173,7 +173,7 @@ class Types {
 
 				// If it's not a list, show the key.
 				if ( ! $is_list ) {
-					$html .= "<th>$key2</th>";
+					$html .= '<th>' . Strings::key_to_label( $key2 ) . '</th>';
 				}
 
 				// Show the value.

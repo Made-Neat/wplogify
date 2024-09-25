@@ -98,8 +98,8 @@ class Option_Tracker {
 		// Get the setting names, but limit to 50 characters total.
 		$option_names = '';
 		foreach ( self::$event->properties as $option => $prop ) {
-			$readable_option = Strings::make_key_readable( $option );
-			$option_names2   = ( $option_names ? ( $option_names . ', ' ) : '' ) . $readable_option;
+			$option_name   = Option_Utility::get_name( $option );
+			$option_names2 = ( $option_names ? ( $option_names . ', ' ) : '' ) . $option_name;
 			if ( strlen( $option_names2 ) <= Logger::MAX_OBJECT_NAME_LENGTH - 6 ) {
 				$option_names = $option_names2;
 			} else {
