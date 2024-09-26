@@ -279,7 +279,7 @@ class User_Tracker {
 		// Check if this is a new or continuing session.
 		$continuing = false;
 
-		$event = Event_Repository::get_most_recent_event( (int) $user->ID, $event_type );
+		$event = Event_Repository::get_most_recent_event( $event_type );
 		if ( $event ) {
 			// Check we have the info we need.
 			if ( $event->has_meta( 'activity_start' ) && $event->has_meta( 'activity_end' ) ) {

@@ -238,14 +238,20 @@ class Eventmeta_Repository extends Repository {
 	 * Delete all eventmeta records relating to an event.
 	 *
 	 * @param int $event_id The ID of the event.
-	 * @return bool True if the delete completed ok, false on error.
+	 * @return bool True on success, false on failure.
+	 * @throws Exception If the delete fails.
 	 */
 	public static function delete_by_event_id( int $event_id ): bool {
 		global $wpdb;
 
 		// Do the delete.
-		$ok = $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
+		$result = $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
 
-		return $ok !== false;
+		// Check for error.
+		if ( $result === false ) {
+			throw new Exception( "Failed to delete eventmetas for event $event_id" );
+		}
+
+		return (bool) $result;
 	}
 }

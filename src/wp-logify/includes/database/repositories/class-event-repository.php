@@ -8,6 +8,7 @@
 namespace WP_Logify;
 
 use DateTime;
+use Exception;
 use InvalidArgumentException;
 
 /**
@@ -145,10 +146,32 @@ class Event_Repository extends Repository {
 	 *
 	 * @param int $event_id The ID of the event record to delete.
 	 * @return bool True on success, false on failure.
+	 * @throws Exception If there is an error deleting the record.
 	 */
 	public static function delete( int $event_id ): bool {
 		global $wpdb;
-		return $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) ) !== false;
+
+		// If the event ID is 0 or null, can't delete anything.
+		if ( ! $event_id ) {
+			return false;
+		}
+
+		// Delete the event record.
+		$result = $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
+
+		// Check for error.
+		if ( $result === false ) {
+			throw new Exception( "Error deleting event record $event_id" );
+		}
+
+		// Delete the property records.
+		Property_Repository::delete_by_event_id( $event_id );
+
+		// Delete the eventmeta records.
+		Eventmeta_Repository::delete_by_event_id( $event_id );
+
+		// Return success.
+		return (bool) $result;
 	}
 
 	// =============================================================================================
@@ -170,7 +193,7 @@ class Event_Repository extends Repository {
 
 		// Delete any we don't need anymore.
 		foreach ( $records as $record ) {
-			if ( ! $event->has_meta( $record['prop_key'] ) ) {
+			if ( ! $event->has_prop( $record['prop_key'] ) ) {
 				$del_result = $wpdb->delete( $table_name, array( 'prop_id' => $record['prop_id'] ), '%d' );
 				if ( $del_result === false ) {
 					debug( 'Error deleting property record.' );
@@ -598,21 +621,43 @@ class Event_Repository extends Repository {
 	}
 
 	/**
-	 * Get the most recent event of a given type, caused by a given user.
+	 * Get the most recent event caused by the current user. The event type can be specified.
 	 *
-	 * @param int    $user_id    The ID of the acting user.
-	 * @param string $event_type The event type.
+	 * @param ?string $event_type The event type. If null, get the most recent event of any type.
 	 * @return ?Event The most recent event matching the provided arguments.
 	 */
-	public static function get_most_recent_event( int $user_id, string $event_type ): ?Event {
+	public static function get_most_recent_event( ?string $event_type = null ): ?Event {
 		global $wpdb;
-		$sql      = $wpdb->prepare(
-			'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
-			self::get_table_name(),
-			$user_id,
-			$event_type
-		);
+
+		// Get the current user ID.
+		$user_id = get_current_user_id();
+
+		// If we don't have a user ID, we can't get the most recent event they caused.
+		if ( ! $user_id ) {
+			return null;
+		}
+
+		if ( $event_type ) {
+			// Get the most recent event of the given type, caused by this user.
+			$sql = $wpdb->prepare(
+				'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
+				self::get_table_name(),
+				$user_id,
+				$event_type
+			);
+		} else {
+			// Get the most recent event caused by this user.
+			$sql = $wpdb->prepare(
+				'SELECT event_id FROM %i WHERE user_id = %d ORDER BY when_happened DESC LIMIT 1',
+				self::get_table_name(),
+				$user_id
+			);
+		}
+
+		// Get the event ID.
 		$event_id = $wpdb->get_var( $sql );
+
+		// Return the event, if found.
 		return $event_id ? self::load( $event_id ) : null;
 	}
 }

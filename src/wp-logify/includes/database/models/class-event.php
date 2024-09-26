@@ -266,9 +266,9 @@ class Event {
 
 		// Log the result.
 		if ( $ok ) {
-			debug( 'EVENT LOGGED: ' . $this->event_type );
+			debug( 'EVENT SAVED:', $this->id, $this->event_type );
 		} else {
-			debug( 'FAILED TO LOG EVENT: ' . $this->event_type );
+			debug( 'FAILED TO SAVE EVENT:', $this->id, $this->event_type );
 		}
 
 		return $ok;
@@ -277,10 +277,37 @@ class Event {
 	/**
 	 * Check if a new event has been saved yet or not.
 	 *
-	 * @return bool True if the event has been saved, false otherwise.
+	 * @return bool True if the event has no ID, and thus hasn't yet been saved to the database.
 	 */
-	public function is_saved(): bool {
-		return ! empty( $this->id );
+	public function is_new(): bool {
+		return empty( $this->id );
+	}
+
+	/**
+	 * Delete the event from the database.
+	 *
+	 * @return bool True if the event was deleted successfully, false otherwise.
+	 */
+	public function delete(): bool {
+		// If the event has no ID, it can't be deleted.
+		if ( ! $this->id ) {
+			return false;
+		}
+
+		// Delete the event from the database.
+		$ok = Event_Repository::delete( $this->id );
+
+		// Clear the ID.
+		$this->id = null;
+
+		// Log the result.
+		if ( $ok ) {
+			debug( 'EVENT DELETED:', $this->id, $this->event_type );
+		} else {
+			debug( 'FAILED TO DELETED EVENT:', $this->id, $this->event_type );
+		}
+
+		return $ok;
 	}
 
 	// =============================================================================================
@@ -489,20 +516,24 @@ class Event {
 	}
 
 	/**
-	 * Get the number of changed properties.
+	 * See if the event has any property changes.
 	 *
-	 * @return int The number of properties with new values.
+	 * TODO: This method assumes that a new_val of null means no change.
+	 * TODO: This is not always the case; a property can be changed to null.
+	 * TODO: We still need to add the "changed" flag fo the properties table.
+	 * TODO: Then we can update this method.
+	 *
+	 * @return bool True if the event includes property changes, false otherwise.
 	 */
-	public function num_changed_props(): int {
-		$count = 0;
-
+	public function has_changes(): int {
+		// Check if any property has a new value.
 		foreach ( $this->properties as $prop ) {
 			if ( $prop->new_val !== null ) {
-				++$count;
+				return true;
 			}
 		}
 
-		return $count;
+		return false;
 	}
 
 	// =============================================================================================
