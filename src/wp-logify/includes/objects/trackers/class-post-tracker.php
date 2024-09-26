@@ -202,7 +202,7 @@ class Post_Tracker {
 		$props = Post_Utility::get_changes( $post_before, $post_after );
 
 		// Remove any changes to post_status, which we log separately.
-		Property::remove_from_array( $props, 'post_status' );
+		Property_Array::remove( $props, 'post_status' );
 
 		// If any changes remain, update the event.
 		if ( ! empty( $props ) ) {

@@ -235,7 +235,7 @@ class Property_Repository extends Repository {
 		// Convert the records to objects.
 		$props = array();
 		foreach ( $recordset as $record ) {
-			$props[] = self::record_to_object( $record );
+			Property_Array::add( $props, self::record_to_object( $record ) );
 		}
 
 		return $props;

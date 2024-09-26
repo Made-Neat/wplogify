@@ -129,14 +129,14 @@ class Plugin_Tracker {
 		$event_type = "Plugin $verb";
 
 		// If we have both the old and new versions, show this.
-		$properties  = array();
+		$props       = array();
 		$new_version = $upgrader->new_plugin_data['Version'] ?? null;
 		if ( $old_version && $new_version && $old_version !== $new_version ) {
-			Property::update_array( $properties, 'version', null, $old_version, $new_version );
+			Property_Array::set( $props, 'version', null, $old_version, $new_version );
 		}
 
 		// Log the event.
-		Logger::log_event( $event_type, $plugin, null, $properties );
+		Logger::log_event( $event_type, $plugin, null, $props );
 	}
 
 	/**

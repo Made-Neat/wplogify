@@ -483,7 +483,7 @@ class Log_Page {
 
 			case 'post':
 				// Get the post type. It might be in the properties.
-				$prop      = Property::get_from_array( $event->properties, 'post_type' );
+				$prop      = $event->get_prop( 'post_type' );
 				$post_type = $prop->val ?? null;
 
 				// If not, we can get it from the post.
@@ -505,7 +505,7 @@ class Log_Page {
 
 			case 'term':
 				// Get the taxonomy. It might be in the properties.
-				$prop     = Property::get_from_array( $event->properties, 'taxonomy' );
+				$prop     = $event->get_prop( 'taxonomy' );
 				$taxonomy = $prop->val ?? null;
 
 				// If not, we can get it from the term.

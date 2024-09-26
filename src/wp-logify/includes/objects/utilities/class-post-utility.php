@@ -91,35 +91,35 @@ class Post_Utility extends Object_Utility {
 		$props = array();
 
 		// Link.
-		Property::update_array( $props, 'link', null, Object_Reference::new_from_wp_object( $post ) );
+		Property_Array::set( $props, 'link', null, Object_Reference::new_from_wp_object( $post ) );
 
 		// ID.
-		Property::update_array( $props, 'ID', $wpdb->posts, $post_id );
+		Property_Array::set( $props, 'ID', $wpdb->posts, $post_id );
 
 		// Post type.
-		Property::update_array( $props, 'post_type', $wpdb->posts, $post->post_type );
+		Property_Array::set( $props, 'post_type', $wpdb->posts, $post->post_type );
 
 		// Post author.
 		$author = new Object_Reference( 'user', $post->post_author );
-		Property::update_array( $props, 'post_author', $wpdb->posts, $author );
+		Property_Array::set( $props, 'post_author', $wpdb->posts, $author );
 
 		// Post status.
-		Property::update_array( $props, 'post_status', $wpdb->posts, $post->post_status );
+		Property_Array::set( $props, 'post_status', $wpdb->posts, $post->post_status );
 
 		// Post date.
-		Property::update_array( $props, 'post_date', $wpdb->posts, self::get_created_datetime( $post ) );
+		Property_Array::set( $props, 'post_date', $wpdb->posts, self::get_created_datetime( $post ) );
 
 		// Post modified.
-		Property::update_array( $props, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
+		Property_Array::set( $props, 'post_modified', $wpdb->posts, self::get_last_modified_datetime( $post ) );
 
 		// Post content, only if not empty.
 		if ( $post->post_content ) {
-			Property::update_array( $props, 'post_content', $wpdb->posts, Strings::get_snippet( $post->post_content, 100 ) );
+			Property_Array::set( $props, 'post_content', $wpdb->posts, Strings::get_snippet( $post->post_content, 100 ) );
 		}
 
 		// Post excerpt, only if not empty.
 		if ( $post->post_excerpt ) {
-			Property::update_array( $props, 'post_excerpt', $wpdb->posts, Strings::get_snippet( $post->post_excerpt, 100 ) );
+			Property_Array::set( $props, 'post_excerpt', $wpdb->posts, Strings::get_snippet( $post->post_excerpt, 100 ) );
 		}
 
 		// For nav menu items, get the menu item's core properties and merge them into the properties array.
@@ -131,7 +131,7 @@ class Post_Utility extends Object_Utility {
 		// For images, include the alt text.
 		if ( $post->post_type === 'attachment' && Media_Utility::get_media_type( $post_id ) === 'image' ) {
 			$alt_text = get_post_meta( $post_id, '_wp_attachment_image_alt', true );
-			Property::update_array( $props, '_wp_attachment_image_alt', $wpdb->postmeta, $alt_text );
+			Property_Array::set( $props, '_wp_attachment_image_alt', $wpdb->postmeta, $alt_text );
 		}
 
 		return $props;
@@ -301,7 +301,7 @@ class Post_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $props, $key, $wpdb->posts, $value );
+			Property_Array::set( $props, $key, $wpdb->posts, $value );
 		}
 
 		// Add the meta properties.
@@ -314,7 +314,7 @@ class Post_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $props, $key, $wpdb->postmeta, $value );
+			Property_Array::set( $props, $key, $wpdb->postmeta, $value );
 		}
 
 		return $props;
@@ -444,7 +444,7 @@ class Post_Utility extends Object_Utility {
 
 			// If so, add the property.
 			if ( $diff ) {
-				Property::update_array( $props, $key, $wpdb->posts, $val, $new_val );
+				Property_Array::set( $props, $key, $wpdb->posts, $val, $new_val );
 			}
 		}
 
@@ -467,7 +467,7 @@ class Post_Utility extends Object_Utility {
 
 			// If so, add the property.
 			if ( $diff ) {
-				Property::update_array( $props, $key, $wpdb->postmeta, $val, $new_val );
+				Property_Array::set( $props, $key, $wpdb->postmeta, $val, $new_val );
 			}
 		}
 

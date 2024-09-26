@@ -102,7 +102,7 @@ class Term_Tracker {
 				}
 
 				// Update the property's before and after values.
-				Property::update_array( self::$properties, $key, $wpdb->terms, $val, $new_val );
+				Property_Array::set( self::$properties, $key, $wpdb->terms, $val, $new_val );
 
 				// Note there were changes.
 				$changed = true;

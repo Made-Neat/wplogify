@@ -104,25 +104,25 @@ class User_Utility extends Object_Utility {
 		}
 
 		// Build the array of properties.
-		$properties = array();
+		$props = array();
 
 		// Display name.
-		Property::update_array( $properties, 'display_name', $wpdb->users, Object_Reference::new_from_wp_object( $user ) );
+		Property_Array::set( $props, 'display_name', $wpdb->users, Object_Reference::new_from_wp_object( $user ) );
 
 		// ID.
-		Property::update_array( $properties, 'ID', $wpdb->users, (int) $user->ID );
+		Property_Array::set( $props, 'ID', $wpdb->users, (int) $user->ID );
 
 		// User login.
-		Property::update_array( $properties, 'user_login', $wpdb->users, $user->user_login );
+		Property_Array::set( $props, 'user_login', $wpdb->users, $user->user_login );
 
 		// User email.
-		Property::update_array( $properties, 'user_email', $wpdb->users, self::get_email_link( $user ) );
+		Property_Array::set( $props, 'user_email', $wpdb->users, self::get_email_link( $user ) );
 
 		// User registered.
 		$user_registered = DateTimes::create_datetime( $user->data->user_registered, 'UTC' );
-		Property::update_array( $properties, 'user_registered', $wpdb->users, $user_registered );
+		Property_Array::set( $props, 'user_registered', $wpdb->users, $user_registered );
 
-		return $properties;
+		return $props;
 	}
 
 	/**
@@ -213,7 +213,7 @@ class User_Utility extends Object_Utility {
 			$user = self::load( $user );
 		}
 
-		$properties = array();
+		$props = array();
 
 		// Add the base properties.
 		foreach ( $user->data as $key => $value ) {
@@ -227,7 +227,7 @@ class User_Utility extends Object_Utility {
 			}
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->users, $value );
+			Property_Array::set( $props, $key, $wpdb->users, $value );
 		}
 
 		// Add the meta properties.
@@ -240,10 +240,10 @@ class User_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $properties, $key, $wpdb->usermeta, $value );
+			Property_Array::set( $props, $key, $wpdb->usermeta, $value );
 		}
 
-		return $properties;
+		return $props;
 	}
 
 	/**

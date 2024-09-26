@@ -93,7 +93,7 @@ class Comment_Tracker {
 
 			// If there's a difference, update the properties.
 			if ( $diff ) {
-				Property::update_array( self::$properties, $key, $wpdb->comments, $val, $new_val );
+				Property_Array::set( self::$properties, $key, $wpdb->comments, $val, $new_val );
 			}
 		}
 
@@ -168,7 +168,7 @@ class Comment_Tracker {
 
 		// Store the old and new status in a property.
 		$props = array();
-		Property::update_array( $props, 'status', null, $old_status, $new_status );
+		Property_Array::set( $props, 'status', null, $old_status, $new_status );
 
 		// Log the event.
 		Logger::log_event( $event_type, $comment, null, $props );
@@ -197,8 +197,8 @@ class Comment_Tracker {
 			// Store some additional properties.
 			$props      = array();
 			$old_status = Comment_Utility::approved_to_status( $approved );
-			Property::update_array( $props, 'status', null, $old_status, 'post-trashed' );
-			Property::update_array( $props, 'post', null, $post_ref );
+			Property_Array::set( $props, 'status', null, $old_status, 'post-trashed' );
+			Property_Array::set( $props, 'post', null, $post_ref );
 
 			// Log the event.
 			Logger::log_event( 'Comment Trashed with Post', $comment, null, $props );
@@ -233,8 +233,8 @@ class Comment_Tracker {
 
 			// Store some additional properties.
 			$props = array();
-			Property::update_array( $props, 'status', null, 'post-trashed', $new_status );
-			Property::update_array( $props, 'post', null, $post_ref );
+			Property_Array::set( $props, 'status', null, 'post-trashed', $new_status );
+			Property_Array::set( $props, 'post', null, $post_ref );
 
 			// Log the event.
 			Logger::log_event( 'Comment Restored', $comment, null, $props );

@@ -72,16 +72,16 @@ class Option_Utility extends Object_Utility {
 		}
 
 		// Build the array of properties.
-		$properties = array();
+		$props = array();
 
 		// Name.
-		Property::update_array( $properties, 'name', $wpdb->options, $option_name );
+		Property_Array::set( $props, 'name', $wpdb->options, $option_name );
 
 		// Value.
 		$option_value = Types::process_database_value( $option_name, $option_value );
-		Property::update_array( $properties, 'value', $wpdb->options, $option_value );
+		Property_Array::set( $props, 'value', $wpdb->options, $option_value );
 
-		return $properties;
+		return $props;
 	}
 
 	/**

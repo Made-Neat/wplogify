@@ -100,11 +100,11 @@ class Menu_Item_Utility extends Object_Utility {
 		$props = array();
 
 		// Link.
-		Property::update_array( $props, 'link', $wpdb->posts, self::get_linked_object( $post_id ) );
+		Property_Array::set( $props, 'link', $wpdb->posts, self::get_linked_object( $post_id ) );
 
 		// Convert the menu item details to properties.
 		foreach ( $details as $key => $value ) {
-			Property::update_array( $props, $key, $wpdb->postmeta, $value );
+			Property_Array::set( $props, $key, $wpdb->postmeta, $value );
 		}
 		return $props;
 	}
@@ -259,8 +259,8 @@ class Menu_Item_Utility extends Object_Utility {
 		}
 
 		// Try to get the link from the event properties.
-		$prop = Property::get_from_array( $event->properties, 'link' );
-		if ( ! empty( $prop->val ) ) {
+		$prop = $event->get_prop( 'link' );
+		if ( $prop && $prop->val ) {
 			// Convert the linked object to a string.
 			return Types::value_to_string( $prop->val );
 		}

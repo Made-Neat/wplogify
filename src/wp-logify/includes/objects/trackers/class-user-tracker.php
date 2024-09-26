@@ -136,7 +136,7 @@ class User_Tracker {
 		global $wpdb;
 
 		// Get the user's properties.
-		$properties = User_Utility::get_properties( $user );
+		$props = User_Utility::get_properties( $user );
 
 		// Get the posts authored by this user.
 		$sql_posts = $wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id );
@@ -162,7 +162,7 @@ class User_Tracker {
 		}
 
 		// Log the event.
-		Logger::log_event( 'User Deleted', $user, self::$eventmetas, $properties );
+		Logger::log_event( 'User Deleted', $user, self::$eventmetas, $props );
 	}
 
 	/**

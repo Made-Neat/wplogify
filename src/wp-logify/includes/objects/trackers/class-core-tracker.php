@@ -48,7 +48,7 @@ class Core_Tracker {
 
 		// Get the properties.
 		$props = array();
-		Property::update_array( $props, 'version', null, $old_version, $wp_version );
+		Property_Array::set( $props, 'version', null, $old_version, $wp_version );
 
 		// Log the event.
 		$core_ref = new Object_Reference( 'core', $wp_version );

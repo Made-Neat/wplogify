@@ -109,7 +109,7 @@ class Widget_Tracker {
 
 					if ( $diff ) {
 						// Record the property change.
-						Property::update_array( $props, $key, null, $old_widget_value, $new_widget_value );
+						Property_Array::set( $props, $key, null, $old_widget_value, $new_widget_value );
 					}
 				}
 

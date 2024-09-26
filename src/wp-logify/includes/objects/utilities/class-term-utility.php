@@ -88,21 +88,21 @@ class Term_Utility extends Object_Utility {
 		$props = array();
 
 		// Name.
-		Property::update_array( $props, 'name', $wpdb->terms, Object_Reference::new_from_wp_object( $term ) );
+		Property_Array::set( $props, 'name', $wpdb->terms, Object_Reference::new_from_wp_object( $term ) );
 
 		// ID.
-		Property::update_array( $props, 'term_id', $wpdb->terms, $term->term_id );
+		Property_Array::set( $props, 'term_id', $wpdb->terms, $term->term_id );
 
 		// Taxonomy.
-		Property::update_array( $props, 'taxonomy', $wpdb->term_taxonomy, $term->taxonomy );
+		Property_Array::set( $props, 'taxonomy', $wpdb->term_taxonomy, $term->taxonomy );
 
 		// Slug.
-		Property::update_array( $props, 'slug', $wpdb->terms, $term->slug );
+		Property_Array::set( $props, 'slug', $wpdb->terms, $term->slug );
 
 		// Parent.
 		if ( $term->parent ) {
 			$parent = new Object_Reference( 'term', $term->parent );
-			Property::update_array( $props, 'parent', $wpdb->term_taxonomy, $parent );
+			Property_Array::set( $props, 'parent', $wpdb->term_taxonomy, $parent );
 		}
 
 		return $props;
@@ -168,7 +168,7 @@ class Term_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $props, $key, $wpdb->terms, $value );
+			Property_Array::set( $props, $key, $wpdb->terms, $value );
 		}
 
 		// Add the meta properties.
@@ -181,7 +181,7 @@ class Term_Utility extends Object_Utility {
 			$value = Types::process_database_value( $key, $value );
 
 			// Construct the new Property object and add it to the properties array.
-			Property::update_array( $props, $key, $wpdb->termmeta, $value );
+			Property_Array::set( $props, $key, $wpdb->termmeta, $value );
 		}
 
 		return $props;

@@ -228,10 +228,10 @@ class Event {
 			$object_props = array();
 		}
 
-		// Include any other properties we received.
+		// Add any other properties we received. This could overwrite some core ones.
 		if ( ! empty( $properties ) ) {
 			foreach ( $properties as $prop ) {
-				Property::add_to_array( $object_props, $prop );
+				Property_Array::add( $object_props, $prop );
 			}
 		}
 
@@ -387,8 +387,8 @@ class Event {
 	 * @param string $prop_key The property key.
 	 * @return bool True if the property exists, false otherwise.
 	 */
-	public function has_prop( string $prop_key ) {
-		return self::get_prop( $prop_key ) !== null;
+	public function has_prop( string $prop_key ): bool {
+		return Property_Array::has( $this->properties, $prop_key );
 	}
 
 	/**
@@ -398,7 +398,7 @@ class Event {
 	 * @return ?Property The property or null if not set.
 	 */
 	public function get_prop( string $prop_key ): ?Property {
-		return Property::get_from_array( $this->properties, $prop_key );
+		return Property_Array::get( $this->properties, $prop_key );
 	}
 
 	/**
@@ -408,37 +408,15 @@ class Event {
 	 * @param ?string $table_name The table name the property came from.
 	 * @param mixed   $val        The old or current value.
 	 * @param mixed   $new_val    The new value.
-	 * @return bool True if a new property was created, false if an existing one was updated.
 	 */
-	public function set_prop( string $prop_key, ?string $table_name, mixed $val, mixed $new_val = null ): bool {
-		// If the properties array is not set, create it.
+	public function set_prop( string $prop_key, ?string $table_name, mixed $val, mixed $new_val = null ) {
+		// If the properties array hasn't been created yet, do it now.
 		if ( ! isset( $this->properties ) ) {
 			$this->properties = array();
 		}
 
 		// Update the properties array.
-		return Property::update_array( $this->properties, $prop_key, $table_name, $val, $new_val );
-	}
-
-	/**
-	 * Set multiple properties at once.
-	 *
-	 * @param array $props The properties to set.
-	 */
-	public function set_props( array $props ) {
-		foreach ( $props as $prop ) {
-			$this->set_prop( $prop->key, $prop->table_name, $prop->val, $prop->new_val );
-		}
-	}
-
-	/**
-	 * Remove an event property.
-	 *
-	 * @param string $prop_key The key of the property to remove.
-	 * @return ?Property The removed property.
-	 */
-	public function remove_prop( string $prop_key ): ?Property {
-		return Property::remove_from_array( $this->properties, $prop_key );
+		Property_Array::set( $this->properties, $prop_key, $table_name, $val, $new_val );
 	}
 
 	/**
@@ -447,10 +425,35 @@ class Event {
 	 * If there is already a property with this key, it will be replaced.
 	 *
 	 * @param Property The property to add to the event.
-	 * @return bool True if the new property was added, false if an existing one was replaced.
 	 */
-	public function add_prop( Property $prop ): bool {
-		return Property::add_to_array( $this->properties, $prop );
+	public function add_prop( Property $prop ) {
+		// If the properties array hasn't been created yet, do it now.
+		if ( ! isset( $this->properties ) ) {
+			$this->properties = array();
+		}
+
+		// Update the properties array.
+		Property_Array::add( $this->properties, $prop );
+	}
+
+	/**
+	 * Add multiple properties to the event.
+	 *
+	 * @param array $props The properties to add.
+	 */
+	public function add_props( array $props ) {
+		foreach ( $props as $prop ) {
+			$this->add_prop( $prop );
+		}
+	}
+
+	/**
+	 * Remove an event property.
+	 *
+	 * @param string $prop_key The key of the property to remove.
+	 */
+	public function remove_prop( string $prop_key ) {
+		Property_Array::remove( $this->properties, $prop_key );
 	}
 
 	/**
@@ -460,8 +463,15 @@ class Event {
 	 * @return mixed The current or old value.
 	 */
 	public function get_prop_val( string $prop_key ): mixed {
+		// Try to get the property.
 		$prop = $this->get_prop( $prop_key );
-		return $prop->val ?? null;
+
+		// If the property is not found, throw an exception.
+		if ( $prop === null ) {
+			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
+		}
+
+		return $prop->val;
 	}
 
 	/**
@@ -491,8 +501,15 @@ class Event {
 	 * @return mixed The new value of the property.
 	 */
 	public function get_prop_new_val( string $prop_key ): mixed {
+		// Try to get the property.
 		$prop = $this->get_prop( $prop_key );
-		return $prop->new_val ?? null;
+
+		// If the property is not found, throw an exception.
+		if ( $prop === null ) {
+			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
+		}
+
+		return $prop->new_val;
 	}
 
 	/**
@@ -610,8 +627,8 @@ class Event {
 		}
 
 		// If we couldn't load the post (it may have been deleted), check the object properties.
-		$prop = Property::get_from_array( $this->properties, 'post_type' );
-		if ( isset( $prop->val ) ) {
+		$prop = $this->get_prop( 'post_type' );
+		if ( $prop ) {
 			return $prop->val === 'nav_menu_item';
 		}
 

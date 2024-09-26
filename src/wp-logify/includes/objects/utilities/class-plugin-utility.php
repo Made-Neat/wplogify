@@ -96,16 +96,16 @@ class Plugin_Utility extends Object_Utility {
 		// Name or link. Use the link if there is one, otherwise use the name.
 		if ( $plugin['PluginURI'] ) {
 			$link = "<a href='{$plugin['PluginURI']}' target='_blank'>{$plugin['Name']}</a>";
-			Property::update_array( $props, 'link', null, $link );
+			Property_Array::set( $props, 'link', null, $link );
 		} else {
-			Property::update_array( $props, 'name', null, $plugin['Name'] );
+			Property_Array::set( $props, 'name', null, $plugin['Name'] );
 		}
 
 		// Slug.
-		Property::update_array( $props, 'slug', null, $plugin['slug'] );
+		Property_Array::set( $props, 'slug', null, $plugin['slug'] );
 
 		// Version.
-		Property::update_array( $props, 'version', null, $plugin['Version'] );
+		Property_Array::set( $props, 'version', null, $plugin['Version'] );
 
 		// Author. Use the link if there is one.
 		if ( $plugin['AuthorURI'] ) {
@@ -113,7 +113,7 @@ class Plugin_Utility extends Object_Utility {
 		} else {
 			$author = $plugin['AuthorName'];
 		}
-		Property::update_array( $props, 'author', null, $author );
+		Property_Array::set( $props, 'author', null, $author );
 
 		return $props;
 	}
