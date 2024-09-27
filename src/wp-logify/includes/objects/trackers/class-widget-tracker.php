@@ -54,7 +54,7 @@ class Widget_Tracker {
 		}
 
 		// Beyond this point we're only interested in changes to widget details.
-		if ( ! Strings::starts_with( $option, 'widget_' ) ) {
+		if ( ! str_starts_with( $option, 'widget_' ) ) {
 			return;
 		}
 
@@ -130,7 +130,7 @@ class Widget_Tracker {
 	 */
 	public static function on_updated_option( $option, $old_option_value, $new_option_value ) {
 		// Beyond this point we're only interested in changes to widget details.
-		if ( ! Strings::starts_with( $option, 'widget_' ) ) {
+		if ( ! str_starts_with( $option, 'widget_' ) ) {
 			return;
 		}
 

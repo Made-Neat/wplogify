@@ -66,16 +66,11 @@ class Menu_Item_Utility extends Object_Utility {
 		}
 
 		// Return the menu item name.
-		switch ( $details['_menu_item_type'] ) {
-			case 'post_type':
-				return Post_Utility::get_name( $details['_menu_item_object_id'] );
-
-			case 'taxonomy':
-				return Term_Utility::get_name( $details['_menu_item_object_id'] );
-
-			case 'custom':
-				return $menu_item->post_title;
-		}
+		return match ( $details['_menu_item_type'] ) {
+			'post_type' => Post_Utility::get_name( $details['_menu_item_object_id'] ),
+			'taxonomy'  => Term_Utility::get_name( $details['_menu_item_object_id'] ),
+			'custom'    => $menu_item->post_title
+		};
 	}
 
 	/**
@@ -223,20 +218,12 @@ class Menu_Item_Utility extends Object_Utility {
 		}
 
 		// Return the linked object.
-		switch ( $info['_menu_item_type'] ) {
-			case 'post_type':
-				return new Object_Reference( 'post', $info['_menu_item_object_id'] );
-
-			case 'taxonomy':
-				return new Object_Reference( 'term', $info['_menu_item_object_id'] );
-
-			case 'custom':
-				$url       = $info['_menu_item_url'];
-				$link_text = $post->post_title;
-				return "<a href='$url' class='wp-logify-object' target='_blank'>$link_text</a>";
-		}
-
-		return null;
+		return match ( $info['_menu_item_type'] ) {
+			'post_type' => new Object_Reference( 'post', $info['_menu_item_object_id'] ),
+			'taxonomy'  => new Object_Reference( 'term', $info['_menu_item_object_id'] ),
+			'custom'    => "<a href='{$info['_menu_item_url']}' class='wp-logify-object' target='_blank'>{$post->post_title}</a>",
+			default     => null
+		};
 	}
 
 	/**

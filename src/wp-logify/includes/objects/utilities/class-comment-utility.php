@@ -218,16 +218,11 @@ class Comment_Utility extends Object_Utility {
 	 * @return string The status string.
 	 */
 	public static function approved_to_status( string $comment_approved ) {
-		switch ( $comment_approved ) {
-			case '0':
-				return 'unapproved';
-
-			case '1':
-				return 'approved';
-
-			default:
-				return $comment_approved;
-		}
+		return match ( $comment_approved ) {
+			'0'     => 'unapproved',
+			'1'     => 'approved',
+			default => $comment_approved
+		};
 	}
 
 	/**

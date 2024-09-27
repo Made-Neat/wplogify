@@ -7,6 +7,8 @@
 
 namespace WP_Logify;
 
+use Exception;
+
 /**
  * Class WP_Logify\Cron
  *
@@ -37,23 +39,13 @@ class Cron {
 		// Calculate the number of days to keep records.
 		$quantity = Plugin_Settings::get_keep_period_quantity();
 		$units    = Plugin_Settings::get_keep_period_units();
-		switch ( $units ) {
-			case 'day':
-				$days = $quantity;
-				break;
-
-			case 'week':
-				$days = $quantity * 7;
-				break;
-
-			case 'month':
-				$days = $quantity * 30.436875;
-				break;
-
-			case 'year':
-				$days = $quantity * 365.2425;
-				break;
-		}
+		$days     = match ( $units ) {
+			'day'   => $quantity,
+			'week'  => $quantity * DateTimes::DAYS_PER_WEEK,
+			'month' => $quantity * DateTimes::DAYS_PER_MONTH,
+			'year'  => $quantity * DateTimes::DAYS_PER_YEAR,
+			default => throw new Exception( "Invalid unit: $units" ),
+		};
 		$days = absint( ceil( $days ) );
 
 		// Delete old records.

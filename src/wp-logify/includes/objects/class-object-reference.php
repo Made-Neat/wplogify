@@ -120,18 +120,11 @@ class Object_Reference {
 		} elseif ( is_array( $wp_object ) ) {
 			// An array could be a plugin or a widget, which we can identify by the object_type key.
 			$type = $wp_object['object_type'];
-			switch ( $type ) {
-				case 'plugin':
-					$key = $wp_object['slug'];
-					break;
-
-				case 'widget':
-					$key = $wp_object['widget_id'];
-					break;
-
-				default:
-					throw new Exception( "Unknown or unsupported object type: $type" );
-			}
+			$key  = match ( $type ) {
+				'plugin' => $wp_object['slug'],
+				'widget' => $wp_object['widget_id'],
+				default  => throw new Exception( "Unknown or unsupported object type: $type" )
+			};
 		} else {
 			throw new Exception( 'Unknown or unsupported object type: ' . get_class( $wp_object ) );
 		}

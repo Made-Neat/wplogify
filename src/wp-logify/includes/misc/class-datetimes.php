@@ -34,6 +34,27 @@ class DateTimes {
 	public const MYSQL_DATETIME_ZERO = '0000-00-00 00:00:00';
 
 	/**
+	 * The number of days in a week.
+	 *
+	 * @var int
+	 */
+	public const DAYS_PER_WEEK = 7;
+
+	/**
+	 * The average number of days in a calendar month.
+	 *
+	 * @var float
+	 */
+	public const DAYS_PER_MONTH = 30.436875;
+
+	/**
+	 * The average number of days in a calendar year.
+	 *
+	 * @var float
+	 */
+	public const DAYS_PER_YEAR = 365.2425;
+
+	/**
 	 * Constructs a DateTime object from a given datetime string.
 	 *
 	 * Returns null if the datetime string is null, zero, or otherwise invalid.

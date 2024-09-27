@@ -374,46 +374,21 @@ class Post_Utility extends Object_Utility {
 		}
 
 		// Generate the event type verb from the new status.
-		switch ( $new_status ) {
-			case 'publish':
-				return 'Published';
-
-			case 'draft':
-				return 'Drafted';
-
-			case 'pending':
-				return 'Pending';
-
-			case 'private':
-				return 'Privatized';
-
-			case 'trash':
-				return 'Trashed';
-
-			case 'auto-draft':
-				return 'Auto-drafted';
-
-			case 'inherit':
-				return 'Inherited';
-
-			case 'future':
-				return 'Scheduled';
-
-			case 'request-pending':
-				return 'Request Pending';
-
-			case 'request-confirmed':
-				return 'Request Confirmed';
-
-			case 'request-failed':
-				return 'Request Failed';
-
-			case 'request-completed':
-				return 'Request Completed';
-
-			default:
-				return 'Status Changed';
-		}
+		return match ( $new_status ) {
+			'publish'           => 'Published',
+			'draft'             => 'Drafted',
+			'pending'           => 'Pending',
+			'private'           => 'Privatized',
+			'trash'             => 'Trashed',
+			'auto-draft'        => 'Auto-drafted',
+			'inherit'           => 'Inherited',
+			'future'            => 'Scheduled',
+			'request-pending'   => 'Request Pending',
+			'request-confirmed' => 'Request Confirmed',
+			'request-failed'    => 'Request Failed',
+			'request-completed' => 'Request Completed',
+			default             => 'Status Changed',
+		};
 	}
 
 	/**

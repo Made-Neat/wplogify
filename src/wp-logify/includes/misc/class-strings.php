@@ -156,28 +156,6 @@ class Strings {
 	}
 
 	/**
-	 * Check if a string starts with a prefix.
-	 *
-	 * @param string $str    The string to check.
-	 * @param string $prefix The prefix to check for.
-	 * @return bool Whether the string starts with the prefix.
-	 */
-	public static function starts_with( string $str, string $prefix ): bool {
-		return substr( $str, 0, strlen( $prefix ) ) === $prefix;
-	}
-
-	/**
-	 * Check if a string ends with a suffix.
-	 *
-	 * @param string $str    The string to check.
-	 * @param string $suffix The suffix to check for.
-	 * @return bool Whether the string ends with the suffix.
-	 */
-	public static function ends_with( string $str, string $suffix ): bool {
-		return substr( $str, -strlen( $suffix ) ) === $suffix;
-	}
-
-	/**
 	 * Get a snippet from a piece of content.
 	 *
 	 * @param string $content The content.

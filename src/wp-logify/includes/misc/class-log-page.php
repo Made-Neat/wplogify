@@ -447,6 +447,54 @@ class Log_Page {
 	}
 
 	/**
+	 * Get the title for a post type event.
+	 *
+	 * @param Event $event The event object.
+	 * @return string The post type title.
+	 */
+	public static function get_post_type_title( $event ) {
+		// Get the post type. It might be in the properties.
+		$post_type = $event->get_prop( 'post_type' )?->val;
+
+		// If not, we can get it from the post.
+		if ( ! $post_type ) {
+			$post_type = $event->get_object()?->post_type;
+		}
+
+		// If we have a post type, get the singular name.
+		if ( $post_type ) {
+			return Post_Utility::get_post_type_singular_name( $post_type );
+		} else {
+			// Otherwise, default to 'Post'.
+			return 'Post';
+		}
+	}
+
+	/**
+	 * Get the title for a term type event.
+	 *
+	 * @param Event $event The event object.
+	 * @return string The term type title.
+	 */
+	public static function get_term_type_title( $event ) {
+		// Get the taxonomy. It might be in the properties.
+		$taxonomy = $event->get_prop( 'taxonomy' )?->val;
+
+		// If not, we can get it from the term.
+		if ( ! $taxonomy ) {
+			$taxonomy = $event->get_object()?->taxonomy;
+		}
+
+		// If we have a taxonomy, get the singular name.
+		if ( $taxonomy ) {
+			return Taxonomy_Utility::get_singular_name( $taxonomy );
+		} else {
+			// Otherwise, default to 'Term'.
+			return 'Term';
+		}
+	}
+
+	/**
 	 * Format object properties.
 	 *
 	 * @param Event $event The event.
@@ -472,64 +520,13 @@ class Log_Page {
 		$html = "<div class='wp-logify-details-section wp-logify-properties-section'>\n";
 
 		// Get the title given the object type.
-		switch ( $event->object_type ) {
-			case 'user':
-				$object_type_title = 'Account';
-				break;
-
-			case 'option':
-				$object_type_title = 'Setting';
-				break;
-
-			case 'post':
-				// Get the post type. It might be in the properties.
-				$prop      = $event->get_prop( 'post_type' );
-				$post_type = $prop->val ?? null;
-
-				// If not, we can get it from the post.
-				if ( ! $post_type ) {
-					$obj = $event->get_object();
-					if ( ! empty( $obj->post_type ) ) {
-						$post_type = $obj->post_type;
-					}
-				}
-
-				// If we have a post type, get the singular name.
-				if ( $post_type ) {
-					$object_type_title = Post_Utility::get_post_type_singular_name( $post_type );
-				} else {
-					// Otherwise, default to 'Post'.
-					$object_type_title = 'Post';
-				}
-				break;
-
-			case 'term':
-				// Get the taxonomy. It might be in the properties.
-				$prop     = $event->get_prop( 'taxonomy' );
-				$taxonomy = $prop->val ?? null;
-
-				// If not, we can get it from the term.
-				if ( ! $taxonomy ) {
-					$obj = $event->get_object();
-					if ( ! empty( $obj->taxonomy ) ) {
-						$taxonomy = $obj->taxonomy;
-					}
-				}
-
-				// If we have a taxonomy, get the singular name.
-				if ( $taxonomy ) {
-					$object_type_title = Taxonomy_Utility::get_singular_name( $taxonomy );
-				} else {
-					// Otherwise, default to 'Term'.
-					$object_type_title = 'Term';
-				}
-				break;
-
-			default:
-				// Default is upper-case-first the object-type (e.g. 'Plugin').
-				$object_type_title = Strings::key_to_label( $event->object_type, true );
-				break;
-		}
+		$object_type_title = match ( $event->object_type ) {
+			'user'   => 'Account',
+			'option' => 'Setting',
+			'post'   => self::get_post_type_title( $event ),
+			'term'   => self::get_term_type_title( $event ),
+			default  => Strings::key_to_label( $event->object_type, true ),
+		};
 
 		$html .= "<h4>$object_type_title Details</h4>\n";
 

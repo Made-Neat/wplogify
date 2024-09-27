@@ -71,7 +71,7 @@ class Option_Tracker {
 				self::$event = Event::create( 'Settings Updated', $object_ref );
 			}
 
-			if ( Strings::ends_with( $option_name, '_category' ) ) {
+			if ( str_ends_with( $option_name, '_category' ) ) {
 				// Convert categories to links.
 				$val     = new Object_Reference( 'term', $val );
 				$new_val = new Object_Reference( 'term', $new_val );
