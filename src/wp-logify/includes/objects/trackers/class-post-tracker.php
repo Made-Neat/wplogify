@@ -210,7 +210,7 @@ class Post_Tracker {
 			$event = self::get_update_post_event( 'Updated', $post_after );
 
 			// Add the changed properties to the event.
-			$event->set_props( $props );
+			$event->add_props( $props );
 		}
 	}
 
@@ -478,7 +478,7 @@ class Post_Tracker {
 		// For normal post types (not menu items), add all the object's properties (including
 		// metadata), in case we want to restore it later.
 		if ( $post->post_type !== 'nav_menu_item' ) {
-			$event->set_props( Post_Utility::get_properties( $post ) );
+			$event->add_props( Post_Utility::get_properties( $post ) );
 		}
 
 		// Save the event to the log.

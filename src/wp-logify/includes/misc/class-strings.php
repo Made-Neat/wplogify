@@ -290,5 +290,6 @@ class Strings {
 		'user registered'          => 'Registered (UTC)',
 		'user_nicename'            => 'Nice name',
 		'user_pass'                => 'Password',
+		'WPLANG'                   => 'Site language',
 	);
 }

@@ -292,7 +292,7 @@ class Media_Tracker {
 		// NOTE: This will probably have to change when we update the data model to distinguish
 		// NOTE: between properties we want to show for user information, vs. those we want to keep
 		// NOTE: for undo actions.
-		$event->set_props( Post_Utility::get_properties( $post ) );
+		$event->add_props( Post_Utility::get_properties( $post ) );
 
 		// Save the event to the log.
 		$event->save();
