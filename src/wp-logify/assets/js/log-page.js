@@ -196,7 +196,8 @@ jQuery(($) => {
         }
         $('#wp-logify-object-type-checkboxes input[type="checkbox"]').each((index, element) => {
             let checked = (selectedObjectTypes && typeof selectedObjectTypes === 'object'
-                && element.value in selectedObjectTypes) ? !!selectedObjectTypes[element.value] : true;
+                && element.value in selectedObjectTypes)
+                ? Boolean(selectedObjectTypes[element.value]) : true;
             $(element).prop('checked', checked);
         });
         // Update state of 'All' checkbox to match state of others.

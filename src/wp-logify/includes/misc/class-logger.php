@@ -25,17 +25,17 @@ class Logger {
 	 * @var string[]
 	 */
 	public const VALID_OBJECT_TYPES = array(
-		'comment'     => 'Comment',
-		'plugin'      => 'Plugin',
-		'post'        => 'Post',
-		'option'      => 'Setting',
-		'taxonomy'    => 'Taxonomy',
-		'term'        => 'Term',
-		'theme'       => 'Theme',
-		'translation' => 'Translation',
-		'user'        => 'User',
-		'widget'      => 'Widget',
-		'core'        => 'WP Core',
+		'comment'  => 'Comment',
+		'plugin'   => 'Plugin',
+		'post'     => 'Post',
+		'option'   => 'Setting',
+		'taxonomy' => 'Taxonomy',
+		'term'     => 'Term',
+		'theme'    => 'Theme',
+		// 'translation' => 'Translation',
+		'user'     => 'User',
+		'widget'   => 'Widget',
+		'core'     => 'WP Core',
 	);
 
 	/**
