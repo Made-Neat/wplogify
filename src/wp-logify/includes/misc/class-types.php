@@ -165,7 +165,7 @@ class Types {
 			$html = "<table>\n";
 
 			// Check if the array is a list.
-			$is_list = array_is_list( $value );
+			$is_list = Arrays::is_list( $value );
 
 			foreach ( $value as $key2 => $value2 ) {
 				// Start the table row.

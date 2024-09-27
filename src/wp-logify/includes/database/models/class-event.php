@@ -196,7 +196,7 @@ class Event {
 				|| ! Access_Control::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() )
 			)
 		) {
-			debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked.", func_get_args() );
+			debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
 			return null;
 		}
 
