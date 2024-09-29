@@ -531,6 +531,16 @@ class Post_Tracker {
 	}
 
 	/**
+	 * Convert a set of term IDs to an array of Object_Reference objects.
+	 *
+	 * @param Set $term_ids Set of term IDs.
+	 * @return array Array of Object_Reference objects.
+	 */
+	private static function convert_term_ids_to_references( Set $term_ids ): array {
+		return array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_ids->items() );
+	}
+
+	/**
 	 * Fires immediately after an object-term relationship is added.
 	 *
 	 * @param int      $post_id     Post ID.
@@ -550,10 +560,6 @@ class Post_Tracker {
 		if ( self::$terms ) {
 			// Loop through the taxonomies and create a log entry for each.
 			foreach ( self::$terms as $taxonomy => $term_changes ) {
-				// Get some useful information.
-				$terms_were_added   = empty( $term_changes['added'] ) ? 0 : count( $term_changes['added'] );
-				$terms_were_removed = empty( $term_changes['removed'] ) ? 0 : count( $term_changes['removed'] );
-
 				// Get the taxonomy object and name.
 				$taxonomy_obj  = get_taxonomy( $taxonomy );
 				$taxonomy_name = $taxonomy_obj->label;
@@ -562,9 +568,9 @@ class Post_Tracker {
 				$metas = array();
 
 				// Show the added terms in the eventmetas.
-				if ( $terms_were_added ) {
+				if ( ! $term_changes['added']->isEmpty() ) {
 					// Convert term IDs to Object_Reference objects.
-					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['added'] );
+					$term_refs = self::convert_term_ids_to_references( $term_changes['added'] );
 					if ( $post->post_type === 'nav_menu_item' ) {
 						$meta_key = strtolower( $taxonomy_name );
 					} else {
@@ -574,9 +580,9 @@ class Post_Tracker {
 				}
 
 				// Show the removed terms in the eventmetas.
-				if ( $terms_were_removed ) {
+				if ( ! $term_changes['removed']->isEmpty() ) {
 					// Convert term IDs to Object_Reference objects.
-					$term_refs = array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_changes['removed'] );
+					$term_refs = self::convert_term_ids_to_references( $term_changes['removed'] );
 					$meta_key  = 'removed_' . $taxonomy_name;
 					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
@@ -605,13 +611,24 @@ class Post_Tracker {
 	 * @param string $change   The change type ('added' or 'removed').
 	 * @param int    $term_id  The term ID.
 	 */
-	public static function add_term( string $taxonomy, string $change, int $term_id ) {
+	private static function add_term( string $taxonomy, string $change, int $term_id ) {
 		// Prepare the array if necessary.
-		if ( ! isset( self::$terms[ $taxonomy ][ $change ] ) ) {
-			self::$terms[ $taxonomy ][ $change ] = array();
+		if ( ! isset( self::$terms[ $taxonomy ] ) ) {
+			self::$terms[ $taxonomy ] = array(
+				'added'   => new Set(),
+				'removed' => new Set(),
+			);
 		}
 
-		// Add the term to the array.
-		Arrays::add_if_new( self::$terms[ $taxonomy ][ $change ], $term_id );
+		// Get the opposite change.
+		$opposite_change = $change === 'added' ? 'removed' : 'added';
+
+		// If the reverse of the change is already recorded, remove it.
+		if ( self::$terms[ $taxonomy ][ $opposite_change ]->contains( $term_id ) ) {
+			self::$terms[ $taxonomy ][ $opposite_change ]->remove( $term_id );
+		} else {
+			// Add the term to the 'added' or 'removed' set as required.
+			self::$terms[ $taxonomy ][ $change ]->add( $term_id );
+		}
 	}
 }

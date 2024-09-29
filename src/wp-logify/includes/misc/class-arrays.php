@@ -13,18 +13,6 @@ namespace WP_Logify;
 class Arrays {
 
 	/**
-	 * Add a value to an array if it's not already in the array.
-	 *
-	 * @param array $array1 The array to add to.
-	 * @param mixed $value  The value to add.
-	 */
-	public static function add_if_new( array &$array1, mixed $value ) {
-		if ( ! in_array( $value, $array1, true ) ) {
-			$array1[] = $value;
-		}
-	}
-
-	/**
 	 * Checks if an array is a list.
 	 *
 	 * An array is considered a list if its keys are sequential integers starting from 0.

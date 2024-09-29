@@ -94,6 +94,7 @@ require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-logger.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-main.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-plugin-settings.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-serialization.php';
+require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-set.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-strings.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-types.php';
 require_once WP_LOGIFY_PLUGIN_DIR . 'includes/misc/class-urls.php';
