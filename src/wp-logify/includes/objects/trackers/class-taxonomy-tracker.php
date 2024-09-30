@@ -30,19 +30,15 @@ class Taxonomy_Tracker {
 	public static function on_init() {
 		// Get the core properties of the current taxonomies.
 		$current_taxonomies = Taxonomy_Utility::get_current_taxonomies_core_properties();
-		// debug( 'current_taxonomies', $current_taxonomies );
 
 		// Get the taxonomies remembered by WP Logify.
 		$known_taxonomies = get_option( 'wp_logify_known_taxonomies', array() );
-		// debug( 'known_taxonomies', $known_taxonomies );
 
 		// Find the new ones.
 		$new_taxonomies = array_diff_key( $current_taxonomies, $known_taxonomies );
-		// debug( 'new_taxonomies', $new_taxonomies );
 
 		// Find the removed ones.
 		$removed_taxonomies = array_diff_key( $known_taxonomies, $current_taxonomies );
-		// debug( 'removed_taxonomies', $removed_taxonomies );
 
 		// Log events for added taxonomies.
 		foreach ( $new_taxonomies as $taxonomy => $taxonomy_info ) {

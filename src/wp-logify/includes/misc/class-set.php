@@ -84,9 +84,10 @@ class Set implements Countable, IteratorAggregate {
 	}
 
 	/**
-	 * Add an array of item to the set.
+	 * Add multiple items to the set.
+	 *
 	 * Note, this method will recursively flatten nested arrays.
-	 * No items added to the set will be arrays.
+	 * No arrays will be added to the set.
 	 *
 	 * @param array $items The items to add.
 	 * @return self The set with the items added.

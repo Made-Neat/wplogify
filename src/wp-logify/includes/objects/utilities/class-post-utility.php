@@ -429,7 +429,6 @@ class Post_Utility extends Object_Utility {
 
 		// Collect all the keys.
 		$keys = array_unique( array_merge( array_keys( $postmeta_before ), array_keys( $postmeta_after ) ) );
-		// debug( $keys );
 
 		// Go through the meta keys looking for changes.
 		foreach ( $keys as $key ) {

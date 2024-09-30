@@ -39,6 +39,11 @@ function debug_var_to_string( mixed $value ): string {
  * @param mixed ...$args The variable(s) to dump.
  */
 function debug( ...$args ) {
+	// Check if debug logging is enabled.
+	if ( ! ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) ) {
+		return;
+	}
+
 	// If no arguments are provided, do nothing.
 	if ( empty( $args ) ) {
 		return;

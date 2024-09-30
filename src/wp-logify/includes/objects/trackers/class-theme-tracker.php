@@ -98,10 +98,6 @@ class Theme_Tracker {
 			return;
 		}
 
-		// debug( '$_POST', $_POST );
-		// debug( '$upgrader->new_theme_data', $upgrader->new_theme_data );
-		// debug( '$upgrader->result', $upgrader->result );
-
 		// Try to load the theme.
 		$theme_loaded = false;
 

@@ -18,13 +18,6 @@ class Plugin_Settings {
 	// Default values for settings.
 
 	/**
-	 * The default value for the 'API key' setting.
-	 *
-	 * @var string
-	 */
-	private const DEFAULT_API_KEY = '';
-
-	/**
 	 * The default value for the 'delete on uninstall' setting.
 	 *
 	 * @var bool
@@ -53,32 +46,18 @@ class Plugin_Settings {
 	private const DEFAULT_SHOW_IN_ADMIN_BAR = true;
 
 	/**
-	 * The default value for the 'keep forever' setting.
-	 *
-	 * @var bool
-	 */
-	private const DEFAULT_KEEP_FOREVER = true;
-
-	/**
 	 * The default value for the 'keep period quantity' setting.
 	 *
 	 * @var int
 	 */
-	private const DEFAULT_KEEP_PERIOD_QUANTITY = 1;
+	private const DEFAULT_KEEP_PERIOD_QUANTITY = 12;
 
 	/**
 	 * The default value for the 'keep period units' setting.
 	 *
 	 * @var string
 	 */
-	private const DEFAULT_KEEP_PERIOD_UNITS = 'year';
-
-	/**
-	 * The default value for the 'WP-Cron tracking' setting.
-	 *
-	 * @var bool
-	 */
-	private const DEFAULT_WP_CRON_TRACKING = false;
+	private const DEFAULT_KEEP_PERIOD_UNITS = 'month';
 
 	/**
 	 * Get the names of all current roles.
@@ -105,15 +84,6 @@ class Plugin_Settings {
 	 * Registers the settings for the WP Logify plugin.
 	 */
 	public static function register_settings() {
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_api_key',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => self::DEFAULT_API_KEY,
-			)
-		);
 		register_setting(
 			'wp_logify_settings_group',
 			'wp_logify_delete_on_uninstall',
@@ -161,15 +131,6 @@ class Plugin_Settings {
 		);
 		register_setting(
 			'wp_logify_settings_group',
-			'wp_logify_keep_forever',
-			array(
-				'type'              => 'boolean',
-				'sanitize_callback' => 'rest_sanitize_boolean',
-				'default'           => self::DEFAULT_KEEP_FOREVER,
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
 			'wp_logify_keep_period_quantity',
 			array(
 				'type'              => 'integer',
@@ -184,15 +145,6 @@ class Plugin_Settings {
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
 				'default'           => self::DEFAULT_KEEP_PERIOD_UNITS,
-			)
-		);
-		register_setting(
-			'wp_logify_settings_group',
-			'wp_logify_wp_cron_tracking',
-			array(
-				'type'              => 'boolean',
-				'sanitize_callback' => 'rest_sanitize_boolean',
-				'default'           => self::DEFAULT_WP_CRON_TRACKING,
 			)
 		);
 	}
@@ -276,15 +228,6 @@ class Plugin_Settings {
 	// Functions to get the current values of settings.
 
 	/**
-	 * Retrieves the value of the 'API key' setting.
-	 *
-	 * @return string The API key.
-	 */
-	public static function get_api_key(): string {
-		return get_option( 'wp_logify_api_key', self::DEFAULT_API_KEY );
-	}
-
-	/**
 	 * Retrieves the value of the 'delete on uninstall' setting.
 	 *
 	 * @return bool The delete on uninstall setting.
@@ -330,15 +273,6 @@ class Plugin_Settings {
 	}
 
 	/**
-	 * Retrieves the value of the 'keep forever' setting.
-	 *
-	 * @return bool The keep forever setting.
-	 */
-	public static function get_keep_forever(): bool {
-		return get_option( 'wp_logify_keep_forever', self::DEFAULT_KEEP_FOREVER );
-	}
-
-	/**
 	 * Retrieves the value of the 'keep period quantity' setting.
 	 *
 	 * @return int The keep period quantity setting.
@@ -354,14 +288,5 @@ class Plugin_Settings {
 	 */
 	public static function get_keep_period_units(): string {
 		return get_option( 'wp_logify_keep_period_units', self::DEFAULT_KEEP_PERIOD_UNITS );
-	}
-
-	/**
-	 * Retrieves the value of the 'WP-Cron tracking' setting.
-	 *
-	 * @return bool The WP-Cron tracking setting.
-	 */
-	public static function get_wp_cron_tracking(): bool {
-		return get_option( 'wp_logify_wp_cron_tracking', self::DEFAULT_WP_CRON_TRACKING );
 	}
 }

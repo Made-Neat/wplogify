@@ -116,7 +116,6 @@ class Logger {
 		// Save any unsaved events.
 		foreach ( self::$current_events as $event ) {
 			if ( $event->is_new() ) {
-				debug( "Saving '{$event->event_type}' event in Logger::on_shutdown" );
 				$event->save();
 			}
 		}

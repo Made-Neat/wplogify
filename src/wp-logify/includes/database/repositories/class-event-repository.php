@@ -451,7 +451,6 @@ class Event_Repository extends Repository {
 			// Set the object subtype to the post type.
 			if ( $post_type ) {
 				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $post_type, $record['event_id'] );
-				// debug( $update_sql );
 				$wpdb->query( $update_sql );
 			}
 		}
@@ -486,7 +485,6 @@ class Event_Repository extends Repository {
 			// Set the object subtype to the taxonomy.
 			if ( $taxonomy ) {
 				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $taxonomy, $record['event_id'] );
-				// debug( $update_sql );
 				$wpdb->query( $update_sql );
 			}
 		}

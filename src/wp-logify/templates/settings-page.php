@@ -60,29 +60,22 @@ namespace WP_Logify;
 					<th scope="row">How long to keep log records</th>
 					<td>
 						<?php
-						$keep_forever = Plugin_Settings::get_keep_forever();
-						$quantity     = Plugin_Settings::get_keep_period_quantity();
-						$units        = Plugin_Settings::get_keep_period_units();
+						$quantity = Plugin_Settings::get_keep_period_quantity();
+						$units    = Plugin_Settings::get_keep_period_units();
 						?>
-						<label class="wp-logify-settings-radio">
-							<input type="radio" name="wp_logify_keep_forever" value="true" <?php checked( $keep_forever, true ); ?>> Forever
-						</label>
-						<label class="wp-logify-settings-radio">
-							<input type="radio" name="wp_logify_keep_forever" value="false" <?php checked( $keep_forever, false ); ?>>
-							<select name="wp_logify_keep_period_quantity">
-								<?php
-								for ( $i = 1; $i <= 10; $i++ ) {
-									echo '<option value="' . $i . '" ' . selected( $quantity, $i ) . '>' . $i . '</option>';
-								}
-								?>
-							</select>
-							<select name="wp_logify_keep_period_units">
-								<option value="day" <?php selected( $units, 'day' ); ?>>days</option>
-								<option value="week" <?php selected( $units, 'week' ); ?>>weeks</option>
-								<option value="month" <?php selected( $units, 'month' ); ?>>months</option>
-								<option value="year" <?php selected( $units, 'year' ); ?>>years</option>
-							</select>
-						</label>
+						<select name="wp_logify_keep_period_quantity">
+							<?php
+							for ( $i = 1; $i <= 12; $i++ ) {
+								echo '<option value="' . $i . '" ' . selected( $quantity, $i ) . '>' . $i . '</option>';
+							}
+							?>
+						</select>
+						<select name="wp_logify_keep_period_units">
+							<option value="day" <?php selected( $units, 'day' ); ?>>days</option>
+							<option value="week" <?php selected( $units, 'week' ); ?>>weeks</option>
+							<option value="month" <?php selected( $units, 'month' ); ?>>months</option>
+							<!-- <option value="year" <?php selected( $units, 'year' ); ?>>years</option> -->
+						</select>
 					</td>
 				</tr>
 				<tr valign="top">
@@ -102,10 +95,6 @@ namespace WP_Logify;
 			<legend>Additional settings</legend>
 			<table class="form-table wp-logify-settings-table">
 				<tr valign="top">
-					<th scope="row">API Key</th>
-					<td><input type="text" id="wp-logify-api-key" name="wp_logify_api_key" value="<?php echo esc_attr( Plugin_Settings::get_api_key() ); ?>" /></td>
-				</tr>
-				<tr valign="top">
 					<th scope="row">Roles to track</th>
 					<td>
 						<?php
@@ -121,10 +110,6 @@ namespace WP_Logify;
 				<tr valign="top">
 					<th scope="row">Show submenu in admin bar</th>
 					<td><input type="checkbox" name="wp_logify_show_in_admin_bar" value="1" <?php checked( Plugin_Settings::get_show_in_admin_bar(), 1 ); ?> /></td>
-				</tr>
-				<tr valign="top">
-					<th scope="row">WP-Cron Tracking</th>
-					<td><input type="checkbox" name="wp_logify_wp_cron_tracking" value="1" <?php checked( Plugin_Settings::get_wp_cron_tracking(), 1 ); ?> /></td>
 				</tr>
 			</table>
 		</fieldset>

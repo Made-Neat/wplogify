@@ -31,11 +31,6 @@ class Cron {
 	public static function cleanup_old_records() {
 		global $wpdb;
 
-		// Check if we need to delete any old records.
-		if ( Plugin_Settings::get_keep_forever() ) {
-			return;
-		}
-
 		// Calculate the number of days to keep records.
 		$quantity = Plugin_Settings::get_keep_period_quantity();
 		$units    = Plugin_Settings::get_keep_period_units();

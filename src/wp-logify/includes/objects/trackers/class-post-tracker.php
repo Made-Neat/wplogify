@@ -235,7 +235,7 @@ class Post_Tracker {
 			return;
 		}
 
-		// debug( 'Post_Tracker::on_update_post_meta', func_get_args() );
+		debug( 'Post_Tracker::on_update_post_meta' );
 
 		// Get the current value.
 		$current_value = get_post_meta( $post_id, $meta_key, true );

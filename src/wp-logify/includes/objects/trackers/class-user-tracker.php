@@ -62,6 +62,8 @@ class User_Tracker {
 		// User update.
 		add_action( 'profile_update', array( __CLASS__, 'on_profile_update' ), 10, 3 );
 		add_action( 'update_user_meta', array( __CLASS__, 'on_update_user_meta' ), 10, 4 );
+
+		// Shutdown hook.
 		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
