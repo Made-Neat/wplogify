@@ -276,8 +276,8 @@ class User_Tracker {
 		$event_type = 'User Active';
 		$now        = DateTimes::current_datetime();
 
-		// Check if this is a new or continuing session.
-		$continuing = false;
+		// Flags for whether or not we need to create a new event or update an existing one.
+		$create_new_event = true;
 
 		$event = Event_Repository::get_most_recent_event( $event_type );
 		if ( $event ) {
@@ -291,27 +291,30 @@ class User_Tracker {
 				// Get the duration in seconds.
 				$seconds_diff = $now->getTimestamp() - $activity_end_datetime->getTimestamp();
 
-				// If the current value for activity_end time is less than 10 minutes ago, we'll
-				// assume the current session is continuing, and update the activity_end time in the
-				// existing log entry to now.
+				// If the activity end time is less than 10 minutes ago, no need to create a new
+				// event.
 				if ( $seconds_diff <= self::MAX_BREAK_PERIOD ) {
-					$continuing = true;
+					$create_new_event = false;
 
-					// Update the activity end time.
-					$event->set_meta( 'activity_end', $now );
+					// If the activity end time is more than zero seconds but less than 10 minutes
+					// ago, update the existing event.
+					if ( $seconds_diff > 0 ) {
+						// Update the activity end time.
+						$event->set_meta( 'activity_end', $now );
 
-					// Update the duration.
-					// This could be calculated, but for now we'll just record the string.
-					$event->set_meta( 'activity_duration', DateTimes::get_duration_string( $activity_start_datetime, $now ) );
+						// Update the duration.
+						// This could be calculated, but for now we'll just record the string.
+						$event->set_meta( 'activity_duration', DateTimes::get_duration_string( $activity_start_datetime, $now ) );
 
-					// Save the updated event.
-					$event->save();
+						// Save the updated event.
+						$event->save();
+					}
 				}
 			}
 		}
 
 		// If we're not continuing an existing session, record the start of a new one.
-		if ( ! $continuing ) {
+		if ( $create_new_event ) {
 			// Create a new activity event.
 			$event = Event::create( $event_type, 'user', null, null, $user );
 
