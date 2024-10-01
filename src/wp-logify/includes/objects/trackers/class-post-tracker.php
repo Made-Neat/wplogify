@@ -501,7 +501,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_added_term_relationship' );
+		debug( 'on_added_term_relationship', $post_id, $tt_id, $taxonomy );
 
 		// Remember the newly attached term.
 		$term_id = Term_Utility::get_term_id_from_term_taxonomy_id( $tt_id );
@@ -521,7 +521,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_deleted_term_relationships' );
+		debug( 'on_deleted_term_relationships', $post_id, $tt_ids, $taxonomy );
 
 		// Remember the removed terms.
 		foreach ( $tt_ids as $tt_id ) {

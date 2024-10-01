@@ -196,7 +196,7 @@ class Term_Utility extends Object_Utility {
 	 * @param int $term_taxonomy_id The term taxonomy ID.
 	 * @return ?int The term ID on success, null on failure.
 	 */
-	public static function get_term_id_from_term_taxonomy_id( $term_taxonomy_id ) {
+	public static function get_term_id_from_term_taxonomy_id( $term_taxonomy_id ): ?int {
 		global $wpdb;
 
 		// Retrieve the term ID from the term_taxonomy_id.
@@ -211,9 +211,9 @@ class Term_Utility extends Object_Utility {
 	 * Get a WP_Term object, given a term_taxonomy_id.
 	 *
 	 * @param int $term_taxonomy_id The term taxonomy ID.
-	 * @return WP_Term|null WP_Term object on success, null on failure.
+	 * @return ?WP_Term WP_Term object on success, null on failure.
 	 */
-	public static function get_by_term_taxonomy_id( $term_taxonomy_id ) {
+	public static function get_by_term_taxonomy_id( $term_taxonomy_id ): ?WP_Term {
 		// Get the term ID.
 		$term_id = self::get_term_id_from_term_taxonomy_id( $term_taxonomy_id );
 

@@ -106,11 +106,18 @@ class Set implements Countable, IteratorAggregate {
 	/**
 	 * Remove an item from the set.
 	 *
-	 * @param mixed $item The item to remove.
+	 * @param mixed $item2 The item to remove.
 	 * @return self The set with the item removed.
 	 */
 	public function remove( $item ): self {
-		return $this->diff( new self( $item ) );
+		$new_items = array();
+		foreach ( $this->items as $item2 ) {
+			if ( $item !== $item2 ) {
+				$new_items[] = $item2;
+			}
+		}
+		$this->items = $new_items;
+		return $this;
 	}
 
 	/**
