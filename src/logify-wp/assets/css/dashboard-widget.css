@@ -1,0 +1,141 @@
+.logify-wp-stats {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.logify-wp-stats-box {
+  flex: 1;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  text-align: center;
+  border: solid 1px hsl(0, 0%, 87%);
+  background-color: hsl(0, 0%, 97%);
+}
+
+.logify-wp-stats-number {
+  font-size: 4rem;
+  margin: 0;
+}
+
+.logify-wp-stats-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.logify-wp-widget-links {
+  margin: 0;
+  padding-bottom: 0.25rem;
+}
+.logify-wp-widget-links li {
+  display: inline;
+}
+.logify-wp-widget-links .logify-wp-separator {
+  color: hsl(0, 0%, 87%);
+  padding: 0 0.5rem;
+}
+
+#logify-wp-dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: solid 1px hsl(0, 0%, 50%);
+  margin: 1rem 0;
+}
+#logify-wp-dashboard-table .logify-wp-object-type-all {
+  background-color: white;
+  border-color: hsl(0, 0%, 93%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-all.shown, #logify-wp-dashboard-table .logify-wp-object-type-all:hover {
+  background-color: hsl(0, 0%, 93%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-comment {
+  background-color: hsl(180, 100%, 95%);
+  border-color: hsl(180, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-comment.shown, #logify-wp-dashboard-table .logify-wp-object-type-comment:hover {
+  background-color: hsl(180, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-core {
+  background-color: hsl(330, 100%, 95%);
+  border-color: hsl(330, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-core.shown, #logify-wp-dashboard-table .logify-wp-object-type-core:hover {
+  background-color: hsl(330, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-option {
+  background-color: hsl(270, 100%, 95%);
+  border-color: hsl(270, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-option.shown, #logify-wp-dashboard-table .logify-wp-object-type-option:hover {
+  background-color: hsl(270, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-plugin {
+  background-color: hsl(120, 100%, 95%);
+  border-color: hsl(120, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-plugin.shown, #logify-wp-dashboard-table .logify-wp-object-type-plugin:hover {
+  background-color: hsl(120, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-post {
+  background-color: hsl(210, 100%, 95%);
+  border-color: hsl(210, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-post.shown, #logify-wp-dashboard-table .logify-wp-object-type-post:hover {
+  background-color: hsl(210, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-taxonomy {
+  background-color: hsl(300, 100%, 95%);
+  border-color: hsl(300, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-taxonomy.shown, #logify-wp-dashboard-table .logify-wp-object-type-taxonomy:hover {
+  background-color: hsl(300, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-term {
+  background-color: hsl(0, 100%, 95%);
+  border-color: hsl(0, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-term.shown, #logify-wp-dashboard-table .logify-wp-object-type-term:hover {
+  background-color: hsl(0, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-theme {
+  background-color: hsl(30, 100%, 95%);
+  border-color: hsl(30, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-theme.shown, #logify-wp-dashboard-table .logify-wp-object-type-theme:hover {
+  background-color: hsl(30, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-translation {
+  background-color: hsl(150, 100%, 95%);
+  border-color: hsl(150, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-translation.shown, #logify-wp-dashboard-table .logify-wp-object-type-translation:hover {
+  background-color: hsl(150, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-user {
+  background-color: hsl(60, 100%, 95%);
+  border-color: hsl(60, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-user.shown, #logify-wp-dashboard-table .logify-wp-object-type-user:hover {
+  background-color: hsl(60, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-widget {
+  background-color: hsl(90, 100%, 95%);
+  border-color: hsl(90, 100%, 92%);
+}
+#logify-wp-dashboard-table .logify-wp-object-type-widget.shown, #logify-wp-dashboard-table .logify-wp-object-type-widget:hover {
+  background-color: hsl(90, 100%, 92%);
+}
+#logify-wp-dashboard-table th,
+#logify-wp-dashboard-table td {
+  border: 1px solid hsl(0, 0%, 87%);
+  padding: 0.5rem;
+}
+#logify-wp-dashboard-table th {
+  background-color: hsl(0, 0%, 97%);
+  text-align: left;
+}
+#logify-wp-dashboard-table .logify-wp-deleted-object {
+  font-style: italic;
+}
+#logify-wp-dashboard-table .logify-wp-event-row {
+  cursor: pointer;
+}

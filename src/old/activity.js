@@ -5,10 +5,10 @@
     function sendActivity() {
         $.ajax({
             type: 'POST',
-            url: wpLogifyActivity.ajax_url,
+            url: logifyWpActivity.ajax_url,
             data: {
                 action: 'track_user_activity',
-                nonce: wpLogifyActivity.nonce
+                nonce: logifyWpActivity.nonce
             },
             success: function (response) {
                 // console.log('User activity tracked', response);

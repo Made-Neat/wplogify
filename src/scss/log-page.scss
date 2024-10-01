@@ -1,10 +1,10 @@
 @import 'colors';
 
-.toplevel_page_wp-logify {
+.toplevel_page_logify-wp {
     background-color: $gray-93;
 }
 
-.table-wp-logify {
+.table-logify-wp {
     width: 100%;
     border-collapse: collapse;
 
@@ -43,11 +43,11 @@
     }
 }
 
-#wp-logify-activity-log_length {
+#logify-wp-activity-log_length {
     margin-bottom: 1rem;
 }
 
-#wp-logify-activity-log_processing {
+#logify-wp-activity-log_processing {
     margin-top: -0.5rem;
     background: repeating-linear-gradient(45deg, $blue-95, $blue-95 1rem, white 1rem, white 2rem);
     background-size: 200% 200%;
@@ -65,11 +65,11 @@
     }
 }
 
-#wp-logify-activity-log {
+#logify-wp-activity-log {
     @include object-type-colors;
 
-    .wp-logify-summary-row,
-    .wp-logify-details-row {
+    .logify-wp-summary-row,
+    .logify-wp-details-row {
 
         &.shown,
         &:hover {
@@ -81,7 +81,7 @@
         }
     }
 
-    .wp-logify-show-details {
+    .logify-wp-show-details {
         background-color: $gray-93;
         color: $blue-33;
         padding: 0.25rem 0.5rem;
@@ -89,7 +89,7 @@
         cursor: pointer;
     }
 
-    .wp-logify-deleted-object {
+    .logify-wp-deleted-object {
         font-style: italic;
     }
 }
@@ -103,15 +103,15 @@
     width: 20rem;
 }
 
-.wp-logify-details {
+.logify-wp-details {
     margin-bottom: 1rem;
 
-    .wp-logify-details-section {
+    .logify-wp-details-section {
         display: inline-block;
         margin-left: 1rem;
         vertical-align: top;
 
-        .wp-logify-details-table-wrapper {
+        .logify-wp-details-table-wrapper {
             max-height: 32rem;
             overflow-y: auto;
         }
@@ -129,19 +129,19 @@
             margin-bottom: 0.25rem;
         }
 
-        .wp-logify-details-table {
+        .logify-wp-details-table {
             >tbody>tr {
                 >td {
                     background-color: white;
 
-                    &.wp-logify-value-unchanged {
+                    &.logify-wp-value-unchanged {
                         background-color: $gray-97;
                     }
                 }
             }
         }
 
-        .wp-logify-user-details-table {
+        .logify-wp-user-details-table {
             >tbody>tr {
                 >th {
                     width: 8rem;
@@ -153,7 +153,7 @@
             }
         }
 
-        .wp-logify-properties-table {
+        .logify-wp-properties-table {
             >tbody>tr {
                 >th {
                     width: 14rem;
@@ -165,7 +165,7 @@
             }
         }
 
-        .wp-logify-eventmeta-table {
+        .logify-wp-eventmeta-table {
             >tbody>tr {
                 >th {
                     width: 14rem;
@@ -179,7 +179,7 @@
     }
 }
 
-.wp-logify-user-info {
+.logify-wp-user-info {
     display: inline-block;
     vertical-align: top;
     margin-left: 0.5rem;
@@ -188,18 +188,18 @@
         font-weight: bold;
     }
 
-    .wp-logify-user-role {
+    .logify-wp-user-role {
         font-size: 0.9em;
         color: $gray-33;
     }
 }
 
-#wp-logify-object-type-filter {
+#logify-wp-object-type-filter {
     margin-top: 1rem;
 
     @include object-type-colors;
 
-    .wp-logify-object-type-filter-item {
+    .logify-wp-object-type-filter-item {
         display: inline-block;
         padding: 0.25rem;
         border-radius: 0.25rem;
@@ -218,17 +218,17 @@
         }
     }
 
-    .wp-logify-object-type-all {
+    .logify-wp-object-type-all {
         border-color: $gray-87;
         margin-top: 0;
     }
 }
 
-#wp-logify-object-type-checkboxes {
+#logify-wp-object-type-checkboxes {
     display: inline;
 }
 
-#wp-logify-filters {
+#logify-wp-filters {
     border-collapse: collapse;
     margin: 1rem 0;
     background-color: $gray-97;
@@ -240,7 +240,7 @@
         vertical-align: top;
     }
 
-    .wp-logify-filter-label {
+    .logify-wp-filter-label {
         margin-bottom: 0.25rem;
     }
 
@@ -269,11 +269,11 @@
     }
 }
 
-#wp-logify-search-filter,
-#wp-logify-post-type-filter,
-#wp-logify-taxonomy-filter,
-#wp-logify-user-filter,
-#wp-logify-role-filter,
-#wp-logify-event-type-filter {
+#logify-wp-search-filter,
+#logify-wp-post-type-filter,
+#logify-wp-taxonomy-filter,
+#logify-wp-user-filter,
+#logify-wp-role-filter,
+#logify-wp-event-type-filter {
     width: 20rem;
 }

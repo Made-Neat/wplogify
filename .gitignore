@@ -70,7 +70,6 @@ Thumbs.db
 
 # Backups
 backup/
-wp-logify-backup/
 
 # Log files
 log/

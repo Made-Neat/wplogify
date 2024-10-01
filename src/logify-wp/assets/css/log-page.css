@@ -1,0 +1,383 @@
+.toplevel_page_logify-wp {
+  background-color: hsl(0, 0%, 93%);
+}
+
+.table-logify-wp {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-logify-wp th,
+.table-logify-wp td {
+  border: 1px solid hsl(0, 0%, 87%);
+  padding: 0.5rem;
+}
+.table-logify-wp th {
+  background-color: hsl(0, 0%, 97%);
+  text-align: left;
+}
+.table-logify-wp th.dt-type-numeric.column-id {
+  text-align: left;
+}
+.table-logify-wp td {
+  cursor: pointer;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  padding: 0.2rem 0.5rem;
+}
+.dataTables_wrapper .dataTables_filter {
+  display: none;
+  /* Hide default DataTables search box */
+}
+.dataTables_wrapper .dataTables_length select {
+  width: 3.25rem;
+}
+
+#logify-wp-activity-log_length {
+  margin-bottom: 1rem;
+}
+
+#logify-wp-activity-log_processing {
+  margin-top: -0.5rem;
+  background: repeating-linear-gradient(45deg, hsl(210, 100%, 95%), hsl(210, 100%, 95%) 1rem, white 1rem, white 2rem);
+  background-size: 200% 200%;
+  animation: slide 60s linear infinite;
+  border: solid 1px hsl(210, 100%, 85%);
+}
+
+@keyframes slide {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0%;
+  }
+}
+#logify-wp-activity-log .logify-wp-object-type-all {
+  background-color: white;
+  border-color: hsl(0, 0%, 93%);
+}
+#logify-wp-activity-log .logify-wp-object-type-all.shown, #logify-wp-activity-log .logify-wp-object-type-all:hover {
+  background-color: hsl(0, 0%, 93%);
+}
+#logify-wp-activity-log .logify-wp-object-type-comment {
+  background-color: hsl(180, 100%, 95%);
+  border-color: hsl(180, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-comment.shown, #logify-wp-activity-log .logify-wp-object-type-comment:hover {
+  background-color: hsl(180, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-core {
+  background-color: hsl(330, 100%, 95%);
+  border-color: hsl(330, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-core.shown, #logify-wp-activity-log .logify-wp-object-type-core:hover {
+  background-color: hsl(330, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-option {
+  background-color: hsl(270, 100%, 95%);
+  border-color: hsl(270, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-option.shown, #logify-wp-activity-log .logify-wp-object-type-option:hover {
+  background-color: hsl(270, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-plugin {
+  background-color: hsl(120, 100%, 95%);
+  border-color: hsl(120, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-plugin.shown, #logify-wp-activity-log .logify-wp-object-type-plugin:hover {
+  background-color: hsl(120, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-post {
+  background-color: hsl(210, 100%, 95%);
+  border-color: hsl(210, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-post.shown, #logify-wp-activity-log .logify-wp-object-type-post:hover {
+  background-color: hsl(210, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-taxonomy {
+  background-color: hsl(300, 100%, 95%);
+  border-color: hsl(300, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-taxonomy.shown, #logify-wp-activity-log .logify-wp-object-type-taxonomy:hover {
+  background-color: hsl(300, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-term {
+  background-color: hsl(0, 100%, 95%);
+  border-color: hsl(0, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-term.shown, #logify-wp-activity-log .logify-wp-object-type-term:hover {
+  background-color: hsl(0, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-theme {
+  background-color: hsl(30, 100%, 95%);
+  border-color: hsl(30, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-theme.shown, #logify-wp-activity-log .logify-wp-object-type-theme:hover {
+  background-color: hsl(30, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-translation {
+  background-color: hsl(150, 100%, 95%);
+  border-color: hsl(150, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-translation.shown, #logify-wp-activity-log .logify-wp-object-type-translation:hover {
+  background-color: hsl(150, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-user {
+  background-color: hsl(60, 100%, 95%);
+  border-color: hsl(60, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-user.shown, #logify-wp-activity-log .logify-wp-object-type-user:hover {
+  background-color: hsl(60, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-widget {
+  background-color: hsl(90, 100%, 95%);
+  border-color: hsl(90, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-object-type-widget.shown, #logify-wp-activity-log .logify-wp-object-type-widget:hover {
+  background-color: hsl(90, 100%, 92%);
+}
+#logify-wp-activity-log .logify-wp-summary-row.shown > td,
+#logify-wp-activity-log .logify-wp-summary-row.shown > th, #logify-wp-activity-log .logify-wp-summary-row:hover > td,
+#logify-wp-activity-log .logify-wp-summary-row:hover > th,
+#logify-wp-activity-log .logify-wp-details-row.shown > td,
+#logify-wp-activity-log .logify-wp-details-row.shown > th,
+#logify-wp-activity-log .logify-wp-details-row:hover > td,
+#logify-wp-activity-log .logify-wp-details-row:hover > th {
+  border-color: hsl(0, 0%, 73%);
+}
+#logify-wp-activity-log .logify-wp-show-details {
+  background-color: hsl(0, 0%, 93%);
+  color: hsl(210, 100%, 33%);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+#logify-wp-activity-log .logify-wp-deleted-object {
+  font-style: italic;
+}
+
+.dt-search {
+  margin: 1rem 0 0.5rem 0;
+}
+
+#dt-search-0 {
+  background-color: white;
+  width: 20rem;
+}
+
+.logify-wp-details {
+  margin-bottom: 1rem;
+}
+.logify-wp-details .logify-wp-details-section {
+  display: inline-block;
+  margin-left: 1rem;
+  vertical-align: top;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-details-table-wrapper {
+  max-height: 32rem;
+  overflow-y: auto;
+}
+.logify-wp-details .logify-wp-details-section table {
+  border-collapse: collapse;
+}
+.logify-wp-details .logify-wp-details-section table th,
+.logify-wp-details .logify-wp-details-section table td {
+  vertical-align: top;
+}
+.logify-wp-details .logify-wp-details-section h4 {
+  margin-bottom: 0.25rem;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-details-table > tbody > tr > td {
+  background-color: white;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-details-table > tbody > tr > td.logify-wp-value-unchanged {
+  background-color: hsl(0, 0%, 97%);
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-user-details-table > tbody > tr > th {
+  width: 8rem;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-user-details-table > tbody > tr > td {
+  width: 22rem;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-properties-table > tbody > tr > th {
+  width: 14rem;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-properties-table > tbody > tr > td {
+  width: 24rem;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-eventmeta-table > tbody > tr > th {
+  width: 14rem;
+}
+.logify-wp-details .logify-wp-details-section .logify-wp-eventmeta-table > tbody > tr > td {
+  width: 22rem;
+}
+
+.logify-wp-user-info {
+  display: inline-block;
+  vertical-align: top;
+  margin-left: 0.5rem;
+}
+.logify-wp-user-info a {
+  font-weight: bold;
+}
+.logify-wp-user-info .logify-wp-user-role {
+  font-size: 0.9em;
+  color: hsl(0, 0%, 33%);
+}
+
+#logify-wp-object-type-filter {
+  margin-top: 1rem;
+}
+#logify-wp-object-type-filter .logify-wp-object-type-all {
+  background-color: white;
+  border-color: hsl(0, 0%, 93%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-all.shown, #logify-wp-object-type-filter .logify-wp-object-type-all:hover {
+  background-color: hsl(0, 0%, 93%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-comment {
+  background-color: hsl(180, 100%, 95%);
+  border-color: hsl(180, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-comment.shown, #logify-wp-object-type-filter .logify-wp-object-type-comment:hover {
+  background-color: hsl(180, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-core {
+  background-color: hsl(330, 100%, 95%);
+  border-color: hsl(330, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-core.shown, #logify-wp-object-type-filter .logify-wp-object-type-core:hover {
+  background-color: hsl(330, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-option {
+  background-color: hsl(270, 100%, 95%);
+  border-color: hsl(270, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-option.shown, #logify-wp-object-type-filter .logify-wp-object-type-option:hover {
+  background-color: hsl(270, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-plugin {
+  background-color: hsl(120, 100%, 95%);
+  border-color: hsl(120, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-plugin.shown, #logify-wp-object-type-filter .logify-wp-object-type-plugin:hover {
+  background-color: hsl(120, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-post {
+  background-color: hsl(210, 100%, 95%);
+  border-color: hsl(210, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-post.shown, #logify-wp-object-type-filter .logify-wp-object-type-post:hover {
+  background-color: hsl(210, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-taxonomy {
+  background-color: hsl(300, 100%, 95%);
+  border-color: hsl(300, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-taxonomy.shown, #logify-wp-object-type-filter .logify-wp-object-type-taxonomy:hover {
+  background-color: hsl(300, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-term {
+  background-color: hsl(0, 100%, 95%);
+  border-color: hsl(0, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-term.shown, #logify-wp-object-type-filter .logify-wp-object-type-term:hover {
+  background-color: hsl(0, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-theme {
+  background-color: hsl(30, 100%, 95%);
+  border-color: hsl(30, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-theme.shown, #logify-wp-object-type-filter .logify-wp-object-type-theme:hover {
+  background-color: hsl(30, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-translation {
+  background-color: hsl(150, 100%, 95%);
+  border-color: hsl(150, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-translation.shown, #logify-wp-object-type-filter .logify-wp-object-type-translation:hover {
+  background-color: hsl(150, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-user {
+  background-color: hsl(60, 100%, 95%);
+  border-color: hsl(60, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-user.shown, #logify-wp-object-type-filter .logify-wp-object-type-user:hover {
+  background-color: hsl(60, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-widget {
+  background-color: hsl(90, 100%, 95%);
+  border-color: hsl(90, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-widget.shown, #logify-wp-object-type-filter .logify-wp-object-type-widget:hover {
+  background-color: hsl(90, 100%, 92%);
+}
+#logify-wp-object-type-filter .logify-wp-object-type-filter-item {
+  display: inline-block;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  width: 6rem;
+  border-style: solid;
+  border-width: 1px;
+}
+#logify-wp-object-type-filter .logify-wp-object-type-filter-item label {
+  cursor: inherit;
+}
+#logify-wp-object-type-filter .logify-wp-object-type-filter-item:nth-child(-n+6) {
+  margin-bottom: 0.5rem;
+}
+#logify-wp-object-type-filter .logify-wp-object-type-all {
+  border-color: hsl(0, 0%, 87%);
+  margin-top: 0;
+}
+
+#logify-wp-object-type-checkboxes {
+  display: inline;
+}
+
+#logify-wp-filters {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background-color: hsl(0, 0%, 97%);
+}
+#logify-wp-filters td {
+  width: 400px;
+  padding: 1rem;
+  border: solid 1px hsl(0, 0%, 87%);
+  vertical-align: top;
+}
+#logify-wp-filters .logify-wp-filter-label {
+  margin-bottom: 0.25rem;
+}
+#logify-wp-filters .hasDatepicker {
+  background-image: url("../images/calendar.png");
+  background-position: right center;
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  padding-right: 0.25rem;
+  width: 11rem;
+}
+
+#ui-datepicker-div .ui-icon-circle-triangle-w {
+  background-image: url("../images/TriangleArrow-Left.svg");
+  background-position: 0.125rem 0.125rem;
+  background-size: 0.75rem 0.75rem;
+}
+#ui-datepicker-div .ui-icon-circle-triangle-e {
+  background-image: url("../images/TriangleArrow-Right.svg");
+  background-position: 0.125rem 0.125rem;
+  background-size: 0.75rem 0.75rem;
+}
+
+#logify-wp-search-filter,
+#logify-wp-post-type-filter,
+#logify-wp-taxonomy-filter,
+#logify-wp-user-filter,
+#logify-wp-role-filter,
+#logify-wp-event-type-filter {
+  width: 20rem;
+}

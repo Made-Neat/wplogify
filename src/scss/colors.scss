@@ -49,7 +49,7 @@ $danger: #dc3232;
 $danger-hover: lighten($danger, 5%);
 
 @mixin object-type-colors {
-    .wp-logify-object-type-all {
+    .logify-wp-object-type-all {
         background-color: white;
         border-color: $gray-93;
 
@@ -59,7 +59,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-comment {
+    .logify-wp-object-type-comment {
         background-color: $cyan-95;
         border-color: $cyan-92;
 
@@ -69,7 +69,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-core {
+    .logify-wp-object-type-core {
         background-color: $rose-95;
         border-color: $rose-92;
 
@@ -79,7 +79,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-option {
+    .logify-wp-object-type-option {
         background-color: $purple-95;
         border-color: $purple-92;
 
@@ -89,7 +89,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-plugin {
+    .logify-wp-object-type-plugin {
         background-color: $green-95;
         border-color: $green-92;
 
@@ -99,7 +99,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-post {
+    .logify-wp-object-type-post {
         background-color: $blue-95;
         border-color: $blue-92;
 
@@ -109,7 +109,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-taxonomy {
+    .logify-wp-object-type-taxonomy {
         background-color: $pink-95;
         border-color: $pink-92;
 
@@ -119,7 +119,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-term {
+    .logify-wp-object-type-term {
         background-color: $red-95;
         border-color: $red-92;
 
@@ -129,7 +129,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-theme {
+    .logify-wp-object-type-theme {
         background-color: $orange-95;
         border-color: $orange-92;
 
@@ -139,7 +139,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-translation {
+    .logify-wp-object-type-translation {
         background-color: $springgreen-95;
         border-color: $springgreen-92;
 
@@ -149,7 +149,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-user {
+    .logify-wp-object-type-user {
         background-color: $yellow-95;
         border-color: $yellow-92;
 
@@ -159,7 +159,7 @@ $danger-hover: lighten($danger, 5%);
         }
     }
 
-    .wp-logify-object-type-widget {
+    .logify-wp-object-type-widget {
         background-color: $chartreuse-95;
         border-color: $chartreuse-92;
 

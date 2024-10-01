@@ -1,10 +1,10 @@
 FROM php:8.0.30-fpm
 
 # Copy the PHP configuration file into the container.
-COPY wp-logify-php.ini /usr/local/etc/php/conf.d/
+COPY logify-wp-php.ini /usr/local/etc/php/conf.d/
 
 # Copy the custom PHP-FPM configuration file into the container.
-COPY wp-logify-php-fpm.conf /usr/local/etc/php-fpm.d/
+COPY logify-wp-php-fpm.conf /usr/local/etc/php-fpm.d/
 
 # Copy the custom PHP-FPM configuration file into the container.
 COPY phpinfo.php /var/www/html/
@@ -28,10 +28,10 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     mv wp-cli.phar /usr/local/bin/wp
 
 # Copy the start.sh script into the container.
-COPY wp-logify-start.sh /usr/local/bin/
+COPY logify-wp-start.sh /usr/local/bin/
 
 # Make sure the script is executable.
-RUN chmod +x /usr/local/bin/wp-logify-start.sh
+RUN chmod +x /usr/local/bin/logify-wp-start.sh
 
 # Use the start.sh script as the entrypoint
-ENTRYPOINT ["wp-logify-start.sh"]
+ENTRYPOINT ["logify-wp-start.sh"]

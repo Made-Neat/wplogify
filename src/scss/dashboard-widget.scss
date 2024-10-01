@@ -1,11 +1,11 @@
 @import 'colors';
 
-.wp-logify-stats {
+.logify-wp-stats {
     display: flex;
     gap: 0.5rem;
 }
 
-.wp-logify-stats-box {
+.logify-wp-stats-box {
     flex: 1;
     box-sizing: border-box;
     padding: 0.5rem;
@@ -14,17 +14,17 @@
     background-color: $gray-97;
 }
 
-.wp-logify-stats-number {
+.logify-wp-stats-number {
     font-size: 4rem;
     margin: 0;
 }
 
-.wp-logify-stats-title {
+.logify-wp-stats-title {
     margin: 0;
     font-size: 1rem;
 }
 
-.wp-logify-widget-links {
+.logify-wp-widget-links {
     margin: 0;
     padding-bottom: 0.25rem;
 
@@ -32,13 +32,13 @@
         display: inline;
     }
 
-    .wp-logify-separator {
+    .logify-wp-separator {
         color: $gray-87;
         padding: 0 0.5rem;
     }
 }
 
-#wp-logify-dashboard-table {
+#logify-wp-dashboard-table {
     width: 100%;
     border-collapse: collapse;
     border: solid 1px $gray-50;
@@ -57,11 +57,11 @@
         text-align: left;
     }
 
-    .wp-logify-deleted-object {
+    .logify-wp-deleted-object {
         font-style: italic;
     }
 
-    .wp-logify-event-row {
+    .logify-wp-event-row {
         cursor: pointer;
     }
 }

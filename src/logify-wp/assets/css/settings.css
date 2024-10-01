@@ -1,0 +1,53 @@
+body.logify-wp_page_logify-wp-settings {
+  background-color: hsl(0, 0%, 93%);
+}
+
+.wrap .logify-wp-settings-table {
+  width: 100%;
+}
+.wrap .logify-wp-settings-table th {
+  width: 16rem;
+}
+
+.logify-wp-settings-radio {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+#logify-wp-delete-logs-button {
+  background-color: #dc3232;
+  border-color: #dc3232;
+  color: white;
+  box-shadow: 0 0 0 1px #dc3232;
+}
+#logify-wp-delete-logs-button:hover {
+  background-color: #e04848;
+  border-color: #e04848;
+  box-shadow: 0 0 0 1px #e04848;
+}
+
+#logify-wp-submit-button {
+  width: 110px;
+}
+
+.logify-wp-settings-group {
+  border: solid 1px hsl(0, 0%, 80%);
+  border-radius: 0.5rem;
+  width: 40rem;
+  padding: 1rem;
+  background-color: hsl(0, 0%, 97%);
+  margin-top: 1rem;
+}
+.logify-wp-settings-group legend {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.logify-wp-role-access-msg {
+  color: hsl(0, 0%, 67%);
+}
+
+#logify-wp-settings-users {
+  max-height: 8rem;
+  overflow: auto;
+}

@@ -1,4 +1,4 @@
-# How to set up the local containers for WP Logify development.
+# How to set up the local containers for Logify WP development.
 
 ## Prerequisites
 
@@ -13,10 +13,10 @@ Adjust any other configuration settings in docker-compose.yml as needed for your
 
 1. **Update Hosts File**
 
-Add this line to your `/etc/hosts` file to map `wplogify.localhost` to `127.0.0.1`:
+Add this line to your `/etc/hosts` file to map `logifywp.localhost` to `127.0.0.1`:
 
 ```
-127.0.0.1   wplogify.localhost
+127.0.0.1   logifywp.localhost
 ```
 
 2. **Update Docker Compose File**
@@ -45,14 +45,14 @@ docker-compose up -d
 
 5. **Install WordPress**
 
-Open your browser and go to http://wplogify.localhost to complete the WordPress installation.
+Open your browser and go to http://logifywp.localhost to complete the WordPress installation.
 
 6. **Copy Plugin Code**
 
-Copy your plugin code to the wp-content/plugins/wp-logify directory:
+Copy your plugin code to the wp-content/plugins/logify-wp directory:
 
 ```
-cp -r /path/to/your/plugin wp-content/plugins/wp-logify
+cp -r /path/to/your/plugin wp-content/plugins/logify-wp
 ```
 
 Replace /path/to/your/plugin with the actual path to your plugin code.
