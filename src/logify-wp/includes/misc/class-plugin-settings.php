@@ -154,15 +154,13 @@ class Plugin_Settings {
 	 */
 	public static function delete_all() {
 		// Options that are registered settings.
-		delete_option( 'logify_wp_api_key' );
 		delete_option( 'logify_wp_delete_on_uninstall' );
 		delete_option( 'logify_wp_roles_to_track' );
 		delete_option( 'logify_wp_roles_with_access' );
 		delete_option( 'logify_wp_users_with_access' );
-		delete_option( 'logify_wp_keep_forever' );
+		delete_option( 'logify_wp_show_in_admin_bar' );
 		delete_option( 'logify_wp_keep_period_quantity' );
 		delete_option( 'logify_wp_keep_period_units' );
-		delete_option( 'logify_wp_wp_cron_tracking' );
 
 		// Additional options used by the plugin that aren't settings.
 		delete_option( 'logify_wp_known_taxonomies' );
