@@ -176,7 +176,7 @@ class Comment_Utility extends Object_Utility {
 		if ( is_int( $comment ) ) {
 			$comment = self::load( $comment );
 
-			// Handle the case where the comment no longer exists.
+			// Handle comment not found.
 			if ( ! $comment ) {
 				return null;
 			}

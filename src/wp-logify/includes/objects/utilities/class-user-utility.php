@@ -202,14 +202,19 @@ class User_Utility extends Object_Utility {
 	 * Get the properties of a user to show in the log.
 	 *
 	 * @param WP_User|int $user The user object or ID.
-	 * @return array The properties of the user.
+	 * @return ?Property[] The properties of the user, or null if not found.
 	 */
-	public static function get_properties( WP_User|int $user ): array {
+	public static function get_properties( WP_User|int $user ): ?array {
 		global $wpdb;
 
 		// Load the user if necessary.
 		if ( is_int( $user ) ) {
 			$user = self::load( $user );
+
+			// Handle user not found.
+			if ( ! $user ) {
+				return null;
+			}
 		}
 
 		$props = array();

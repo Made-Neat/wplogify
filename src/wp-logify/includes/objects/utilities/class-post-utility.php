@@ -279,14 +279,19 @@ class Post_Utility extends Object_Utility {
 	 * Get the properties of a post.
 	 *
 	 * @param WP_Post|int $post The post object or ID.
-	 * @return array The properties of the post.
+	 * @return ?Property[] The properties of the post.
 	 */
-	public static function get_properties( WP_Post|int $post ): array {
+	public static function get_properties( WP_Post|int $post ): ?array {
 		global $wpdb;
 
 		// Load the post if necessary.
 		if ( is_int( $post ) ) {
 			$post = self::load( $post );
+
+			// Handle post not found.
+			if ( ! $post ) {
+				return null;
+			}
 		}
 
 		$props = array();
@@ -399,7 +404,7 @@ class Post_Utility extends Object_Utility {
 	 * @param WP_Post $post_after  The post after the update.
 	 * @return Property[] The changes in the post.
 	 */
-	public static function get_changes( WP_Post $post_before, WP_Post $post_after ) {
+	public static function get_changes( WP_Post $post_before, WP_Post $post_after ): array {
 		global $wpdb;
 
 		$props = array();

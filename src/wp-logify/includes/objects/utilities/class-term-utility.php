@@ -147,14 +147,19 @@ class Term_Utility extends Object_Utility {
 	 * Extracts and returns term properties for logging.
 	 *
 	 * @param WP_Term|int $term The term object or ID.
-	 * @return array An associative array of term properties.
+	 * @return ?Property[] An associative array of term properties.
 	 */
-	public static function get_properties( WP_Term|int $term ) {
+	public static function get_properties( WP_Term|int $term ): ?array {
 		global $wpdb;
 
 		// Load the term if necessary.
 		if ( is_int( $term ) ) {
 			$term = self::load( $term );
+
+			// Handle term not found.
+			if ( ! $term ) {
+				return null;
+			}
 		}
 
 		// Start building the properties array.
