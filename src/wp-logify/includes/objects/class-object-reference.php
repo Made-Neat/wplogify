@@ -7,8 +7,8 @@
 
 namespace WP_Logify;
 
-use Exception;
 use Throwable;
+use UnexpectedValueException;
 use WP_Comment;
 use WP_Post;
 use WP_Taxonomy;
@@ -89,7 +89,7 @@ class Object_Reference {
 	 *
 	 * @param object|array $wp_object The WordPress object or array.
 	 * @return self The new Object_Reference.
-	 * @throws Exception If the object type is unknown or unsupported.
+	 * @throws UnexpectedValueException If the object type is unknown or unsupported.
 	 */
 	public static function new_from_wp_object( object|array $wp_object ): Object_Reference {
 		$type = null;
@@ -123,10 +123,10 @@ class Object_Reference {
 			$key  = match ( $type ) {
 				'plugin' => $wp_object['slug'],
 				'widget' => $wp_object['widget_id'],
-				default  => throw new Exception( "Unknown or unsupported object type: $type" )
+				default  => throw new UnexpectedValueException( "Unknown or unsupported object type: $type" )
 			};
 		} else {
-			throw new Exception( 'Unknown or unsupported object type: ' . get_class( $wp_object ) );
+			throw new UnexpectedValueException( 'Unknown or unsupported object type: ' . get_class( $wp_object ) );
 		}
 
 		return new Object_Reference( $type, $key );
@@ -152,7 +152,7 @@ class Object_Reference {
 	 * actually exists.
 	 *
 	 * @return string The utility class name.
-	 * @throws Exception If the object type is unknown.
+	 * @throws UnexpectedValueException If the object type is unknown.
 	 */
 	public function get_utility_class_name() {
 		// Get the fully-qualified name of the utility class for this object type.
@@ -160,7 +160,7 @@ class Object_Reference {
 
 		// If the class doesn't exist, throw an exception.
 		if ( ! class_exists( $class ) ) {
-			throw new Exception( "Invalid object type: $this->type" );
+			throw new UnexpectedValueException( "Invalid object type: $this->type" );
 		}
 
 		return $class;
@@ -223,8 +223,7 @@ class Object_Reference {
 	/**
 	 * Get the core properties of the object.
 	 *
-	 * @return ?array The core properties of the object or null if not found.
-	 * @throws Exception If the object type is unknown.
+	 * @return ?Property[] The core properties of the object or null if not found.
 	 */
 	public function get_core_properties(): ?array {
 		// Call the method on the utility class.
@@ -235,7 +234,6 @@ class Object_Reference {
 	 * Gets the link or span element showing the object name.
 	 *
 	 * @return string The HTML for the link or span element.
-	 * @throws Exception If the object type is invalid or the object ID is null.
 	 */
 	public function get_tag(): string {
 		// For options, show the option name(s).

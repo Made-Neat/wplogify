@@ -7,8 +7,9 @@
 
 namespace WP_Logify;
 
-use Exception;
 use InvalidArgumentException;
+use RuntimeException;
+use UnexpectedValueException;
 
 /**
  * Class responsible for managing properties in the database.
@@ -172,15 +173,15 @@ class Property_Repository extends Repository {
 	 *
 	 * @param array $record The database record as an associative array.
 	 * @return Property The Property object.
-	 * @throws Exception If the old or new value cannot be unserialized.
+	 * @throws UnexpectedValueException If the old or new value cannot be unserialized.
 	 */
 	public static function record_to_object( array $record ): Property {
 		// Unserialize the old and new values.
 		if ( ! Serialization::try_unserialize( $record['val'], $val ) ) {
-			throw new Exception( 'Failed to unserialize value.' );
+			throw new UnexpectedValueException( 'Failed to unserialize value.' );
 		}
 		if ( ! Serialization::try_unserialize( $record['new_val'], $new_val ) ) {
-			throw new Exception( 'Failed to unserialize new value.' );
+			throw new UnexpectedValueException( 'Failed to unserialize new value.' );
 		}
 
 		// Create the Property object.
@@ -246,7 +247,7 @@ class Property_Repository extends Repository {
 	 *
 	 * @param int $event_id The ID of the event.
 	 * @return bool True on success, false on failure.
-	 * @throws Exception If the delete fails.
+	 * @throws RuntimeException If the delete fails.
 	 */
 	public static function delete_by_event_id( int $event_id ): bool {
 		global $wpdb;
@@ -256,7 +257,7 @@ class Property_Repository extends Repository {
 
 		// Check for error.
 		if ( $result === false ) {
-			throw new Exception( "Failed to delete properties for event $event_id" );
+			throw new RuntimeException( "Failed to delete properties for event $event_id" );
 		}
 
 		return (bool) $result;

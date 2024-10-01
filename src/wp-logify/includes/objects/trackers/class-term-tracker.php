@@ -7,8 +7,7 @@
 
 namespace WP_Logify;
 
-use Exception;
-use WP_Term;
+use RuntimeException;
 
 /**
  * Class WP_Logify\Term_Tracker
@@ -124,7 +123,7 @@ class Term_Tracker {
 	 *
 	 * @param int    $term_id  Term ID.
 	 * @param string $taxonomy Taxonomy name.
-	 * @throws Exception If the term could not be retrieved.
+	 * @throws RuntimeException If the term could not be retrieved.
 	 */
 	public static function on_pre_delete_term( int $term_id, string $taxonomy ) {
 		global $wpdb;
@@ -141,7 +140,7 @@ class Term_Tracker {
 
 		// Handle error if the posts could not be retrieved.
 		if ( is_wp_error( $post_ids ) ) {
-			throw new Exception( "Failed to retrieve posts with term ID $term_id in taxonomy $taxonomy." );
+			throw new RuntimeException( "Failed to retrieve posts with term ID $term_id in taxonomy $taxonomy." );
 		}
 
 		// Convert the array of post IDs to an array of Object_Reference objects.

@@ -7,9 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
-use WP_Widget;
-
 /**
  * Class WP_Logify\Widget_Utility
  *
@@ -92,17 +89,16 @@ class Widget_Utility extends Object_Utility {
 	 * Get the core properties of a widget.
 	 *
 	 * @param int|string $widget_id The ID of the widget.
-	 * @return array The core properties of the widget.
-	 * @throws Exception If the widget no longer exists.
+	 * @return ?Property[] The core properties of the widget, or null if not found.
 	 */
-	public static function get_core_properties( int|string $widget_id ): array {
+	public static function get_core_properties( int|string $widget_id ): ?array {
 
 		// Load the widget.
 		$widget = self::load( $widget_id );
 
 		// Handle the case where the widget no longer exists.
 		if ( ! $widget ) {
-			throw new Exception( "Widget $widget_id not found." );
+			return null;
 		}
 
 		// Build the array of properties.

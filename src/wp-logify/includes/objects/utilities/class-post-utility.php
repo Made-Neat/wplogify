@@ -8,7 +8,7 @@
 namespace WP_Logify;
 
 use DateTime;
-use Exception;
+use RuntimeException;
 use WP_Error;
 use WP_Post;
 
@@ -72,10 +72,9 @@ class Post_Utility extends Object_Utility {
 	 * Get the core properties of a post.
 	 *
 	 * @param int|string $post_id The ID of the post.
-	 * @return Property[] The core properties of the post.
-	 * @throws Exception If the post doesn't exist.
+	 * @return ?Property[] The core properties of the post, or null if not found.
 	 */
-	public static function get_core_properties( int|string $post_id ): array {
+	public static function get_core_properties( int|string $post_id ): ?array {
 		global $wpdb;
 
 		// Load the post.
@@ -84,7 +83,7 @@ class Post_Utility extends Object_Utility {
 
 		// Handle the case where the post doesn't exist.
 		if ( ! $post ) {
-			throw new Exception( "Post $post_id not found." );
+			return null;
 		}
 
 		// Build the array of properties.
@@ -125,7 +124,9 @@ class Post_Utility extends Object_Utility {
 		// For nav menu items, get the menu item's core properties and merge them into the properties array.
 		if ( $post->post_type === 'nav_menu_item' ) {
 			$nav_menu_item_props = Menu_Item_Utility::get_core_properties( $post_id );
-			$props               = array_merge( $props, $nav_menu_item_props );
+			if ( $nav_menu_item_props ) {
+				$props = array_merge( $props, $nav_menu_item_props );
+			}
 		}
 
 		// For images, include the alt text.
@@ -325,7 +326,7 @@ class Post_Utility extends Object_Utility {
 	 *
 	 * @param WP_Post|int $post The post object or ID.
 	 * @return array The attached terms as an array of arrays of object references.
-	 * @throws Exception If an error occurs.
+	 * @throws RuntimeException If an error occurs getting the terms.
 	 */
 	public static function get_attached_terms( WP_Post|int $post ): array {
 		// Load the post if necessary.
@@ -345,7 +346,7 @@ class Post_Utility extends Object_Utility {
 
 			// Check for error.
 			if ( $terms instanceof WP_Error ) {
-				throw new Exception( "Error getting terms attached to post $post->ID." );
+				throw new RuntimeException( "Error getting terms attached to post $post->ID." );
 			}
 
 			// If we got some terms, convert them to object references.

@@ -7,8 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
-
 /**
  * Class WP_Logify\Object_Utility
  *
@@ -61,10 +59,9 @@ abstract class Object_Utility {
 	 * Get the core properties of a object, for logging.
 	 *
 	 * @param int|string $object_key The object key.
-	 * @return Property[] The core properties of the object.
-	 * @throws Exception If the object doesn't exist.
+	 * @return ?Property[] The core properties of the object, or null not found.
 	 */
-	abstract public static function get_core_properties( int|string $object_key ): array;
+	abstract public static function get_core_properties( int|string $object_key ): ?array;
 
 	/**
 	 * Return HTML referencing an object.

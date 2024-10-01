@@ -7,8 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
-
 /**
  * Class WP_Logify\Plugin_Utility
  *
@@ -78,16 +76,15 @@ class Plugin_Utility extends Object_Utility {
 	 * Get the core properties of a plugin.
 	 *
 	 * @param int|string $plugin_slug The plugin's slug.
-	 * @return Property[] The core properties of the plugin.
-	 * @throws Exception If the plugin no longer exists.
+	 * @return ?Property[] The core properties of the plugin, or null if not found.
 	 */
-	public static function get_core_properties( int|string $plugin_slug ): array {
+	public static function get_core_properties( int|string $plugin_slug ): ?array {
 		// Get the plugin data.
 		$plugin = self::load( $plugin_slug );
 
 		// Handle the case where the plugin no longer exists.
 		if ( ! $plugin ) {
-			throw new Exception( "Plugin '$plugin_slug' not found." );
+			return null;
 		}
 
 		// Collect the core properties.

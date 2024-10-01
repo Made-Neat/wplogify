@@ -51,9 +51,9 @@ class Core_Utility {
 	 * Get the core properties of an object, for logging. Irrelevant for core.
 	 *
 	 * @param int|string $version The WordPress core version.
-	 * @return Property[] The core properties of the object.
+	 * @return ?Property[] The core properties of the object, or null if not found.
 	 */
-	public static function get_core_properties( int|string $version ): array {
+	public static function get_core_properties( int|string $version ): ?array {
 		$props = array();
 
 		// Link.

@@ -8,8 +8,8 @@
 namespace WP_Logify;
 
 use DateTime;
-use Exception;
 use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Class responsible for managing events in the database.
@@ -146,7 +146,7 @@ class Event_Repository extends Repository {
 	 *
 	 * @param int $event_id The ID of the event record to delete.
 	 * @return bool True on success, false on failure.
-	 * @throws Exception If there is an error deleting the record.
+	 * @throws RuntimeException If there is an error deleting the record.
 	 */
 	public static function delete( int $event_id ): bool {
 		global $wpdb;
@@ -161,7 +161,7 @@ class Event_Repository extends Repository {
 
 		// Check for error.
 		if ( $result === false ) {
-			throw new Exception( "Error deleting event record $event_id" );
+			throw new RuntimeException( "Error deleting event record $event_id" );
 		}
 
 		// Delete the property records.

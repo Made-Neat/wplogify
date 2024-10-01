@@ -8,7 +8,7 @@
 namespace WP_Logify;
 
 use DateTime;
-use Exception;
+use UnexpectedValueException;
 use WP_Query;
 use WP_User;
 
@@ -89,10 +89,9 @@ class User_Utility extends Object_Utility {
 	 * Get the core properties of a user.
 	 *
 	 * @param int|string $user_id The ID of the user.
-	 * @return array The core properties of the user.
-	 * @throws Exception If the user doesn't exist.
+	 * @return ?Property[] The core properties of the user, or null if not found.
 	 */
-	public static function get_core_properties( int|string $user_id ): array {
+	public static function get_core_properties( int|string $user_id ): ?array {
 		global $wpdb;
 
 		// Load the user.
@@ -100,7 +99,7 @@ class User_Utility extends Object_Utility {
 
 		// Handle the case where the user no longer exists.
 		if ( ! $user ) {
-			throw new Exception( "User $user_id not found." );
+			return null;
 		}
 
 		// Build the array of properties.
@@ -466,7 +465,7 @@ class User_Utility extends Object_Utility {
 
 			// If the object type is not user, this is invalid.
 			if ( $user->type !== 'user' ) {
-				throw new Exception( "Invalid object type: '{$user->type}'" );
+				throw new UnexpectedValueException( "Invalid object type: '{$user->type}'" );
 			}
 
 			$user_id   = (int) $user->key;

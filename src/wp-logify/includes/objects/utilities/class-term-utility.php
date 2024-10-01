@@ -7,7 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
 use WP_Term;
 
 /**
@@ -70,10 +69,9 @@ class Term_Utility extends Object_Utility {
 	 * Extracts and returns a term's core properties for logging.
 	 *
 	 * @param int|string $term_id The ID of the term.
-	 * @return Property[] An associative array of a term's core properties.
-	 * @throws Exception If the term could not be retrieved.
+	 * @return ?Property[] The core properties of the term, or null if not found.
 	 */
-	public static function get_core_properties( int|string $term_id ): array {
+	public static function get_core_properties( int|string $term_id ): ?array {
 		global $wpdb;
 
 		// Load the term.
@@ -81,7 +79,7 @@ class Term_Utility extends Object_Utility {
 
 		// Handle error if the term could not be retrieved.
 		if ( ! $term ) {
-			throw new Exception( "Term $term_id not found." );
+			return null;
 		}
 
 		// Start building the properties array.

@@ -7,9 +7,6 @@
 
 namespace WP_Logify;
 
-use WP_Logify\Event;
-use Exception;
-
 /**
  * Class WP_Logify\Menu_Item_Utility
  *
@@ -77,10 +74,9 @@ class Menu_Item_Utility extends Object_Utility {
 	 * Get the core properties of a nav menu item, for logging.
 	 *
 	 * @param int|string $post_id The post ID of the navigation menu item.
-	 * @return Property[] The core properties of the object.
-	 * @throws Exception If the object doesn't exist.
+	 * @return ?Property[] The core properties of the menu item, or null if not found.
 	 */
-	public static function get_core_properties( int|string $post_id ): array {
+	public static function get_core_properties( int|string $post_id ): ?array {
 		global $wpdb;
 
 		// Get the menu item details.
@@ -88,7 +84,7 @@ class Menu_Item_Utility extends Object_Utility {
 
 		// If we don't have details, return an empty array.
 		if ( ! $details ) {
-			return array();
+			return null;
 		}
 
 		// Build the array of properties.

@@ -7,8 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
-
 /**
  * Class WP_Logify\Media_Utility
  *

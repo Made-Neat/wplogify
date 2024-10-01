@@ -8,7 +8,6 @@
 namespace WP_Logify;
 
 use DateTime;
-use Exception;
 use InvalidArgumentException;
 use WP_Post;
 use WP_Term;
@@ -169,9 +168,7 @@ class Event {
 	 * @param ?array                   $eventmetas  The event metadata.
 	 * @param ?array                   $properties  The event properties.
 	 * @param null|int|WP_User         $acting_user The user who performed the action. This can be a user ID or WP_User object, or null for the current user.
-	 *
 	 * @return ?Event The new event, or null if the user is anonymous or doesn't have a tracked role.
-	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function create(
 		string $event_type,
@@ -221,20 +218,6 @@ class Event {
 			$object_subtype = null;
 		}
 
-		// Get the core properties.
-		if ( $object_ref instanceof Object_Reference ) {
-			$object_props = $object_ref->get_core_properties();
-		} else {
-			$object_props = array();
-		}
-
-		// Add any other properties we received. This could overwrite some core ones.
-		if ( ! empty( $properties ) ) {
-			foreach ( $properties as $prop ) {
-				Property_Array::add( $object_props, $prop );
-			}
-		}
-
 		// Construct the new Event object.
 		$event                 = new Event();
 		$event->when_happened  = DateTimes::current_datetime();
@@ -250,7 +233,15 @@ class Event {
 		$event->object_key     = $object_ref?->key;
 		$event->object_name    = $object_ref?->name;
 		$event->eventmetas     = empty( $eventmetas ) ? null : $eventmetas;
-		$event->properties     = empty( $object_props ) ? null : $object_props;
+		$event->properties     = null;
+
+		// Add the core properties.
+		if ( $object_ref instanceof Object_Reference ) {
+			$event->add_props( $object_ref->get_core_properties() );
+		}
+
+		// Add any other properties we received. This could overwrite some core ones.
+		$event->add_props( $properties );
 
 		return $event;
 	}
@@ -439,9 +430,15 @@ class Event {
 	/**
 	 * Add multiple properties to the event.
 	 *
-	 * @param array $props The properties to add.
+	 * @param ?array $props The properties to add.
 	 */
-	public function add_props( array $props ) {
+	public function add_props( ?array $props ) {
+		// If there are no properties, return.
+		if ( empty( $props ) ) {
+			return;
+		}
+
+		// Add each property.
 		foreach ( $props as $prop ) {
 			$this->add_prop( $prop );
 		}
@@ -461,6 +458,7 @@ class Event {
 	 *
 	 * @param string $prop_key The property key.
 	 * @return mixed The current or old value.
+	 * @throws InvalidArgumentException If the property with the specified key is not found.
 	 */
 	public function get_prop_val( string $prop_key ): mixed {
 		// Try to get the property.
@@ -479,7 +477,7 @@ class Event {
 	 *
 	 * @param string $prop_key The property key.
 	 * @param mixed  $val      The current or old property value.
-	 * @throws Exception If the property with the specified key is not found.
+	 * @throws InvalidArgumentException If the property with the specified key is not found.
 	 */
 	public function set_prop_val( string $prop_key, mixed $val ) {
 		// Try to get the property.
@@ -499,6 +497,7 @@ class Event {
 	 *
 	 * @param string $prop_key The property key.
 	 * @return mixed The new value of the property.
+	 * @throws InvalidArgumentException If the property with the specified key is not found.
 	 */
 	public function get_prop_new_val( string $prop_key ): mixed {
 		// Try to get the property.
@@ -517,7 +516,7 @@ class Event {
 	 *
 	 * @param string $prop_key The property key.
 	 * @param mixed  $new_val  The new value of the property.
-	 * @throws Exception If the property with the specified key is not found.
+	 * @throws InvalidArgumentException If the property with the specified key is not found.
 	 */
 	public function set_prop_new_val( string $prop_key, mixed $new_val ) {
 		// Try to get the property exists.

@@ -7,7 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
 use WP_Theme;
 
 /**
@@ -68,16 +67,15 @@ class Theme_Utility extends Object_Utility {
 	 * Get the core properties of a object, for logging.
 	 *
 	 * @param int|string $stylesheet The theme stylesheet.
-	 * @return Property[] The core properties of the theme.
-	 * @throws Exception If the theme doesn't exist.
+	 * @return ?Property[] The core properties of the theme, or null if not found.
 	 */
-	public static function get_core_properties( int|string $stylesheet ): array {
+	public static function get_core_properties( int|string $stylesheet ): ?array {
 		// Load the theme.
 		$theme = self::load( $stylesheet );
 
 		// Handle the case where the theme no longer exists.
 		if ( ! $theme ) {
-			throw new Exception( "Theme '$stylesheet' not found." );
+			return null;
 		}
 
 		// Build the array of properties.

@@ -7,7 +7,7 @@
 
 namespace WP_Logify;
 
-use Exception;
+use UnexpectedValueException;
 
 /**
  * Class WP_Logify\Cron
@@ -27,6 +27,8 @@ class Cron {
 
 	/**
 	 * Cleanup old records from the events table.
+	 *
+	 * @throws UnexpectedValueException If the unit is invalid.
 	 */
 	public static function cleanup_old_records() {
 		global $wpdb;
@@ -39,7 +41,7 @@ class Cron {
 			'week'  => $quantity * DateTimes::DAYS_PER_WEEK,
 			'month' => $quantity * DateTimes::DAYS_PER_MONTH,
 			'year'  => $quantity * DateTimes::DAYS_PER_YEAR,
-			default => throw new Exception( "Invalid unit: $units" ),
+			default => throw new UnexpectedValueException( "Invalid unit: $units" ),
 		};
 		$days = absint( ceil( $days ) );
 

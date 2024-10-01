@@ -7,7 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
 use WP_Comment;
 
 /**
@@ -70,10 +69,9 @@ class Comment_Utility extends Object_Utility {
 	 * Get the core properties of a comment.
 	 *
 	 * @param int|string $comment_id The ID of the comment.
-	 * @return array The core properties of the comment.
-	 * @throws Exception If the comment no longer exists.
+	 * @return ?Property[] The core properties of the comment, or null if not found.
 	 */
-	public static function get_core_properties( int|string $comment_id ): array {
+	public static function get_core_properties( int|string $comment_id ): ?array {
 		global $wpdb;
 
 		// Load the comment.
@@ -81,7 +79,7 @@ class Comment_Utility extends Object_Utility {
 
 		// Handle the case where the comment no longer exists.
 		if ( ! $comment ) {
-			throw new Exception( "Comment $comment_id not found." );
+			return null;
 		}
 
 		// Build the array of properties.
@@ -169,10 +167,9 @@ class Comment_Utility extends Object_Utility {
 	 * Get all the properties of a comment.
 	 *
 	 * @param int|WP_Comment $comment The ID of the comment or the comment object.
-	 * @return array The properties of the comment.
-	 * @throws Exception If the comment no longer exists.
+	 * @return ?Property[] The properties of the comment, or null if not found.
 	 */
-	public static function get_properties( int|WP_Comment $comment ): array {
+	public static function get_properties( int|WP_Comment $comment ): ?array {
 		global $wpdb;
 
 		// Load the comment if necessary.
@@ -181,7 +178,7 @@ class Comment_Utility extends Object_Utility {
 
 			// Handle the case where the comment no longer exists.
 			if ( ! $comment ) {
-				throw new Exception( "Comment $comment not found." );
+				return null;
 			}
 		}
 

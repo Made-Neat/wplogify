@@ -7,8 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
-
 /**
  * Class WP_Logify\Option_Utility
  *
@@ -57,10 +55,9 @@ class Option_Utility extends Object_Utility {
 	 * Get the core properties of a option.
 	 *
 	 * @param int|string $option_name The option name.
-	 * @return array The core properties of the option.
-	 * @throws Exception If the option no longer exists.
+	 * @return ?Property[] The core properties of the option, or null if not found.
 	 */
-	public static function get_core_properties( int|string $option_name ): array {
+	public static function get_core_properties( int|string $option_name ): ?array {
 		global $wpdb;
 
 		// Load the option.
@@ -68,7 +65,7 @@ class Option_Utility extends Object_Utility {
 
 		// Handle the case where the option no longer exists.
 		if ( $option_value === null ) {
-			throw new Exception( "Option '$option_name' not found." );
+			return null;
 		}
 
 		// Build the array of properties.

@@ -7,8 +7,9 @@
 
 namespace WP_Logify;
 
-use Exception;
 use InvalidArgumentException;
+use RuntimeException;
+use UnexpectedValueException;
 
 /**
  * Class WP_Logify\Eventmeta_Repository
@@ -172,12 +173,12 @@ class Eventmeta_Repository extends Repository {
 	 *
 	 * @param array $record The database record.
 	 * @return Eventmeta The Eventmeta entity.
-	 * @throws Exception If the meta value cannot be unserialized.
+	 * @throws UnexpectedValueException If the meta value cannot be unserialized.
 	 */
 	protected static function record_to_object( array $record ): Eventmeta {
 		// Unserialize the meta value.
 		if ( ! Serialization::try_unserialize( $record['meta_value'], $meta_value ) ) {
-			throw new Exception( 'Failed to unserialize eventmeta value.' );
+			throw new UnexpectedValueException( 'Failed to unserialize eventmeta value.' );
 		}
 
 		// Create the Eventmeta object.
@@ -211,7 +212,6 @@ class Eventmeta_Repository extends Repository {
 	 *
 	 * @param int $event_id The ID of the event.
 	 * @return ?array Array of metadata or null if none found.
-	 * @throws Exception If a metadata value cannot be unserialized.
 	 */
 	public static function load_by_event_id( int $event_id ): ?array {
 		global $wpdb;
@@ -239,7 +239,7 @@ class Eventmeta_Repository extends Repository {
 	 *
 	 * @param int $event_id The ID of the event.
 	 * @return bool True on success, false on failure.
-	 * @throws Exception If the delete fails.
+	 * @throws RuntimeException If the delete fails.
 	 */
 	public static function delete_by_event_id( int $event_id ): bool {
 		global $wpdb;
@@ -249,7 +249,7 @@ class Eventmeta_Repository extends Repository {
 
 		// Check for error.
 		if ( $result === false ) {
-			throw new Exception( "Failed to delete eventmetas for event $event_id" );
+			throw new RuntimeException( "Failed to delete eventmetas for event $event_id" );
 		}
 
 		return (bool) $result;

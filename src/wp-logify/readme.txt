@@ -1,4 +1,5 @@
 === WP Logify ===
+
 Contributors: madeneat
 Tags: activity log, audit log, security, user tracking, event log
 Requires at least: 6.0
@@ -9,7 +10,7 @@ License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Website: https://wplogify.com/
 
-WP Logify is a lightweight, user-friendly WordPress plugin that tracks critical actions on your site, offering a complete **activity log** and **audit log** for enhanced **security** and **user tracking**.
+WP Logify is a lightweight, user-friendly plugin that tracks critical actions on your site, offering enhanced security and user tracking.
 
 == Description ==
 
@@ -72,6 +73,7 @@ Absolutely! WP Logify provides advanced search and filtering options, allowing y
 * Initial release with core logging features, advanced search and filtering, and a dashboard widget.
 
 == Links ==
+
 - [Plugin Website](https://wplogify.com/)
 - [Suggest Features](https://wplogify.com/suggest/)
 

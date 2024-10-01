@@ -7,7 +7,6 @@
 
 namespace WP_Logify;
 
-use Exception;
 use WP_Taxonomy;
 
 /**
@@ -70,16 +69,15 @@ class Taxonomy_Utility extends Object_Utility {
 	 * Extracts and returns a taxonomy's core properties for logging.
 	 *
 	 * @param int|string $taxonomy The name of the taxonomy.
-	 * @return Property[] An associative array of a taxonomy's core properties.
-	 * @throws Exception If the taxonomy could not be retrieved.
+	 * @return ?Property[] The core properties of the taxonomy, or null if not found.
 	 */
-	public static function get_core_properties( int|string $taxonomy ): array {
+	public static function get_core_properties( int|string $taxonomy ): ?array {
 		// Load the taxonomy.
 		$taxonomy_obj = self::load( $taxonomy );
 
 		// Handle error if the taxonomy could not be retrieved.
 		if ( ! $taxonomy_obj ) {
-			throw new Exception( "Taxonomy $taxonomy not found." );
+			return null;
 		}
 
 		// Start building the properties array.
@@ -181,7 +179,6 @@ class Taxonomy_Utility extends Object_Utility {
 	 *
 	 * @param array $taxonomy_info Core properties remembered about the taxonomy.
 	 * @return Property[] An associative array of a taxonomy's core properties.
-	 * @throws Exception If the taxonomy could not be retrieved.
 	 */
 	public static function get_core_properties_from_array( array $taxonomy_info ): array {
 		// Start building the properties array.
