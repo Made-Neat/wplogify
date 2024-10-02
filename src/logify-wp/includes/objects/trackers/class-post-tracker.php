@@ -368,6 +368,14 @@ class Post_Tracker {
 
 		// Add them to the eventmetas. One for each taxonomy.
 		foreach ( $attached_terms as $taxonomy => $term_refs ) {
+
+			// Handle navigation menu items differently.
+			if ( $post->post_type === 'nav_menu_item' && $taxonomy === 'nav_menu' ) {
+				// Add the event meta for this taxonomy.
+				$event->set_meta( 'navigation_menu', $term_refs[0] );
+				continue;
+			}
+
 			// Get the taxonomy object.
 			$taxonomy_obj = get_taxonomy( $taxonomy );
 
@@ -571,12 +579,15 @@ class Post_Tracker {
 				if ( ! $term_changes['added']->isEmpty() ) {
 					// Convert term IDs to Object_Reference objects.
 					$term_refs = self::convert_term_ids_to_references( $term_changes['added'] );
-					if ( $post->post_type === 'nav_menu_item' ) {
-						$meta_key = strtolower( $taxonomy_name );
+
+					// Get the meta key.
+					if ( $post->post_type === 'nav_menu_item' && $taxonomy === 'nav_menu' ) {
+						// For menu items, just show the menu.
+						Eventmeta::update_array( $metas, 'navigation_menu', $term_refs[0] );
 					} else {
 						$meta_key = 'added_' . $taxonomy_name;
+						Eventmeta::update_array( $metas, $meta_key, $term_refs );
 					}
-					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
 
 				// Show the removed terms in the eventmetas.
@@ -587,16 +598,13 @@ class Post_Tracker {
 					Eventmeta::update_array( $metas, $meta_key, $term_refs );
 				}
 
-				// Handle navigation menu items differently.
+				// Get the event type.
 				if ( $post->post_type === 'nav_menu_item' ) {
-					$post_type = 'Item';
+					$event_type = 'Item Added To Navigation Menu';
 				} else {
-					// Get the post type name.
-					$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
+					$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
+					$event_type = "$post_type $taxonomy_name Updated";
 				}
-
-				// Get event type.
-				$event_type = "$post_type $taxonomy_name Updated";
 
 				// Log the event.
 				Logger::log_event( $event_type, $post, $metas );
