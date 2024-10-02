@@ -4,8 +4,8 @@ Contributors: madeneat
 Tags: activity log, audit log, security, user tracking, event log
 Requires at least: 6.0
 Tested up to: 6.6.1
-Requires PHP: 8.0
 Stable tag: 1.48
+Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Website: https://logifywp.com/
@@ -54,7 +54,7 @@ No, Logify WP is optimized for performance and has minimal impact on your websit
 
 ### Can I control who views the activity logs?
 
-Yes, Logify WP includes role-based access control, allowing you to restrict access to logs based on user roles.
+Yes, Logify WP includes role-based access control, allowing you to restrict access to logs based on user roles. You can also grant access to specific users.
 
 ### Can I search and filter logs?
 
@@ -62,10 +62,12 @@ Absolutely! Logify WP provides advanced search and filtering options, allowing y
 
 == Screenshots ==
 
-1. **Activity Dashboard** – View a summary of recent activities on your site at a glance.
-2. **Detailed Log View** – See full details of logged activities, including user avatars and advanced metadata.
-3. **Settings Page** – Customize what actions are logged and who has access to view them.
-4. **Search & Filter** – Easily search through logs by user, date, post type, and more.
+Screenshots can be found in /wp-content/logify-wp/assets/images/screenshots.
+
+1. **Activity Dashboard** – View a summary of recent activities on your site at a glance. (logify-wp-dashboard-widget.png)
+2. **Detailed Log View** – See full details of logged activities, including user avatars and advanced metadata. (logify-wp-event-log.png)
+3. **Settings Page** – Customize what actions are logged and who has access to view them. (logify-wp-settings.png)
+4. **Search & Filter** – Easily search through logs by user, date, post type, and more. (logify-wp-search-filters.png)
 
 == Changelog ==
 
