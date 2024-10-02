@@ -153,12 +153,19 @@ class Widget_Utility extends Object_Utility {
 		if ( $widget ) {
 			// Get the widget display name.
 			$name = self::get_name( $widget_id );
+
+			// If the widget doesn't have a name, use a default name.
+			if ( ! $name ) {
+				$name = Strings::key_to_label( $widget_id );
+			}
+
+			// Construct the span element.
 			return "<span class='logify-wp-object'>$name</span>";
 		}
 
 		// Make a backup name.
 		if ( ! $old_name ) {
-			$old_name = "Widget $widget_id";
+			$old_name = Strings::key_to_label( $widget_id );
 		}
 
 		// The widget no longer exists. Construct the 'deleted' span element.
