@@ -7,6 +7,14 @@
 
 namespace Logify_WP;
 
+// Show a message if the log records were successfully deleted.
+if ( isset( $_GET['reset'] ) && $_GET['reset'] === 'success' ) {
+	?>
+	<div class="notice notice-success">
+		<p>Log records have been deleted.</p>
+	</div>
+	<?php
+}
 ?>
 
 <div class="wrap">
@@ -79,12 +87,12 @@ namespace Logify_WP;
 					</td>
 				</tr>
 				<tr valign="top">
-					<th scope="row">Delete all data when uninstalling</th>
+					<th scope="row">Delete all data when uninstalling<br>(drop tables)</th>
 					<td><input type="checkbox" name="logify_wp_delete_on_uninstall" value="1" <?php checked( Plugin_Settings::get_delete_on_uninstall(), 1 ); ?> /></td>
 				</tr>
 				<tr valign="top">
 					<th>
-						<a id="logify-wp-delete-logs-button" class="button button-secondary logify-wp-settings-button" href="<?php echo esc_url( admin_url( 'admin-post.php?action=logify_wp_reset_logs' ) ); ?>" onclick="return confirm('Are you sure you want to delete all the log records? This action cannot be undone.');">Delete all log records now</a>
+						<a id="logify-wp-delete-logs-button" class="button button-secondary logify-wp-settings-button" href="<?php echo esc_url( admin_url( 'admin-post.php?action=logify_wp_reset_logs' ) ); ?>" onclick="return confirm('Are you sure you want to delete all the log records? This action cannot be undone.');">Delete all log records now (empty tables)</a>
 					</th>
 					<td>&nbsp;</td>
 				</tr>
