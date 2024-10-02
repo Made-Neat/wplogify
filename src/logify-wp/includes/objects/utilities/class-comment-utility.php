@@ -86,34 +86,34 @@ class Comment_Utility extends Object_Utility {
 		$props = array();
 
 		// Link.
-		Property_Array::set( $props, 'link', null, Object_Reference::new_from_wp_object( $comment ) );
+		Property::update_array( $props, 'link', null, Object_Reference::new_from_wp_object( $comment ) );
 
 		// Comment author.
 		if ( $comment->user_id && User_Utility::exists( $comment->user_id ) ) {
 			$posted_by = new Object_Reference( 'user', $comment->user_id );
-			Property_Array::set( $props, 'comment_author', $wpdb->comments, $posted_by );
+			Property::update_array( $props, 'comment_author', $wpdb->comments, $posted_by );
 		} elseif ( $comment->comment_author ) {
-			Property_Array::set( $props, 'comment_author', $wpdb->comments, $comment->comment_author );
+			Property::update_array( $props, 'comment_author', $wpdb->comments, $comment->comment_author );
 		}
 
 		// Date.
 		$date = Datetimes::create_datetime( $comment->comment_date );
-		Property_Array::set( $props, 'comment_date', $wpdb->comments, $date );
+		Property::update_array( $props, 'comment_date', $wpdb->comments, $date );
 
 		// Status.
 		$status = self::approved_to_status( $comment->comment_approved );
-		Property_Array::set( $props, 'status', $wpdb->comments, $status );
+		Property::update_array( $props, 'status', $wpdb->comments, $status );
 
 		// Post.
 		if ( $comment->comment_post_ID ) {
 			$post = new Object_Reference( 'post', $comment->comment_post_ID );
-			Property_Array::set( $props, 'post', $wpdb->comments, $post );
+			Property::update_array( $props, 'post', $wpdb->comments, $post );
 		}
 
 		// Parent.
 		if ( $comment->comment_parent ) {
 			$parent = new Object_Reference( 'comment', $comment->comment_parent );
-			Property_Array::set( $props, 'comment_parent', $wpdb->comments, $parent );
+			Property::update_array( $props, 'comment_parent', $wpdb->comments, $parent );
 		}
 
 		return $props;
@@ -197,12 +197,12 @@ class Comment_Utility extends Object_Utility {
 			if ( $key === 'children' ) {
 				// Get the children and add them to the properties.
 				$children = self::get_children( $comment->comment_ID );
-				Property_Array::set( $props, 'children', $wpdb->comments, $children );
+				Property::update_array( $props, 'children', $wpdb->comments, $children );
 				continue;
 			}
 
 			// Add the property.
-			Property_Array::set( $props, $key, $wpdb->comments, $value );
+			Property::update_array( $props, $key, $wpdb->comments, $value );
 		}
 
 		return $props;

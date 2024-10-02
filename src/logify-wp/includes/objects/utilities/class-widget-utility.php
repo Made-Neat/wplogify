@@ -105,36 +105,36 @@ class Widget_Utility extends Object_Utility {
 		$props = array();
 
 		// ID. This will show both the type and the instance number.
-		Property_Array::set( $props, 'widget_id', null, $widget_id );
+		Property::update_array( $props, 'widget_id', null, $widget_id );
 
 		// Widget type.
-		Property_Array::set( $props, 'type', null, $widget['id_base'] );
+		Property::update_array( $props, 'type', null, $widget['id_base'] );
 
 		// Block type (block widgets).
 		if ( ! empty( $widget['block_type'] ) ) {
-			Property_Array::set( $props, 'block_type', null, $widget['block_type'] );
+			Property::update_array( $props, 'block_type', null, $widget['block_type'] );
 		}
 
 		// Block name (block widgets).
 		if ( ! empty( $widget['block_name'] ) ) {
-			Property_Array::set( $props, 'block_name', null, $widget['block_name'] );
+			Property::update_array( $props, 'block_name', null, $widget['block_name'] );
 		}
 
 		// Title (classic widgets).
 		if ( ! empty( $widget['title'] ) ) {
-			Property_Array::set( $props, 'title', null, $widget['title'] );
+			Property::update_array( $props, 'title', null, $widget['title'] );
 		}
 
 		// Content.
 		if ( ! empty( $widget['content'] ) ) {
 			$content = Strings::strip_tags( $widget['content'] );
 			if ( $content ) {
-				Property_Array::set( $props, 'content', null, $content );
+				Property::update_array( $props, 'content', null, $content );
 			}
 		}
 
 		// Area.
-		Property_Array::set( $props, 'area', null, $widget['area'] );
+		Property::update_array( $props, 'area', null, $widget['area'] );
 
 		return $props;
 	}

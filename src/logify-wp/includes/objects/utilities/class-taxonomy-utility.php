@@ -85,16 +85,16 @@ class Taxonomy_Utility extends Object_Utility {
 
 		// Name. This will be a link if there's an admin page accessible to the user, otherwise it
 		// will be the label (usually plural).
-		Property_Array::set( $props, 'name', null, Object_Reference::new_from_wp_object( $taxonomy_obj ) );
+		Property::update_array( $props, 'name', null, Object_Reference::new_from_wp_object( $taxonomy_obj ) );
 
 		// Slug.
-		Property_Array::set( $props, 'slug', null, $taxonomy_obj->name );
+		Property::update_array( $props, 'slug', null, $taxonomy_obj->name );
 
 		// Label.
-		// Property_Array::set( $props, 'label', null, $taxonomy_obj->label );
+		// Property::update_array( $props, 'label', null, $taxonomy_obj->label );
 
 		// Show UI.
-		Property_Array::set( $props, 'show_ui', null, $taxonomy_obj->show_ui );
+		Property::update_array( $props, 'show_ui', null, $taxonomy_obj->show_ui );
 
 		return $props;
 	}
@@ -186,13 +186,13 @@ class Taxonomy_Utility extends Object_Utility {
 
 		// Name. This will be a link if there's an admin page accessible to the user, otherwise it
 		// will be the label (usually plural).
-		Property_Array::set( $props, 'name', null, new Object_Reference( 'taxonomy', $taxonomy_info['name'], $taxonomy_info['label'] ) );
+		Property::update_array( $props, 'name', null, new Object_Reference( 'taxonomy', $taxonomy_info['name'], $taxonomy_info['label'] ) );
 
 		// Slug.
-		Property_Array::set( $props, 'slug', null, $taxonomy_info['name'] );
+		Property::update_array( $props, 'slug', null, $taxonomy_info['name'] );
 
 		// Show UI.
-		Property_Array::set( $props, 'show_ui', null, $taxonomy_info['show_ui'] );
+		Property::update_array( $props, 'show_ui', null, $taxonomy_info['show_ui'] );
 
 		return $props;
 	}

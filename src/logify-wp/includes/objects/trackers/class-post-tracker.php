@@ -17,18 +17,18 @@ use WP_Post;
 class Post_Tracker {
 
 	/**
-	 * Array to remember properties between different events.
+	 * Event for creating or updating a post object.
 	 *
-	 * @var array
+	 * @var ?Event
 	 */
-	protected static $properties = array();
+	private static ?Event $update_post_event = null;
 
 	/**
-	 * Array to remember metadata between different events.
+	 * Whether the event being developed is for creating a media object, or updating it.
 	 *
-	 * @var array
+	 * @var bool
 	 */
-	protected static $eventmetas = array();
+	private static bool $creating = false;
 
 	/**
 	 * Keep track of terms added to a post in a single request.
@@ -36,13 +36,6 @@ class Post_Tracker {
 	 * @var array
 	 */
 	private static array $terms = array();
-
-	/**
-	 * Event for creating or updating a post object.
-	 *
-	 * @var ?Event
-	 */
-	private static ?Event $update_post_event = null;
 
 	/**
 	 * Set up hooks for the events we want to log.
@@ -65,39 +58,13 @@ class Post_Tracker {
 		add_action( 'added_term_relationship', array( __CLASS__, 'on_added_term_relationship' ), 10, 3 );
 		add_action( 'wp_after_insert_post', array( __CLASS__, 'on_wp_after_insert_post' ), 10, 4 );
 		add_action( 'deleted_term_relationships', array( __CLASS__, 'on_deleted_term_relationships' ), 10, 3 );
+
+		// Shutdown.
+		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	// =============================================================================================
 	// Post creation and update
-
-	/**
-	 * Get the update or create post event. If it hasn't been created yet, do it now.
-	 *
-	 * @param string      $event_type_verb The event type verb.
-	 * @param int|WP_Post $post            The post the event is about.
-	 * @return Event The event.
-	 */
-	private static function get_update_post_event( string $event_type_verb, int|WP_Post $post ): Event {
-		// Create the event if not done already.
-		if ( ! self::$update_post_event ) {
-
-			// Load the post if necessary.
-			if ( is_int( $post ) ) {
-				$post = Post_Utility::load( $post );
-			}
-
-			// Get the post type.
-			$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
-
-			// Get the event type.
-			$event_type = "$post_type $event_type_verb";
-
-			// Create the event.
-			self::$update_post_event = Event::create( $event_type, $post );
-		}
-
-		return self::$update_post_event;
-	}
 
 	/**
 	 * Log the creation and update of a post.
@@ -129,11 +96,11 @@ class Post_Tracker {
 
 		// Check if we're creating or updating. If this is a revision, we're updating the post.
 		// Otherwise, we're creating a new one.
-		$creating = wp_is_post_revision( $post_id ) === false;
+		self::$creating = wp_is_post_revision( $post_id ) === false;
 
 		// If we're updating, the current $post variable refers to the new revision rather than the
 		// parent post. Update $post so we get the right details.
-		if ( ! $creating ) {
+		if ( ! self::$creating ) {
 			// Record the ID and title of the new revision; we'll use this info in the link, below.
 			$revision_id    = $post_id;
 			$revision_title = $post->post_title;
@@ -144,14 +111,14 @@ class Post_Tracker {
 		}
 
 		// Get the event type verb.
-		$event_type_verb = $creating || $post->post_status === 'auto-draft' ? 'Created' : 'Updated';
+		$event_type_verb = self::$creating || $post->post_status === 'auto-draft' ? 'Created' : 'Updated';
 
 		// Get the event.
 		$event = self::get_update_post_event( $event_type_verb, $post );
 
 		// If updating, and the content has changed, replace the changed content so we aren't
 		// storing huge blocks of text in the properties table.
-		if ( ! $creating ) {
+		if ( ! self::$creating ) {
 			$prop = $event->get_prop( 'post_content' );
 			if ( $prop ) {
 				// Show a snippet of the old version.
@@ -160,9 +127,6 @@ class Post_Tracker {
 				$prop->new_val = new Object_Reference( 'post', $revision_id, $revision_title );
 			}
 		}
-
-		// Log the event.
-		$event->save();
 	}
 
 	/**
@@ -202,7 +166,7 @@ class Post_Tracker {
 		$props = Post_Utility::get_changes( $post_before, $post_after );
 
 		// Remove any changes to post_status, which we log separately.
-		Property_Array::remove( $props, 'post_status' );
+		unset( $props['post_status'] );
 
 		// If any changes remain, update the event.
 		if ( ! empty( $props ) ) {
@@ -324,21 +288,6 @@ class Post_Tracker {
 	// Post deletion
 
 	/**
-	 * Get the event type for a post deletion.
-	 *
-	 * @param string $post_type The post type.
-	 * @return string The event type.
-	 */
-	private static function get_delete_event_type( string $post_type ): string {
-		// Get the event type.
-		if ( $post_type === 'nav_menu_item' ) {
-			return 'Item Removed From Navigation Menu';
-		} else {
-			return Post_Utility::get_post_type_singular_name( $post_type ) . ' Deleted';
-		}
-	}
-
-	/**
 	 * Fires before a post is deleted, at the start of wp_delete_post().
 	 *
 	 * We use this method to create the delete event (without saving it), and record details that
@@ -368,22 +317,12 @@ class Post_Tracker {
 
 		// Add them to the eventmetas. One for each taxonomy.
 		foreach ( $attached_terms as $taxonomy => $term_refs ) {
-
 			// Handle navigation menu items differently.
 			if ( $post->post_type === 'nav_menu_item' && $taxonomy === 'nav_menu' ) {
-				// Add the event meta for this taxonomy.
 				$event->set_meta( 'navigation_menu', $term_refs[0] );
-				continue;
+			} else {
+				$event->set_meta( get_taxonomy( $taxonomy )->labels->name, $term_refs );
 			}
-
-			// Get the taxonomy object.
-			$taxonomy_obj = get_taxonomy( $taxonomy );
-
-			// Use the plural name.
-			$taxonomy_name = $taxonomy_obj->labels->name;
-
-			// Add the event meta for this taxonomy.
-			$event->set_meta( $taxonomy_name, $term_refs );
 		}
 
 		// For navigation menu items, get the menu item details from the post meta data.
@@ -539,16 +478,6 @@ class Post_Tracker {
 	}
 
 	/**
-	 * Convert a set of term IDs to an array of Object_Reference objects.
-	 *
-	 * @param Set $term_ids Set of term IDs.
-	 * @return array Array of Object_Reference objects.
-	 */
-	private static function convert_term_ids_to_references( Set $term_ids ): array {
-		return array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_ids->items() );
-	}
-
-	/**
 	 * Fires immediately after an object-term relationship is added.
 	 *
 	 * @param int      $post_id     Post ID.
@@ -568,12 +497,21 @@ class Post_Tracker {
 		if ( self::$terms ) {
 			// Loop through the taxonomies and create a log entry for each.
 			foreach ( self::$terms as $taxonomy => $term_changes ) {
+
 				// Get the taxonomy object and name.
 				$taxonomy_obj  = get_taxonomy( $taxonomy );
 				$taxonomy_name = $taxonomy_obj->label;
 
-				// Collect eventmetas.
-				$metas = array();
+				// Get the event type.
+				if ( $post->post_type === 'nav_menu_item' ) {
+					$event_type = 'Navigation Menu Item Added';
+				} else {
+					$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
+					$event_type = "$post_type $taxonomy_name Updated";
+				}
+
+				// Create the event.
+				$event = Event::create( $event_type, $post );
 
 				// Show the added terms in the eventmetas.
 				if ( ! $term_changes['added']->isEmpty() ) {
@@ -583,10 +521,9 @@ class Post_Tracker {
 					// Get the meta key.
 					if ( $post->post_type === 'nav_menu_item' && $taxonomy === 'nav_menu' ) {
 						// For menu items, just show the menu.
-						Eventmeta::update_array( $metas, 'navigation_menu', $term_refs[0] );
+						$event->set_meta( 'navigation_menu', $term_refs[0] );
 					} else {
-						$meta_key = 'added_' . $taxonomy_name;
-						Eventmeta::update_array( $metas, $meta_key, $term_refs );
+						$event->set_meta( 'added_' . $taxonomy_name, $term_refs );
 					}
 				}
 
@@ -594,22 +531,82 @@ class Post_Tracker {
 				if ( ! $term_changes['removed']->isEmpty() ) {
 					// Convert term IDs to Object_Reference objects.
 					$term_refs = self::convert_term_ids_to_references( $term_changes['removed'] );
-					$meta_key  = 'removed_' . $taxonomy_name;
-					Eventmeta::update_array( $metas, $meta_key, $term_refs );
-				}
-
-				// Get the event type.
-				if ( $post->post_type === 'nav_menu_item' ) {
-					$event_type = 'Item Added To Navigation Menu';
-				} else {
-					$post_type  = Post_Utility::get_post_type_singular_name( $post->post_type );
-					$event_type = "$post_type $taxonomy_name Updated";
+					$event->set_meta( 'removed_' . $taxonomy_name, $term_refs );
 				}
 
 				// Log the event.
-				Logger::log_event( $event_type, $post, $metas );
+				$event->save();
 			}
 		}
+	}
+
+	// =============================================================================================
+	// Shutdown.
+
+	/**
+	 * Fires on shutdown, after PHP execution.
+	 */
+	public static function on_shutdown() {
+		// Save the post update/create event, if necessary.
+		if ( self::$update_post_event && ( self::$creating || self::$update_post_event->has_changes() ) ) {
+			self::$update_post_event->save();
+		}
+	}
+
+	// =============================================================================================
+	// Support methods.
+
+	/**
+	 * Get the update or create post event. If it hasn't been created yet, do it now.
+	 *
+	 * @param string      $event_type_verb The event type verb.
+	 * @param int|WP_Post $post            The post the event is about.
+	 * @return Event The event.
+	 */
+	private static function get_update_post_event( string $event_type_verb, int|WP_Post $post ): Event {
+		// Create the event if not done already.
+		if ( ! self::$update_post_event ) {
+
+			// Load the post if necessary.
+			if ( is_int( $post ) ) {
+				$post = Post_Utility::load( $post );
+			}
+
+			// Get the post type.
+			$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
+
+			// Get the event type.
+			$event_type = "$post_type $event_type_verb";
+
+			// Create the event.
+			self::$update_post_event = Event::create( $event_type, $post );
+		}
+
+		return self::$update_post_event;
+	}
+
+	/**
+	 * Get the event type for a post deletion.
+	 *
+	 * @param string $post_type The post type.
+	 * @return string The event type.
+	 */
+	private static function get_delete_event_type( string $post_type ): string {
+		if ( $post_type === 'nav_menu_item' ) {
+			return 'Navigation Menu Item Removed';
+		} else {
+			return Post_Utility::get_post_type_singular_name( $post_type ) . ' Deleted';
+		}
+	}
+
+	/**
+	 * Convert a set of term IDs to an array of Object_Reference objects.
+	 *
+	 * @param Set $term_ids Set of term IDs.
+	 * @return array Array of Object_Reference objects.
+	 */
+	private static function convert_term_ids_to_references( Set $term_ids ): array {
+		return array_map( fn( $term_id ) => new Object_Reference( 'term', $term_id ), $term_ids->items() );
 	}
 
 	/**

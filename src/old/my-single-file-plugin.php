@@ -7,6 +7,7 @@
  * Author:      Your Name
  * Author URI:  https://example.com
  * License:     GPLv2 or later
+ * Text Domain: my-single-file-plugin
  */
 
 // Your plugin code goes here.

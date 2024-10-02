@@ -57,7 +57,7 @@ class Core_Utility {
 		$props = array();
 
 		// Link.
-		Property_Array::set( $props, 'link', null, self::get_tag( $version ) );
+		Property::update_array( $props, 'link', null, self::get_tag( $version ) );
 
 		return $props;
 	}

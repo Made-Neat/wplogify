@@ -379,7 +379,7 @@ class Event {
 	 * @return bool True if the property exists, false otherwise.
 	 */
 	public function has_prop( string $prop_key ): bool {
-		return Property_Array::has( $this->properties, $prop_key );
+		return is_array( $this->properties ) && key_exists( $prop_key, $this->properties );
 	}
 
 	/**
@@ -389,7 +389,7 @@ class Event {
 	 * @return ?Property The property or null if not set.
 	 */
 	public function get_prop( string $prop_key ): ?Property {
-		return Property_Array::get( $this->properties, $prop_key );
+		return $this->properties[ $prop_key ] ?? null;
 	}
 
 	/**
@@ -407,7 +407,7 @@ class Event {
 		}
 
 		// Update the properties array.
-		Property_Array::set( $this->properties, $prop_key, $table_name, $val, $new_val );
+		Property::update_array( $this->properties, $prop_key, $table_name, $val, $new_val );
 	}
 
 	/**
@@ -424,7 +424,7 @@ class Event {
 		}
 
 		// Update the properties array.
-		Property_Array::add( $this->properties, $prop );
+		$this->properties[ $prop->key ] = $prop;
 	}
 
 	/**
@@ -450,7 +450,9 @@ class Event {
 	 * @param string $prop_key The key of the property to remove.
 	 */
 	public function remove_prop( string $prop_key ) {
-		Property_Array::remove( $this->properties, $prop_key );
+		if ( $this->has_prop( $prop_key ) ) {
+			unset( $this->properties[ $prop_key ] );
+		}
 	}
 
 	/**

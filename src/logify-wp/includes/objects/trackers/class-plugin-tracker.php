@@ -76,8 +76,16 @@ class Plugin_Tracker {
 		}
 
 		// Get the plugin name and load the plugin.
-		$plugin_name = $upgrader->new_plugin_data['Name'];
-		$plugin      = Plugin_Utility::load_by_name( $plugin_name );
+		if ( ! empty( $upgrader->new_plugin_data['Name'] ) ) {
+			$plugin_name = $upgrader->new_plugin_data['Name'];
+			$plugin      = Plugin_Utility::load_by_name( $plugin_name );
+		} elseif ( ! empty( $upgrader->new_plugin_data['TextDomain'] ) ) {
+			$plugin_name = $upgrader->new_plugin_data['TextDomain'];
+			$plugin      = Plugin_Utility::load( $plugin_name );
+		} else {
+			debug( 'ERROR: Could not find plugin name and could not load plugin.' );
+			return;
+		}
 
 		// If the result is null, the plugin was not installed or updated, so we won't log anything.
 		if ( $upgrader->result === null ) {
@@ -132,7 +140,7 @@ class Plugin_Tracker {
 		$props       = array();
 		$new_version = $upgrader->new_plugin_data['Version'] ?? null;
 		if ( $old_version && $new_version && $old_version !== $new_version ) {
-			Property_Array::set( $props, 'version', null, $old_version, $new_version );
+			Property::update_array( $props, 'version', null, $old_version, $new_version );
 		}
 
 		// Log the event.

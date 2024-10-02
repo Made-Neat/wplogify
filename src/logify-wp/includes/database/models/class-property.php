@@ -71,4 +71,27 @@ class Property {
 		$this->val        = $val;
 		$this->new_val    = $new_val;
 	}
+
+	/**
+	 * Given a property's values, update a property within an array of properties.
+	 * If the property with the given key isn't in the array, create a new one and add it.
+	 *
+	 * @param array<string, Property> $props      The array of properties to update.
+	 * @param string                  $key        The property key.
+	 * @param ?string                 $table_name The name of the database table the property belongs to.
+	 * @param mixed                   $val        The old or current value of the property.
+	 * @param mixed                   $new_val    Optional. The new value of the property, if changed.
+	 * @return void
+	 */
+	public static function update_array( array &$props, string $key, ?string $table_name, mixed $val, mixed $new_val = null ): void {
+		if ( key_exists( $key, $props ) ) {
+			// If the array already contains a property with this key, update it with the new values.
+			$props[ $key ]->table_name = $table_name;
+			$props[ $key ]->val        = $val;
+			$props[ $key ]->new_val    = $new_val;
+		} else {
+			// If it doesn't, create a new Property object and add it to the array.
+			$props[ $key ] = new Property( $key, $table_name, $val, $new_val );
+		}
+	}
 }

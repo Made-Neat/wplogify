@@ -157,7 +157,7 @@ class Theme_Tracker {
 
 			// Put the old and new versions in the props, if they are different.
 			if ( $old_version !== $new_version ) {
-				Property_Array::set( $props, 'version', null, $old_version, $new_version );
+				Property::update_array( $props, 'version', null, $old_version, $new_version );
 			}
 		} else {
 			// The user is installing a new theme.

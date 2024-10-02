@@ -7,6 +7,8 @@
 
 namespace Logify_WP;
 
+use WP_Post;
+
 /**
  * Class Logify_WP\Menu_Item_Utility
  *
@@ -91,11 +93,11 @@ class Menu_Item_Utility extends Object_Utility {
 		$props = array();
 
 		// Link.
-		Property_Array::set( $props, 'link', $wpdb->posts, self::get_linked_object( $post_id ) );
+		Property::update_array( $props, 'link', $wpdb->posts, self::get_linked_object( $post_id ) );
 
 		// Convert the menu item details to properties.
 		foreach ( $details as $key => $value ) {
-			Property_Array::set( $props, $key, $wpdb->postmeta, $value );
+			Property::update_array( $props, $key, $wpdb->postmeta, $value );
 		}
 		return $props;
 	}
@@ -155,6 +157,7 @@ class Menu_Item_Utility extends Object_Utility {
 
 		// Specify the fields we want according to the menu item type.
 		$menu_item_type = $meta['_menu_item_type'][0];
+
 		switch ( $menu_item_type ) {
 			case 'post_type':
 			case 'taxonomy':
@@ -176,18 +179,19 @@ class Menu_Item_Utility extends Object_Utility {
 				return null;
 		}
 
-		// Extract the menu item details.
-		$menu_item = array();
+		// Collect the menu item details.
+		$menu_item_details = array();
+
 		foreach ( $meta as $key => $value ) {
 			// Get the properties we want.
 			if ( in_array( $key, $fields ) ) {
 				// Just take the first value, these are all singular.
-				$menu_item[ $key ] = $value[0];
+				$menu_item_details[ $key ] = $value[0];
 			}
 		}
 
 		// Return the menu item details.
-		return $menu_item;
+		return $menu_item_details;
 	}
 
 	/**
@@ -206,18 +210,18 @@ class Menu_Item_Utility extends Object_Utility {
 		}
 
 		// Get the linked object details.
-		$info = self::get_menu_item_details( $post_id );
+		$menu_item = self::get_menu_item_details( $post_id );
 
 		// Check we have a menu item type.
-		if ( empty( $info['_menu_item_type'] ) ) {
+		if ( empty( $menu_item['_menu_item_type'] ) ) {
 			return null;
 		}
 
 		// Return the linked object.
-		return match ( $info['_menu_item_type'] ) {
-			'post_type' => new Object_Reference( 'post', $info['_menu_item_object_id'] ),
-			'taxonomy'  => new Object_Reference( 'term', $info['_menu_item_object_id'] ),
-			'custom'    => "<a href='{$info['_menu_item_url']}' class='logify-wp-object' target='_blank'>{$post->post_title}</a>",
+		return match ( $menu_item['_menu_item_type'] ) {
+			'post_type' => new Object_Reference( 'post', $menu_item['_menu_item_object_id'] ),
+			'taxonomy'  => new Object_Reference( 'term', $menu_item['_menu_item_object_id'] ),
+			'custom'    => "<a href='{$menu_item['_menu_item_url']}' class='logify-wp-object' target='_blank'>{$post->post_title}</a>",
 			default     => null
 		};
 	}

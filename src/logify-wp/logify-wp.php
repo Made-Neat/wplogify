@@ -41,7 +41,6 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/database/class-database.php';
 
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/database/models/class-event.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/database/models/class-eventmeta.php';
-require_once LOGIFY_WP_PLUGIN_DIR . 'includes/database/models/class-property-array.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/database/models/class-property.php';
 
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/database/repositories/class-repository.php';

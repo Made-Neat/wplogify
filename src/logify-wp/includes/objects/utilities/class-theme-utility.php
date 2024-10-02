@@ -87,10 +87,10 @@ class Theme_Utility extends Object_Utility {
 		if ( $uri ) {
 			$name = "<a href='$uri' target='_blank'>$name</a>";
 		}
-		Property_Array::set( $props, 'name', null, $name );
+		Property::update_array( $props, 'name', null, $name );
 
 		// Stylesheet.
-		Property_Array::set( $props, 'stylesheet', null, $theme->get_stylesheet() );
+		Property::update_array( $props, 'stylesheet', null, $theme->get_stylesheet() );
 
 		// Author. Make into a link if the URI is provided.
 		$author_uri = $theme->get( 'AuthorURI' );
@@ -98,18 +98,18 @@ class Theme_Utility extends Object_Utility {
 		if ( $author_uri ) {
 			$author = "<a href='$author_uri ' target='_blank'>$author</a>";
 		}
-		Property_Array::set( $props, 'author', null, $author );
+		Property::update_array( $props, 'author', null, $author );
 
 		// Version.
-		Property_Array::set( $props, 'version', null, $theme->get( 'Version' ) );
+		Property::update_array( $props, 'version', null, $theme->get( 'Version' ) );
 
 		// Status.
-		Property_Array::set( $props, 'status', null, $theme->get( 'Status' ) );
+		Property::update_array( $props, 'status', null, $theme->get( 'Status' ) );
 
 		// Parent theme.
 		if ( $theme->get( 'Template' ) ) {
 			$parent_ref = new Object_Reference( 'theme', $theme->get( 'Template' ) );
-			Property_Array::set( $props, 'parent', null, $parent_ref );
+			Property::update_array( $props, 'parent', null, $parent_ref );
 		}
 
 		return $props;
