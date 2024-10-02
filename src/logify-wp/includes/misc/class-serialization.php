@@ -50,8 +50,8 @@ class Serialization {
 			return true;
 		}
 
+		// Attempt to unserialize the value.
 		try {
-			// Attempt to unserialize the value.
 			$unserialized_value = @unserialize( $serialized_value );
 
 			// Check if unserialization was successful.
