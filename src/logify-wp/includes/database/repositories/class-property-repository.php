@@ -132,10 +132,10 @@ class Property_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
+		// Create or update the table.
 		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
-
-		$sql = "CREATE TABLE $table_name (
+		$sql             = "CREATE TABLE $table_name (
             prop_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             event_id   BIGINT UNSIGNED NOT NULL,
             prop_key   VARCHAR(100)    NOT NULL,
@@ -145,8 +145,10 @@ class Property_Repository extends Repository {
             PRIMARY KEY (prop_id),
             KEY event_id (event_id)
         ) $charset_collate;";
-
 		dbDelta( $sql );
+
+		// Migrate data from the old wp-logify table, if present and not done already.
+		self::migrate_data( 'properties' );
 	}
 
 	/**
@@ -236,8 +238,8 @@ class Property_Repository extends Repository {
 		// Convert the records to objects.
 		$props = array();
 		foreach ( $recordset as $record ) {
-            $prop = self::record_to_object( $record );
-            $props[ $prop->key ] = $prop;
+			$prop                = self::record_to_object( $record );
+			$props[ $prop->key ] = $prop;
 		}
 
 		return $props;

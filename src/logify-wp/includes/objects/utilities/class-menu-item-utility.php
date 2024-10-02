@@ -239,7 +239,7 @@ class Menu_Item_Utility extends Object_Utility {
 		}
 
 		// Try to get the linked object from the post. This will return null if the post has been deleted.
-		$linked_object = self::get_linked_object( $event->object_key );
+		$linked_object = self::get_linked_object( (int) $event->object_key );
 		if ( $linked_object ) {
 			// Convert the linked object to a string.
 			return Types::value_to_string( $linked_object );

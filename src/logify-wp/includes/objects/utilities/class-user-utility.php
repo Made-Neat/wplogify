@@ -141,8 +141,8 @@ class User_Utility extends Object_Utility {
 		// Load the user.
 		$user = $user_id ? self::load( $user_id ) : null;
 
-		// Try to load the user by email or username if it wasn't found.
-		if ( ! $user ) {
+		// If the user wasn't found, but we have a name, try to load the user by email or username.
+		if ( ! $user && $old_name ) {
 			if ( Strings::looks_like_email( $old_name ) ) {
 				// Load by email.
 				$user = self::load_user_by_email( $old_name );

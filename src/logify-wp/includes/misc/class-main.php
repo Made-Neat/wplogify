@@ -60,7 +60,7 @@ class Main {
 	 * Run on deactivation.
 	 */
 	public static function deactivate() {
-		wp_clear_scheduled_hook( 'logify_wp_cleanup_logs' );
+		wp_clear_scheduled_hook( 'logify_wp_cleanup' );
 	}
 
 	/**

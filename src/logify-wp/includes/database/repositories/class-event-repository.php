@@ -282,10 +282,10 @@ class Event_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
-		$table_name      = self::get_table_name();
+		// Create or update the table.
+		$new_table_name  = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
-
-		$sql = "CREATE TABLE $table_name (
+		$sql             = "CREATE TABLE $new_table_name (
             event_id       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             when_happened  DATETIME        NOT NULL,
             user_id        BIGINT UNSIGNED NOT NULL,
@@ -302,8 +302,10 @@ class Event_Repository extends Repository {
             PRIMARY KEY (event_id),
             KEY user_id (user_id)
         ) $charset_collate;";
-
 		dbDelta( $sql );
+
+		// Migrate data from the old wp-logify table, if present and not done already.
+		self::migrate_data( 'events' );
 	}
 
 	/**

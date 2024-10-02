@@ -79,7 +79,7 @@ namespace Logify_WP;
 					</td>
 				</tr>
 				<tr valign="top">
-					<th scope="row">Delete log records when uninstalling</th>
+					<th scope="row">Delete all data when uninstalling</th>
 					<td><input type="checkbox" name="logify_wp_delete_on_uninstall" value="1" <?php checked( Plugin_Settings::get_delete_on_uninstall(), 1 ); ?> /></td>
 				</tr>
 				<tr valign="top">

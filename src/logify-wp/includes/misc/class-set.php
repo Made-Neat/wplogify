@@ -66,7 +66,7 @@ class Set implements Countable, IteratorAggregate {
 	 * @param mixed $item The item to check.
 	 * @return bool True if the set contains the item, false otherwise.
 	 */
-	public function contains( $item ): bool {
+	public function contains( mixed $item ): bool {
 		return in_array( $item, $this->items, true );
 	}
 
@@ -76,7 +76,7 @@ class Set implements Countable, IteratorAggregate {
 	 * @param mixed $item The item to add.
 	 * @return self The set with the item added.
 	 */
-	public function add( $item ): self {
+	public function add( mixed $item ): self {
 		if ( ! $this->contains( $item ) ) {
 			$this->items[] = $item;
 		}
@@ -106,14 +106,14 @@ class Set implements Countable, IteratorAggregate {
 	/**
 	 * Remove an item from the set.
 	 *
-	 * @param mixed $item2 The item to remove.
+	 * @param mixed $item The item to remove.
 	 * @return self The set with the item removed.
 	 */
-	public function remove( $item ): self {
+	public function remove( mixed $item ): self {
 		$new_items = array();
-		foreach ( $this->items as $item2 ) {
-			if ( $item !== $item2 ) {
-				$new_items[] = $item2;
+		foreach ( $this->items as $existing_item ) {
+			if ( $item !== $existing_item ) {
+				$new_items[] = $existing_item;
 			}
 		}
 		$this->items = $new_items;
@@ -179,7 +179,8 @@ class Set implements Countable, IteratorAggregate {
 	 */
 	public function intersect( self $set2 ): self {
 		// Construct new set containing items from the first set that are also in the second set.
-		// We use this instead of array_intersect() because that function does not use strict comparison.
+		// We use this instead of array_intersect() because that function does not use strict
+		// comparison.
 		$result = new self();
 		foreach ( $this->items as $item ) {
 			if ( $set2->contains( $item ) ) {
