@@ -133,7 +133,7 @@ jQuery(($) => {
         }
     });
 
-    // Setup behaviour for the search box.
+    // Setup behavior for the search box.
     $('#logify-wp-search-filter').on('keyup', function () {
         // Remember the search string.
         let searchString = this.value;
@@ -230,16 +230,16 @@ jQuery(($) => {
         selectCookieValue('#logify-wp-role-filter', 'role');
     };
 
-    // Setup behaviour of object type checkboxes.
+    // Setup behavior of object type checkboxes.
     $('.logify-wp-object-type-filter-item input').on('change', function (event) {
-        // Cancel the default behaviour of the checkbox.
+        // Cancel the default behavior of the checkbox.
         event.preventDefault();
 
         // Click the surrounding div.
         $(this).parent().click();
     });
 
-    // Setup behaviour of object type containers (i.e. the coloured divs wrapping the checkbox and label).
+    // Setup behavior of object type containers (i.e. the colored divs wrapping the checkbox and label).
     $('.logify-wp-object-type-filter-item').on('click', function (event) {
         // Toggle the checkbox.
         let checkbox = $(this).find('input[type="checkbox"]');

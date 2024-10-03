@@ -18,7 +18,7 @@ use DateTimeZone;
 class Log_Page {
 
 	/**
-	 * Initialise the log page.
+	 * Initialize the log page.
 	 */
 	public static function init() {
 		add_action( 'wp_ajax_logify_wp_fetch_logs', array( __CLASS__, 'fetch_logs' ) );

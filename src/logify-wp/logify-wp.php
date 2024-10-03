@@ -3,10 +3,12 @@
  * Plugin Name: Logify WP
  * Plugin URI: https://logifywp.com
  * Description: Logify WP features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
- * Version: 1.48
+ * Version: 1.0
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
- * License: GPL2
+ * Text Domain: logify-wp
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  *
  * Logify WP is a plugin that logs all changes made to your WordPress website, including who made them
  * and when. It features advanced tracking to ensure awareness of all changes made to your WordPress

@@ -4,19 +4,19 @@ Contributors: madeneat
 Tags: activity log, audit log, security, user tracking, event log
 Requires at least: 6.0
 Tested up to: 6.6.1
-Requires PHP: 8.0
 Stable tag: 1.48
+Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Website: https://logifywp.com/
 
-Logify WP is a user-friendly plugin that tracks critical actions on your WordPress site, offering enhanced security and easy-to-use activity tracking.
+Logify WP is a lightweight, user-friendly plugin that tracks critical actions on your site, offering enhanced security and user tracking.
 
 == Description ==
 
-**Logify WP** provides real-time, detailed logs of activities happening across your WordPress website. Whether you're an **agency**, **freelancer**, **IT team**, **developer**, or **website administrator**, Logify WP gives you full visibility into your website’s activity with a comprehensive **activity log** and **audit log**. From tracking post edits to user login attempts and plugin updates, Logify WP helps you monitor and secure your site with clear and easy-to-understand logs.
+**Logify WP** provides real-time, detailed logs of activities happening across your WordPress website. Whether you're tracking changes to posts, monitoring user logins, reviewing media updates, or plugin management actions, Logify WP ensures full visibility with a comprehensive activity log and audit log. This makes it easy to audit changes and improve your site’s security.
 
-Built to be simple yet powerful, Logify WP features a clean layout of activity information, easy filtering and search options, and customizable role-based access controls. The user-friendly dashboard widget makes it easy to review recent critical activities at a glance.
+Designed to be performance-friendly, Logify WP ensures minimal impact on your site’s speed while delivering powerful user tracking capabilities. It features role-based access control, advanced search and filtering, and an intuitive dashboard widget to keep you in control.
 
 ### Key Features:
 
@@ -27,19 +27,14 @@ Built to be simple yet powerful, Logify WP features a clean layout of activity i
 - **Role-Based Access Control:** Limit who can access the activity logs based on their WordPress role.
 - **Advanced Search & Filters:** Filter logs by user, date, post type, and more to quickly find specific actions.
 - **User-Friendly Dashboard Widget:** View the most recent critical activities in a quick summary.
+- **Secure and Optimized:** Designed for minimal performance impact, ensuring the plugin won’t slow down your website.
 - **IP Address Information Integration:** One-click access to IP information via WhatIsMyIpAddress.com.
 
-**Who is Logify WP for?**
+**Why Choose Logify WP?**
 
-Logify WP is perfect for:
-- **Agencies** managing multiple client sites.
-- **Freelancers** who need a detailed audit trail for their client work.
-- **IT Teams** maintaining the security of large WordPress environments.
-- **Website Administrators** responsible for monitoring site activity and detecting unauthorized changes.
-- **Developers** looking for a simple yet powerful logging tool.
-- **Everyday Website Users** who want a simple way to monitor and track activity on their site.
+Logify WP provides robust activity and audit logging capabilities without bloating your website. Optimized for scalability and security, it’s the ideal solution for developers, agencies, and website owners who need reliable user tracking and event logging.
 
-Logify WP is actively being developed, with new features in the pipeline. If you'd like to suggest features, submit them via [https://logifywp.com/suggest/](https://logifywp.com/suggest/).
+The plugin is actively being developed, with new features in the pipeline. If you'd like to suggest features, submit them via [https://logifywp.com/suggest/](https://logifywp.com/suggest/).
 
 == Installation ==
 
@@ -67,10 +62,12 @@ Absolutely! Logify WP provides advanced search and filtering options, allowing y
 
 == Screenshots ==
 
-1. **Activity Dashboard** – View a summary of recent activities on your site at a glance.
-2. **Detailed Log View** – See full details of logged activities, including user avatars and advanced metadata.
-3. **Settings Page** – Customize what actions are logged and who has access to view them.
-4. **Search & Filter** – Easily search through logs by user, date, post type, and more.
+Screenshots can be found in /wp-content/logify-wp/assets/images/screenshots.
+
+1. **Activity Dashboard** – View a summary of recent activities on your site at a glance. (logify-wp-dashboard-widget.png)
+2. **Detailed Log View** – See full details of logged activities, including user avatars and advanced metadata. (logify-wp-event-log.png)
+3. **Settings Page** – Customize what actions are logged and who has access to view them. (logify-wp-settings.png)
+4. **Search & Filter** – Easily search through logs by user, date, post type, and more. (logify-wp-search-filters.png)
 
 == Changelog ==
 

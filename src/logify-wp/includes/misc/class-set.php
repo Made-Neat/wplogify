@@ -272,7 +272,7 @@ class Set implements Countable, IteratorAggregate {
 	}
 
 	/**
-	 * Magic method providing default behaviour for converting a set to a string.
+	 * Magic method providing default behavior for converting a set to a string.
 	 *
 	 * @return string The set as a string.
 	 */
