@@ -128,6 +128,10 @@ namespace Logify_WP;
 		</tr>
 	</table>
 
+	<div id="logify-wp-reset-filters-wrapper">
+		<button id="logify-wp-reset-filters" class="button button-primary">Reset search filters</button>
+	</div>
+
 	<table id="logify-wp-activity-log" class="widefat fixed table-logify-wp" cellspacing="0">
 		<thead>
 			<tr>

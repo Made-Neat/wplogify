@@ -381,3 +381,7 @@
 #logify-wp-event-type-filter {
   width: 20rem;
 }
+
+#logify-wp-reset-filters-wrapper {
+  margin: 1rem 0;
+}

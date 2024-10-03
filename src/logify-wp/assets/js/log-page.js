@@ -141,7 +141,8 @@ jQuery(($) => {
 
         // If there are 3 or more characters in the field, or 0, search.
         if (searchString.length >= 3 || searchString.length === 0) {
-            eventsTable.search(searchString).draw();
+            eventsTable.search(searchString);
+            eventsTable.ajax.reload();
         }
     });
 
@@ -360,6 +361,51 @@ jQuery(($) => {
         wpCookies.set('role', this.value, false, false, false, false);
 
         // Reload the table.
+        eventsTable.ajax.reload();
+    });
+
+    // Set up the button to reset search filters.
+    $('#logify-wp-reset-filters-wrapper').on('click', function () {
+        // Clear the search text.
+        $('#logify-wp-search-filter').val('');
+        wpCookies.set('search', '', false, false, false, false);
+
+        // Clear the object type checkboxes.
+        $('#logify-wp-show-all-events').prop('checked', true);
+        $('#logify-wp-object-type-checkboxes input').prop('checked', true);
+        let selectedObjectTypes = getSelectedObjectTypes();
+        wpCookies.set('object_types', JSON.stringify(selectedObjectTypes), false, false, false, false);
+
+        // Clear the start date.
+        $('#logify-wp-start-date').val('');
+        wpCookies.set('start_date', '', false, false, false, false);
+
+        // Clear the end date.
+        $('#logify-wp-end-date').val('');
+        wpCookies.set('end_date', '', false, false, false, false);
+
+        // Clear the post type.
+        $('#logify-wp-post-type-filter').val('');
+        wpCookies.set('post_type', '', false, false, false, false);
+
+        // Clear the taxonomy.
+        $('#logify-wp-taxonomy-filter').val('');
+        wpCookies.set('taxonomy', '', false, false, false, false);
+
+        // Clear the event type.
+        $('#logify-wp-event-type-filter').val('');
+        wpCookies.set('event_type', '', false, false, false, false);
+
+        // Clear the user.
+        $('#logify-wp-user-filter').val('');
+        wpCookies.set('user_id', '', false, false, false, false);
+
+        // Clear the role.
+        $('#logify-wp-role-filter').val('');
+        wpCookies.set('role', '', false, false, false, false);
+
+        // Reload the table.
+        eventsTable.search('');
         eventsTable.ajax.reload();
     });
 
