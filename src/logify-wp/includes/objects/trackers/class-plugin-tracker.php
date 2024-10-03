@@ -69,21 +69,23 @@ class Plugin_Tracker {
 		}
 
 		// Check we're installing or updating a plugin.
-		$installing_plugin = $hook_extra['action'] === 'install';
-		$updating_plugin   = $hook_extra['action'] === 'update';
-		if ( ! $installing_plugin && ! $updating_plugin ) {
+		$installing = $hook_extra['action'] === 'install';
+		$updating   = $hook_extra['action'] === 'update';
+		if ( ! $installing && ! $updating ) {
+			return;
+		}
+
+		// Check we have a plugin name. In theory this shouldn't happen, but it has.
+		if ( empty( $upgrader->new_plugin_data['Name'] ) ) {
 			return;
 		}
 
 		// Get the plugin name and load the plugin.
-		if ( ! empty( $upgrader->new_plugin_data['Name'] ) ) {
-			$plugin_name = $upgrader->new_plugin_data['Name'];
-			$plugin      = Plugin_Utility::load_by_name( $plugin_name );
-		} elseif ( ! empty( $upgrader->new_plugin_data['TextDomain'] ) ) {
-			$plugin_name = $upgrader->new_plugin_data['TextDomain'];
-			$plugin      = Plugin_Utility::load( $plugin_name );
-		} else {
-			debug( 'ERROR: Could not find plugin name and could not load plugin.' );
+		$plugin_name = $upgrader->new_plugin_data['Name'];
+		$plugin      = Plugin_Utility::load_by_name( $plugin_name );
+
+		// If we couldn't find the plugin, return.
+		if ( ! $plugin ) {
 			return;
 		}
 
@@ -107,7 +109,7 @@ class Plugin_Tracker {
 		$old_version = null;
 
 		// Get the event type.
-		if ( $installing_plugin ) {
+		if ( $installing ) {
 			// Default event type verb.
 			$verb = 'Installed';
 

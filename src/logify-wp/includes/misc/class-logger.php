@@ -81,7 +81,7 @@ class Logger {
 		// Create the new event.
 		$event = Event::create( $event_type, $wp_object, $eventmetas, $properties, $acting_user );
 
-		// An event won't be created if the user is not logged in or if they don't have a role we're tracking.
+		// If the event could not be created, we aren't tracking this user.
 		if ( ! $event ) {
 			return false;
 		}

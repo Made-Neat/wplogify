@@ -76,10 +76,13 @@ class Widget_Tracker {
 			$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 			if ( ! key_exists( $widget_number, $new_option_value ) ) {
-				// The widget is being deleted.
+				// The widget is being deleted. Create an event.
+				$event = Event::create( 'Widget Deleted', $old_widget );
 
-				// Create the event.
-				self::$events[ $widget_id ] = Event::create( 'Widget Deleted', $old_widget );
+				// If the event was successfully created, store it.
+				if ( $event ) {
+					self::$events[ $widget_id ] = $event;
+				}
 			} elseif ( $old_widget !== $new_widget ) {
 				// The widget is being updated.
 
@@ -115,7 +118,12 @@ class Widget_Tracker {
 
 				// If there were property changes, create an event.
 				if ( ! empty( $props ) ) {
-					self::$events[ $widget_id ] = Event::create( 'Widget Updated', $old_widget, null, $props );
+					$event = Event::create( 'Widget Updated', $old_widget, null, $props );
+
+					// If the event was successfully created, store it.
+					if ( $event ) {
+						self::$events[ $widget_id ] = $event;
+					}
 				}
 			}
 		}
@@ -153,7 +161,12 @@ class Widget_Tracker {
 				$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 				// Create the event.
-				self::$events[ $widget_id ] = Event::create( 'Widget Created', $new_widget );
+				$event = Event::create( 'Widget Created', $new_widget );
+
+				// If the event was successfully created, store it.
+				if ( $event ) {
+					self::$events[ $widget_id ] = $event;
+				}
 			}
 		}
 	}
@@ -210,14 +223,21 @@ class Widget_Tracker {
 					}
 
 					// Create a new event for this widget.
-					$widget                     = Widget_Utility::load( $widget_id );
-					self::$events[ $widget_id ] = Event::create( $event_type, $widget );
+					$widget = Widget_Utility::load( $widget_id );
+					$event  = Event::create( $event_type, $widget );
+
+					// If the event was successfully created, store it.
+					if ( $event ) {
+						self::$events[ $widget_id ] = $event;
+					}
 				}
 
-				// Add the changed area to the properties.
-				$old_area_name = Widget_Utility::get_area_name( $old_area );
-				$new_area_name = Widget_Utility::get_area_name( $new_area );
-				self::$events[ $widget_id ]->set_prop( 'area', null, $old_area_name, $new_area_name );
+				// If an event exists, add the changed area to the properties.
+				if ( isset( self::$events[ $widget_id ] ) ) {
+					$old_area_name = Widget_Utility::get_area_name( $old_area );
+					$new_area_name = Widget_Utility::get_area_name( $new_area );
+					self::$events[ $widget_id ]->set_prop( 'area', null, $old_area_name, $new_area_name );
+				}
 			}
 		}
 

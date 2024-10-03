@@ -271,6 +271,11 @@ class Post_Tracker {
 		// Create the event.
 		$event = Event::create( $event_type, $post );
 
+		// If the event could not be created, we aren't tracking this user.
+		if ( ! $event ) {
+			return;
+		}
+
 		// Update the properties to correctly show the status change.
 		$event->set_prop( 'post_status', $wpdb->posts, $old_status, $new_status );
 
@@ -311,6 +316,11 @@ class Post_Tracker {
 
 		// Create the event.
 		$event = Event::create( $event_type, $post );
+
+		// If the event could not be created, we aren't tracking this user.
+		if ( ! $event ) {
+			return;
+		}
 
 		// Get the attached terms.
 		$attached_terms = Post_Utility::get_attached_terms( $post_id );
@@ -512,6 +522,11 @@ class Post_Tracker {
 
 				// Create the event.
 				$event = Event::create( $event_type, $post );
+
+				// If the event could not be created, we aren't tracking this user.
+				if ( ! $event ) {
+					return;
+				}
 
 				// Show the added terms in the eventmetas.
 				if ( ! $term_changes['added']->isEmpty() ) {

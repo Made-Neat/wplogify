@@ -53,6 +53,13 @@ class Taxonomy_Tracker {
 				// registered, so we use the properties remembered in the logify_wp_known_taxonomies option.
 				$taxonomy_ref = new Object_Reference( 'taxonomy', $taxonomy, $taxonomy_info['label'] );
 				$event        = Event::create( 'Taxonomy Removed', $taxonomy_ref );
+
+				// If the event could not be created, we aren't tracking this user.
+				if ( ! $event ) {
+					break;
+				}
+
+				// Add the taxonomy properties.
 				$event->add_props( Taxonomy_Utility::get_core_properties_from_array( $taxonomy_info ) );
 				$event->save();
 			}

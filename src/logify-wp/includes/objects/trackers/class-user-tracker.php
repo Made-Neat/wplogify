@@ -79,6 +79,12 @@ class User_Tracker {
 		// Also, the acting user must be provided, because there is no current logged in user at the
 		// time this event occurs.
 		$event = Event::create( 'User Login', 'user', null, null, $user );
+
+		// If the event could not be created, we aren't tracking this user.
+		if ( ! $event ) {
+			return;
+		}
+
 		$event->save();
 	}
 
@@ -93,6 +99,11 @@ class User_Tracker {
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
 		$event = Event::create( 'Failed Login', 'user' );
+
+		// If the event could not be created, we aren't tracking this user.
+		if ( ! $event ) {
+			return;
+		}
 
 		// Store deatils of the login failure in the event metadata.
 		$event->set_meta( 'username_entered', $username );
@@ -114,6 +125,12 @@ class User_Tracker {
 		// Also, the acting user must be provided, because there is no current logged in user at the
 		// time this event occurs.
 		$event = Event::create( 'User Logout', 'user', null, null, $user_id );
+
+		// If the event could not be created, we aren't tracking this user.
+		if ( ! $event ) {
+			return;
+		}
+
 		$event->save();
 	}
 
@@ -196,7 +213,7 @@ class User_Tracker {
 					// current user has a role that isn't being tracked.
 					self::$profile_update_event = Event::create( 'User Updated', $user );
 
-					// If no event was created, no need to log an event.
+					// If the event could not be created, we aren't tracking this user.
 					if ( ! self::$profile_update_event ) {
 						return;
 					}
@@ -244,7 +261,7 @@ class User_Tracker {
 				$user_ref                   = new Object_Reference( 'user', $user_id );
 				self::$profile_update_event = Event::create( 'User Updated', $user_ref );
 
-				// If no event was created, no need to log an event.
+				// If the event could not be created, we aren't tracking this user.
 				if ( ! self::$profile_update_event ) {
 					return;
 				}
@@ -319,6 +336,11 @@ class User_Tracker {
 		if ( $create_new_event ) {
 			// Create a new activity event.
 			$event = Event::create( $event_type, 'user', null, null, $user );
+
+			// If the event could not be created, we aren't tracking this user.
+			if ( ! $event ) {
+				return;
+			}
 
 			// Set the eventmetas.
 			$event->set_meta( 'activity_start', $now );

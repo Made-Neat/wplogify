@@ -69,6 +69,11 @@ class Option_Tracker {
 			if ( ! isset( self::$event ) ) {
 				$object_ref  = new Object_Reference( 'option', null, null );
 				self::$event = Event::create( 'Settings Updated', $object_ref );
+
+				// If the event could not be created, we aren't tracking this user.
+				if ( ! self::$event ) {
+					return;
+				}
 			}
 
 			if ( str_ends_with( $option_name, '_category' ) ) {

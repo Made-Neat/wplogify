@@ -18,6 +18,11 @@
 	 */
 public static function on_export_personal_data( int $request_id ) {
 	$event = Event::create( 'Personal Data Export Requested', 'user' );
+
+	if ( ! $event ) {
+		return;
+	}
+
 	$event->set_meta( 'request_id', $request_id );
 	$event->save();
 }
@@ -30,6 +35,11 @@ public static function on_export_personal_data( int $request_id ) {
 	 */
 public static function on_export_wp( $args ) {
 	$event = Event::create( 'Data Export', 'user' );
+
+	if ( ! $event ) {
+		return;
+	}
+
 	$event->set_meta( 'export_arguments', $args );
 	$event->save();
 }

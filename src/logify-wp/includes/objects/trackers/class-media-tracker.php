@@ -288,6 +288,11 @@ class Media_Tracker {
 		// Create the event.
 		$event = Event::create( $event_type, $post );
 
+		// If the event could not be created, we aren't tracking this user.
+		if ( ! $event ) {
+			return;
+		}
+
 		// Add all the object's properties (including metadata), in case we want to restore it later.
 		// NOTE: This will probably have to change when we update the data model to distinguish
 		// NOTE: between properties we want to show for user information, vs. those we want to keep
