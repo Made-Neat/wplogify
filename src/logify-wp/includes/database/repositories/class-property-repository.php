@@ -9,7 +9,6 @@ namespace Logify_WP;
 
 use InvalidArgumentException;
 use RuntimeException;
-use UnexpectedValueException;
 
 /**
  * Class responsible for managing properties in the database.
@@ -148,7 +147,7 @@ class Property_Repository extends Repository {
 		dbDelta( $sql );
 
 		// Migrate data from the old wp-logify table, if present and not done already.
-		self::migrate_data( 'properties' );
+		self::migrate_data( 'properties', array( 'val', 'new_val' ) );
 	}
 
 	/**
@@ -175,15 +174,16 @@ class Property_Repository extends Repository {
 	 *
 	 * @param array $record The database record as an associative array.
 	 * @return Property The Property object.
-	 * @throws UnexpectedValueException If the old or new value cannot be unserialized.
 	 */
 	public static function record_to_object( array $record ): Property {
 		// Unserialize the old and new values.
 		if ( ! Serialization::try_unserialize( $record['val'], $val ) ) {
-			throw new UnexpectedValueException( 'Failed to unserialize value.' );
+			debug( "Failed to unserialize value: {$record['val']}" );
+			$val = $record['val'];
 		}
 		if ( ! Serialization::try_unserialize( $record['new_val'], $new_val ) ) {
-			throw new UnexpectedValueException( 'Failed to unserialize new value.' );
+			debug( "Failed to unserialize new value: {$record['new_val']}" );
+			$new_val = $record['new_val'];
 		}
 
 		// Create the Property object.

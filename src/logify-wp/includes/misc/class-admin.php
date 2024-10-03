@@ -34,7 +34,7 @@ class Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_menu' ), 10, 0 );
 
 		// Add the Logify WP menu to the Admin bar.
-		add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_menu' ), 10, 1 );
+		add_action( 'admin_bar_menu', array( __CLASS__, 'add_admin_bar_menu' ), 100, 1 );
 
 		// Enqueue the necessary assets for the Logify WP admin pages.
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ), 10, 1 );

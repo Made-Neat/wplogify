@@ -73,10 +73,11 @@ abstract class Repository {
 	/**
 	 * Migrate data from the old wp-logify table, if present and not done already.
 	 *
-	 * @param string $table_key The table key (e.g. 'events', 'properties', or 'eventmeta').
+	 * @param string $table_key        The table key (e.g. 'events', 'properties', or 'eventmeta').
+	 * @param array  $fields_to_update The fields that require a namespace update.
 	 * @return void
 	 */
-	public static function migrate_data( string $table_key ): void {
+	public static function migrate_data( string $table_key, array $fields_to_update = array() ): void {
 		$option = "logify_wp_{$table_key}_data_migrated";
 		if ( ! get_option( $option, false ) ) {
 
@@ -93,7 +94,22 @@ abstract class Repository {
 
 			// If the new table is empty and the old table is present, copy the data.
 			if ( $new_table_empty && ! $old_table_empty ) {
-				$wpdb->query( "INSERT INTO $new_table_name SELECT * FROM $old_table_name" );
+				// Select all records from the old table.
+				$old_records = $wpdb->get_results( "SELECT * FROM $old_table_name", ARRAY_A );
+
+				debug( $fields_to_update );
+				// Iterate through the records.
+				foreach ( $old_records as $record ) {
+					// Update the namespace in the specified fields.
+					foreach ( $fields_to_update as $field ) {
+						if ( is_string( $record[ $field ] ) && strpos( $record[ $field ], 'WP_Logify' ) !== false ) {
+							$record[ $field ] = str_replace( 'WP_Logify', 'Logify_WP', $record[ $field ] );
+						}
+					}
+
+					// Insert the transformed record into the new table.
+					$wpdb->insert( $new_table_name, $record );
+				}
 			}
 
 			// Set the flag to indicate that the data has been migrated.

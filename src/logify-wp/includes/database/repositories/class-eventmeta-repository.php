@@ -9,7 +9,6 @@ namespace Logify_WP;
 
 use InvalidArgumentException;
 use RuntimeException;
-use UnexpectedValueException;
 
 /**
  * Class Logify_WP\Eventmeta_Repository
@@ -148,7 +147,7 @@ class Eventmeta_Repository extends Repository {
 		dbDelta( $sql );
 
 		// Migrate data from the old wp-logify table, if present and not done already.
-		self::migrate_data( 'eventmeta' );
+		self::migrate_data( 'eventmeta', array( 'meta_value' ) );
 	}
 
 	/**
@@ -175,12 +174,12 @@ class Eventmeta_Repository extends Repository {
 	 *
 	 * @param array $record The database record.
 	 * @return Eventmeta The Eventmeta entity.
-	 * @throws UnexpectedValueException If the meta value cannot be unserialized.
 	 */
 	protected static function record_to_object( array $record ): Eventmeta {
 		// Unserialize the meta value.
 		if ( ! Serialization::try_unserialize( $record['meta_value'], $meta_value ) ) {
-			throw new UnexpectedValueException( 'Failed to unserialize eventmeta value.' );
+			debug( "Failed to unserialize eventmeta value: {$record['meta_value']}" );
+			$meta_value = $record['meta_value'];
 		}
 
 		// Create the Eventmeta object.
