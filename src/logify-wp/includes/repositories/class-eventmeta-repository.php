@@ -132,22 +132,24 @@ class Eventmeta_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
-		// Create or update the table.
 		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
-		$sql             = "CREATE TABLE $table_name (
-			eventmeta_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-			event_id      BIGINT UNSIGNED NOT NULL,
-			meta_key      VARCHAR(255) NOT NULL,
-			meta_value    LONGTEXT NOT NULL,
-			PRIMARY KEY (eventmeta_id),
-			KEY event_id (event_id),
-			KEY meta_key (meta_key(191))
-		) $charset_collate;";
-		dbDelta( $sql );
 
-		// Migrate data from the old wp-logify table, if present and not done already.
-		self::migrate_data( 'eventmeta', array( 'meta_value' ) );
+		$sql = $wpdb->prepare(
+			'CREATE TABLE %i (
+				eventmeta_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				event_id     BIGINT UNSIGNED NOT NULL,
+				meta_key     VARCHAR(255)    NOT NULL,
+				meta_value   LONGTEXT        NOT NULL,
+				PRIMARY KEY (eventmeta_id),
+				KEY event_id (event_id),
+				KEY meta_key (meta_key(191))
+			) %s',
+			$table_name,
+			$charset_collate
+		);
+
+		dbDelta( $sql );
 	}
 
 	/**

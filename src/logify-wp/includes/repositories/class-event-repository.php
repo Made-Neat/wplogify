@@ -282,30 +282,32 @@ class Event_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
-		// Create or update the table.
 		$new_table_name  = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
-		$sql             = "CREATE TABLE $new_table_name (
-            event_id       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            when_happened  DATETIME        NOT NULL,
-            user_id        BIGINT UNSIGNED NOT NULL,
-            user_name      VARCHAR(255)    NOT NULL,
-            user_role      VARCHAR(255)    NOT NULL,
-            user_ip        VARCHAR(40)     NULL,
-            user_location  VARCHAR(255)    NULL,
-            user_agent     VARCHAR(255)    NULL,
-            event_type     VARCHAR(255)    NOT NULL,
-            object_type    VARCHAR(10)     NULL,
-            object_subtype VARCHAR(50)     NULL,
-            object_key     VARCHAR(50)     NULL,
-            object_name    VARCHAR(100)    NULL,
-            PRIMARY KEY (event_id),
-            KEY user_id (user_id)
-        ) $charset_collate;";
-		dbDelta( $sql );
 
-		// Migrate data from the old wp-logify table, if present and not done already.
-		self::migrate_data( 'events' );
+		$sql = $wpdb->prepare(
+			'CREATE TABLE %i (
+				event_id       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				when_happened  DATETIME        NOT NULL,
+				user_id        BIGINT UNSIGNED NOT NULL,
+				user_name      VARCHAR(255)    NOT NULL,
+				user_role      VARCHAR(255)    NOT NULL,
+				user_ip        VARCHAR(40)     NULL,
+				user_location  VARCHAR(255)    NULL,
+				user_agent     VARCHAR(255)    NULL,
+				event_type     VARCHAR(255)    NOT NULL,
+				object_type    VARCHAR(10)     NULL,
+				object_subtype VARCHAR(50)     NULL,
+				object_key     VARCHAR(50)     NULL,
+				object_name    VARCHAR(100)    NULL,
+				PRIMARY KEY (event_id),
+				KEY user_id (user_id)
+			) %s',
+			$new_table_name,
+			$charset_collate
+		);
+
+		dbDelta( $sql );
 	}
 
 	/**

@@ -48,6 +48,9 @@ $rose-95: hsl(330, 100%, 95%);
 $danger: #dc3232;
 $danger-hover: lighten($danger, 5%);
 
+$action: #f7941d;
+$action-hover: lighten($action, 5%);
+
 @mixin object-type-colors {
     .logify-wp-object-type-all {
         background-color: white;

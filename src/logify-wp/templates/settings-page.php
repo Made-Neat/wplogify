@@ -27,6 +27,16 @@ if ( isset( $_GET['reset'] ) && $_GET['reset'] === 'success' ) {
 	);
 }
 
+// Show a message if the data was successfully migrated.
+if ( isset( $_GET['migrated'] ) && $_GET['migrated'] === 'success' ) {
+	add_settings_error(
+		'logify_wp_messages',
+		'logify_wp_migration_done',
+		__( 'Data migrated successfully. You should verify the data in the new plugin, then deactivate and delete the old WP Logify plugin.', 'logify-wp' ),
+		'updated'
+	);
+}
+
 // Display any settings errors or messages.
 settings_errors( 'logify_wp_messages' );
 ?>
@@ -137,5 +147,13 @@ settings_errors( 'logify_wp_messages' );
 		</fieldset>
 
 		<?php submit_button( name: 'logify-wp-submit-button' ); ?>
+
+		<?php
+		// If wp-logify is installed, display a button to migrate data.
+		if ( is_plugin_active( 'wp-logify/wp-logify.php' ) ) {
+			echo "<a id='logify-wp-migrate-data-button' class='button button-action' href='" . esc_url( admin_url( 'admin-post.php?action=logify_wp_migrate_data' ) ) . "' onclick='return confirm(\"Are you sure you want to migrate the data from the old WP Logify plugin to the new Logify WP plugin? This will remove all log records in the new plugin.\");'>Migrate data from WP Logify</a>";
+		}
+		?>
+
 	</form>
 </div>

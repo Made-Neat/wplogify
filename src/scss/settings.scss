@@ -56,3 +56,17 @@ body.logify-wp_page_logify-wp-settings {
     max-height: 8rem;
     overflow: auto;
 }
+
+.wp-core-ui .button-action {
+    background-color: $action;
+    border-color: $action;
+    color: white;
+
+    &:hover,
+    &:focus {
+        background-color: $action-hover;
+        border-color: $action-hover;
+        color: white;
+        box-shadow: none;
+    }
+}

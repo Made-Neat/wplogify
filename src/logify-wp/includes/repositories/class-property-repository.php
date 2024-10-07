@@ -131,23 +131,25 @@ class Property_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
-		// Create or update the table.
 		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
-		$sql             = "CREATE TABLE $table_name (
-            prop_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            event_id   BIGINT UNSIGNED NOT NULL,
-            prop_key   VARCHAR(100)    NOT NULL,
-            table_name VARCHAR(100)    NULL,
-            val        LONGTEXT        NULL,
-            new_val    LONGTEXT        NULL,
-            PRIMARY KEY (prop_id),
-            KEY event_id (event_id)
-        ) $charset_collate;";
-		dbDelta( $sql );
 
-		// Migrate data from the old wp-logify table, if present and not done already.
-		self::migrate_data( 'properties', array( 'val', 'new_val' ) );
+		$sql = $wpdb->prepare(
+			'CREATE TABLE %i (
+				prop_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				event_id   BIGINT UNSIGNED NOT NULL,
+				prop_key   VARCHAR(100)    NOT NULL,
+				table_name VARCHAR(100)    NULL,
+				val        LONGTEXT        NULL,
+				new_val    LONGTEXT        NULL,
+				PRIMARY KEY (prop_id),
+				KEY event_id (event_id)
+			) %s',
+			$table_name,
+			$charset_collate
+		);
+
+		dbDelta( $sql );
 	}
 
 	/**
@@ -264,71 +266,5 @@ class Property_Repository extends Repository {
 		}
 
 		return (bool) $result;
-	}
-
-
-	/**
-	 * Updates the wp_wp_logify_properties table by renaming the primary key column from property_id to prop_id.
-	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
-	 */
-	public static function repair_wp_logify_properties_table() {
-		global $wpdb;
-
-		// Check if the repair has already been done.
-		if ( get_option( 'logify_wp_properties_repair_done', false ) ) {
-			return;
-		}
-
-		// Get the correct table name with the WordPress table prefix.
-		$table_name = $wpdb->prefix . 'wp_logify_properties';
-
-		// Check if the table exists.
-		$sql          = $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name );
-		$table_exists = $wpdb->get_var( $sql );
-
-		Debug::info( "Table exists: $table_exists" );
-
-		if ( $table_exists !== $table_name ) {
-			// Table does not exist, so nothing to do.
-			Debug::info( 'Table does not exist' );
-			return;
-		}
-
-		// Check the current structure of the table.
-		$sql     = $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name );
-		$columns = $wpdb->get_results( $sql );
-
-		Debug::info( 'Columns: ' . print_r( $columns, true ) );
-
-		$has_property_id = false;
-		$has_prop_id     = false;
-		$primary_key     = '';
-
-		foreach ( $columns as $column ) {
-			if ( $column->Field === 'property_id' ) {
-				$has_property_id = true;
-				if ( $column->Key === 'PRI' ) {
-					$primary_key = 'property_id';
-				}
-			}
-			if ( $column->Field === 'prop_id' ) {
-				$has_prop_id = true;
-				if ( $column->Key === 'PRI' ) {
-					$primary_key = 'prop_id';
-				}
-			}
-		}
-
-		// Check if the primary key is 'property_id' and 'prop_id' does not exist.
-		if ( $has_property_id && ! $has_prop_id && $primary_key === 'property_id' ) {
-			Debug::info( 'Renaming primary key' );
-
-			// Execute the SQL query to rename the column.
-			$wpdb->query( "ALTER TABLE $table_name CHANGE `property_id` `prop_id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT" );
-		}
-
-		// Mark the repair as done.
-		update_option( 'logify_wp_properties_repair_done', true );
 	}
 }
