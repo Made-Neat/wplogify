@@ -186,7 +186,7 @@ class Object_Reference {
 			// Call the method on the utility class.
 			return $utility_class::$method( $this->key, ...$params );
 		} catch ( Throwable $e ) {
-			debug( "EXCEPTION calling $utility_class::$method({$this->key})", $e->getMessage() );
+			Debug::error( "EXCEPTION calling $utility_class::$method({$this->key})", $e->getMessage() );
 			return null;
 		}
 	}

@@ -108,7 +108,7 @@ class Media_Tracker {
 	 * @param int $post_id Attachment ID.
 	 */
 	public static function on_add_attachment( int $post_id ) {
-		debug( 'on_add_attachment' );
+		Debug::info( 'on_add_attachment' );
 
 		// Get the event.
 		$event = self::get_update_media_event( $post_id );
@@ -164,7 +164,7 @@ class Media_Tracker {
 			return;
 		}
 
-		debug( 'on_update_post_meta', $media_type );
+		Debug::info( 'on_update_post_meta', $media_type );
 
 		// Get the event.
 		$event = self::get_update_media_event( $post_id );
@@ -218,7 +218,7 @@ class Media_Tracker {
 			return;
 		}
 
-		debug( 'on_attachment_updated', $media_type );
+		Debug::info( 'on_attachment_updated', $media_type );
 
 		// Get the changes.
 		// This will find both core and meta property changes, but no meta changes should be found
@@ -280,7 +280,7 @@ class Media_Tracker {
 			return;
 		}
 
-		debug( 'on_delete_attachment', $media_type );
+		Debug::info( 'on_delete_attachment', $media_type );
 
 		// Get the event type.
 		$event_type = ucfirst( $media_type ) . ' Deleted';

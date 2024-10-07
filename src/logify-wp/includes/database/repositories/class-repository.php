@@ -97,13 +97,21 @@ abstract class Repository {
 				// Select all records from the old table.
 				$old_records = $wpdb->get_results( "SELECT * FROM $old_table_name", ARRAY_A );
 
-				debug( $fields_to_update );
+				Debug::info( $fields_to_update );
 				// Iterate through the records.
 				foreach ( $old_records as $record ) {
 					// Update the namespace in the specified fields.
 					foreach ( $fields_to_update as $field ) {
 						if ( is_string( $record[ $field ] ) && strpos( $record[ $field ], 'WP_Logify' ) !== false ) {
 							$record[ $field ] = str_replace( 'WP_Logify', 'Logify_WP', $record[ $field ] );
+						}
+					}
+
+					// Remove any invalid fields.
+					$valid_fields = self::get_table_column_names( $new_table_name );
+					foreach ( $record as $key => $value ) {
+						if ( ! in_array( $key, $valid_fields ) ) {
+							unset( $record[ $key ] );
 						}
 					}
 
@@ -115,5 +123,33 @@ abstract class Repository {
 			// Set the flag to indicate that the data has been migrated.
 			update_option( $option, true );
 		}
+	}
+
+	/**
+	 * Retrieves the column names from a given database table.
+	 *
+	 * @param string $table_name The name of the table (with prefix if necessary).
+	 * @return array An array of column names.
+	 */
+	public static function get_table_column_names( $table_name ): array {
+		global $wpdb;
+
+		// Prepare the SQL query to get columns from the table.
+		$sql = $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name );
+
+		// Execute the query and get the results.
+		$results = $wpdb->get_results( $sql );
+
+		// Initialize an array to hold the column names.
+		$column_names = array();
+
+		// Loop through the results and extract the column names.
+		if ( ! empty( $results ) ) {
+			foreach ( $results as $column ) {
+				$column_names[] = $column->Field;
+			}
+		}
+
+		return $column_names;
 	}
 }

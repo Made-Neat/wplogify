@@ -178,7 +178,7 @@ class Eventmeta_Repository extends Repository {
 	protected static function record_to_object( array $record ): Eventmeta {
 		// Unserialize the meta value.
 		if ( ! Serialization::try_unserialize( $record['meta_value'], $meta_value ) ) {
-			debug( "Failed to unserialize eventmeta value: {$record['meta_value']}" );
+			Debug::error( "Failed to unserialize eventmeta value: {$record['meta_value']}" );
 			$meta_value = $record['meta_value'];
 		}
 

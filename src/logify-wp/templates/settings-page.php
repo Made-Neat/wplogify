@@ -7,21 +7,35 @@
 
 namespace Logify_WP;
 
+// Show a success message if settings were saved.
+if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] === 'true' ) {
+	add_settings_error(
+		'logify_wp_messages',
+		'logify_wp_settings_saved',
+		__( 'Settings saved.', 'logify-wp' ),
+		'updated'
+	);
+}
+
 // Show a message if the log records were successfully deleted.
 if ( isset( $_GET['reset'] ) && $_GET['reset'] === 'success' ) {
-	?>
-	<div class="notice notice-success">
-		<p>Log records have been deleted.</p>
-	</div>
-	<?php
+	add_settings_error(
+		'logify_wp_messages',
+		'logify_wp_reset_done',
+		__( 'Log records have been deleted.', 'logify-wp' ),
+		'updated'
+	);
 }
+
+// Display any settings errors or messages.
+settings_errors( 'logify_wp_messages' );
 ?>
 
 <div class="wrap">
 	<h1>Logify WP Settings</h1>
 	<form method="post" action="options.php">
 		<?php settings_fields( 'logify_wp_settings_group' ); ?>
-		<?php do_settings_sections( 'logify_wp_settings_group' ); ?>
+		<?php // do_settings_sections( 'logify_wp_settings_group' ); ?>
 
 		<fieldset class="logify-wp-settings-group">
 			<legend>Access control</legend>

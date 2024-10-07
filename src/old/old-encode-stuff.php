@@ -47,7 +47,7 @@ public static function can_decode( array $ary, ?object &$obj ): bool {
 		// The DateTime constructor will throw if the details don't represent a valid DateTime.
 		$obj = DateTime::__set_state( $ary['DateTime'] );
 	} catch ( Throwable $ex ) {
-		debug( $ex->getMessage(), $ary['DateTime'], );
+		Debug::info( $ex->getMessage(), $ary['DateTime'], );
 		return false;
 	}
 

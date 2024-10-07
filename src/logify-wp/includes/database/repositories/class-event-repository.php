@@ -110,7 +110,7 @@ class Event_Repository extends Repository {
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
-			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
+			Debug::error( 'Database error', $wpdb->last_query, $wpdb->last_error );
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -120,7 +120,7 @@ class Event_Repository extends Repository {
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
-			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
+			Debug::error( 'Database error', $wpdb->last_query, $wpdb->last_error );
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -130,7 +130,7 @@ class Event_Repository extends Repository {
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
-			debug( 'Database error', $wpdb->last_query, $wpdb->last_error );
+			Debug::error( 'Database error', $wpdb->last_query, $wpdb->last_error );
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -196,7 +196,7 @@ class Event_Repository extends Repository {
 			if ( ! $event->has_prop( $record['prop_key'] ) ) {
 				$del_result = $wpdb->delete( $table_name, array( 'prop_id' => $record['prop_id'] ), '%d' );
 				if ( $del_result === false ) {
-					debug( 'Error deleting property record.' );
+					Debug::error( 'Error deleting property record.' );
 				}
 			}
 		}
@@ -239,7 +239,7 @@ class Event_Repository extends Repository {
 			if ( ! $event->has_meta( $record['meta_key'] ) ) {
 				$del_result = $wpdb->delete( $table_name, array( 'eventmeta_id' => $record['eventmeta_id'] ), '%d' );
 				if ( $del_result === false ) {
-					debug( 'Error deleting eventmeta record.' );
+					Debug::error( 'Error deleting eventmeta record.' );
 				}
 			}
 		}

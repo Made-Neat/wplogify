@@ -189,7 +189,7 @@ class Event {
 		if ( ! in_array( $event_type, array( 'User Login', 'Failed Login' ) ) &&
 			( ! $user_data['object'] || ! Access_Control::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() ) )
 		) {
-			debug( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
+			Debug::info( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
 			return null;
 		}
 
@@ -253,9 +253,9 @@ class Event {
 
 		// Log the result.
 		if ( $ok ) {
-			debug( 'EVENT SAVED:', $this->id, $this->event_type );
+			Debug::info( 'EVENT SAVED:', $this->id, $this->event_type );
 		} else {
-			debug( 'FAILED TO SAVE EVENT:', $this->id, $this->event_type );
+			Debug::error( 'FAILED TO SAVE EVENT:', $this->id, $this->event_type );
 		}
 
 		return $ok;
@@ -289,9 +289,9 @@ class Event {
 
 		// Log the result.
 		if ( $ok ) {
-			debug( 'EVENT DELETED:', $this->id, $this->event_type );
+			Debug::info( 'EVENT DELETED:', $this->id, $this->event_type );
 		} else {
-			debug( 'FAILED TO DELETED EVENT:', $this->id, $this->event_type );
+			Debug::error( 'FAILED TO DELETE EVENT:', $this->id, $this->event_type );
 		}
 
 		return $ok;

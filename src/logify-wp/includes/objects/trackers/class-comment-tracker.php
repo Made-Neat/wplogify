@@ -51,7 +51,7 @@ class Comment_Tracker {
 	 * @param WP_Comment $comment Comment object.
 	 */
 	public static function on_wp_insert_comment( int $id, WP_Comment $comment ) {
-		debug( 'on_wp_insert_comment', $id, $comment );
+		Debug::info( 'on_wp_insert_comment', $id, $comment );
 
 		Logger::log_event( 'Comment Added', $comment );
 	}
@@ -111,7 +111,7 @@ class Comment_Tracker {
 	 * @param array $data       Comment data.
 	 */
 	public static function on_edit_comment( int $comment_id, array $data ) {
-		debug( 'on_edit_comment', $comment_id, $data );
+		Debug::info( 'on_edit_comment', $comment_id, $data );
 
 		// Load the comment.
 		$comment = Comment_Utility::load( $comment_id );
@@ -127,7 +127,7 @@ class Comment_Tracker {
 	 * @param WP_Comment $comment    The comment to be deleted.
 	 */
 	public static function on_delete_comment( string $comment_id, WP_Comment $comment ) {
-		debug( 'on_delete_comment', $comment_id, $comment );
+		Debug::info( 'on_delete_comment', $comment_id, $comment );
 
 		// Get all the comment properties in case we need to restore it.
 		$props = Comment_Utility::get_properties( $comment );
@@ -144,7 +144,7 @@ class Comment_Tracker {
 	 * @param WP_Comment $comment    Comment object.
 	 */
 	public static function on_transition_comment_status( int|string $new_status, int|string $old_status, WP_Comment $comment ) {
-		debug( 'on_transition_comment_status', $new_status, $old_status, $comment );
+		Debug::info( 'on_transition_comment_status', $new_status, $old_status, $comment );
 
 		// Ignore delete events.
 		if ( $new_status === 'delete' ) {
@@ -184,7 +184,7 @@ class Comment_Tracker {
 	 * @param array $statuses Array of comment statuses.
 	 */
 	public static function on_trashed_post_comments( int $post_id, array $statuses ) {
-		debug( 'on_trashed_post_comments', $post_id, $statuses );
+		Debug::info( 'on_trashed_post_comments', $post_id, $statuses );
 
 		// Get the post reference.
 		$post_ref = new Object_Reference( 'post', $post_id );
@@ -211,7 +211,7 @@ class Comment_Tracker {
 	 * @param int $post_id Post ID.
 	 */
 	public static function on_untrash_post_comments( int $post_id ) {
-		debug( 'on_untrash_post_comments', $post_id );
+		Debug::info( 'on_untrash_post_comments', $post_id );
 
 		// Get the original statuses of the comments that were trashed with the post, if any.
 		$statuses = get_post_meta( $post_id, '_wp_trash_meta_comments_status', true );

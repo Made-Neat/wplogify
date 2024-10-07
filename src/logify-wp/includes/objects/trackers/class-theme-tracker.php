@@ -127,7 +127,7 @@ class Theme_Tracker {
 
 		// If we couldn't load the theme, we can't log the event.
 		if ( ! $theme_loaded ) {
-			debug( "Couldn't load the theme." );
+			Debug::warning( "Couldn't load the theme." );
 			return;
 		}
 

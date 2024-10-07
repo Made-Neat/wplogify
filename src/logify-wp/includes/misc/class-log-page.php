@@ -273,7 +273,7 @@ class Log_Page {
 		$select_args  = array( $events_table_name, $user_table_name );
 		$args         = array_merge( $select_args, $where_args );
 		$filtered_sql = $wpdb->prepare( "$select_count $where", $args );
-		// debug_sql( $filtered_sql );
+		// Debug::sql( $filtered_sql );
 		$num_filtered_records = (int) $wpdb->get_var( $filtered_sql );
 
 		// -----------------------------------------------------------------------------------------
@@ -293,7 +293,7 @@ class Log_Page {
 		// Construct and run the SQL statement.
 		$args        = array_merge( $select_args, $where_args, $limit_args );
 		$results_sql = $wpdb->prepare( "$select $where $order_by $limit", $args );
-		// debug_sql( $results_sql );
+		// Debug::sql( $results_sql );
 		$recordset = $wpdb->get_results( $results_sql, ARRAY_A );
 
 		// -----------------------------------------------------------------------------------------

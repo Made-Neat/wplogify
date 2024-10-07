@@ -153,18 +153,17 @@ class Plugin_Settings {
 	 * Deletes all settings options for the Logify WP plugin.
 	 */
 	public static function delete_all() {
-		// Options that are registered settings.
-		delete_option( 'logify_wp_delete_on_uninstall' );
-		delete_option( 'logify_wp_roles_to_track' );
-		delete_option( 'logify_wp_roles_with_access' );
-		delete_option( 'logify_wp_users_with_access' );
-		delete_option( 'logify_wp_show_in_admin_bar' );
-		delete_option( 'logify_wp_keep_period_quantity' );
-		delete_option( 'logify_wp_keep_period_units' );
-
-		// Additional options used by the plugin that aren't settings.
-		delete_option( 'logify_wp_known_taxonomies' );
-		delete_option( 'logify_wp_object_subtypes_set' );
+		// Delete all options that start with logify_wp.
+		global $wpdb;
+		$sql     = $wpdb->prepare(
+			'SELECT option_name FROM %i WHERE option_name LIKE %s',
+			$wpdb->options,
+			'logify_wp%'
+		);
+		$options = $wpdb->get_results( $sql );
+		foreach ( $options as $option ) {
+			delete_option( $option->option_name );
+		}
 	}
 
 	/**

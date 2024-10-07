@@ -92,7 +92,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_save_post' );
+		Debug::info( 'on_save_post' );
 
 		// Check if we're creating or updating. If this is a revision, we're updating the post.
 		// Otherwise, we're creating a new one.
@@ -140,7 +140,7 @@ class Post_Tracker {
 	public static function on_pre_post_update( int $post_id, array $data, ) {
 		global $wpdb;
 
-		debug( 'on_pre_post_update' );
+		Debug::info( 'on_pre_post_update' );
 
 		// Get the new event.
 		$event = self::get_update_post_event( 'Updated', $post_id );
@@ -160,7 +160,7 @@ class Post_Tracker {
 	 * @param WP_Post $post_before  Post object before the update.
 	 */
 	public static function on_post_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
-		debug( 'on_post_updated' );
+		Debug::info( 'on_post_updated' );
 
 		// Get changes to the post.
 		$props = Post_Utility::get_changes( $post_before, $post_after );
@@ -199,7 +199,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'Post_Tracker::on_update_post_meta' );
+		Debug::info( 'Post_Tracker::on_update_post_meta' );
 
 		// Get the current value.
 		$current_value = get_post_meta( $post_id, $meta_key, true );
@@ -257,7 +257,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_transition_post_status', $post->ID, $old_status, $new_status );
+		Debug::info( 'on_transition_post_status', $post->ID, $old_status, $new_status );
 
 		// Get the post type.
 		$post_type = Post_Utility::get_post_type_singular_name( $post->post_type );
@@ -309,7 +309,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_before_delete_post', $post_id );
+		Debug::info( 'on_before_delete_post', $post_id );
 
 		// Get the event type.
 		$event_type = self::get_delete_event_type( $post->post_type );
@@ -419,7 +419,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_delete_post', $post_id );
+		Debug::info( 'on_delete_post', $post_id );
 
 		// Get the event type.
 		$event_type = self::get_delete_event_type( $post->post_type );
@@ -458,7 +458,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_added_term_relationship' ); // , $post_id, $tt_id, $taxonomy );
+		Debug::info( 'on_added_term_relationship' ); // , $post_id, $tt_id, $taxonomy );
 
 		// Remember the newly attached term.
 		$term_id = Term_Utility::get_term_id_from_term_taxonomy_id( $tt_id );
@@ -478,7 +478,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_deleted_term_relationships' ); // , $post_id, $tt_ids, $taxonomy );
+		Debug::info( 'on_deleted_term_relationships' ); // , $post_id, $tt_ids, $taxonomy );
 
 		// Remember the removed terms.
 		foreach ( $tt_ids as $tt_id ) {
@@ -501,7 +501,7 @@ class Post_Tracker {
 			return;
 		}
 
-		debug( 'on_wp_after_insert_post' );
+		Debug::info( 'on_wp_after_insert_post' );
 
 		// Log the addition or removal of any taxonomy terms.
 		if ( self::$terms ) {

@@ -88,6 +88,7 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-access-control.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-admin.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-arrays.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-cron.php';
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-debug.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-dashboard-widget.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-datetimes.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-log-page.php';
@@ -100,8 +101,6 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-strings.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-types.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/misc/class-urls.php';
 
-// Supporting functions.
-require_once LOGIFY_WP_PLUGIN_DIR . 'includes/debug.php';
 // require_once LOGIFY_WP_PLUGIN_DIR . 'includes/test.php';
 
 // =================================================================================================
@@ -115,3 +114,7 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( 'Logify
 
 // Permit fast commenting.
 add_filter( 'comment_flood_filter', '__return_false' );
+
+// Fix the altered column name in the old wp_logify_properties table, otherwise the migration won't
+// work.
+Property_Repository::repair_wp_logify_properties_table();
