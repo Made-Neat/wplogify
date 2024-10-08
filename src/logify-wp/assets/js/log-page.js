@@ -365,7 +365,7 @@ jQuery(($) => {
     });
 
     // Set up the button to reset search filters.
-    $('#logify-wp-reset-filters-wrapper').on('click', function () {
+    $('#logify-wp-reset-filters').on('click', function () {
         // Clear the search text.
         $('#logify-wp-search-filter').val('');
         wpCookies.set('search', '', false, false, false, false);

@@ -46,7 +46,7 @@ class Data_Migration {
 	}
 
 	/**
-	 * Updates the wp_wp_logify_properties table by renaming the primary key column from property_id to prop_id.
+	 * Updates the wp_wp_logify_properties table by renaming the primary key column to prop_id.
 	 *
 	 * @global wpdb $wpdb WordPress database abstraction object.
 	 */

@@ -285,27 +285,23 @@ class Event_Repository extends Repository {
 		$new_table_name  = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = $wpdb->prepare(
-			'CREATE TABLE %i (
-				event_id       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-				when_happened  DATETIME        NOT NULL,
-				user_id        BIGINT UNSIGNED NOT NULL,
-				user_name      VARCHAR(255)    NOT NULL,
-				user_role      VARCHAR(255)    NOT NULL,
-				user_ip        VARCHAR(40)     NULL,
-				user_location  VARCHAR(255)    NULL,
-				user_agent     VARCHAR(255)    NULL,
-				event_type     VARCHAR(255)    NOT NULL,
-				object_type    VARCHAR(10)     NULL,
-				object_subtype VARCHAR(50)     NULL,
-				object_key     VARCHAR(50)     NULL,
-				object_name    VARCHAR(100)    NULL,
-				PRIMARY KEY (event_id),
-				KEY user_id (user_id)
-			) %s',
-			$new_table_name,
-			$charset_collate
-		);
+		$sql = "CREATE TABLE $new_table_name (
+			event_id	   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			when_happened  DATETIME		NOT NULL,
+			user_id		   BIGINT UNSIGNED NOT NULL,
+			user_name	   VARCHAR(255)	NOT NULL,
+			user_role	   VARCHAR(255)	NOT NULL,
+			user_ip		   VARCHAR(40)	 NULL,
+			user_location  VARCHAR(255)	NULL,
+			user_agent	   VARCHAR(255)	NULL,
+			event_type	   VARCHAR(255)	NOT NULL,
+			object_type	   VARCHAR(10)	 NULL,
+			object_subtype VARCHAR(50)	 NULL,
+			object_key	   VARCHAR(50)	 NULL,
+			object_name	   VARCHAR(100)	NULL,
+			PRIMARY KEY (event_id),
+			KEY user_id (user_id)
+		) $charset_collate";
 
 		dbDelta( $sql );
 	}
@@ -508,7 +504,7 @@ class Event_Repository extends Repository {
 		// Get the post types.
 		$sql        = $wpdb->prepare(
 			"SELECT DISTINCT object_subtype
-            FROM %i WHERE object_type = 'post' AND object_subtype IS NOT NULL",
+			FROM %i WHERE object_type = 'post' AND object_subtype IS NOT NULL",
 			self::get_table_name()
 		);
 		$post_types = $wpdb->get_col( $sql );
@@ -533,7 +529,7 @@ class Event_Repository extends Repository {
 		// Get the taxonomies.
 		$sql        = $wpdb->prepare(
 			"SELECT DISTINCT object_subtype
-            FROM %i WHERE object_type = 'term' AND object_subtype IS NOT NULL",
+			FROM %i WHERE object_type = 'term' AND object_subtype IS NOT NULL",
 			self::get_table_name()
 		);
 		$taxonomies = $wpdb->get_col( $sql );

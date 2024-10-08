@@ -52,7 +52,7 @@ class Debug {
 	public static function log( int $severity, ...$args ) {
 		// Check if debug logging is enabled.
 		if ( ! ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) ) {
-			error_log( 'Logging disabled' );
+			// error_log( 'Logging disabled' );
 			return;
 		}
 

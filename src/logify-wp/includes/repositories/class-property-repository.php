@@ -134,20 +134,16 @@ class Property_Repository extends Repository {
 		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = $wpdb->prepare(
-			'CREATE TABLE %i (
-				prop_id    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-				event_id   BIGINT UNSIGNED NOT NULL,
-				prop_key   VARCHAR(100)    NOT NULL,
-				table_name VARCHAR(100)    NULL,
-				val        LONGTEXT        NULL,
-				new_val    LONGTEXT        NULL,
-				PRIMARY KEY (prop_id),
-				KEY event_id (event_id)
-			) %s',
-			$table_name,
-			$charset_collate
-		);
+		$sql = "CREATE TABLE $table_name (
+			prop_id	    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			event_id    BIGINT UNSIGNED NOT NULL,
+			prop_key    VARCHAR(100)	NOT NULL,
+			table_name  VARCHAR(100)	NULL,
+			val		    LONGTEXT		NULL,
+			new_val	    LONGTEXT		NULL,
+			PRIMARY KEY (prop_id),
+			KEY event_id (event_id)
+		) $charset_collate";
 
 		dbDelta( $sql );
 	}

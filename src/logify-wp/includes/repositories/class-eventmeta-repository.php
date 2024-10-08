@@ -135,19 +135,15 @@ class Eventmeta_Repository extends Repository {
 		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = $wpdb->prepare(
-			'CREATE TABLE %i (
-				eventmeta_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-				event_id     BIGINT UNSIGNED NOT NULL,
-				meta_key     VARCHAR(255)    NOT NULL,
-				meta_value   LONGTEXT        NOT NULL,
-				PRIMARY KEY (eventmeta_id),
-				KEY event_id (event_id),
-				KEY meta_key (meta_key(191))
-			) %s',
-			$table_name,
-			$charset_collate
-		);
+		$sql = "CREATE TABLE $table_name (
+			eventmeta_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			event_id	 BIGINT UNSIGNED NOT NULL,
+			meta_key	 VARCHAR(255)	NOT NULL,
+			meta_value   LONGTEXT		NOT NULL,
+			PRIMARY KEY (eventmeta_id),
+			KEY event_id (event_id),
+			KEY meta_key (meta_key(191))
+		) $charset_collate";
 
 		dbDelta( $sql );
 	}
