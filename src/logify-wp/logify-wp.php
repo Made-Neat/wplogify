@@ -6,6 +6,7 @@
  * Version: 1.0.2
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
+ * Requires at least: 6.2
  * Text Domain: logify-wp
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

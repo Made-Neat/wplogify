@@ -38,7 +38,9 @@ class Data_Migration {
 
 		// Drop an old table.
 		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'wp_logify_event_meta' ) );
+		$wpdb->query(
+			$wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'wp_logify_event_meta' )
+		);
 		Debug::info( 'Dropped wp_logify_event_meta table.' );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=logify-wp-settings&migrated=success' ) );
@@ -48,7 +50,7 @@ class Data_Migration {
 	/**
 	 * Updates the wp_wp_logify_properties table by renaming the primary key column to prop_id.
 	 *
-	 * @global wpdb $wpdb WordPress database abstraction object.
+	 * @global $wpdb WordPress database abstraction object.
 	 */
 	public static function repair_wp_logify_properties_table() {
 		global $wpdb;
@@ -59,8 +61,7 @@ class Data_Migration {
 		$table_name = $wpdb->prefix . 'wp_logify_properties';
 
 		// Check if the table exists.
-		$sql          = $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name );
-		$table_exists = $wpdb->get_var( $sql );
+		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
 		Debug::info( "Table exists: $table_exists" );
 
@@ -71,10 +72,9 @@ class Data_Migration {
 		}
 
 		// Check the current structure of the table.
-		$sql     = $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name );
-		$columns = $wpdb->get_results( $sql );
+		$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 
-		Debug::info( 'Columns: ' . print_r( $columns, true ) );
+		// Debug::info( 'Columns:', $columns);
 
 		$has_property_id = false;
 		$has_prop_id     = false;
@@ -100,7 +100,9 @@ class Data_Migration {
 			Debug::info( 'Renaming primary key' );
 
 			// Execute the SQL query to rename the column.
-			$wpdb->query( "ALTER TABLE $table_name CHANGE `property_id` `prop_id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT" );
+			$wpdb->query(
+				$wpdb->prepare( 'ALTER TABLE %i CHANGE `property_id` `prop_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT', $table_name )
+			);
 		}
 	}
 
@@ -119,7 +121,10 @@ class Data_Migration {
 
 		// Check if the new table exists.
 		$new_table_name   = "{$wpdb->prefix}logify_wp_$table_key";
-		$new_table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$new_table_name'" ) === $new_table_name;
+		$matching_table   = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $new_table_name )
+		);
+		$new_table_exists = $matching_table === $new_table_name;
 
 		if ( ! $new_table_exists ) {
 			Debug::info( 'new table does not exist', $new_table_name );
@@ -127,11 +132,16 @@ class Data_Migration {
 		}
 
 		// Truncate the new table.
-		$wpdb->query( "TRUNCATE TABLE $new_table_name" );
+		$wpdb->query(
+			$wpdb->prepare( 'TRUNCATE TABLE %i', $new_table_name )
+		);
 
 		// Check if the old table exists.
 		$old_table_name   = "{$wpdb->prefix}wp_logify_$table_key";
-		$old_table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$old_table_name'" ) === $old_table_name;
+		$matching_table   = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', $old_table_name )
+		);
+		$old_table_exists = $matching_table === $old_table_name;
 
 		if ( ! $old_table_exists ) {
 			Debug::info( 'old table does not exist', $old_table_name );
@@ -139,7 +149,10 @@ class Data_Migration {
 		}
 
 		// Select all records from the old table.
-		$old_records = $wpdb->get_results( "SELECT * FROM $old_table_name", ARRAY_A );
+		$old_records = $wpdb->get_results(
+			$wpdb->prepare( 'SELECT * FROM %i', $old_table_name ),
+			ARRAY_A
+		);
 
 		Debug::info( 'fields to update', $fields_to_update );
 
@@ -176,11 +189,10 @@ class Data_Migration {
 	public static function get_table_column_names( $table_name ): array {
 		global $wpdb;
 
-		// Prepare the SQL query to get columns from the table.
-		$sql = $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name );
-
 		// Execute the query and get the results.
-		$results = $wpdb->get_results( $sql );
+		$results = $wpdb->get_results(
+			$wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name )
+		);
 
 		// Initialize an array to hold the column names.
 		$column_names = array();

@@ -28,8 +28,10 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get the property record.
-		$sql    = $wpdb->prepare( 'SELECT * FROM %i WHERE prop_id = %d', self::get_table_name(), $prop_id );
-		$record = $wpdb->get_row( $sql, ARRAY_A );
+		$record = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE prop_id = %d', self::get_table_name(), $prop_id ),
+			ARRAY_A
+		);
 
 		// If the record is not found, return null.
 		if ( ! $record ) {
@@ -58,23 +60,21 @@ class Property_Repository extends Repository {
 
 		// Check entity type.
 		if ( ! $prop instanceof Property ) {
-			throw new InvalidArgumentException( 'Entity must be an instance of Property.' );
+			throw new InvalidArgumentException( esc_html( 'Entity must be an instance of Property.' ) );
 		}
-
-		// Get the table name.
-		$table_name = self::get_table_name();
 
 		// Check if we're inserting or updating.
 		$inserting = false;
 		if ( empty( $prop->id ) ) {
 			// See if there is an existing record we should update.
-			$sql              = $wpdb->prepare(
-				'SELECT prop_id FROM %i WHERE event_id = %d AND prop_key = %s',
-				$table_name,
-				$prop->event_id,
-				$prop->key
+			$existing_prop_id = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT prop_id FROM %i WHERE event_id = %d AND prop_key = %s',
+					self::get_table_name(),
+					$prop->event_id,
+					$prop->key
+				)
 			);
-			$existing_prop_id = $wpdb->get_var( $sql );
 			if ( $existing_prop_id ) {
 				$prop->id = $existing_prop_id;
 			} else {
@@ -87,7 +87,7 @@ class Property_Repository extends Repository {
 		$formats = array( '%d', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( $table_name, $record, $formats ) !== false;
+			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Property object with the new ID.
 			if ( $ok ) {
@@ -95,7 +95,7 @@ class Property_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( $table_name, $record, array( 'prop_id' => $prop->id ), $formats, array( '%d' ) ) !== false;
+			$ok = $wpdb->update( self::get_table_name(), $record, array( 'prop_id' => $prop->id ), $formats, array( '%d' ) ) !== false;
 		}
 
 		return $ok;
@@ -135,16 +135,17 @@ class Property_Repository extends Repository {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
-			prop_id	    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-			event_id    BIGINT UNSIGNED NOT NULL,
-			prop_key    VARCHAR(100)	NOT NULL,
-			table_name  VARCHAR(100)	NULL,
-			val		    LONGTEXT		NULL,
-			new_val	    LONGTEXT		NULL,
-			PRIMARY KEY (prop_id),
-			KEY event_id (event_id)
-		) $charset_collate";
+            prop_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            event_id bigint(20) unsigned NOT NULL,
+            prop_key varchar(100) NOT NULL,
+            table_name varchar(100) NULL,
+            val LONGTEXT NULL,
+            new_val LONGTEXT NULL,
+            PRIMARY KEY  (prop_id),
+            KEY event_id (event_id)
+        ) $charset_collate;";
 
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
 	}
 
@@ -225,8 +226,10 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get all the properties connectted to the event.
-		$sql       = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-		$recordset = $wpdb->get_results( $sql, ARRAY_A );
+		$recordset = $wpdb->get_results(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id ),
+			ARRAY_A
+		);
 
 		// If none found, return null.
 		if ( ! $recordset ) {
@@ -258,7 +261,7 @@ class Property_Repository extends Repository {
 
 		// Check for error.
 		if ( $result === false ) {
-			throw new RuntimeException( "Failed to delete properties for event $event_id" );
+			throw new RuntimeException( esc_html( "Failed to delete properties for event $event_id" ) );
 		}
 
 		return (bool) $result;

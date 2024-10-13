@@ -26,7 +26,7 @@ namespace Logify_WP;
 				</div>
 
 				<div class='logify-wp-object-type-filter-item logify-wp-object-type-all'>
-					<input type='checkbox' id='logify-wp-show-all-events' value='all' checked='checked'>
+					<input type='checkbox' id='logify-wp-show-all-events' value='all' checked>
 					<label for='logify-wp-show-all-events'>All</label>
 				</div>
 
@@ -35,13 +35,13 @@ namespace Logify_WP;
 					$i = 1;
 					foreach ( Logger::VALID_OBJECT_TYPES as $object_type => $object_type_display ) {
 						if ( $i % 6 === 0 ) {
-							echo '<br>';
+							echo '<br>' . PHP_EOL;
 						}
 
-						echo "<div class='logify-wp-object-type-filter-item logify-wp-object-type-$object_type'>\n";
-						echo "<input type='checkbox' id='logify-wp-show-$object_type-events' value='$object_type' checked='checked'>\n";
-						echo "<label>$object_type_display</label>\n";
-						echo "</div>\n";
+						echo '<div class="' . esc_attr( "logify-wp-object-type-filter-item logify-wp-object-type-$object_type" ) . '">' . PHP_EOL;
+						echo '<input type="checkbox" id="' . esc_attr( "logify-wp-show-$object_type-events" ) . '" value="' . esc_attr( $object_type ) . '" checked>' . PHP_EOL;
+						echo '<label>' . esc_html( $object_type_display ) . '</label>' . PHP_EOL;
+						echo '</div>' . PHP_EOL;
 
 						++$i;
 					}
@@ -65,7 +65,7 @@ namespace Logify_WP;
 						<option value="">All</option>
 						<?php
 						foreach ( $post_types as $post_type => $post_type_label ) {
-							echo "<option value='$post_type'>$post_type_label</option>";
+							echo '<option value="' . esc_attr( $post_type ) . '">' . esc_html( $post_type_label ) . '</option>' . PHP_EOL;
 						}
 						?>
 					</select>
@@ -78,7 +78,7 @@ namespace Logify_WP;
 						<option value="">All</option>
 						<?php
 						foreach ( $taxonomies as $taxonomy => $taxonomy_label ) {
-							echo "<option value='$taxonomy'>$taxonomy_label</option>";
+							echo '<option value="' . esc_attr( $taxonomy ) . '">' . esc_html( $taxonomy_label ) . '</option>' . PHP_EOL;
 						}
 						?>
 					</select>
@@ -93,7 +93,7 @@ namespace Logify_WP;
 						<option value="">All</option>
 						<?php
 						foreach ( $event_types as $event_type ) {
-							echo "<option value='$event_type'>$event_type</option>";
+							echo '<option value="' . esc_attr( $event_type ) . '">' . esc_html( $event_type ) . '</option>' . PHP_EOL;
 						}
 						?>
 					</select>
@@ -106,7 +106,7 @@ namespace Logify_WP;
 						<option value="">All</option>
 						<?php
 						foreach ( $users as $user_id => $user_name ) {
-							echo "<option value='$user_id'>$user_name</option>";
+							echo "<option value='" . esc_attr( $user_id ) . "'>" . esc_html( $user_name ) . '</option>' . PHP_EOL;
 						}
 						?>
 					</select>
@@ -119,7 +119,7 @@ namespace Logify_WP;
 						<option value="">All</option>
 						<?php
 						foreach ( $roles as $role ) {
-							echo "<option value='$role'>" . ucwords( $role ) . '</option>';
+							echo "<option value='" . esc_attr( $role ) . "'>" . esc_html( ucwords( $role ) ) . '</option>' . PHP_EOL;
 						}
 						?>
 					</select>
@@ -141,7 +141,6 @@ namespace Logify_WP;
 				<th>Source IP</th>
 				<th>Event</th>
 				<th>Object</th>
-				<!-- <th>Details</th> -->
 			</tr>
 		</thead>
 		<tbody>

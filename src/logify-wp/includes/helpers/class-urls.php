@@ -24,8 +24,11 @@ class Urls {
 	 * @return bool True if the page exists, false otherwise.
 	 */
 	public static function url_exists( $url ): bool {
+		// Request the page.
 		$response = wp_remote_get( $url );
-		return $response['response']['code'] == 200;
+
+		// Check if the response code is 200.
+		return wp_remote_retrieve_response_code( $response ) === 200;
 	}
 
 	/**
@@ -45,8 +48,16 @@ class Urls {
 		// The base URL for WordPress releases.
 		$url = 'https://wordpress.org/news/category/releases/';
 
-		// Load the content of the page.
-		$html = file_get_contents( $url );
+		// Request the URL.
+		$response = wp_remote_get( $url );
+
+		// Check if the response code is 200.
+		if ( wp_remote_retrieve_response_code( $response ) !== 200 ) {
+			return null;
+		}
+
+		// Get the HTML content.
+		$html = wp_remote_retrieve_body( $response );
 		if ( ! $html ) {
 			return null;
 		}

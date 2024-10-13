@@ -1,174 +1,127 @@
-$gray-33: hsl(0, 0%, 33%);
-$gray-50: hsl(0, 0%, 50%);
-$gray-67: hsl(0, 0%, 67%);
-$gray-73: hsl(0, 0%, 73%);
-$gray-80: hsl(0, 0%, 80%);
-$gray-87: hsl(0, 0%, 87%);
-$gray-93: hsl(0, 0%, 93%);
-$gray-97: hsl(0, 0%, 97%);
+$gray-33: #555;
+$gray-50: #808080;
+$gray-66: #aaa;
+$gray-73: #bbb;
+$gray-80: #ccc;
+$gray-86: #ddd;
+$gray-93: #eee;
+$gray-96: #f7f7f7;
 
-$red-92: hsl(0, 100%, 92%);
-$red-95: hsl(0, 100%, 95%);
+$red-border: #ffb3b3;
+$red-base: #ffd6d6;
+$red-hover: #ffebeb;
 
-$orange-92: hsl(30, 100%, 92%);
-$orange-95: hsl(30, 100%, 95%);
+$orange-border: #ffcfb3;
+$orange-base: #ffe0d6;
+$orange-hover: #fff0eb;
 
-$yellow-92: hsl(60, 100%, 92%);
-$yellow-95: hsl(60, 100%, 95%);
+$yellow-border: #ebeb47;
+$yellow-base: #fcfccf;
+$yellow-hover: #ffffeb;
 
-$chartreuse-92: hsl(90, 100%, 92%);
-$chartreuse-95: hsl(90, 100%, 95%);
+$lime-border: #bbff80;
+$lime-base: #e8ffd6;
+$lime-hover: #f4ffeb;
 
-$green-92: hsl(120, 100%, 92%);
-$green-95: hsl(120, 100%, 95%);
+$green-border: #99ff99;
+$green-base: #d6ffd6;
+$green-hover: #ebffeb;
 
-$springgreen-92: hsl(150, 100%, 92%);
-$springgreen-95: hsl(150, 100%, 95%);
+$springgreen-border: #b3ffcf;
+$springgreen-base: #d6ffe0;
+$springgreen-hover: #ebfff0;
 
-$cyan-92: hsl(180, 100%, 92%);
-$cyan-95: hsl(180, 100%, 95%);
+$cyan-border: #80ffff;
+$cyan-base: #d6ffff;
+$cyan-hover: #ebffff;
 
-$blue-33: hsl(210, 100%, 33%);
-$blue-85: hsl(210, 100%, 85%);
-$blue-92: hsl(210, 100%, 92%);
-$blue-95: hsl(210, 100%, 95%);
+$blue-border: #b3cfff;
+$blue-base: #d6e0ff;
+$blue-hover: #ebf0ff;
 
-$violet-92: hsl(240, 100%, 92%);
-$violet-95: hsl(240, 100%, 95%);
+$violet-border: #b3b3ff;
+$violet-base: #d6d6ff;
+$violet-hover: #ebebff;
 
-$purple-92: hsl(270, 100%, 92%);
-$purple-95: hsl(270, 100%, 95%);
+$purple-border: #cfb3ff;
+$purple-base: #e0d6ff;
+$purple-hover: #f0ebff;
 
-$pink-92: hsl(300, 100%, 92%);
-$pink-95: hsl(300, 100%, 95%);
+$pink-border: #ffb3ff;
+$pink-base: #ffd6ff;
+$pink-hover: #ffebff;
 
-$rose-92: hsl(330, 100%, 92%);
-$rose-95: hsl(330, 100%, 95%);
+$rose-border: #ffb3cf;
+$rose-base: #ffd6e0;
+$rose-hover: #ffebf0;
 
+// WP classic colors.
+// @see https://make.wordpress.org/design/handbook/design-guide/foundations/colors/
+// Accent Red.
 $danger: #dc3232;
 $danger-hover: lighten($danger, 5%);
-
-$action: #f7941d;
+// Accent Orange.
+$action: #f56e28;
 $action-hover: lighten($action, 5%);
 
 @mixin object-type-colors {
     .logify-wp-object-type-all {
         background-color: white;
         border-color: $gray-93;
-
-        &.shown,
-        &:hover {
-            background-color: $gray-93;
-        }
     }
 
     .logify-wp-object-type-comment {
-        background-color: $cyan-95;
-        border-color: $cyan-92;
-
-        &.shown,
-        &:hover {
-            background-color: $cyan-92;
-        }
+        background-color: $cyan-base;
+        border-color: $cyan-border;
     }
 
     .logify-wp-object-type-core {
-        background-color: $rose-95;
-        border-color: $rose-92;
-
-        &.shown,
-        &:hover {
-            background-color: $rose-92;
-        }
+        background-color: $rose-base;
+        border-color: $rose-border;
     }
 
     .logify-wp-object-type-option {
-        background-color: $purple-95;
-        border-color: $purple-92;
-
-        &.shown,
-        &:hover {
-            background-color: $purple-92;
-        }
+        background-color: $purple-base;
+        border-color: $purple-border;
     }
 
     .logify-wp-object-type-plugin {
-        background-color: $green-95;
-        border-color: $green-92;
-
-        &.shown,
-        &:hover {
-            background-color: $green-92;
-        }
+        background-color: $green-base;
+        border-color: $green-border;
     }
 
     .logify-wp-object-type-post {
-        background-color: $blue-95;
-        border-color: $blue-92;
-
-        &.shown,
-        &:hover {
-            background-color: $blue-92;
-        }
+        background-color: $blue-base;
+        border-color: $blue-border;
     }
 
     .logify-wp-object-type-taxonomy {
-        background-color: $pink-95;
-        border-color: $pink-92;
-
-        &.shown,
-        &:hover {
-            background-color: $pink-92;
-        }
+        background-color: $pink-base;
+        border-color: $pink-border;
     }
 
     .logify-wp-object-type-term {
-        background-color: $red-95;
-        border-color: $red-92;
-
-        &.shown,
-        &:hover {
-            background-color: $red-92;
-        }
+        background-color: $red-base;
+        border-color: $red-border;
     }
 
     .logify-wp-object-type-theme {
-        background-color: $orange-95;
-        border-color: $orange-92;
-
-        &.shown,
-        &:hover {
-            background-color: $orange-92;
-        }
+        background-color: $orange-base;
+        border-color: $orange-border;
     }
 
     .logify-wp-object-type-translation {
-        background-color: $springgreen-95;
-        border-color: $springgreen-92;
-
-        &.shown,
-        &:hover {
-            background-color: $springgreen-92;
-        }
+        background-color: $springgreen-base;
+        border-color: $springgreen-border;
     }
 
     .logify-wp-object-type-user {
-        background-color: $yellow-95;
-        border-color: $yellow-92;
-
-        &.shown,
-        &:hover {
-            background-color: $yellow-92;
-        }
+        background-color: $yellow-base;
+        border-color: $yellow-border;
     }
 
     .logify-wp-object-type-widget {
-        background-color: $chartreuse-95;
-        border-color: $chartreuse-92;
-
-        &.shown,
-        &:hover {
-            background-color: $chartreuse-92;
-        }
+        background-color: $lime-base;
+        border-color: $lime-border;
     }
 }

@@ -155,12 +155,13 @@ class Plugin_Settings {
 	public static function delete_all() {
 		// Delete all options that start with logify_wp.
 		global $wpdb;
-		$sql     = $wpdb->prepare(
-			'SELECT option_name FROM %i WHERE option_name LIKE %s',
-			$wpdb->options,
-			'logify_wp%'
+		$options = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT option_name FROM %i WHERE option_name LIKE %s',
+				$wpdb->options,
+				'logify_wp%'
+			)
 		);
-		$options = $wpdb->get_results( $sql );
 		foreach ( $options as $option ) {
 			delete_option( $option->option_name );
 		}
@@ -172,7 +173,7 @@ class Plugin_Settings {
 	public static function display_settings_page() {
 		if ( ! Access_Control::can_access_settings_page() ) {
 			// Disallow access.
-			wp_die( __( 'Sorry, you are not allowed to access this page.', 'logify-wp' ), 403 );
+			wp_die( esc_html( 'Sorry, you are not allowed to access this page.' ), 403 );
 		}
 
 		// Include the settings-page.php template file to render the settings page.

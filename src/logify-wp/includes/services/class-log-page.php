@@ -30,7 +30,7 @@ class Log_Page {
 	public static function display_log_page() {
 		if ( ! Access_Control::can_access_log_page() ) {
 			// Disallow access.
-			wp_die( __( 'Sorry, you are not allowed to access this page.', 'logify-wp' ), 403 );
+			wp_die( esc_html( 'Sorry, you are not allowed to access this page.' ), 403 );
 		}
 
 		// Get all the data required for the log page.
@@ -62,7 +62,7 @@ class Log_Page {
 
 		// Get table names.
 		$events_table_name = Event_Repository::get_table_name();
-		$user_table_name   = $wpdb->prefix . 'users';
+		$users_table_name  = $wpdb->users;
 
 		// These should match the columns in admin.js.
 		$columns = array(
@@ -96,47 +96,70 @@ class Log_Page {
 				$order_by_columns = array( $columns[ $column_number ] );
 			}
 		}
-		$order_by_columns[] = 'event_id';
+		// Include ordering by event ID, if not already included.
+		if ( ! in_array( 'event_id', $order_by_columns ) ) {
+			$order_by_columns[] = 'event_id';
+		}
 
 		// Get the order-by direction. Check it's valid. Default to DESC.
-		$order_by_direction = isset( $_POST['order'][0]['dir'] ) ? strtoupper( $_POST['order'][0]['dir'] ) : 'DESC';
+		$order_by_direction = isset( $_POST['order'][0]['dir'] )
+			? strtoupper( sanitize_text_field( wp_unslash( $_POST['order'][0]['dir'] ) ) )
+			: 'DESC';
 		if ( ! in_array( $order_by_direction, array( 'ASC', 'DESC' ), true ) ) {
 			$order_by_direction = 'DESC';
 		}
 
 		// Get the search value.
-		$search_value = isset( $_POST['search']['value'] ) ? wp_unslash( $_POST['search']['value'] ) : '';
+		$search_value = isset( $_POST['search']['value'] )
+			? sanitize_text_field( wp_unslash( $_POST['search']['value'] ) )
+			: '';
 
 		// Get the object types to show events for.
 		$valid_object_types = array_keys( Logger::VALID_OBJECT_TYPES );
 		if ( ! empty( $_COOKIE['object_types'] ) ) {
-			$selected_object_types = json_decode( stripslashes( $_COOKIE['object_types'] ), true );
+			$cookie_value          = sanitize_text_field( wp_unslash( $_COOKIE['object_types'] ) );
+			$selected_object_types = json_decode( stripslashes( $cookie_value ), true );
 			$object_types          = array_keys( array_filter( $selected_object_types ) );
 		} else {
 			$object_types = $valid_object_types;
 		}
 
 		// Get the date range.
-		$start_date = isset( $_COOKIE['start_date'] ) ? wp_unslash( $_COOKIE['start_date'] ) : null;
-		$end_date   = isset( $_COOKIE['end_date'] ) ? wp_unslash( $_COOKIE['end_date'] ) : null;
+		$start_date = isset( $_COOKIE['start_date'] )
+			? sanitize_text_field( wp_unslash( $_COOKIE['start_date'] ) )
+			: null;
+		$end_date   = isset( $_COOKIE['end_date'] )
+			? sanitize_text_field( wp_unslash( $_COOKIE['end_date'] ) )
+			: null;
 
 		// Get the post type and taxonomy.
-		$post_type = isset( $_COOKIE['post_type'] ) ? wp_unslash( $_COOKIE['post_type'] ) : null;
-		$taxonomy  = isset( $_COOKIE['taxonomy'] ) ? wp_unslash( $_COOKIE['taxonomy'] ) : null;
+		$post_type = isset( $_COOKIE['post_type'] )
+			? sanitize_text_field( wp_unslash( $_COOKIE['post_type'] ) )
+			: null;
+		$taxonomy  = isset( $_COOKIE['taxonomy'] )
+			? sanitize_text_field( wp_unslash( $_COOKIE['taxonomy'] ) )
+			: null;
 
 		// Get the event type.
-		$event_type = isset( $_COOKIE['event_type'] ) ? wp_unslash( $_COOKIE['event_type'] ) : null;
+		$event_type = isset( $_COOKIE['event_type'] )
+			? sanitize_text_field( wp_unslash( $_COOKIE['event_type'] ) )
+			: null;
 
 		// Get the user.
-		$user_id = isset( $_COOKIE['user_id'] ) ? wp_unslash( $_COOKIE['user_id'] ) : null;
+		$user_id = isset( $_COOKIE['user_id'] )
+			? sanitize_text_field( wp_unslash( $_COOKIE['user_id'] ) )
+			: null;
 
 		// Get the role.
-		$role = isset( $_COOKIE['role'] ) ? wp_unslash( $_COOKIE['role'] ) : null;
+		$role = isset( $_COOKIE['role'] )
+			? sanitize_text_field( wp_unslash( $_COOKIE['role'] ) )
+			: null;
 
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of events in the database.
-		$total_sql         = $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name );
-		$num_total_records = (int) $wpdb->get_var( $total_sql );
+		$num_total_records = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name )
+		);
 
 		// -----------------------------------------------------------------------------------------
 		// Get the number of filtered records.
@@ -270,11 +293,11 @@ class Log_Page {
 		$where = $where_parts ? ( 'WHERE ' . implode( ' AND ', $where_parts ) ) : '';
 
 		// Construct and run the SQL statement.
-		$select_args  = array( $events_table_name, $user_table_name );
-		$args         = array_merge( $select_args, $where_args );
-		$filtered_sql = $wpdb->prepare( "$select_count $where", $args );
-		// Debug::sql( $filtered_sql );
-		$num_filtered_records = (int) $wpdb->get_var( $filtered_sql );
+		$select_args          = array( $events_table_name, $users_table_name );
+		$args                 = array_merge( $select_args, $where_args );
+		$num_filtered_records = (int) $wpdb->get_var(
+			$wpdb->prepare( "$select_count $where", $args )
+		);
 
 		// -----------------------------------------------------------------------------------------
 		// Get the requested records.
@@ -283,18 +306,29 @@ class Log_Page {
 		$select = 'SELECT event_id FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
 
 		// Order-by clause.
-		$order_by_columns = array_map( fn( $order_by_col ) => "$order_by_col $order_by_direction", $order_by_columns );
-		$order_by         = 'ORDER BY ' . implode( ', ', $order_by_columns );
+		$order_by      = '';
+		$order_by_args = array();
+		if ( ! empty( $order_by_columns ) ) {
+			$order_by_parts = array();
+			foreach ( $order_by_columns as $order_by_col ) {
+				$order_by_parts[] = "%i $order_by_direction";
+				$order_by_args[]  = $order_by_col;
+			}
+			$order_by = 'ORDER BY ' . implode( ', ', $order_by_parts );
+			// Debug::info( $order_by_columns, $order_by_direction, $order_by_parts, $order_by_args, $order_by );
+		}
 
 		// Limit clause.
 		$limit      = 'LIMIT %d OFFSET %d';
 		$limit_args = array( $page_length, $start );
 
 		// Construct and run the SQL statement.
-		$args        = array_merge( $select_args, $where_args, $limit_args );
-		$results_sql = $wpdb->prepare( "$select $where $order_by $limit", $args );
-		// Debug::sql( $results_sql );
-		$recordset = $wpdb->get_results( $results_sql, ARRAY_A );
+		$args = array_merge( $select_args, $where_args, $order_by_args, $limit_args );
+		Debug::sql( $wpdb->prepare( "$select $where $order_by $limit", $args ) );
+		$recordset = $wpdb->get_results(
+			$wpdb->prepare( "$select $where $order_by $limit", $args ),
+			ARRAY_A
+		);
 
 		// -----------------------------------------------------------------------------------------
 		// Construct the data array to return to the client.
@@ -310,21 +344,21 @@ class Log_Page {
 			// Date and time of the event.
 			$formatted_datetime    = DateTimes::format_datetime_site( $event->when_happened );
 			$time_ago              = DateTimes::get_ago_string( $event->when_happened );
-			$item['when_happened'] = "<div>$formatted_datetime ($time_ago)</div>";
+			$item['when_happened'] = '<div>' . wp_kses_post( $formatted_datetime ) . ' (' . esc_html( $time_ago ) . ')</div>';
 
 			// User details.
 			$user_tag             = User_Utility::get_tag( $event->user_id, $event->user_name );
-			$user_role            = esc_html( ucwords( $event->user_role ?? 'none' ) );
-			$item['display_name'] = get_avatar( $event->user_id, 32 ) . " <div class='logify-wp-user-info'>$user_tag<br><span class='logify-wp-user-role'>$user_role</span></div>";
+			$user_role            = ucwords( $event->user_role ?? 'none' );
+			$item['display_name'] = get_avatar( $event->user_id, 32 ) . ' <div class="logify-wp-user-info">' . wp_kses_post( $user_tag ) . '<br><span class="logify-wp-user-role">' . esc_html( $user_role ) . '</span></div>';
 
 			// Source IP.
-			$item['user_ip'] = Urls::get_ip_link( $event->user_ip );
+			$item['user_ip'] = wp_kses_post( Urls::get_ip_link( $event->user_ip ) );
 
 			// Event type.
-			$item['event_type'] = $event->event_type;
+			$item['event_type'] = '<span class="' . esc_attr( "logify-wp-event-type logify-wp-object-type-$event->object_type" ) . '">' . esc_html( $event->event_type ) . '</span>';
 
 			// Get the HTML for the object name.
-			$item['object_name'] = $event->get_object_tag();
+			$item['object_name'] = wp_kses_post( $event->get_object_tag() );
 
 			// Include the object type.
 			$item['object_type'] = $event->object_type;
@@ -336,9 +370,11 @@ class Log_Page {
 			$data[] = $item;
 		}
 
+		$draw = isset( $_POST['draw'] ) ? intval( wp_unslash( $_POST['draw'] ) ) : 0;
+
 		wp_send_json(
 			array(
-				'draw'            => intval( $_POST['draw'] ),
+				'draw'            => $draw,
 				'recordsTotal'    => $num_total_records,
 				'recordsFiltered' => $num_filtered_records,
 				'data'            => $data,

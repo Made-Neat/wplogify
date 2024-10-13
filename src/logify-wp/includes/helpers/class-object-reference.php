@@ -123,10 +123,10 @@ class Object_Reference {
 			$key  = match ( $type ) {
 				'plugin' => $wp_object['slug'],
 				'widget' => $wp_object['widget_id'],
-				default  => throw new UnexpectedValueException( "Unknown or unsupported object type: $type" )
+				default  => throw new UnexpectedValueException( esc_html( "Unknown or unsupported object type: $type" ) )
 			};
 		} else {
-			throw new UnexpectedValueException( 'Unknown or unsupported object type: ' . get_class( $wp_object ) );
+			throw new UnexpectedValueException( esc_html( 'Unknown or unsupported object type: ' . get_class( $wp_object ) ) );
 		}
 
 		return new Object_Reference( $type, $key );
@@ -160,7 +160,7 @@ class Object_Reference {
 
 		// If the class doesn't exist, throw an exception.
 		if ( ! class_exists( $class ) ) {
-			throw new UnexpectedValueException( "Invalid object type: $this->type" );
+			throw new UnexpectedValueException( esc_html( "Invalid object type: $this->type" ) );
 		}
 
 		return $class;

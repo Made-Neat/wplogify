@@ -464,7 +464,7 @@ class Event {
 
 		// If the property is not found, throw an exception.
 		if ( $prop === null ) {
-			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
+			throw new InvalidArgumentException( esc_html( "Property with key '$prop_key' not found." ) );
 		}
 
 		return $prop->val;
@@ -483,7 +483,7 @@ class Event {
 
 		// If the property is not found, throw an exception.
 		if ( $prop === null ) {
-			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
+			throw new InvalidArgumentException( esc_html( "Property with key '$prop_key' not found." ) );
 		}
 
 		// Set the value.
@@ -503,7 +503,7 @@ class Event {
 
 		// If the property is not found, throw an exception.
 		if ( $prop === null ) {
-			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
+			throw new InvalidArgumentException( esc_html( "Property with key '$prop_key' not found." ) );
 		}
 
 		return $prop->new_val;
@@ -522,7 +522,7 @@ class Event {
 
 		// If the property is not found, throw an exception.
 		if ( $prop === null ) {
-			throw new InvalidArgumentException( "Property with key '$prop_key' not found." );
+			throw new InvalidArgumentException( esc_html( "Property with key '$prop_key' not found." ) );
 		}
 
 		// Set the new value.

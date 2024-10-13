@@ -53,8 +53,7 @@ jQuery(($) => {
             const eventId = $row.find('td:first-child').text();
 
             // Add CSS classes to the tr element, and set the event-id.
-            $row.addClass('logify-wp-summary-row logify-wp-object-type-' + data.object_type)
-                .attr('data-event-id', eventId);
+            $row.addClass('logify-wp-summary-row').attr('data-event-id', eventId);
         },
         drawCallback: function (settings) {
             // Check if we need to expand a row.
@@ -78,7 +77,7 @@ jQuery(($) => {
         // Get the datatable row object.
         let row = eventsTable.row($tr);
         // Add CSS classes to the details row.
-        let classes = 'logify-wp-details-row logify-wp-object-type-' + row.data().object_type + ' shown';
+        let classes = 'logify-wp-details-row shown';
         // Show the details row.
         row.child(row.data().details, classes).show();
         // Add the shown class to the summary row.

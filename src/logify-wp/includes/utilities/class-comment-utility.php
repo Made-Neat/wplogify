@@ -27,8 +27,9 @@ class Comment_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $comment_id ): bool {
 		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(comment_ID) FROM %i WHERE comment_ID = %d', $wpdb->comments, $comment_id );
-		$count = (int) $wpdb->get_var( $sql );
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(comment_ID) FROM %i WHERE comment_ID = %d', $wpdb->comments, $comment_id )
+		);
 		return $count > 0;
 	}
 
@@ -232,8 +233,9 @@ class Comment_Utility extends Object_Utility {
 		global $wpdb;
 
 		// Get the children comment IDs.
-		$sql     = $wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_parent = %d', $wpdb->comments, $comment_id );
-		$results = $wpdb->get_col( $sql );
+		$results = $wpdb->get_col(
+			$wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_parent = %d', $wpdb->comments, $comment_id )
+		);
 
 		// Convert to object references.
 		$results = array_map(

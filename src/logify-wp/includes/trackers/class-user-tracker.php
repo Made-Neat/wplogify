@@ -158,8 +158,9 @@ class User_Tracker {
 		$props = User_Utility::get_properties( $user );
 
 		// Get the posts authored by this user.
-		$sql_posts = $wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id );
-		$post_ids  = $wpdb->get_col( $sql_posts );
+		$post_ids  = $wpdb->get_col(
+			$wpdb->prepare( "SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id )
+		);
 		$post_refs = array_map(
 			fn ( $post_id ) => new Object_Reference( 'post', $post_id ),
 			$post_ids
@@ -167,8 +168,9 @@ class User_Tracker {
 		Eventmeta::update_array( self::$eventmetas, 'posts_authored', $post_refs );
 
 		// Get the comments authored by this user.
-		$sql_comments = $wpdb->prepare( 'SELECT comment_ID FROM %i WHERE user_id = %d', $wpdb->comments, $user_id );
-		$comment_ids  = $wpdb->get_col( $sql_comments );
+		$comment_ids  = $wpdb->get_col(
+			$wpdb->prepare( 'SELECT comment_ID FROM %i WHERE user_id = %d', $wpdb->comments, $user_id )
+		);
 		$comment_refs = array_map(
 			fn ( $comment_id ) =>new Object_Reference( 'comment', $comment_id ),
 			$comment_ids

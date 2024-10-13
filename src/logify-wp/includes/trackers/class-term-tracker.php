@@ -27,8 +27,13 @@ class Term_Tracker {
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
+		// Term creation.
 		add_action( 'created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
+
+		// Term update.
 		add_action( 'edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
+
+		// Term deletion.
 		add_action( 'pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
 	}
 
@@ -140,7 +145,7 @@ class Term_Tracker {
 
 		// Handle error if the posts could not be retrieved.
 		if ( is_wp_error( $post_ids ) ) {
-			throw new RuntimeException( "Failed to retrieve posts with term ID $term_id in taxonomy $taxonomy." );
+			throw new RuntimeException( esc_html( "Failed to retrieve posts with term ID $term_id in taxonomy $taxonomy." ) );
 		}
 
 		// Convert the array of post IDs to an array of Object_Reference objects.

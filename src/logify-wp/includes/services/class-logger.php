@@ -7,7 +7,6 @@
 
 namespace Logify_WP;
 
-use InvalidArgumentException;
 use WP_User;
 
 /**
@@ -69,7 +68,6 @@ class Logger {
 	 * @param ?array                   $properties  The event properties.
 	 * @param null|int|WP_User         $acting_user The user who performed the action. This can be a user ID or WP_User object, or null for the current user.
 	 * @return bool True if the event was logged successfully, false otherwise.
-	 * @throws InvalidArgumentException If the object type is invalid.
 	 */
 	public static function log_event(
 		string $event_type,

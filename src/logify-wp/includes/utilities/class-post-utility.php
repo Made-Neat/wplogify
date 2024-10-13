@@ -30,8 +30,9 @@ class Post_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $post_id ): bool {
 		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->posts, $post_id );
-		$count = (int) $wpdb->get_var( $sql );
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->posts, $post_id )
+		);
 		return $count > 0;
 	}
 
@@ -235,16 +236,15 @@ class Post_Utility extends Object_Utility {
 			$post = self::load( $post );
 		}
 
-		// Construct the SQL.
-		$sql = $wpdb->prepare(
-			"SELECT MIN(post_date) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_date != '0000-00-00 00:00:00'",
-			$wpdb->posts,
-			$post->ID,
-			$post->ID
-		);
-
 		// Get the created datetime.
-		$created_datetime = $wpdb->get_var( $sql );
+		$created_datetime = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT MIN(post_date) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_date != '0000-00-00 00:00:00'",
+				$wpdb->posts,
+				$post->ID,
+				$post->ID
+			)
+		);
 		return DateTimes::create_datetime( $created_datetime );
 	}
 
@@ -262,16 +262,15 @@ class Post_Utility extends Object_Utility {
 			$post = self::load( $post );
 		}
 
-		// Construct the SQL.
-		$sql = $wpdb->prepare(
-			"SELECT MAX(post_modified) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_modified != '0000-00-00 00:00:00'",
-			$wpdb->posts,
-			$post->ID,
-			$post->ID
-		);
-
 		// Get the last modified datetime.
-		$last_modified_datetime = $wpdb->get_var( $sql );
+		$last_modified_datetime = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT MAX(post_modified) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_modified != '0000-00-00 00:00:00'",
+				$wpdb->posts,
+				$post->ID,
+				$post->ID
+			)
+		);
 		return DateTimes::create_datetime( $last_modified_datetime );
 	}
 
@@ -351,7 +350,7 @@ class Post_Utility extends Object_Utility {
 
 			// Check for error.
 			if ( $terms instanceof WP_Error ) {
-				throw new RuntimeException( "Error getting terms attached to post $post->ID." );
+				throw new RuntimeException( esc_html( "Error getting terms attached to post $post->ID." ) );
 			}
 
 			// If we got some terms, convert them to object references.

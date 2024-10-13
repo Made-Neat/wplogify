@@ -41,12 +41,17 @@ class Cron {
 			'week'  => $quantity * DateTimes::DAYS_PER_WEEK,
 			'month' => $quantity * DateTimes::DAYS_PER_MONTH,
 			'year'  => $quantity * DateTimes::DAYS_PER_YEAR,
-			default => throw new UnexpectedValueException( "Invalid unit: $units" ),
+			default => throw new UnexpectedValueException( esc_html( "Invalid unit: $units" ) ),
 		};
 		$days = absint( ceil( $days ) );
 
 		// Delete old records.
-		$table_name = Event_Repository::get_table_name();
-		$wpdb->query( $wpdb->prepare( "DELETE FROM $table_name WHERE when_happened < NOW() - INTERVAL %d DAY", $days ) );
+		$wpdb->query(
+			$wpdb->prepare(
+				'DELETE FROM %i WHERE when_happened < NOW() - INTERVAL %d DAY',
+				Event_Repository::get_table_name(),
+				$days
+			)
+		);
 	}
 }

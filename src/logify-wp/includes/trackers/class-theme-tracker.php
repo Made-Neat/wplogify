@@ -116,7 +116,7 @@ class Theme_Tracker {
 		// If we couldn't load it by name, we can try loading it by stylesheet.
 		if ( ! $theme_loaded && ! empty( $_POST['slug'] ) ) {
 			// Get the theme stylesheet from the $_POST data.
-			$stylesheet = $_POST['slug'];
+			$stylesheet = sanitize_text_field( wp_unslash( $_POST['slug'] ) );
 
 			// Load the theme by stylesheet.
 			$theme = Theme_Utility::load( $stylesheet );

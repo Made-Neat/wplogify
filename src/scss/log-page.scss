@@ -4,30 +4,6 @@
     background-color: $gray-93;
 }
 
-.table-logify-wp {
-    width: 100%;
-    border-collapse: collapse;
-
-    th,
-    td {
-        border: 1px solid $gray-87;
-        padding: 0.5rem;
-    }
-
-    th {
-        background-color: $gray-97;
-        text-align: left;
-    }
-
-    th.dt-type-numeric.column-id {
-        text-align: left;
-    }
-
-    td {
-        cursor: pointer;
-    }
-}
-
 .dataTables_wrapper {
     .dataTables_paginate .paginate_button {
         padding: 0.2rem 0.5rem;
@@ -49,10 +25,10 @@
 
 #logify-wp-activity-log_processing {
     margin-top: -0.5rem;
-    background: repeating-linear-gradient(45deg, $blue-95, $blue-95 1rem, white 1rem, white 2rem);
+    background: repeating-linear-gradient(45deg, $blue-hover, $blue-hover 1rem, white 1rem, white 2rem);
     background-size: 200% 200%;
     animation: slide 60s linear infinite;
-    border: solid 1px $blue-85;
+    border: solid 1px $blue-border;
 }
 
 @keyframes slide {
@@ -66,7 +42,36 @@
 }
 
 #logify-wp-activity-log {
+    width: 100%;
+    border-collapse: collapse;
+
     @include object-type-colors;
+
+    th,
+    td {
+        border: 1px solid $gray-86;
+        padding: 0.5rem;
+    }
+
+    th {
+        text-align: left;
+        background-color: $gray-96;
+    }
+
+    th.dt-type-numeric.column-id {
+        text-align: left;
+    }
+
+    td {
+        cursor: pointer;
+    }
+
+    .logify-wp-summary-row {
+        td {
+            vertical-align: middle;
+            background-color: $gray-96;
+        }
+    }
 
     .logify-wp-summary-row,
     .logify-wp-details-row {
@@ -76,21 +81,20 @@
 
             >td,
             >th {
-                border-color: $gray-73;
+                background-color: white;
             }
         }
     }
 
-    .logify-wp-show-details {
-        background-color: $gray-93;
-        color: $blue-33;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
-    }
-
     .logify-wp-deleted-object {
         font-style: italic;
+    }
+
+    .logify-wp-event-type {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        border-style: solid;
+        border-width: 1px;
     }
 }
 
@@ -135,7 +139,7 @@
                     background-color: white;
 
                     &.logify-wp-value-unchanged {
-                        background-color: $gray-97;
+                        background-color: $gray-96;
                     }
                 }
             }
@@ -219,24 +223,106 @@
     }
 
     .logify-wp-object-type-all {
-        border-color: $gray-87;
+        border-color: $gray-86;
         margin-top: 0;
+
+        &:hover {
+            background-color: $gray-93;
+            // border-color: $gray-80;
+        }
     }
 }
 
 #logify-wp-object-type-checkboxes {
     display: inline;
+
+    .logify-wp-object-type-comment {
+        &:hover {
+            background-color: $cyan-hover;
+            border-color: $cyan-border;
+        }
+    }
+
+    .logify-wp-object-type-core {
+        &:hover {
+            background-color: $rose-hover;
+            border-color: $rose-border;
+        }
+    }
+
+    .logify-wp-object-type-option {
+        &:hover {
+            background-color: $purple-hover;
+            border-color: $purple-border;
+        }
+    }
+
+    .logify-wp-object-type-plugin {
+        &:hover {
+            background-color: $green-hover;
+            border-color: $green-border;
+        }
+    }
+
+    .logify-wp-object-type-post {
+        &:hover {
+            background-color: $blue-hover;
+            border-color: $blue-border;
+        }
+    }
+
+    .logify-wp-object-type-taxonomy {
+        &:hover {
+            background-color: $pink-hover;
+            border-color: $pink-border;
+        }
+    }
+
+    .logify-wp-object-type-term {
+        &:hover {
+            background-color: $red-hover;
+            border-color: $red-border;
+        }
+    }
+
+    .logify-wp-object-type-theme {
+        &:hover {
+            background-color: $orange-hover;
+            border-color: $orange-border;
+        }
+    }
+
+    .logify-wp-object-type-translation {
+        &:hover {
+            background-color: $springgreen-hover;
+            border-color: $springgreen-border;
+        }
+    }
+
+    .logify-wp-object-type-user {
+        &:hover {
+            background-color: $yellow-hover;
+            border-color: $yellow-border;
+        }
+    }
+
+    .logify-wp-object-type-widget {
+        &:hover {
+            background-color: $lime-hover;
+            border-color: $lime-border;
+        }
+    }
 }
 
 #logify-wp-filters {
     border-collapse: collapse;
     margin: 1rem 0;
-    background-color: $gray-97;
+    background-color: $gray-96;
 
     td {
         width: 400px;
         padding: 1rem;
-        border: solid 1px $gray-87;
+        border: solid 1px $gray-86;
         vertical-align: top;
     }
 

@@ -10,8 +10,8 @@
     box-sizing: border-box;
     padding: 0.5rem;
     text-align: center;
-    border: solid 1px $gray-87;
-    background-color: $gray-97;
+    border: solid 1px $gray-86;
+    background-color: $gray-96;
 }
 
 .logify-wp-stats-number {
@@ -33,7 +33,7 @@
     }
 
     .logify-wp-separator {
-        color: $gray-87;
+        color: $gray-86;
         padding: 0 0.5rem;
     }
 }
@@ -48,12 +48,12 @@
 
     th,
     td {
-        border: 1px solid $gray-87;
+        border: 1px solid $gray-86;
         padding: 0.5rem;
     }
 
     th {
-        background-color: $gray-97;
+        background-color: $gray-96;
         text-align: left;
     }
 
@@ -63,5 +63,17 @@
 
     .logify-wp-event-row {
         cursor: pointer;
+        background-color: $gray-96;
+
+        &:hover {
+            background-color: white;
+        }
+    }
+
+    .logify-wp-event-type {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        border-style: solid;
+        border-width: 1px;
     }
 }

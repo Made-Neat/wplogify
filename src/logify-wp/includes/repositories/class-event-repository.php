@@ -44,8 +44,10 @@ class Event_Repository extends Repository {
 	public static function load( int $event_id ): ?Event {
 		global $wpdb;
 
-		$sql    = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-		$record = $wpdb->get_row( $sql, ARRAY_A );
+		$record = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id ),
+			ARRAY_A
+		);
 
 		// If the record is not found, return null.
 		if ( ! $record ) {
@@ -83,7 +85,7 @@ class Event_Repository extends Repository {
 
 		// Check entity type.
 		if ( ! $event instanceof Event ) {
-			throw new InvalidArgumentException( 'Entity must be an instance of Event.' );
+			throw new InvalidArgumentException( esc_html( 'Entity must be an instance of Event.' ) );
 		}
 
 		// Check if we're inserting or updating.
@@ -161,7 +163,7 @@ class Event_Repository extends Repository {
 
 		// Check for error.
 		if ( $result === false ) {
-			throw new RuntimeException( "Error deleting event record $event_id" );
+			throw new RuntimeException( esc_html( esc_html( "Error deleting event record $event_id" ) ) );
 		}
 
 		// Delete the property records.
@@ -187,14 +189,16 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get all properties currently attached to this event in the database.
-		$table_name = Property_Repository::get_table_name();
-		$sql        = $wpdb->prepare( 'SELECT prop_id, prop_key FROM %i WHERE event_id = %d', $table_name, $event->id );
-		$records    = $wpdb->get_results( $sql, ARRAY_A );
+		$prop_table = Property_Repository::get_table_name();
+		$records    = $wpdb->get_results(
+			$wpdb->prepare( 'SELECT prop_id, prop_key FROM %i WHERE event_id = %d', $prop_table, $event->id ),
+			ARRAY_A
+		);
 
 		// Delete any we don't need anymore.
 		foreach ( $records as $record ) {
 			if ( ! $event->has_prop( $record['prop_key'] ) ) {
-				$del_result = $wpdb->delete( $table_name, array( 'prop_id' => $record['prop_id'] ), '%d' );
+				$del_result = $wpdb->delete( $prop_table, array( 'prop_id' => $record['prop_id'] ), '%d' );
 				if ( $del_result === false ) {
 					Debug::error( 'Error deleting property record.' );
 				}
@@ -230,14 +234,16 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get all eventmetas currently attached to this event in the database.
-		$table_name = Eventmeta_Repository::get_table_name();
-		$sql        = $wpdb->prepare( 'SELECT eventmeta_id, meta_key FROM %i WHERE event_id = %d', $table_name, $event->id );
-		$records    = $wpdb->get_results( $sql, ARRAY_A );
+		$meta_table = Eventmeta_Repository::get_table_name();
+		$records    = $wpdb->get_results(
+			$wpdb->prepare( 'SELECT eventmeta_id, meta_key FROM %i WHERE event_id = %d', $meta_table, $event->id ),
+			ARRAY_A
+		);
 
 		// Delete any we don't need anymore.
 		foreach ( $records as $record ) {
 			if ( ! $event->has_meta( $record['meta_key'] ) ) {
-				$del_result = $wpdb->delete( $table_name, array( 'eventmeta_id' => $record['eventmeta_id'] ), '%d' );
+				$del_result = $wpdb->delete( $meta_table, array( 'eventmeta_id' => $record['eventmeta_id'] ), '%d' );
 				if ( $del_result === false ) {
 					Debug::error( 'Error deleting eventmeta record.' );
 				}
@@ -282,27 +288,28 @@ class Event_Repository extends Repository {
 	public static function create_table() {
 		global $wpdb;
 
-		$new_table_name  = self::get_table_name();
+		$table_name      = self::get_table_name();
 		$charset_collate = $wpdb->get_charset_collate();
 
-		$sql = "CREATE TABLE $new_table_name (
-			event_id	   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-			when_happened  DATETIME		NOT NULL,
-			user_id		   BIGINT UNSIGNED NOT NULL,
-			user_name	   VARCHAR(255)	NOT NULL,
-			user_role	   VARCHAR(255)	NOT NULL,
-			user_ip		   VARCHAR(40)	 NULL,
-			user_location  VARCHAR(255)	NULL,
-			user_agent	   VARCHAR(255)	NULL,
-			event_type	   VARCHAR(255)	NOT NULL,
-			object_type	   VARCHAR(10)	 NULL,
-			object_subtype VARCHAR(50)	 NULL,
-			object_key	   VARCHAR(50)	 NULL,
-			object_name	   VARCHAR(100)	NULL,
-			PRIMARY KEY (event_id),
-			KEY user_id (user_id)
-		) $charset_collate";
+		$sql = "CREATE TABLE $table_name (
+            event_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            when_happened datetime NOT NULL,
+            user_id bigint(20) unsigned NOT NULL,
+            user_name varchar(255) NOT NULL,
+            user_role varchar(255) NOT NULL,
+            user_ip varchar(40) NULL,
+            user_location varchar(255) NULL,
+            user_agent varchar(255) NULL,
+            event_type varchar(255) NOT NULL,
+            object_type varchar(10) NULL,
+            object_subtype varchar(50) NULL,
+            object_key varchar(50) NULL,
+            object_name varchar(100) NULL,
+            PRIMARY KEY  (event_id),
+            KEY user_id (user_id)
+        ) $charset_collate;";
 
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
 	}
 
@@ -384,8 +391,9 @@ class Event_Repository extends Repository {
 	 */
 	public static function get_earliest_date(): ?DateTime {
 		global $wpdb;
-		$sql      = 'SELECT MIN(when_happened) FROM ' . self::get_table_name();
-		$min_date = $wpdb->get_var( $sql );
+		$min_date = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT MIN(when_happened) FROM %i', self::get_table_name() )
+		);
 		return $min_date ? DateTimes::create_datetime( $min_date ) : null;
 	}
 
@@ -396,8 +404,9 @@ class Event_Repository extends Repository {
 	 */
 	public static function get_latest_date(): ?DateTime {
 		global $wpdb;
-		$sql      = 'SELECT MAX(when_happened) FROM ' . self::get_table_name();
-		$max_date = $wpdb->get_var( $sql );
+		$max_date = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT MAX(when_happened) FROM %i', self::get_table_name() )
+		);
 		return $max_date ? DateTimes::create_datetime( $max_date ) : null;
 	}
 
@@ -411,14 +420,17 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Check if the column exists
-		$sql           = $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', self::get_table_name(), 'object_subtype' );
-		$column_exists = $wpdb->get_results( $sql );
+		$column_exists = $wpdb->get_results(
+			$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', self::get_table_name(), 'object_subtype' ),
+			ARRAY_A
+		);
 
 		// If the column doesn't exist, add it
 		if ( empty( $column_exists ) ) {
-			$sql = $wpdb->prepare( 'ALTER TABLE %i ADD object_subtype VARCHAR(50)', self::get_table_name() );
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-			$wpdb->query( $sql );
+			$wpdb->query(
+				$wpdb->prepare( 'ALTER TABLE %i ADD object_subtype varchar(50)', self::get_table_name() )
+			);
 		}
 	}
 
@@ -430,8 +442,15 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Check in the events table for any events with an object_type of 'post' and a object_subtype of null.
-		$sql     = $wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'post' AND object_subtype IS NULL", self::get_table_name() );
-		$records = $wpdb->get_results( $sql, ARRAY_A );
+		$records = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT event_id, object_key
+				FROM %i
+				WHERE object_type = 'post' and object_subtype IS null",
+				self::get_table_name()
+			),
+			ARRAY_A
+		);
 		foreach ( $records as $record ) {
 			// Get the post.
 			$post = Post_Utility::load( $record['object_key'] );
@@ -450,8 +469,14 @@ class Event_Repository extends Repository {
 
 			// Set the object subtype to the post type.
 			if ( $post_type ) {
-				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $post_type, $record['event_id'] );
-				$wpdb->query( $update_sql );
+				$wpdb->query(
+					$wpdb->prepare(
+						'UPDATE %i SET object_subtype = %s WHERE event_id = %d',
+						self::get_table_name(),
+						$post_type,
+						$record['event_id']
+					)
+				);
 			}
 		}
 	}
@@ -464,8 +489,10 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Check in the events table for any events with an object_type of 'term' and a object_subtype of null.
-		$sql     = $wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'term' AND object_subtype IS NULL", self::get_table_name() );
-		$records = $wpdb->get_results( $sql, ARRAY_A );
+		$records = $wpdb->get_results(
+			$wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'term' and object_subtype IS null", self::get_table_name() ),
+			ARRAY_A
+		);
 		foreach ( $records as $record ) {
 			// Get the term.
 			$term = Term_Utility::load( $record['object_key'] );
@@ -484,8 +511,9 @@ class Event_Repository extends Repository {
 
 			// Set the object subtype to the taxonomy.
 			if ( $taxonomy ) {
-				$update_sql = $wpdb->prepare( 'UPDATE %i SET object_subtype=%s WHERE event_id=%d', self::get_table_name(), $taxonomy, $record['event_id'] );
-				$wpdb->query( $update_sql );
+				$wpdb->query(
+					$wpdb->prepare( 'UPDATE %i SET object_subtype = %s WHERE event_id = %d', self::get_table_name(), $taxonomy, $record['event_id'] )
+				);
 			}
 		}
 	}
@@ -502,12 +530,14 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the post types.
-		$sql        = $wpdb->prepare(
-			"SELECT DISTINCT object_subtype
-			FROM %i WHERE object_type = 'post' AND object_subtype IS NOT NULL",
-			self::get_table_name()
+		$post_types = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT object_subtype
+				FROM %i
+				WHERE object_type = 'post' and object_subtype IS NOT null",
+				self::get_table_name()
+			)
 		);
-		$post_types = $wpdb->get_col( $sql );
 
 		// Construct the array of names.
 		$result = array();
@@ -527,12 +557,14 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the taxonomies.
-		$sql        = $wpdb->prepare(
-			"SELECT DISTINCT object_subtype
-			FROM %i WHERE object_type = 'term' AND object_subtype IS NOT NULL",
-			self::get_table_name()
+		$taxonomies = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT object_subtype
+				FROM %i
+				WHERE object_type = 'term' and object_subtype IS NOT null",
+				self::get_table_name()
+			)
 		);
-		$taxonomies = $wpdb->get_col( $sql );
 
 		// Construct the array of names.
 		$result = array();
@@ -553,8 +585,9 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the event types.
-		$sql = $wpdb->prepare( 'SELECT DISTINCT event_type FROM %i ORDER BY event_type', self::get_table_name() );
-		return $wpdb->get_col( $sql );
+		return $wpdb->get_col(
+			$wpdb->prepare( 'SELECT DISTINCT event_type FROM %i ORDER BY event_type', self::get_table_name() )
+		);
 	}
 
 	/**
@@ -564,8 +597,10 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the acting users.
-		$sql   = $wpdb->prepare( 'SELECT DISTINCT user_id, user_name FROM %i ORDER BY event_id DESC', self::get_table_name() );
-		$users = $wpdb->get_results( $sql, ARRAY_A );
+		$users = $wpdb->get_results(
+			$wpdb->prepare( 'SELECT DISTINCT user_id, user_name FROM %i ORDER BY event_id DESC', self::get_table_name() ),
+			ARRAY_A
+		);
 
 		// Construct the array of user IDs and names.
 		$result = array();
@@ -606,8 +641,9 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the roles.
-		$sql   = $wpdb->prepare( 'SELECT DISTINCT user_role FROM %i ORDER BY user_role', self::get_table_name() );
-		$roles = $wpdb->get_col( $sql );
+		$roles = $wpdb->get_col(
+			$wpdb->prepare( 'SELECT DISTINCT user_role FROM %i ORDER BY user_role', self::get_table_name() )
+		);
 
 		// Put 'none' at the start.
 		if ( in_array( 'none', $roles ) ) {
@@ -637,23 +673,24 @@ class Event_Repository extends Repository {
 
 		if ( $event_type ) {
 			// Get the most recent event of the given type, caused by this user.
-			$sql = $wpdb->prepare(
-				'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
-				self::get_table_name(),
-				$user_id,
-				$event_type
+			$event_id = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
+					self::get_table_name(),
+					$user_id,
+					$event_type
+				)
 			);
 		} else {
 			// Get the most recent event caused by this user.
-			$sql = $wpdb->prepare(
-				'SELECT event_id FROM %i WHERE user_id = %d ORDER BY when_happened DESC LIMIT 1',
-				self::get_table_name(),
-				$user_id
+			$event_id = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT event_id FROM %i WHERE user_id = %d ORDER BY when_happened DESC LIMIT 1',
+					self::get_table_name(),
+					$user_id
+				)
 			);
 		}
-
-		// Get the event ID.
-		$event_id = $wpdb->get_var( $sql );
 
 		// Return the event, if found.
 		return $event_id ? self::load( $event_id ) : null;

@@ -62,7 +62,10 @@ settings_errors( 'logify_wp_messages' );
 						foreach ( $roles as $role_key => $role ) {
 							$checked  = in_array( $role_key, $selected_roles_with_access, true ) ? 'checked' : '';
 							$disabled = $role_key === 'administrator' ? 'disabled' : '';
-							echo "<label><input type='checkbox' name='logify_wp_roles_with_access[]' value='" . esc_attr( $role_key ) . "' $checked $disabled> " . esc_html( $role['name'] ) . '</label><br>';
+							echo '<label>';
+							echo '<input type="checkbox" name="logify_wp_roles_with_access[]" value="' . esc_attr( $role_key ) . '" ' . esc_attr( $checked ) . ' ' . esc_attr( $disabled ) . '>';
+							echo esc_html( $role['name'] );
+							echo '</label><br>';
 						}
 						?>
 					</td>
@@ -74,9 +77,14 @@ settings_errors( 'logify_wp_messages' );
 							<?php
 							$users = get_users();
 							foreach ( $users as $user ) {
-								$checked         = Access_Control::user_has_individual_access( $user ) ? 'checked' : '';
-								$role_access_msg = Access_Control::user_has_access_via_role( $user ) ? ' <span class="logify-wp-role-access-msg">(has access via role)</span>' : '';
-								echo "<label><input type='checkbox' name='logify_wp_users_with_access[]' value='{$user->ID}' $checked> " . esc_html( User_Utility::get_name( $user->ID ) ) . "$role_access_msg</label><br>";
+								$checked = Access_Control::user_has_individual_access( $user ) ? 'checked' : '';
+								echo '<label>';
+								echo '<input type="checkbox" name="logify_wp_users_with_access[]" value="' . esc_attr( $user->ID ) . '" ' . esc_attr( $checked ) . '>';
+								echo esc_html( User_Utility::get_name( $user->ID ) );
+								if ( Access_Control::user_has_access_via_role( $user ) ) {
+									echo ' <span class="logify-wp-role-access-msg">' . esc_html( '(has access via role)' ) . '</span>';
+								}
+								echo '</label><br>';
 							}
 							?>
 						</div>
@@ -98,7 +106,7 @@ settings_errors( 'logify_wp_messages' );
 						<select name="logify_wp_keep_period_quantity">
 							<?php
 							for ( $i = 1; $i <= 12; $i++ ) {
-								echo '<option value="' . $i . '" ' . selected( $quantity, $i ) . '>' . $i . '</option>';
+								echo '<option value="' . esc_attr( $i ) . '" ' . selected( $quantity, $i ) . '>' . esc_html( $i ) . '</option>';
 							}
 							?>
 						</select>
@@ -134,7 +142,10 @@ settings_errors( 'logify_wp_messages' );
 						$selected_roles_to_track = Plugin_Settings::get_roles_to_track();
 						foreach ( $roles as $role_key => $role ) {
 							$checked = in_array( $role_key, $selected_roles_to_track, true ) ? 'checked' : '';
-							echo '<label><input type="checkbox" name="logify_wp_roles_to_track[]" value="' . esc_attr( $role_key ) . '" ' . $checked . '> ' . esc_html( $role['name'] ) . '</label><br>';
+							echo '<label>';
+							echo '<input type="checkbox" name="logify_wp_roles_to_track[]" value="' . esc_attr( $role_key ) . '" ' . esc_attr( $checked ) . '> ';
+							echo esc_html( $role['name'] );
+							echo '</label><br>';
 						}
 						?>
 					</td>

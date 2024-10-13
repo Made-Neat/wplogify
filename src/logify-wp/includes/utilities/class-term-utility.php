@@ -27,8 +27,9 @@ class Term_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $term_id ): bool {
 		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(term_id) FROM %i WHERE term_id = %d', $wpdb->terms, $term_id );
-		$count = (int) $wpdb->get_var( $sql );
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(term_id) FROM %i WHERE term_id = %d', $wpdb->terms, $term_id )
+		);
 		return $count > 0;
 	}
 
@@ -200,8 +201,9 @@ class Term_Utility extends Object_Utility {
 		global $wpdb;
 
 		// Retrieve the term ID from the term_taxonomy_id.
-		$sql     = $wpdb->prepare( 'SELECT term_id FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_taxonomy, $term_taxonomy_id );
-		$term_id = $wpdb->get_var( $sql );
+		$term_id = $wpdb->get_var(
+			$wpdb->prepare( 'SELECT term_id FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_taxonomy, $term_taxonomy_id )
+		);
 
 		// Return the term ID or null if the term couldn't be found.
 		return $term_id ? (int) $term_id : null;

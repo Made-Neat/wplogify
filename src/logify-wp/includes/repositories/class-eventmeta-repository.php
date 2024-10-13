@@ -29,8 +29,10 @@ class Eventmeta_Repository extends Repository {
 	public static function load( int $eventmeta_id ): ?Eventmeta {
 		global $wpdb;
 
-		$sql    = $wpdb->prepare( 'SELECT * FROM %i WHERE eventmeta_id = %d', self::get_table_name(), $eventmeta_id );
-		$record = $wpdb->get_row( $sql, ARRAY_A );
+		$record = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE eventmeta_id = %d', self::get_table_name(), $eventmeta_id ),
+			ARRAY_A
+		);
 
 		// If the record is not found, return null.
 		if ( ! $record ) {
@@ -59,23 +61,21 @@ class Eventmeta_Repository extends Repository {
 
 		// Check entity type.
 		if ( ! $eventmeta instanceof Eventmeta ) {
-			throw new InvalidArgumentException( 'Entity must be an instance of Eventmeta.' );
+			throw new InvalidArgumentException( esc_html( 'Entity must be an instance of Eventmeta.' ) );
 		}
-
-		// Get the table name.
-		$table_name = self::get_table_name();
 
 		// Check if we're inserting or updating.
 		$inserting = false;
 		if ( empty( $eventmeta->id ) ) {
 			// See if there is an existing record we should update.
-			$sql                   = $wpdb->prepare(
-				'SELECT eventmeta_id FROM %i WHERE event_id = %d AND meta_key = %s',
-				$table_name,
-				$eventmeta->event_id,
-				$eventmeta->meta_key
+			$existing_eventmeta_id = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT eventmeta_id FROM %i WHERE event_id = %d AND meta_key = %s',
+					self::get_table_name(),
+					$eventmeta->event_id,
+					$eventmeta->meta_key
+				)
 			);
-			$existing_eventmeta_id = $wpdb->get_var( $sql );
 			if ( $existing_eventmeta_id ) {
 				$eventmeta->id = $existing_eventmeta_id;
 			} else {
@@ -88,7 +88,7 @@ class Eventmeta_Repository extends Repository {
 		$formats = array( '%d', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
-			$ok = $wpdb->insert( $table_name, $record, $formats ) !== false;
+			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Eventmeta object with the new ID.
 			if ( $ok ) {
@@ -96,7 +96,7 @@ class Eventmeta_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
-			$ok = $wpdb->update( $table_name, $record, array( 'eventmeta_id' => $eventmeta->id ), $formats, array( '%d' ) ) !== false;
+			$ok = $wpdb->update( self::get_table_name(), $record, array( 'eventmeta_id' => $eventmeta->id ), $formats, array( '%d' ) ) !== false;
 		}
 
 		return $ok;
@@ -136,15 +136,16 @@ class Eventmeta_Repository extends Repository {
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE $table_name (
-			eventmeta_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-			event_id	 BIGINT UNSIGNED NOT NULL,
-			meta_key	 VARCHAR(255)	NOT NULL,
-			meta_value   LONGTEXT		NOT NULL,
-			PRIMARY KEY (eventmeta_id),
-			KEY event_id (event_id),
-			KEY meta_key (meta_key(191))
-		) $charset_collate";
+            eventmeta_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            event_id bigint(20) unsigned NOT NULL,
+            meta_key varchar(255) NOT NULL,
+            meta_value LONGTEXT NOT NULL,
+            PRIMARY KEY  (eventmeta_id),
+            KEY event_id (event_id),
+            KEY meta_key (meta_key(191))
+        ) $charset_collate;";
 
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
 	}
 
@@ -216,8 +217,10 @@ class Eventmeta_Repository extends Repository {
 		global $wpdb;
 
 		// Get the metadata records for the event from the eventmeta table.
-		$sql_meta  = $wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id );
-		$recordset = $wpdb->get_results( $sql_meta, ARRAY_A );
+		$recordset = $wpdb->get_results(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id ),
+			ARRAY_A
+		);
 
 		// If none found, return null.
 		if ( ! $recordset ) {
@@ -248,7 +251,7 @@ class Eventmeta_Repository extends Repository {
 
 		// Check for error.
 		if ( $result === false ) {
-			throw new RuntimeException( "Failed to delete eventmetas for event $event_id" );
+			throw new RuntimeException( esc_html( "Failed to delete eventmetas for event $event_id" ) );
 		}
 
 		return (bool) $result;

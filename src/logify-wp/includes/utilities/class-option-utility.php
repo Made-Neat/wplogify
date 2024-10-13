@@ -25,8 +25,9 @@ class Option_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $option_name ): bool {
 		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(option_name) FROM %i WHERE option_name = %d', $wpdb->options, $option_name );
-		$count = (int) $wpdb->get_var( $sql );
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(option_name) FROM %i WHERE option_name = %d', $wpdb->options, $option_name )
+		);
 		return $count > 0;
 	}
 

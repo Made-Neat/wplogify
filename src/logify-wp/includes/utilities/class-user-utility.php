@@ -30,8 +30,9 @@ class User_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $user_id ): bool {
 		global $wpdb;
-		$sql   = $wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->users, $user_id );
-		$count = (int) $wpdb->get_var( $sql );
+		$count = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->users, $user_id )
+		);
 		return $count > 0;
 	}
 
@@ -258,14 +259,15 @@ class User_Utility extends Object_Utility {
 	public static function get_ip(): ?string {
 		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
 			// Check for shared internet/ISP IP.
-			$ip = wp_unslash( $_SERVER['HTTP_CLIENT_IP'] );
+			$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
 		} elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
 			// Check for IPs passing through proxies.
 			// The value might be a comma-separated list of addresses.
-			$ip = explode( ',', wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) )[0];
+			$http_x_forwarded_for = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
+			$ip                   = explode( ',', $http_x_forwarded_for )[0];
 		} elseif ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
 			// The remote address (the actual IP).
-			$ip = wp_unslash( $_SERVER['REMOTE_ADDR'] );
+			$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
 		} else {
 			$ip = null;
 		}
@@ -311,7 +313,7 @@ class User_Utility extends Object_Utility {
 	 */
 	public static function get_user_agent(): ?string {
 		return isset( $_SERVER['HTTP_USER_AGENT'] )
-			? trim( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) )
+			? trim( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) )
 			: null;
 	}
 
@@ -330,13 +332,18 @@ class User_Utility extends Object_Utility {
 		}
 
 		// Get the last login datetime from the logify_wp_events table.
-		$table_name = Event_Repository::get_table_name();
-		$sql        = $wpdb->prepare(
-			"SELECT when_happened FROM %i WHERE user_id = %d AND event_type = 'User Login' ORDER BY when_happened DESC LIMIT 1",
-			$table_name,
-			$user->ID
+		$record = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT when_happened
+                FROM %i
+                WHERE user_id = %d AND event_type = 'User Login'
+                ORDER BY when_happened DESC
+                LIMIT 1",
+				Event_Repository::get_table_name(),
+				$user->ID
+			),
+			ARRAY_A
 		);
-		$record     = $wpdb->get_row( $sql, ARRAY_A );
 		return $record === null ? null : DateTimes::create_datetime( $record['when_happened'] );
 	}
 
@@ -355,13 +362,18 @@ class User_Utility extends Object_Utility {
 		}
 
 		// Get the most recent activity_end datetime from the logify_wp_events table.
-		$table_name = Event_Repository::get_table_name();
-		$sql        = $wpdb->prepare(
-			"SELECT * FROM %i WHERE user_id = %d AND event_type = 'User Active' ORDER BY when_happened DESC LIMIT 1",
-			$table_name,
-			$user->ID
+		$record = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT *
+                FROM %i
+                WHERE user_id = %d AND event_type = 'User Active'
+                ORDER BY when_happened DESC
+                LIMIT 1",
+				Event_Repository::get_table_name(),
+				$user->ID
+			),
+			ARRAY_A
 		);
-		$record     = $wpdb->get_row( $sql, ARRAY_A );
 
 		// If we got a record.
 		if ( $record !== null ) {
@@ -438,6 +450,7 @@ class User_Utility extends Object_Utility {
 	 *
 	 * @param null|int|string|Object_Reference|WP_User $user
 	 * @return ?array Array with the user's id, name, and roles.
+	 * @throws UnexpectedValueException If the object type is invalid.
 	 */
 	public static function get_user_data( null|int|string|Object_Reference|WP_User $user ): ?array {
 		// Default values for the user data.
@@ -470,7 +483,7 @@ class User_Utility extends Object_Utility {
 
 			// If the object type is not user, this is invalid.
 			if ( $user->type !== 'user' ) {
-				throw new UnexpectedValueException( "Invalid object type: '{$user->type}'" );
+				throw new UnexpectedValueException( esc_html( "Invalid object type: '{$user->type}'" ) );
 			}
 
 			$user_id   = (int) $user->key;

@@ -1,5 +1,5 @@
 body.logify-wp_page_logify-wp-settings {
-  background-color: hsl(0, 0%, 93%);
+  background-color: #eee;
 }
 
 .wrap .logify-wp-settings-table {
@@ -31,11 +31,11 @@ body.logify-wp_page_logify-wp-settings {
 }
 
 .logify-wp-settings-group {
-  border: solid 1px hsl(0, 0%, 80%);
+  border: solid 1px #ccc;
   border-radius: 0.5rem;
   width: 40rem;
   padding: 1rem;
-  background-color: hsl(0, 0%, 97%);
+  background-color: #f7f7f7;
   margin-top: 1rem;
 }
 .logify-wp-settings-group legend {
@@ -44,7 +44,7 @@ body.logify-wp_page_logify-wp-settings {
 }
 
 .logify-wp-role-access-msg {
-  color: hsl(0, 0%, 67%);
+  color: #aaa;
 }
 
 #logify-wp-settings-users {
@@ -53,13 +53,13 @@ body.logify-wp_page_logify-wp-settings {
 }
 
 .wp-core-ui .button-action {
-  background-color: #f7941d;
-  border-color: #f7941d;
+  background-color: #f56e28;
+  border-color: #f56e28;
   color: white;
 }
 .wp-core-ui .button-action:hover, .wp-core-ui .button-action:focus {
-  background-color: #f8a036;
-  border-color: #f8a036;
+  background-color: #f67e40;
+  border-color: #f67e40;
   color: white;
   box-shadow: none;
 }
