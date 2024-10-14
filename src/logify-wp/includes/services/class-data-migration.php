@@ -177,7 +177,7 @@ class Data_Migration {
 			ARRAY_A
 		);
 
-		Debug::info( 'fields to update', $fields_to_update );
+		// Debug::info( 'fields to update', $fields_to_update );
 
 		// Iterate through the records, copying them to the new table.
 		foreach ( $old_records as $record ) {

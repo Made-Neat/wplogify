@@ -110,6 +110,6 @@ class Debug {
 	 */
 	public static function sql( string $sql ) {
 		global $wpdb;
-		self::info( $wpdb->remove_placeholder_escape( $sql ) );
+		error_log( 'SQL: ' . $wpdb->remove_placeholder_escape( $sql ) );
 	}
 }
