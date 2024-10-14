@@ -36,5 +36,5 @@ From settings-page.php
 
 <tr valign="top">
 	<th scope="row">WP-Cron Tracking</th>
-	<td><input type="checkbox" name="wp_logify_wp_cron_tracking" value="1" <?php checked( Plugin_Settings::get_wp_cron_tracking(), 1 ); ?> /></td>
+	<td><input type="checkbox" name="wp_logify_wp_cron_tracking" value="1" <?php echo checked( Plugin_Settings::get_wp_cron_tracking(), 1 ); ?> /></td>
 </tr>

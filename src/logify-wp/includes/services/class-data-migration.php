@@ -28,6 +28,17 @@ class Data_Migration {
 	 * @return void
 	 */
 	public static function migrate_data() {
+		// Verify nonce.
+		$nonce = isset( $_GET['logify_wp_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['logify_wp_nonce'] ) ) : '';
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'logify_wp_migrate_data_action' ) ) {
+			wp_die( esc_html( 'Security check failed. Please try again.' ), esc_html( 'Error' ), array( 'response' => 403 ) );
+		}
+
+		// Check user capabilities.
+		if ( ! Access_Control::can_access_settings_page() ) {
+			wp_die( esc_html( 'You are not allowed to perform this action.' ), esc_html( 'Error' ), array( 'response' => 403 ) );
+		}
+
 		// Fix the altered column name in the old wp_logify_properties table.
 		self::repair_wp_logify_properties_table();
 
@@ -43,7 +54,19 @@ class Data_Migration {
 		);
 		Debug::info( 'Dropped wp_logify_event_meta table.' );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=logify-wp-settings&migrated=success' ) );
+		// After performing the action, generate a nonce for the redirect
+		$redirect_nonce = wp_create_nonce( 'logify_wp_messages_nonce' );
+
+		// Redirect back with success message and nonce.
+		wp_redirect(
+			add_query_arg(
+				array(
+					'migrated'        => 'success',
+					'logify_wp_nonce' => $redirect_nonce,
+				),
+				admin_url( 'admin.php?page=logify-wp-settings' )
+			)
+		);
 		exit;
 	}
 

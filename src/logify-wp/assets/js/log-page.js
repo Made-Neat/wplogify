@@ -12,10 +12,11 @@ jQuery(($) => {
         },
         serverSide: true,
         ajax: {
-            url: logifyWpLogPage.ajaxurl,
+            url: logifyWpLogPage.ajaxUrl,
             type: "POST",
             data: (d) => {
                 d.action = 'logify_wp_fetch_logs';
+                d.security = logifyWpLogPage.ajaxNonce;
                 console.log('Sending AJAX request with data:', d);
             },
             error: (xhr, error, code) => {

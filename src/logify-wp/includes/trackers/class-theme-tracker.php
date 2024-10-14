@@ -100,28 +100,36 @@ class Theme_Tracker {
 
 		// Try to load the theme.
 		$theme_loaded = false;
+		$theme        = null;
+		$stylesheet   = null;
 
-		// Get the theme name.
-		$name = $upgrader->new_theme_data['Name'] ?? null;
-		if ( $name ) {
+		// Attempt to get the theme name from new_theme_data.
+		if ( ! empty( $upgrader->new_theme_data['Name'] ) ) {
+			$name = $upgrader->new_theme_data['Name'];
 			// Load the theme by name.
 			$theme = Theme_Utility::load_by_name( $name );
 			if ( $theme ) {
 				$theme_loaded = true;
-				// Get the stylesheet.
-				$stylesheet = $theme->get_stylesheet();
+				$stylesheet   = $theme->get_stylesheet();
 			}
 		}
 
-		// If we couldn't load it by name, we can try loading it by stylesheet.
-		if ( ! $theme_loaded && ! empty( $_POST['slug'] ) ) {
-			// Get the theme stylesheet from the $_POST data.
-			$stylesheet = sanitize_text_field( wp_unslash( $_POST['slug'] ) );
+		// If we couldn't load it by name, try to get the stylesheet from $hook_extra.
+		if ( ! $theme_loaded ) {
+			// Check if 'theme' key exists in $hook_extra.
+			if ( ! empty( $hook_extra['theme'] ) ) {
+				$stylesheet = sanitize_text_field( $hook_extra['theme'] );
+			} elseif ( ! empty( $hook_extra['themes'] ) && is_array( $hook_extra['themes'] ) ) {
+				// If multiple themes are involved, take the first one.
+				$stylesheet = sanitize_text_field( $hook_extra['themes'][0] );
+			}
 
-			// Load the theme by stylesheet.
-			$theme = Theme_Utility::load( $stylesheet );
-			if ( $theme ) {
-				$theme_loaded = true;
+			if ( $stylesheet ) {
+				// Load the theme by stylesheet.
+				$theme = Theme_Utility::load( $stylesheet );
+				if ( $theme ) {
+					$theme_loaded = true;
+				}
 			}
 		}
 

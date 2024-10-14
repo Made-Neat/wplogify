@@ -228,6 +228,7 @@ class Admin {
 		// Settings.
 		if ( $hook === 'logify-wp_page_logify-wp-settings' ) {
 			self::enqueue_style( 'assets/css/settings.css' );
+			self::enqueue_script( 'assets/js/settings-page.js', array( 'jquery' ), 'auto', true );
 		}
 
 		// Log page.
@@ -246,7 +247,8 @@ class Admin {
 				$log_page_script_handle,
 				'logifyWpLogPage',
 				array(
-					'ajaxurl'    => admin_url( 'admin-ajax.php' ),
+					'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+					'ajaxNonce'  => wp_create_nonce( 'logify-wp-log-page' ),
 					'dateFormat' => $date_format,
 				)
 			);
@@ -267,8 +269,33 @@ class Admin {
 	 * @return void
 	 */
 	public static function reset_logs() {
+		// Verify nonce.
+		$nonce = isset( $_GET['logify_wp_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['logify_wp_nonce'] ) ) : '';
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'logify_wp_reset_logs_action' ) ) {
+			wp_die( esc_html( 'Security check failed. Please try again.' ), esc_html( 'Error' ), array( 'response' => 403 ) );
+		}
+
+		// Check user capabilities.
+		if ( ! Access_Control::can_access_settings_page() ) {
+			wp_die( esc_html( 'You are not allowed to perform this action.' ), esc_html( 'Error' ), array( 'response' => 403 ) );
+		}
+
+		// Do the reset.
 		Database::truncate_all_tables();
-		wp_safe_redirect( admin_url( 'admin.php?page=logify-wp-settings&reset=success' ) );
+
+		// After performing the action, generate a nonce for the redirect
+		$redirect_nonce = wp_create_nonce( 'logify_wp_messages_nonce' );
+
+		// Redirect back with success message and nonce
+		wp_redirect(
+			add_query_arg(
+				array(
+					'reset'           => 'success',
+					'logify_wp_nonce' => $redirect_nonce,
+				),
+				admin_url( 'admin.php?page=logify-wp-settings' )
+			)
+		);
 		exit;
 	}
 }

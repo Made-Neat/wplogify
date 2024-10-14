@@ -52,8 +52,8 @@ $keep_forever = Plugin_Settings::get_keep_forever();
 ?>
 
 <label class="wp-logify-settings-radio">
-							<input type="radio" name="wp_logify_keep_forever" value="true" <?php checked( $keep_forever, true ); ?>> Forever
+							<input type="radio" name="wp_logify_keep_forever" value="true" <?php echo checked( $keep_forever, true ); ?>> Forever
 						</label>
 						<label class="wp-logify-settings-radio">
-							<input type="radio" name="wp_logify_keep_forever" value="false" <?php checked( $keep_forever, false ); ?>>
+							<input type="radio" name="wp_logify_keep_forever" value="false" <?php echo checked( $keep_forever, false ); ?>>
 						</label>

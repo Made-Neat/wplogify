@@ -58,6 +58,14 @@ class Log_Page {
 	 * Fetches logs from the database based on the provided search criteria.
 	 */
 	public static function fetch_logs() {
+		// Verify the nonce
+		check_ajax_referer( 'logify-wp-log-page', 'security' );
+
+		// Check user capabilities.
+		if ( ! Access_Control::can_access_log_page() ) {
+			wp_send_json_error( array( 'message' => esc_html( 'You are not allowed to access this data.' ) ), 403 );
+		}
+
 		global $wpdb;
 
 		// Get table names.
@@ -324,7 +332,7 @@ class Log_Page {
 
 		// Construct and run the SQL statement.
 		$args = array_merge( $select_args, $where_args, $order_by_args, $limit_args );
-		Debug::sql( $wpdb->prepare( "$select $where $order_by $limit", $args ) );
+		// Debug::sql( $wpdb->prepare( "$select $where $order_by $limit", $args ) );
 		$recordset = $wpdb->get_results(
 			$wpdb->prepare( "$select $where $order_by $limit", $args ),
 			ARRAY_A
