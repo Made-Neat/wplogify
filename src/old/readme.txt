@@ -2,7 +2,7 @@
 
 Contributors: madeneat
 Tags: activity log, audit log, security, user tracking, event log
-Requires at least: 6.0
+Requires at least: 2
 Tested up to: 6.6.1
 Stable tag: 1.48
 Requires PHP: 8.0

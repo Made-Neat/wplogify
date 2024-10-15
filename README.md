@@ -112,7 +112,7 @@ Logify WP is open-source software licensed under the [GNU General Public License
 
 ## Requirements
 
-- **WordPress Version:** 6.0 or higher
+- **WordPress Version:** 6.2 or higher
 - **Tested up to:** 6.6.1
 - **PHP Version:** 8.0 or higher
 
