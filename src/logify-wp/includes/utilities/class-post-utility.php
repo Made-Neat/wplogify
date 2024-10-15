@@ -61,7 +61,7 @@ class Post_Utility extends Object_Utility {
 		$post = self::load( $post_id );
 
 		// Handle menu items separately.
-		if ( $post->post_type === 'nav_menu_item' ) {
+		if ( $post && $post->post_type === 'nav_menu_item' ) {
 			return Menu_Item_Utility::get_name( $post_id );
 		}
 
@@ -137,6 +137,36 @@ class Post_Utility extends Object_Utility {
 		}
 
 		return $props;
+	}
+
+	/**
+	 * Get all the post core properties.
+	 *
+	 * @return array The core properties of a post.
+	 */
+	public static function core_properties(): array {
+		return array(
+			'link'                     => 'Link',
+			'ID'                       => 'ID',
+			'post_type'                => 'Post Type',
+			'post_author'              => 'Post Author',
+			'post_status'              => 'Post Status',
+			'post_date'                => 'Post Date',
+			'post_modified'            => 'Post Modified',
+			'post_content'             => 'Post Content',
+			'post_excerpt'             => 'Post Excerpt',
+			'_wp_attachment_image_alt' => 'Alternative Text',
+		);
+	}
+
+	/**
+	 * Check if a property is a core property of posts.
+	 *
+	 * @param string $prop_key The property key.
+	 * @return bool True if the property is a core property, false otherwise.
+	 */
+	public static function is_core_property( string $prop_key ): bool {
+		return key_exists( $prop_key, self::core_properties() );
 	}
 
 	/**
@@ -419,11 +449,8 @@ class Post_Utility extends Object_Utility {
 			$val     = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $post_after->$key );
 
-			// See if the value was changed.
-			$diff = Types::get_diff( $val, $new_val );
-
-			// If so, add the property.
-			if ( $diff ) {
+			// If the value was changed, add the property.
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 				Property::update_array( $props, $key, $wpdb->posts, $val, $new_val );
 			}
 		}
@@ -441,11 +468,8 @@ class Post_Utility extends Object_Utility {
 			$val     = self::extract_meta( $postmeta_before, $key );
 			$new_val = self::extract_meta( $postmeta_after, $key );
 
-			// See if the value was changed.
-			$diff = Types::get_diff( $val, $new_val );
-
-			// If so, add the property.
-			if ( $diff ) {
+			// If the value was changed, add the property.
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 				Property::update_array( $props, $key, $wpdb->postmeta, $val, $new_val );
 			}
 		}

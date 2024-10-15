@@ -38,6 +38,13 @@ class Media_Tracker {
 	private static bool $creating = false;
 
 	/**
+	 * Whether we are re-using a previous "Attachment Updated" event.
+	 *
+	 * @var bool
+	 */
+	private static bool $reusing = false;
+
+	/**
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
@@ -58,46 +65,53 @@ class Media_Tracker {
 	 * Get the update or create media event. If it hasn't been created yet, do it now.
 	 *
 	 * @param int|WP_Post $post The attachment post the event is about.
-	 * @return Event The event.
+	 * @return ?Event The event, if it could be found or created.
 	 */
-	private static function get_update_media_event( int|WP_Post $post ): Event {
-		// Create the event if not done already.
-		if ( ! self::$update_media_event ) {
+	private static function get_update_media_event( int|WP_Post $post ): ?Event {
+		// If we already have an event, return it.
+		if ( self::$update_media_event ) {
+			return self::$update_media_event;
+		}
 
-			// Get the post object and ID.
-			if ( is_int( $post ) ) {
-				$post_id = $post;
-				$post    = Post_Utility::load( $post_id );
-			} else {
-				$post_id = (int) $post->ID;
-			}
+		// Get the post object and ID.
+		if ( is_int( $post ) ) {
+			$post_id = $post;
+			$post    = Post_Utility::load( $post_id );
+		} else {
+			$post_id = (int) $post->ID;
+		}
 
-			// Get the media type and remember it.
-			self::$media_type = Media_Utility::get_media_type( $post_id );
+		// Get the media type and remember it.
+		self::$media_type = Media_Utility::get_media_type( $post_id );
 
-			// Get the event type.
-			$event_type = ucfirst( self::$media_type ) . ' Updated';
+		// Get the event type.
+		$event_type = ucfirst( self::$media_type ) . ' Updated';
 
-			// Get the user's most recent event. If it's equivalent, and was created within the past
-			// few minutes, we'll add to it instead of creating a new one.
-			$event = Event_Repository::get_most_recent_event();
+		// Get the user's most recent event. If it's equivalent, and was created within the past
+		// few minutes, we'll add to it instead of creating a new one.
+		$event = Event_Repository::get_most_recent_event();
 
-			// Check if we can use this event.
-			$can_use = $event &&
-				$event->event_type === $event_type &&
-				$event->object_type === 'post' &&
-				$event->object_key === $post_id &&
-				$event->when_happened->getTimestamp() > time() - 300;
+		// Check if we can re-use this event.
+		self::$reusing = $event &&
+			$event->event_type === $event_type &&
+			$event->object_type === 'post' &&
+			$event->object_key === $post_id &&
+			$event->when_happened->getTimestamp() > time() - 300;
 
-			if ( $can_use ) {
-				self::$update_media_event = $event;
-			} else {
-				// Create the event.
-				self::$update_media_event = Event::create( $event_type, $post );
+		if ( ! self::$reusing ) {
+			// Create a new event.
+			$event = Event::create( $event_type, $post );
+
+			// If the event could not be created, return null.
+			if ( ! $event ) {
+				return null;
 			}
 		}
 
-		return self::$update_media_event;
+		// Keep a reference to the event.
+		self::$update_media_event = $event;
+
+		return $event;
 	}
 
 	/**
@@ -108,10 +122,13 @@ class Media_Tracker {
 	 * @param int $post_id Attachment ID.
 	 */
 	public static function on_add_attachment( int $post_id ) {
-		Debug::info( 'on_add_attachment' );
+		Debug::info( __CLASS__, __FUNCTION__ );
 
 		// Get the event.
 		$event = self::get_update_media_event( $post_id );
+		if ( ! $event ) {
+			return;
+		}
 
 		// Update the event type. If this method is called, we're creating.
 		$event->event_type = ucfirst( self::$media_type ) . ' Added';
@@ -137,6 +154,8 @@ class Media_Tracker {
 	 * @param mixed  $meta_value Metadata value.
 	 */
 	public static function on_add_post_meta( int $post_id, string $meta_key, mixed $meta_value ) {
+		Debug::info( __CLASS__, __FUNCTION__ );
+
 		return self::on_update_post_meta( 0, $post_id, $meta_key, $meta_value );
 	}
 
@@ -164,10 +183,13 @@ class Media_Tracker {
 			return;
 		}
 
-		Debug::info( 'on_update_post_meta', $media_type );
+		Debug::info( __CLASS__, __FUNCTION__, $media_type );
 
 		// Get the event.
 		$event = self::get_update_media_event( $post_id );
+		if ( ! $event ) {
+			return;
+		}
 
 		// Process the new value.
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
@@ -185,10 +207,7 @@ class Media_Tracker {
 				$val      = Types::process_database_value( $meta_key, $meta_val );
 			}
 
-			// Check for a difference.
-			$diff = Types::get_diff( $val, $new_val );
-
-			if ( $diff ) {
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 				// If there is a change, log the changed value.
 				if ( $prop ) {
 					$prop->new_val = $new_val;
@@ -218,7 +237,7 @@ class Media_Tracker {
 			return;
 		}
 
-		Debug::info( 'on_attachment_updated', $media_type );
+		Debug::info( __CLASS__, __FUNCTION__, $media_type );
 
 		// Get the changes.
 		// This will find both core and meta property changes, but no meta changes should be found
@@ -227,31 +246,46 @@ class Media_Tracker {
 
 		// If there are no changes, we're done.
 		if ( ! $changed_props ) {
+			Debug::info( 'No changed properties found.' );
 			return;
 		}
 
 		// Get the event.
 		$event = self::get_update_media_event( $post_id );
+		if ( ! $event ) {
+			return;
+		}
 
-		// Update the properties.
+		if ( ! self::$reusing ) {
+			// Add the changed properties.
+			$event->add_props( $changed_props );
+			return;
+		}
+
+		// The event already existede, so update the properties with the new changes.
 		foreach ( $changed_props as $changed_prop ) {
-			// Check if there's already a property for this key.
-			$existing_prop = $event->get_prop( $changed_prop->key );
+			$key = $changed_prop->key;
 
-			if ( $existing_prop ) {
-				// Check if there's a difference between the original value and the new one.
-				$val     = $existing_prop->val;
-				$new_val = $changed_prop->new_val;
-				if ( $val !== $new_val ) {
-					// There is a difference, so update the property.
-					$existing_prop->new_val = $changed_prop->new_val;
-				} else {
-					// There is no difference now, so remove the property.
-					$event->remove_prop( $changed_prop->key );
-				}
+			// Get the current/old value.
+			// If we are re-using an event and there was already a property for this key, use
+			// that value. Otherwise, use the changed value from this event.
+			$existing_prop = self::$update_media_event->get_prop( $key );
+			$val           = $existing_prop ? $existing_prop->val : $changed_prop->val;
+
+			// Get the new value.
+			$new_val = $changed_prop->new_val;
+
+			// Check if there's a difference between the original value and the new one.
+			if ( ! Types::are_equal( $val, $new_val ) ) {
+				// They are different, so update/add the property.
+				$event->set_prop( $key, $changed_prop->table_name, $val, $new_val );
 			} else {
-				// There is no existing property, so add the new one.
-				$event->add_prop( $changed_prop );
+				// There is no difference now, so remove the property, if it's not a core property.
+				if ( ! Post_Utility::is_core_property( $key ) ) {
+					$event->remove_prop( $key );
+				} else {
+					$event->set_prop_new_val( $key, null );
+				}
 			}
 		}
 	}
@@ -280,7 +314,7 @@ class Media_Tracker {
 			return;
 		}
 
-		Debug::info( 'on_delete_attachment', $media_type );
+		Debug::info( __CLASS__, __FUNCTION__, $media_type );
 
 		// Get the event type.
 		$event_type = ucfirst( $media_type ) . ' Deleted';
@@ -310,6 +344,8 @@ class Media_Tracker {
 	 * Fires on shutdown, after PHP execution.
 	 */
 	public static function on_shutdown() {
+		Debug::info( __CLASS__, __FUNCTION__ );
+
 		// Save the media updated or added event, if it exists.
 		if ( self::$update_media_event ) {
 			if ( self::$creating || self::$update_media_event->has_changes() ) {

@@ -84,10 +84,7 @@ class Term_Tracker {
 			$val     = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $args[ $key ] );
 
-			// Check for difference.
-			$diff = Types::get_diff( $val, $new_val );
-
-			if ( $diff ) {
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 
 				// Ignore the trivial changes that occur whenever a navigation menu is updated.
 				if ( $taxonomy === 'nav_menu' ) {

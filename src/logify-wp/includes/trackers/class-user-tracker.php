@@ -80,7 +80,8 @@ class User_Tracker {
 		// time this event occurs.
 		$event = Event::create( 'User Login', 'user', null, null, $user );
 
-		// If the event could not be created, we aren't tracking this user.
+		// If the event could not be created, exit. This shouldn't happen, because we track all
+		// login events, regardless of user role.
 		if ( ! $event ) {
 			return;
 		}
@@ -100,7 +101,8 @@ class User_Tracker {
 		// require an object type ('user') in order to be grouped properly.
 		$event = Event::create( 'Failed Login', 'user' );
 
-		// If the event could not be created, we aren't tracking this user.
+		// If the event could not be created, exit. This shouldn't happen, because we track all
+		// login events, regardless of user role.
 		if ( ! $event ) {
 			return;
 		}
@@ -122,8 +124,8 @@ class User_Tracker {
 	public static function on_wp_logout( int $user_id ) {
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
-		// Also, the acting user must be provided, because there is no current logged in user at the
-		// time this event occurs.
+		// Also, the acting user (subject) must be provided, because there is no current logged-in
+		// user at the time this event occurs.
 		$event = Event::create( 'User Logout', 'user', null, null, $user_id );
 
 		// If the event could not be created, we aren't tracking this user.
@@ -203,19 +205,14 @@ class User_Tracker {
 			$val     = Types::process_database_value( $key, $value );
 			$new_val = Types::process_database_value( $key, $userdata[ $key ] );
 
-			// Check for difference.
-			$diff = Types::get_diff( $val, $new_val );
-
 			// If the value has changed, add the before and after values to the properties.
-			if ( $diff ) {
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 
 				// Create the event if it doesn't already exist.
 				if ( ! self::$profile_update_event ) {
-					// Note, the event will not be created if the current user isn't logged in or if the
-					// current user has a role that isn't being tracked.
 					self::$profile_update_event = Event::create( 'User Updated', $user );
 
-					// If the event could not be created, we aren't tracking this user.
+					// If the event could not be created, exit the method.
 					if ( ! self::$profile_update_event ) {
 						return;
 					}
@@ -250,20 +247,17 @@ class User_Tracker {
 		$val     = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
-		// Check for difference.
-		$diff = Types::get_diff( $val, $new_val );
-
 		// If the value has changed, add the before and after values to the properties array.
-		if ( $diff ) {
+		if ( ! Types::are_equal( $val, $new_val ) ) {
 
 			// Create the event if it doesn't already exist.
 			if ( ! self::$profile_update_event ) {
-				// Note, the event will not be created if the current user isn't logged in or if the
+				// The event will not be created if the current user isn't logged in or if the
 				// current user has a role that isn't being tracked.
 				$user_ref                   = new Object_Reference( 'user', $user_id );
 				self::$profile_update_event = Event::create( 'User Updated', $user_ref );
 
-				// If the event could not be created, we aren't tracking this user.
+				// If the event could not be created, bail.
 				if ( ! self::$profile_update_event ) {
 					return;
 				}
@@ -339,7 +333,7 @@ class User_Tracker {
 			// Create a new activity event.
 			$event = Event::create( $event_type, 'user', null, null, $user );
 
-			// If the event could not be created, we aren't tracking this user.
+			// If the event could not be created, bail.
 			if ( ! $event ) {
 				return;
 			}

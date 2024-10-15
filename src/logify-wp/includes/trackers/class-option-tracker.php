@@ -29,7 +29,7 @@ class Option_Tracker {
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
-		// Track option updates.
+		// Track settings updates.
 		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
 		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
@@ -59,11 +59,8 @@ class Option_Tracker {
 			$new_val = Types::process_database_value( $option_name, $new_value );
 		}
 
-		// Check for a difference.
-		$diff = Types::get_diff( $val, $new_val );
-
 		// If the value has changed, add the setting change to the event properties.
-		if ( $diff ) {
+		if ( ! Types::are_equal( $val, $new_val ) ) {
 
 			// Create the event object to encapsulate setting updates, if it doesn't already exist.
 			if ( ! isset( self::$event ) ) {

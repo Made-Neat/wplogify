@@ -79,7 +79,7 @@ class Widget_Tracker {
 				// The widget is being deleted. Create an event.
 				$event = Event::create( 'Widget Deleted', $old_widget );
 
-				// If the event was successfully created, store it.
+				// If the event was successfully created, remember it.
 				if ( $event ) {
 					self::$events[ $widget_id ] = $event;
 				}
@@ -107,11 +107,8 @@ class Widget_Tracker {
 						$new_widget_value = empty( $new_widget_value ) ? null : new Object_Reference( 'term', $new_widget_value );
 					}
 
-					// Compare.
-					$diff = Types::get_diff( $old_widget_value, $new_widget_value );
-
-					if ( $diff ) {
-						// Record the property change.
+					// If the values are different, record the change.
+					if ( ! Types::are_equal( $old_widget_value, $new_widget_value ) ) {
 						Property::update_array( $props, $key, null, $old_widget_value, $new_widget_value );
 					}
 				}
@@ -120,7 +117,7 @@ class Widget_Tracker {
 				if ( ! empty( $props ) ) {
 					$event = Event::create( 'Widget Updated', $old_widget, null, $props );
 
-					// If the event was successfully created, store it.
+					// If the event was successfully created, remember it.
 					if ( $event ) {
 						self::$events[ $widget_id ] = $event;
 					}
@@ -163,7 +160,7 @@ class Widget_Tracker {
 				// Create the event.
 				$event = Event::create( 'Widget Created', $new_widget );
 
-				// If the event was successfully created, store it.
+				// If the event was successfully created, remember it.
 				if ( $event ) {
 					self::$events[ $widget_id ] = $event;
 				}
@@ -226,7 +223,7 @@ class Widget_Tracker {
 					$widget = Widget_Utility::load( $widget_id );
 					$event  = Event::create( $event_type, $widget );
 
-					// If the event was successfully created, store it.
+					// If the event was successfully created, remember it.
 					if ( $event ) {
 						self::$events[ $widget_id ] = $event;
 					}

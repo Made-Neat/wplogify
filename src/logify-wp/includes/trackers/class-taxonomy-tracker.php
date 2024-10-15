@@ -40,28 +40,45 @@ class Taxonomy_Tracker {
 		// Find the removed ones.
 		$removed_taxonomies = array_diff_key( $known_taxonomies, $current_taxonomies );
 
+		// Make a note of whether we're tracking this user's role and can therefore create events.
+		$tracking_this_user = true;
+
 		// Log events for added taxonomies.
 		foreach ( $new_taxonomies as $taxonomy => $taxonomy_info ) {
 			$taxonomy_obj = Taxonomy_Utility::load( $taxonomy );
-			Logger::log_event( 'Taxonomy Added', $taxonomy_obj );
+			$event        = Event::create( 'Taxonomy Added', $taxonomy_obj );
+
+			// If the event could not be created, we aren't tracking this user.
+			// We could exit the method here except we want to update the remembered taxonomies.
+			if ( ! $event ) {
+				$tracking_this_user = false;
+				break;
+			}
+
+			$event->save();
 		}
 
-		// Log events for removed taxonomies.
-		foreach ( $removed_taxonomies as $taxonomy => $taxonomy_info ) {
-			if ( is_array( $taxonomy_info ) && ! empty( $taxonomy_info['label'] ) ) {
-				// The usual get_core_properties() won't work here because the taxonomy is no longer
-				// registered, so we use the properties remembered in the logify_wp_known_taxonomies option.
-				$taxonomy_ref = new Object_Reference( 'taxonomy', $taxonomy, $taxonomy_info['label'] );
-				$event        = Event::create( 'Taxonomy Removed', $taxonomy_ref );
+		if ( $tracking_this_user ) {
+			// Log events for removed taxonomies.
+			foreach ( $removed_taxonomies as $taxonomy => $taxonomy_info ) {
+				if ( is_array( $taxonomy_info ) && ! empty( $taxonomy_info['label'] ) ) {
+					// The usual get_core_properties() won't work here because the taxonomy is no longer
+					// registered, so we use the properties remembered in the logify_wp_known_taxonomies option.
+					$taxonomy_ref = new Object_Reference( 'taxonomy', $taxonomy, $taxonomy_info['label'] );
+					$event        = Event::create( 'Taxonomy Removed', $taxonomy_ref );
 
-				// If the event could not be created, we aren't tracking this user.
-				if ( ! $event ) {
-					break;
+					// If the event could not be created, we aren't tracking this user.
+					// We can exit the loop.
+					// This shouldn't happen since adding the $tracking_this_user variable, but
+					// we'll leave it here for safety.
+					if ( ! $event ) {
+						break;
+					}
+
+					// Add the taxonomy properties.
+					$event->add_props( Taxonomy_Utility::get_core_properties_from_array( $taxonomy_info ) );
+					$event->save();
 				}
-
-				// Add the taxonomy properties.
-				$event->add_props( Taxonomy_Utility::get_core_properties_from_array( $taxonomy_info ) );
-				$event->save();
 			}
 		}
 

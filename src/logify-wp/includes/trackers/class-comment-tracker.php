@@ -51,7 +51,7 @@ class Comment_Tracker {
 	 * @param WP_Comment $comment Comment object.
 	 */
 	public static function on_wp_insert_comment( int $id, WP_Comment $comment ) {
-		Debug::info( 'on_wp_insert_comment', $id, $comment );
+		Debug::info( 'on_wp_insert_comment', $id );
 
 		Logger::log_event( 'Comment Added', $comment );
 	}
@@ -88,11 +88,8 @@ class Comment_Tracker {
 			$val     = Types::process_database_value( $key, $val );
 			$new_val = Types::process_database_value( $key, $commentarr[ $key ] );
 
-			// Check for difference.
-			$diff = Types::get_diff( $val, $new_val );
-
 			// If there's a difference, update the properties.
-			if ( $diff ) {
+			if ( ! Types::are_equal( $val, $new_val ) ) {
 				Property::update_array( self::$properties, $key, $wpdb->comments, $val, $new_val );
 			}
 		}
@@ -111,13 +108,13 @@ class Comment_Tracker {
 	 * @param array $data       Comment data.
 	 */
 	public static function on_edit_comment( int $comment_id, array $data ) {
-		Debug::info( 'on_edit_comment', $comment_id, $data );
+		Debug::info( 'on_edit_comment', $comment_id );
 
 		// Load the comment.
 		$comment = Comment_Utility::load( $comment_id );
 
 		// Log the event.
-		Logger::log_event( 'Comment Edited', $comment, null, self::$properties );
+		Logger::log_event( 'Comment Updated', $comment, null, self::$properties );
 	}
 
 	/**
@@ -127,7 +124,7 @@ class Comment_Tracker {
 	 * @param WP_Comment $comment    The comment to be deleted.
 	 */
 	public static function on_delete_comment( string $comment_id, WP_Comment $comment ) {
-		Debug::info( 'on_delete_comment', $comment_id, $comment );
+		Debug::info( 'on_delete_comment', $comment_id );
 
 		// Get all the comment properties in case we need to restore it.
 		$props = Comment_Utility::get_properties( $comment );
@@ -144,7 +141,7 @@ class Comment_Tracker {
 	 * @param WP_Comment $comment    Comment object.
 	 */
 	public static function on_transition_comment_status( int|string $new_status, int|string $old_status, WP_Comment $comment ) {
-		Debug::info( 'on_transition_comment_status', $new_status, $old_status, $comment );
+		Debug::info( 'on_transition_comment_status', $new_status, $old_status );
 
 		// Ignore delete events.
 		if ( $new_status === 'delete' ) {
@@ -184,7 +181,7 @@ class Comment_Tracker {
 	 * @param array $statuses Array of comment statuses.
 	 */
 	public static function on_trashed_post_comments( int $post_id, array $statuses ) {
-		Debug::info( 'on_trashed_post_comments', $post_id, $statuses );
+		Debug::info( 'on_trashed_post_comments', $post_id );
 
 		// Get the post reference.
 		$post_ref = new Object_Reference( 'post', $post_id );
@@ -218,7 +215,7 @@ class Comment_Tracker {
 
 		// No statuses, nothing to do.
 		if ( ! $statuses ) {
-			return true;
+			return;
 		}
 
 		// Get the post reference.

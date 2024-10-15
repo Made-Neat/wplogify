@@ -30,7 +30,7 @@ class Debug {
 		if ( $value === null ) {
 			return 'null';
 		} elseif ( is_string( $value ) ) {
-			return '"' . $value . '"';
+			return $value;
 		} elseif ( is_bool( $value ) ) {
 			return $value ? 'true' : 'false';
 		} elseif ( is_scalar( $value ) ) {

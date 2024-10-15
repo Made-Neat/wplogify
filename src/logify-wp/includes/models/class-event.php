@@ -184,12 +184,12 @@ class Event {
 		// Get the acting user data.
 		$user_data = User_Utility::get_user_data( $acting_user );
 
-		// If this is not a login event, and we aren't tracking this user's role, we don't need to
-		// log the event.
+		// If this is not a login event, and we aren't tracking this user's role, or the user isn't
+		// logged in, we don't need to log the event.
 		if ( ! in_array( $event_type, array( 'User Login', 'Failed Login' ) ) &&
 			( ! $user_data['object'] || ! Access_Control::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() ) )
 		) {
-			Debug::info( 'Acting user ' . $user_data['id'] . " doesn't have a role that is being tracked." );
+			Debug::info( "$event_type event not tracked. This is not a login event, and the acting user ({$user_data['id']}) doesn't have a role that is being tracked." );
 			return null;
 		}
 

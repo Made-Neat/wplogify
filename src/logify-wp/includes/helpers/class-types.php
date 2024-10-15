@@ -75,47 +75,6 @@ class Types {
 	}
 
 	/**
-	 * Detect if two values are different, and if so, reduce to differences.
-	 *
-	 * @param mixed $old_val The old value.
-	 * @param mixed $new_val The new value.
-	 * @return bool True if the values are different, otherwise false.
-	 */
-	public static function get_diff( mixed &$old_val, mixed &$new_val ): bool {
-		// Check for equality.
-		if ( self::are_equal( $old_val, $new_val ) ) {
-			return false;
-		}
-
-		// If both are arrays, compare key-value pairs.
-		if ( is_array( $old_val ) && is_array( $new_val ) ) {
-
-			// Get all the keys in both arrays.
-			$all_keys = array_unique( array_merge( array_keys( $old_val ), array_keys( $new_val ) ) );
-
-			// Process the items by key.
-			foreach ( $all_keys as $inner_key ) {
-
-				// If the key is in both arrays, compare the values.
-				if ( key_exists( $inner_key, $old_val ) && key_exists( $inner_key, $new_val ) ) {
-
-					// Compare the two array values.
-					$diff = self::get_diff( $old_val[ $inner_key ], $new_val[ $inner_key ] );
-
-					// If the values are equal, remove the key-value pair from both arrays.
-					if ( ! $diff ) {
-						unset( $old_val[ $inner_key ] );
-						unset( $new_val[ $inner_key ] );
-					}
-				}
-			}
-		}
-
-		// Return true bc the values are different.
-		return true;
-	}
-
-	/**
 	 * Convert a value to a string for display.
 	 *
 	 * @param mixed $value The value to convert.

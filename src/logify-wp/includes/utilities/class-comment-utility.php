@@ -114,7 +114,7 @@ class Comment_Utility extends Object_Utility {
 		// Parent.
 		if ( $comment->comment_parent ) {
 			$parent = new Object_Reference( 'comment', $comment->comment_parent );
-			Property::update_array( $props, 'comment_parent', $wpdb->comments, $parent );
+			Property::update_array( $props, 'comment_replied_to', $wpdb->comments, $parent );
 		}
 
 		return $props;

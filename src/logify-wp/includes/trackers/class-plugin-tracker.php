@@ -249,7 +249,7 @@ class Plugin_Tracker {
 			}
 
 			// Log the event.
-			Logger::log_event( 'Plugin Auto-update Enabled', $plugin );
+			Logger::log_event( 'Plugin Auto-Update Enabled', $plugin );
 		}
 
 		// Log an event for each plugin for which auto-update has been enabled.
@@ -264,7 +264,7 @@ class Plugin_Tracker {
 			}
 
 			// Log the event.
-			Logger::log_event( 'Plugin Auto-update Disabled', $plugin );
+			Logger::log_event( 'Plugin Auto-Update Disabled', $plugin );
 		}
 	}
 }

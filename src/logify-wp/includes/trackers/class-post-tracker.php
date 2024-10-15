@@ -115,6 +115,9 @@ class Post_Tracker {
 
 		// Get the event.
 		$event = self::get_update_post_event( $event_type_verb, $post );
+		if ( ! $event ) {
+			return;
+		}
 
 		// If updating, and the content has changed, replace the changed content so we aren't
 		// storing huge blocks of text in the properties table.
@@ -144,6 +147,9 @@ class Post_Tracker {
 
 		// Get the new event.
 		$event = self::get_update_post_event( 'Updated', $post_id );
+		if ( ! $event ) {
+			return;
+		}
 
 		// Record the current last modified date.
 		$event->set_prop( 'post_modified', $wpdb->posts, Post_Utility::get_last_modified_datetime( $post_id ) );
@@ -172,6 +178,9 @@ class Post_Tracker {
 		if ( ! empty( $props ) ) {
 			// Get the new event.
 			$event = self::get_update_post_event( 'Updated', $post_after );
+			if ( ! $event ) {
+				return;
+			}
 
 			// Add the changed properties to the event.
 			$event->add_props( $props );
@@ -208,12 +217,12 @@ class Post_Tracker {
 		$val     = Types::process_database_value( $meta_key, $current_value );
 		$new_val = Types::process_database_value( $meta_key, $meta_value );
 
-		// Check if the value has changed.
-		$diff = Types::get_diff( $val, $new_val );
-
-		if ( $diff ) {
+		if ( ! Types::are_equal( $val, $new_val ) ) {
 			// Get the new event.
 			$event = self::get_update_post_event( 'Updated', $post_id );
+			if ( ! $event ) {
+				return;
+			}
 
 			// Update the post meta.
 			$event->set_prop( $meta_key, $wpdb->postmeta, $val, $new_val );
@@ -576,9 +585,9 @@ class Post_Tracker {
 	 *
 	 * @param string      $event_type_verb The event type verb.
 	 * @param int|WP_Post $post            The post the event is about.
-	 * @return Event The event.
+	 * @return ?Event The event, or null if it couldn't be created.
 	 */
-	private static function get_update_post_event( string $event_type_verb, int|WP_Post $post ): Event {
+	private static function get_update_post_event( string $event_type_verb, int|WP_Post $post ): ?Event {
 		// Create the event if not done already.
 		if ( ! self::$update_post_event ) {
 
