@@ -6,7 +6,7 @@ COPY logify-wp-php.ini /usr/local/etc/php/conf.d/
 # Copy the custom PHP-FPM configuration file into the container.
 COPY logify-wp-php-fpm.conf /usr/local/etc/php-fpm.d/
 
-# Copy the custom PHP-FPM configuration file into the container.
+# Copy the phpinfo.php file into the container.
 COPY phpinfo.php /var/www/html/
 
 # Install necessary system dependencies and PHP extensions.
@@ -15,6 +15,15 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
     && docker-php-ext-install zip
+
+
+# Install necessary system dependencies and PHP extensions.
+RUN apt-get update && apt-get install -y \
+    zlib1g-dev \
+    libzip-dev \
+    libicu-dev \
+    unzip \
+    && docker-php-ext-install zip intl
 
 # Install the MySQL extension as root.
 RUN docker-php-ext-install mysqli

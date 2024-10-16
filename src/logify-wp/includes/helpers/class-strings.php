@@ -215,6 +215,83 @@ class Strings {
 	}
 
 	/**
+	 * Pluralize a noun.
+	 *
+	 * NOTE The input and output are lower-case.
+	 *
+	 * @param string $noun The noun to pluralize in lower-case.
+	 * @return string The pluralized noun in lower-case.
+	 */
+	public static function pluralize( string $noun ): string {
+		// Nouns that don't change in plural form.
+		$no_change = array( 'sheep', 'fish', 'deer', 'species', 'aircraft', 'moose' );
+		if ( in_array( $noun, $no_change ) ) {
+			return $noun;
+		}
+
+		// Irregular plurals.
+		$irregular = array(
+			'child'      => 'children',
+			'man'        => 'men',
+			'woman'      => 'women',
+			'mouse'      => 'mice',
+			'goose'      => 'geese',
+			'tooth'      => 'teeth',
+			'foot'       => 'feet',
+			'person'     => 'people',
+			'cactus'     => 'cacti',
+			'focus'      => 'foci',
+			'fungus'     => 'fungi',
+			'nucleus'    => 'nuclei',
+			'syllabus'   => 'syllabi',
+			'analysis'   => 'analyses',
+			'diagnosis'  => 'diagnoses',
+			'oasis'      => 'oases',
+			'thesis'     => 'theses',
+			'crisis'     => 'crises',
+			'phenomenon' => 'phenomena',
+			'criterion'  => 'criteria',
+			'datum'      => 'data',
+			'ox'         => 'oxen',
+			'axis'       => 'axes',
+			'index'      => 'indices',
+			'radius'     => 'radii',
+		);
+		if ( array_key_exists( $noun, $irregular ) ) {
+			return $irregular[ $noun ];
+		}
+
+		// Nouns ending with 'f' or 'fe'.
+		if ( str_ends_with( $noun, 'f' ) ) {
+			return substr( $noun, 0, -1 ) . 'ves';
+		}
+		if ( str_ends_with( $noun, 'fe' ) ) {
+			return substr( $noun, 0, -2 ) . 'ves';
+		}
+
+		// Nouns ending with 'y' preceded by a consonant.
+		if ( str_ends_with( $noun, 'y' ) && ! in_array( substr( $noun, -2, 1 ), array( 'a', 'e', 'i', 'o', 'u' ) ) ) {
+			return substr( $noun, 0, -1 ) . 'ies';
+		}
+
+		// Nouns ending with 'o' preceded by a consonant.
+		if ( str_ends_with( $noun, 'o' ) && ! in_array( substr( $noun, -2, 1 ), array( 'a', 'e', 'i', 'o', 'u' ) ) ) {
+			return $noun . 'es';
+		}
+
+		// Nouns ending with hissing sounds.
+		$hissing_endings = array( 's', 'x', 'z', 'ch', 'sh' );
+		foreach ( $hissing_endings as $ending ) {
+			if ( str_ends_with( $noun, $ending ) ) {
+				return $noun . 'es';
+			}
+		}
+
+		// Default case.
+		return $noun . 's';
+	}
+
+	/**
 	 *  List of acronyms that should be upper-case.
 	 *
 	 * @var array

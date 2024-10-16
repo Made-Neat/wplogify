@@ -80,7 +80,6 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-media-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-option-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-plugin-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-post-tracker.php';
-require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-taxonomy-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-term-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-theme-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-user-tracker.php';

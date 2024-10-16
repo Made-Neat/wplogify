@@ -54,8 +54,8 @@ class Theme_Tracker {
 			$versions[ $stylesheet ] = $version;
 		}
 
-		// Store the theme versions in a transient.
-		set_transient( 'theme_versions', $versions );
+		// Store the theme versions in an option.
+		update_option( 'logify_wp_theme_versions', $versions );
 	}
 
 	/**
@@ -142,7 +142,7 @@ class Theme_Tracker {
 		$props = array();
 
 		// Get the old version, if it's there.
-		$versions    = get_transient( 'theme_versions' );
+		$versions    = get_option( 'logify_wp_theme_versions', array() );
 		$old_version = $versions[ $stylesheet ] ?? null;
 
 		if ( $old_version ) {

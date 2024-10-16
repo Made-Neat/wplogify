@@ -87,3 +87,29 @@ Absolutely! Logify WP provides advanced search and filtering options, allowing y
 This plugin bundles [DataTables](https://datatables.net), which is released under the [MIT License](https://datatables.net/license/mit).
 
 DataTables ©2007-2024 SpryMedia Ltd.
+
+== Third-Party Services ==
+
+This plugin utilizes third-party services under certain circumstances:
+
+### 1. WordPress Documentation Links
+
+When viewing logs, this plugin provides links to the official WordPress documentation corresponding to the version of WordPress that has been installed on your site. These links direct users to:
+
+- **Service URL:** [https://wordpress.org/documentation/wordpress-version/version-&lt;version&gt;/](https://wordpress.org/documentation/)
+- **Purpose:** To offer quick access to documentation for the specific WordPress version installed.
+- **Data Sent:** The WordPress version number is included in the URL.
+- **Privacy Policy:** [https://wordpress.org/about/privacy/](https://wordpress.org/about/privacy/)
+
+### 2. IP Address Lookup
+
+This plugin allows users to click on logged IP addresses to view their origin information. When a user clicks an IP address in the log, it opens a link to an external service:
+
+- **Service Name:** WhatIsMyIPAddress.com
+- **Service URL:** [https://whatismyipaddress.com/ip/&lt;IP&gt;](https://whatismyipaddress.com/)
+- **Purpose:** To provide detailed information about the IP address's geographical location and other related data.
+- **Data Sent:** The IP address clicked in the log is included in the URL.
+- **Privacy Policy:** [https://whatismyipaddress.com/privacy-policy](https://whatismyipaddress.com/privacy-policy)
+- **Terms of Use:** [https://whatismyipaddress.com/terms-of-use](https://whatismyipaddress.com/terms-of-use)
+
+**Please Note:** By using these features, data (such as your WordPress version, or your users' IP addresses) is sent to external services. We recommend reviewing your privacy policies and terms of use to ensure compliance with local laws and regulations.

@@ -89,16 +89,20 @@ class Plugin_Tracker {
 			return;
 		}
 
-		// If the result is null, the plugin was not installed or updated, so we won't log anything.
+		$plugin_slug = $plugin['slug'];
+
+		// If the result is null, the plugin was not installed or updated yet, so we won't log
+		// anything. Most likely we're on the confirmation page prior to upgrade, downgrade, or
+		// re-installation.
 		if ( $upgrader->result === null ) {
 
-			// The user may be downgrading the plugin, so let's store the current plugin verison in
-			// the options.
+			// Remember the current plugin version.
 			if ( $plugin ) {
-				$version_key = $plugin_name . ' version';
 				$old_version = $plugin['Version'] ?? null;
 				if ( $old_version ) {
-					update_option( $version_key, $old_version );
+					$versions                 = get_option( 'logify_wp_plugin_versions', array() );
+					$versions[ $plugin_slug ] = $old_version;
+					update_option( 'logify_wp_plugin_versions', $versions );
 				}
 			}
 
@@ -108,27 +112,24 @@ class Plugin_Tracker {
 		// Default the old version to null (i.e. the plugin is new).
 		$old_version = null;
 
+		// Get the new version.
+		$new_version = $upgrader->new_plugin_data['Version'] ?? null;
+
 		// Get the event type.
 		if ( $installing ) {
-			// Default event type verb.
+			// Installing the plugin.
 			$verb = 'Installed';
 
-			// Handle upgrade and downgrade events.
-			if ( $upgrader->result['clear_destination'] ) {
-				if ( $upgrader->result['clear_destination'] === 'downgrade-plugin' ) {
-					$verb = 'Downgraded';
-				} elseif ( $upgrader->result['clear_destination'] === 'update-plugin' ) {
-					$verb = 'Upgraded';
-				}
-			}
-
 			// See if the old version was stored in the options.
-			$version_key = $plugin_name . ' version';
-			$old_version = get_option( $version_key );
+			$versions    = get_option( 'logify_wp_plugin_versions', array() );
+			$old_version = $versions[ $plugin_slug ] ?? null;
 
-			// Remove the option, as we don't need it anymore.
-			if ( $old_version ) {
-				delete_option( $version_key );
+			// Modify the verb for upgrade, downgrade, and re-installation events.
+			$clear_destination = $upgrader->result['clear_destination'] ?? null;
+			if ( $clear_destination === 'downgrade-plugin' ) {
+				$verb = 'Downgraded';
+			} elseif ( $clear_destination === 'update-plugin' ) {
+				$verb = $old_version === $new_version ? 'Re-installed' : 'Upgraded';
 			}
 		} else {
 			// Updating the plugin from the install page.
@@ -136,17 +137,19 @@ class Plugin_Tracker {
 			$old_version = $upgrader->skin->plugin_info['Version'] ?? null;
 		}
 
-		$event_type = "Plugin $verb";
-
-		// If we have both the old and new versions, show this.
-		$props       = array();
-		$new_version = $upgrader->new_plugin_data['Version'] ?? null;
-		if ( $old_version && $new_version && $old_version !== $new_version ) {
-			Property::update_array( $props, 'version', null, $old_version, $new_version );
+		// Create the event.
+		$event = Event::create( "Plugin $verb", $plugin );
+		if ( ! $event ) {
+			return;
 		}
 
-		// Log the event.
-		Logger::log_event( $event_type, $plugin, null, $props );
+		// If we have both the old and new versions, and they are different, show the change.
+		if ( $old_version && $new_version && $old_version !== $new_version ) {
+			$event->set_prop( 'version', null, $old_version, $new_version );
+		}
+
+		// Save the event.
+		$event->save();
 	}
 
 	/**

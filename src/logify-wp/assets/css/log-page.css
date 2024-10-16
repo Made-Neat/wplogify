@@ -46,8 +46,8 @@
   border-color: #80ffff;
 }
 #logify-wp-activity-log .logify-wp-object-type-core {
-  background-color: #ffd6e0;
-  border-color: #ffb3cf;
+  background-color: #ffd6ff;
+  border-color: #ffb3ff;
 }
 #logify-wp-activity-log .logify-wp-object-type-option {
   background-color: #e0d6ff;
@@ -62,8 +62,8 @@
   border-color: #b3cfff;
 }
 #logify-wp-activity-log .logify-wp-object-type-taxonomy {
-  background-color: #ffd6ff;
-  border-color: #ffb3ff;
+  background-color: #ffd6e0;
+  border-color: #ffb3cf;
 }
 #logify-wp-activity-log .logify-wp-object-type-term {
   background-color: #ffd6d6;
@@ -204,8 +204,8 @@
   border-color: #80ffff;
 }
 #logify-wp-object-type-filter .logify-wp-object-type-core {
-  background-color: #ffd6e0;
-  border-color: #ffb3cf;
+  background-color: #ffd6ff;
+  border-color: #ffb3ff;
 }
 #logify-wp-object-type-filter .logify-wp-object-type-option {
   background-color: #e0d6ff;
@@ -220,8 +220,8 @@
   border-color: #b3cfff;
 }
 #logify-wp-object-type-filter .logify-wp-object-type-taxonomy {
-  background-color: #ffd6ff;
-  border-color: #ffb3ff;
+  background-color: #ffd6e0;
+  border-color: #ffb3cf;
 }
 #logify-wp-object-type-filter .logify-wp-object-type-term {
   background-color: #ffd6d6;
@@ -275,8 +275,8 @@
   border-color: #80ffff;
 }
 #logify-wp-object-type-checkboxes .logify-wp-object-type-core:hover {
-  background-color: #ffebf0;
-  border-color: #ffb3cf;
+  background-color: #ffebff;
+  border-color: #ffb3ff;
 }
 #logify-wp-object-type-checkboxes .logify-wp-object-type-option:hover {
   background-color: #f0ebff;
@@ -291,8 +291,8 @@
   border-color: #b3cfff;
 }
 #logify-wp-object-type-checkboxes .logify-wp-object-type-taxonomy:hover {
-  background-color: #ffebff;
-  border-color: #ffb3ff;
+  background-color: #ffebf0;
+  border-color: #ffb3cf;
 }
 #logify-wp-object-type-checkboxes .logify-wp-object-type-term:hover {
   background-color: #ffebeb;

@@ -168,14 +168,16 @@ class Event {
 	 * @param ?array                   $eventmetas  The event metadata.
 	 * @param ?array                   $properties  The event properties.
 	 * @param null|int|WP_User         $acting_user The user who performed the action. This can be a user ID or WP_User object, or null for the current user.
-	 * @return ?Event The new event, or null if the user is anonymous or doesn't have a tracked role.
+	 * @param bool                     $all_users   If true, create the event regardless of the acting user's role, or if a user is logged in.
+	 * @return ?Event The new event, or null if the event was not created.
 	 */
 	public static function create(
 		string $event_type,
 		null|object|array|string $wp_object = null,
 		?array $eventmetas = null,
 		?array $properties = null,
-		null|int|WP_User $acting_user = null
+		null|int|WP_User $acting_user = null,
+		bool $all_users = false
 	): ?Event {
 		// If the event is about an object deletion, this is where we'd store the details of the
 		// deleted object in the database. We want to do it before user checking so every object
@@ -186,10 +188,10 @@ class Event {
 
 		// If this is not a login event, and we aren't tracking this user's role, or the user isn't
 		// logged in, we don't need to log the event.
-		if ( ! in_array( $event_type, array( 'User Login', 'Failed Login' ) ) &&
-			( ! $user_data['object'] || ! Access_Control::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() ) )
-		) {
-			Debug::info( "$event_type event not tracked. This is not a login event, and the acting user ({$user_data['id']}) doesn't have a role that is being tracked." );
+		$log_it = $all_users ||
+			( $user_data['object'] && Access_Control::user_has_role( $user_data['object'], Plugin_Settings::get_roles_to_track() ) );
+		if ( ! $log_it ) {
+			Debug::info( "$event_type event not logged. This is not an all-users event, and the acting user ({$user_data['id']}) doesn't have a role that is being tracked." );
 			return null;
 		}
 

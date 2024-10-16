@@ -575,6 +575,8 @@ class Post_Tracker {
 		if ( self::$update_post_event && ( self::$creating || self::$update_post_event->has_changes() ) ) {
 			self::$update_post_event->save();
 		}
+
+		Taxonomy_Utility::get_current_taxonomies_core_properties();
 	}
 
 	// =============================================================================================

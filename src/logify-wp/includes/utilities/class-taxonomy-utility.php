@@ -45,24 +45,11 @@ class Taxonomy_Utility extends Object_Utility {
 	 * Get a taxonomy's plural name.
 	 *
 	 * @param int|string $taxonomy The name (lower-case key) of the taxonomy.
-	 * @return ?string The taxonomy plural name or null if not found.
+	 * @return ?string The taxonomy's plural name or null if not found.
 	 */
 	public static function get_name( int|string $taxonomy ): ?string {
-		// Get the taxonomy object.
-		$taxonomy_obj = get_taxonomy( $taxonomy );
-
-		// Return the taxonomy plural name.
-		// I'm favouring labels->name over label because of WooCommerce. WooCommerce has a taxonomy
-		// 'product_cat', with a label 'Categories' and a name 'Product categories'. However,
-		// 'Categories' matches the name of the built-in 'category' taxonomy. The same issue exists
-		// with the WooCommerce taxonomy 'product_tag'.
-		if ( $taxonomy_obj->labels->name ) {
-			return ucwords( $taxonomy_obj->labels->name );
-		} elseif ( $taxonomy_obj->label ) {
-			return ucwords( $taxonomy_obj->label );
-		} else {
-			return null;
-		}
+		$names = self::get_names( (string) $taxonomy );
+		return $names['plural'] ?? null;
 	}
 
 	/**
@@ -89,9 +76,6 @@ class Taxonomy_Utility extends Object_Utility {
 
 		// Slug.
 		Property::update_array( $props, 'slug', null, $taxonomy_obj->name );
-
-		// Label.
-		// Property::update_array( $props, 'label', null, $taxonomy_obj->label );
 
 		// Show UI.
 		Property::update_array( $props, 'show_ui', null, $taxonomy_obj->show_ui );
@@ -138,29 +122,79 @@ class Taxonomy_Utility extends Object_Utility {
 	// Additional methods.
 
 	/**
+	 * Get the singular and plural names of a taxonomy.
+	 *
+	 * @param string|WP_Taxonomy $taxonomy The taxonomy slug or object.
+	 * @return ?string[] The singular and plural names of the taxonomy, or null if the taxonomy is not found.
+	 */
+	public static function get_names( string|WP_Taxonomy $taxonomy ): ?array {
+		// Get the taxonomy slug and object.
+		if ( is_string( $taxonomy ) ) {
+			$taxonomy_slug = $taxonomy;
+			$taxonomy_obj  = get_taxonomy( $taxonomy );
+			if ( ! $taxonomy_obj ) {
+				return null;
+			}
+		} else {
+			$taxonomy_obj  = $taxonomy;
+			$taxonomy_slug = $taxonomy_obj->name;
+		}
+
+		// Get the singular name.
+		// Special handling for taxonomies with names that clash with the core "Categories" and
+		// "Tags" taxonomies, and others with irregular names.
+		// I realise this is a kludge but it's the best I can come up with for now.
+		if ( $taxonomy_slug === 'product_cat' ) {
+			$singular = 'Product Category';
+		} elseif ( $taxonomy_slug === 'product_tag' ) {
+			$singular = 'Product Tag';
+		} elseif ( $taxonomy_slug === 'seopress_404_cat' ) {
+			$singular = 'SEOPress Category';
+		} elseif ( $taxonomy_slug === 'product_shipping_class' ) {
+			$singular = 'Product Shipping Class';
+		} elseif ( $taxonomy_slug === 'pa_colour' ) {
+			$singular = 'Product Colour';
+		} elseif ( isset( $taxonomy_obj->labels->singular_name ) ) {
+			$singular = ucwords( $taxonomy_obj->labels->singular_name );
+		} else {
+			$singular = Strings::key_to_label( $taxonomy_slug, true );
+		}
+
+		// Get the plural form from the taxonomy object.
+		if ( $taxonomy_obj->labels->name ) {
+			$plural = ucwords( $taxonomy_obj->labels->name );
+		} elseif ( $taxonomy_obj->label ) {
+			$plural = ucwords( $taxonomy_obj->label );
+		} else {
+			$plural = '';
+		}
+
+		// Make a plural from the singular.
+		$words       = explode( ' ', $singular );
+		$i           = count( $words ) - 1;
+		$words[ $i ] = ucfirst( Strings::pluralize( strtolower( $words[ $i ] ) ) );
+		$plural2     = implode( ' ', $words );
+
+		// Choose the longer one.
+		if ( strlen( $plural2 ) > strlen( $plural ) ) {
+			$plural = $plural2;
+		}
+
+		return array(
+			'singular' => $singular,
+			'plural'   => $plural,
+		);
+	}
+
+	/**
 	 * Get the singular name of a taxonomy.
 	 *
-	 * @param string $taxonomy The taxonomy slug.
-	 * @return string The singular name of the taxonomy.
+	 * @param string|WP_Taxonomy $taxonomy The taxonomy slug or object.
+	 * @return ?string The singular name of the taxonomy, or null if the taxonomy is not found.
 	 */
-	public static function get_singular_name( string $taxonomy ) {
-		// Get the taxonomy object.
-		$taxonomy_obj = get_taxonomy( $taxonomy );
-
-		// Handle these WooCommerce taxonomies separately, as they clash with core taxonomy names.
-		if ( $taxonomy === 'product_cat' ) {
-			return 'Product Category';
-		} elseif ( $taxonomy === 'product_tag' ) {
-			return 'Product Tag';
-		}
-
-		// Return the taxonomy singular name if found.
-		if ( isset( $taxonomy_obj->labels->singular_name ) ) {
-			return ucwords( $taxonomy_obj->labels->singular_name );
-		} else {
-			// Create a readable name from the taxonomy key.
-			return Strings::key_to_label( $taxonomy, true );
-		}
+	public static function get_singular_name( string|WP_Taxonomy $taxonomy ): ?string {
+		$names = self::get_names( $taxonomy );
+		return $names['singular'] ?? null;
 	}
 
 	/**
@@ -186,10 +220,12 @@ class Taxonomy_Utility extends Object_Utility {
 
 		// Name. This will be a link if there's an admin page accessible to the user, otherwise it
 		// will be the label (usually plural).
-		Property::update_array( $props, 'name', null, new Object_Reference( 'taxonomy', $taxonomy_info['name'], $taxonomy_info['label'] ) );
+		$slug = $taxonomy_info['name'];
+		$name = self::get_name( $slug ) ?? $taxonomy_info['label'];
+		Property::update_array( $props, 'name', null, new Object_Reference( 'taxonomy', $slug, $name ) );
 
 		// Slug.
-		Property::update_array( $props, 'slug', null, $taxonomy_info['name'] );
+		Property::update_array( $props, 'slug', null, $slug );
 
 		// Show UI.
 		Property::update_array( $props, 'show_ui', null, $taxonomy_info['show_ui'] );
@@ -205,11 +241,12 @@ class Taxonomy_Utility extends Object_Utility {
 	public static function get_current_taxonomies_core_properties(): array {
 		// Get the current taxonomies as objects.
 		$current_taxonomy_objects = get_taxonomies( array(), 'objects' );
+		// Debug::info( $current_taxonomy_objects );
 
 		// Convert to an array containing just the core properties we want to show in the log.
-		// Keyed by taxonomy name so we canuse array_diff_key() later.
 		$current_taxonomies = array();
 		foreach ( $current_taxonomy_objects as $taxonomy_obj ) {
+			// Debug::info( $taxonomy_obj->name, self::get_names( $taxonomy_obj ) );
 			$current_taxonomies[ $taxonomy_obj->name ] = array(
 				'name'    => $taxonomy_obj->name,
 				'label'   => $taxonomy_obj->label,

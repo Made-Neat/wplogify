@@ -49,8 +49,8 @@
   border-color: #80ffff;
 }
 #logify-wp-dashboard-table .logify-wp-object-type-core {
-  background-color: #ffd6e0;
-  border-color: #ffb3cf;
+  background-color: #ffd6ff;
+  border-color: #ffb3ff;
 }
 #logify-wp-dashboard-table .logify-wp-object-type-option {
   background-color: #e0d6ff;
@@ -65,8 +65,8 @@
   border-color: #b3cfff;
 }
 #logify-wp-dashboard-table .logify-wp-object-type-taxonomy {
-  background-color: #ffd6ff;
-  border-color: #ffb3ff;
+  background-color: #ffd6e0;
+  border-color: #ffb3cf;
 }
 #logify-wp-dashboard-table .logify-wp-object-type-term {
   background-color: #ffd6d6;

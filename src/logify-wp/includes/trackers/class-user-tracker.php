@@ -80,8 +80,7 @@ class User_Tracker {
 		// time this event occurs.
 		$event = Event::create( 'User Login', 'user', null, null, $user );
 
-		// If the event could not be created, exit. This shouldn't happen, because we track all
-		// login events, regardless of user role.
+		// If the event could not be created, return.
 		if ( ! $event ) {
 			return;
 		}
@@ -99,10 +98,10 @@ class User_Tracker {
 		// Create the event.
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
-		$event = Event::create( 'Failed Login', 'user' );
+		$event = Event::create( 'Failed Login', 'user', all_users: true );
 
 		// If the event could not be created, exit. This shouldn't happen, because we track all
-		// login events, regardless of user role.
+		// failed logins.
 		if ( ! $event ) {
 			return;
 		}
@@ -124,8 +123,8 @@ class User_Tracker {
 	public static function on_wp_logout( int $user_id ) {
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
-		// Also, the acting user (subject) must be provided, because there is no current logged-in
-		// user at the time this event occurs.
+		// Also, the acting user must be provided, because there is no current logged-in user at the
+		// time this event occurs.
 		$event = Event::create( 'User Logout', 'user', null, null, $user_id );
 
 		// If the event could not be created, we aren't tracking this user.
