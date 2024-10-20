@@ -112,4 +112,16 @@ This plugin allows users to click on logged IP addresses to view their origin in
 - **Privacy Policy:** [https://whatismyipaddress.com/privacy-policy](https://whatismyipaddress.com/privacy-policy)
 - **Terms of Use:** [https://whatismyipaddress.com/terms-of-use](https://whatismyipaddress.com/terms-of-use)
 
+### 3. IP Geolocation Service
+
+This plugin retrieves the geographical location of users based on their IP addresses to enhance log information. When a user's IP address is logged, the plugin sends a request to an external service to obtain location details:
+
+- **Service Name:** ip-api.com
+- **Service URL:** [http://ip-api.com/json/&lt;IP&gt;](http://ip-api.com/)
+- **Purpose:** To obtain geographical location data (city, region, country) associated with the IP address for display in logs.
+- **Data Sent:** The user's IP address is included in the API request URL.
+- **Data Received:** The service returns location information such as city, region, and country.
+- **Privacy Policy:** [https://ip-api.com/docs/legal](https://ip-api.com/docs/legal)
+- **Terms of Service:** [https://ip-api.com/docs/legal](https://ip-api.com/docs/legal)
+
 **Please Note:** By using these features, data (such as your WordPress version, or your users' IP addresses) is sent to external services. We recommend reviewing your privacy policies and terms of use to ensure compliance with local laws and regulations.

@@ -13,22 +13,14 @@ COPY phpinfo.php /var/www/html/
 RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libzip-dev \
-    unzip \
-    && docker-php-ext-install zip
-
-
-# Install necessary system dependencies and PHP extensions.
-RUN apt-get update && apt-get install -y \
-    zlib1g-dev \
-    libzip-dev \
     libicu-dev \
     unzip \
     && docker-php-ext-install zip intl
 
-# Install the MySQL extension as root.
+# Install the MySQL extension.
 RUN docker-php-ext-install mysqli
 
-# Install the Xdebug extension as root.
+# Install the Xdebug extension.
 RUN pecl install xdebug && docker-php-ext-enable xdebug
 
 # Install WP-CLI.

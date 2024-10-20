@@ -49,10 +49,7 @@ class Main {
 	 * Run on activation.
 	 */
 	public static function activate() {
-		// Make sure the dbDelta() function is available.
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-		// Create the tables.
+		// Create the database tables used by the plugin.
 		Database::create_all_tables();
 	}
 
