@@ -77,6 +77,10 @@ Absolutely! Logify WP provides advanced search and filtering options, allowing y
 = 1.0 =
 * Initial release with core logging features, advanced search and filtering, and a dashboard widget.
 
+= 1.1 =
+* Code style updates to improve security.
+* Added documentation of third-party services.
+
 == Links ==
 
 - [Plugin Website](https://logifywp.com/)
