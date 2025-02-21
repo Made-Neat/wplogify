@@ -44,28 +44,44 @@ class User_Tracker {
 	 */
 	public static function init() {
 		// User login.
-		add_action( 'wp_login', array( __CLASS__, 'on_wp_login' ), 10, 2 );
-		add_action( 'wp_login_failed', array( __CLASS__, 'on_wp_login_failed' ), 10, 2 );
+		// $var = new Async_Tracker();
 
+		// as_schedule_single_action( time(), 'wp_login', [string $user_login, WP_User $user] );
+
+		add_action('wp_login', [__NAMESPACE__.'\Async_Tracker', 'async_wp_login'], 10, 2 );
+		add_action('middle_wp_login', array(__CLASS__, 'on_wp_login'), 10, 2);
+
+		add_action( 'wp_login_failed', [__NAMESPACE__.'\Async_Tracker' , 'async_wp_login_failed'], 10, 2 );
+		add_action( 'middle_wp_login_failed', array( __CLASS__, 'on_wp_login_failed' ), 10, 2 );
+		
 		// User logout.
-		add_action( 'wp_logout', array( __CLASS__, 'on_wp_logout' ), 10, 1 );
-
+		add_action( 'wp_logout', [__NAMESPACE__.'\Async_Tracker', 'async_wp_logout'], 10, 1 );
+		add_action( 'middle_wp_logout', array( __CLASS__, 'on_wp_logout' ), 10, 1 );
+		
 		// User activity.
-		add_action( 'wp_loaded', array( __CLASS__, 'on_wp_loaded' ) );
-
+		add_action( 'wp_loaded', [__NAMESPACE__.'\Async_Tracker','async_wp_loaded'] );
+		add_action( 'middle_wp_loaded', array( __CLASS__, 'on_wp_loaded' ) );
+		
 		// New user registration.
-		add_action( 'user_register', array( __CLASS__, 'on_user_register' ), 10, 2 );
-
+		add_action( 'user_register', [__NAMESPACE__.'\Async_Tracker','async_user_register'], 10, 2 );
+		add_action( 'middle_user_register', array( __CLASS__, 'on_user_register' ), 10, 2 );
+		
 		// User deletion.
-		add_action( 'delete_user', array( __CLASS__, 'on_delete_user' ), 10, 3 );
-
+		add_action( 'delete_user', [__NAMESPACE__.'\Async_Tracker','async_delete_user'], 10, 3 );
+		add_action( 'middle_delete_user', array( __CLASS__, 'on_delete_user' ), 10, 3 );
+		
 		// User update.
-		add_action( 'profile_update', array( __CLASS__, 'on_profile_update' ), 10, 3 );
-		add_action( 'update_user_meta', array( __CLASS__, 'on_update_user_meta' ), 10, 4 );
-
+		add_action( 'profile_update', [__NAMESPACE__.'\Async_Tracker','async_profile_update'], 10, 3 );
+		add_action( 'middle_profile_update', array( __CLASS__, 'on_profile_update' ), 10, 3 );
+		
+		add_action( 'update_user_meta', [__NAMESPACE__.'\Async_Tracker','async_update_user_meta'], 10, 4 );
+		add_action( 'middle_update_user_meta', array( __CLASS__, 'on_update_user_meta' ), 10, 4 );
+		
 		// Shutdown hook.
-		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown'], 10, 0 );
+		add_action( 'middle_shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
+
 
 	/**
 	 * User login.
@@ -73,11 +89,14 @@ class User_Tracker {
 	 * @param string  $user_login The username of the user that logged in.
 	 * @param WP_User $user       The WP_User object of the user that logged in.
 	 */
-	public static function on_wp_login( string $user_login, WP_User $user ) {
+	
+	public static function on_wp_login( $user_login, $s_user ) {
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
 		// Also, the acting user must be provided, because there is no current logged in user at the
 		// time this event occurs.
+		$user = unserialize($s_user);
+		
 		$event = Event::create( 'User Login', 'user', null, null, $user );
 
 		// If the event could not be created, return.
@@ -88,16 +107,21 @@ class User_Tracker {
 		$event->save();
 	}
 
+
 	/**
 	 * Fires after a user login has failed.
 	 *
 	 * @param string   $username Username or email address.
 	 * @param WP_Error $error    A WP_Error object with the authentication failure details.
 	 */
-	public static function on_wp_login_failed( string $username, WP_Error $error ) {
+
+
+	public static function on_wp_login_failed( $username, $s_error ) {
 		// Create the event.
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
+
+		$error = unserialize($s_error);
 		$event = Event::create( 'Failed Login', 'user', all_users: true );
 
 		// If the event could not be created, exit. This shouldn't happen, because we track all
@@ -120,6 +144,7 @@ class User_Tracker {
 	 *
 	 * @param int $user_id The ID of the user that logged out.
 	 */
+
 	public static function on_wp_logout( int $user_id ) {
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
@@ -152,9 +177,10 @@ class User_Tracker {
 	 * @param ?int    $reassign The ID of the user that the data was reassigned to.
 	 * @param WP_User $user     The WP_User object of the user that was deleted.
 	 */
-	public static function on_delete_user( int $user_id, ?int $reassign, WP_User $user ) {
+	public static function on_delete_user( int $user_id, ?int $reassign, $s_user ) {
 		global $wpdb;
 
+		$user = unserialize($s_user);
 		// Get the user's properties.
 		$props = User_Utility::get_properties( $user );
 
@@ -194,9 +220,10 @@ class User_Tracker {
 	 * @param WP_User $user     The WP_User object of the user before the update.
 	 * @param array   $userdata The data for the user after the update.
 	 */
-	public static function on_profile_update( int $user_id, WP_User $user, array $userdata ) {
+	public static function on_profile_update( $user_id, $s_user, $userdata ) {
 		global $wpdb;
 
+		$user = unserialize($s_user);
 		// Compare values and make note of any changes.
 		foreach ( $user->data as $key => $value ) {
 

@@ -29,19 +29,29 @@ class Comment_Tracker {
 	 */
 	public static function init() {
 		// Add comment.
-		add_action( 'wp_insert_comment', array( __CLASS__, 'on_wp_insert_comment' ), 10, 2 );
-
+		add_action( 'wp_insert_comment', [__NAMESPACE__.'\Async_Tracker','async_wp_insert_comment'], 10, 2 );
+		add_action( 'middle_wp_insert_comment', array( __CLASS__, 'on_wp_insert_comment' ), 10, 2 );
+		
 		// Edit comment.
-		add_filter( 'wp_update_comment_data', array( __CLASS__, 'on_wp_update_comment_data' ), 10, 3 );
-		add_action( 'edit_comment', array( __CLASS__, 'on_edit_comment' ), 10, 2 );
+		add_action( 'wp_update_comment_data', [__NAMESPACE__.'\Async_Tracker','async_wp_update_comment_data'], 10, 3 );
+		add_filter( 'middle_wp_update_comment_data', array( __CLASS__, 'on_wp_update_comment_data' ), 10, 3 );
 
+		add_action( 'edit_comment', [__NAMESPACE__.'\Async_Tracker','async_edit_comment'], 10, 2 );
+		add_action( 'middle_edit_comment', array( __CLASS__, 'on_edit_comment' ), 10, 2 );
+		
 		// Delete comment.
-		add_action( 'delete_comment', array( __CLASS__, 'on_delete_comment' ), 10, 2 );
-
+		add_action( 'delete_comment', [__NAMESPACE__.'\Async_Tracker','async_delete_comment'], 10, 2 );
+		add_action( 'middle_delete_comment', array( __CLASS__, 'on_delete_comment' ), 10, 2 );
+		
 		// Change to comment status.
-		add_action( 'transition_comment_status', array( __CLASS__, 'on_transition_comment_status' ), 10, 3 );
-		add_action( 'trashed_post_comments', array( __CLASS__, 'on_trashed_post_comments' ), 10, 2 );
-		add_action( 'untrash_post_comments', array( __CLASS__, 'on_untrash_post_comments' ), 10, 1 );
+		add_action( 'transition_comment_status', [__NAMESPACE__.'\Async_Tracker','async_transition_comment_status'], 10, 3 );
+		add_action( 'middle_transition_comment_status', array( __CLASS__, 'on_transition_comment_status' ), 10, 3 );
+		
+		add_action( 'trashed_post_comments', [__NAMESPACE__.'\Async_Tracker','async_trashed_post_comments'], 10, 2 );
+		add_action( 'middle_trashed_post_comments', array( __CLASS__, 'on_trashed_post_comments' ), 10, 2 );
+		
+		add_action( 'untrash_post_comments', [__NAMESPACE__.'\Async_Tracker','async_untrash_post_comments'], 10, 3 );
+		add_action( 'middle_untrash_post_comments', array( __CLASS__, 'on_untrash_post_comments' ), 10, 1 );
 	}
 
 	/**
@@ -50,7 +60,9 @@ class Comment_Tracker {
 	 * @param int        $id      The comment ID.
 	 * @param WP_Comment $comment Comment object.
 	 */
-	public static function on_wp_insert_comment( int $id, WP_Comment $comment ) {
+	public static function on_wp_insert_comment( $id, $s_comment ) {
+		
+		$comment = unserialize($s_comment);
 		Debug::info( 'on_wp_insert_comment', $id );
 
 		Logger::log_event( 'Comment Added', $comment );
@@ -69,7 +81,9 @@ class Comment_Tracker {
 	 * @param array          $commentarr The new, raw comment data.
 	 * @return array|WP_Error The new, processed comment data, or WP_Error.
 	 */
-	public static function on_wp_update_comment_data( array|WP_Error $data, array $comment, array $commentarr ): array|WP_Error {
+	public static function on_wp_update_comment_data( array|WP_Error $s_data, array $comment, array $commentarr ): array|WP_Error {
+		
+		$data = unserialize($s_data);
 		// If the data is an error, ignore.
 		if ( is_wp_error( $data ) ) {
 			return $data;
@@ -123,12 +137,14 @@ class Comment_Tracker {
 	 * @param string     $comment_id The comment ID as a numeric string.
 	 * @param WP_Comment $comment    The comment to be deleted.
 	 */
-	public static function on_delete_comment( string $comment_id, WP_Comment $comment ) {
-		Debug::info( 'on_delete_comment', $comment_id );
+	public static function on_delete_comment( $comment_id, $s_comment ) {
 
+		$comment = unserialize($s_comment);
+		Debug::info( 'on_delete_comment', $comment_id );
+		
 		// Get all the comment properties in case we need to restore it.
 		$props = Comment_Utility::get_properties( $comment );
-
+		
 		// Log the event.
 		Logger::log_event( 'Comment Deleted', $comment, null, $props );
 	}
@@ -140,9 +156,11 @@ class Comment_Tracker {
 	 * @param int|string $old_status The old comment status.
 	 * @param WP_Comment $comment    Comment object.
 	 */
-	public static function on_transition_comment_status( int|string $new_status, int|string $old_status, WP_Comment $comment ) {
-		Debug::info( 'on_transition_comment_status', $new_status, $old_status );
+	public static function on_transition_comment_status( int|string $new_status, int|string $old_status, $comment ) {
+		$comment = unserialize($s_comment);
 
+		Debug::info( 'on_transition_comment_status', $new_status, $old_status );
+		
 		// Ignore delete events.
 		if ( $new_status === 'delete' ) {
 			return;

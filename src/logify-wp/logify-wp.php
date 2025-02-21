@@ -77,6 +77,7 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-main.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-plugin-settings.php';
 
 // Classes for tracking events.
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-async-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-comment-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-core-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-media-tracker.php';

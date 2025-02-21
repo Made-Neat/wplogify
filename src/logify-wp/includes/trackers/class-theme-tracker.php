@@ -23,17 +23,23 @@ class Theme_Tracker {
 	 */
 	public static function init() {
 		// Load the themes pages.
-		add_action( 'load-themes.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
-		add_action( 'load-theme-install.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
-
+		add_action( 'load-themes.php', [__NAMESPACE__.'\Async_Tracker','async_load_themes'], 10, 0 );
+		add_action( 'middle_load-themes.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
+		
+		add_action( 'load-theme-install.php', [__NAMESPACE__.'\Async_Tracker','async_load_theme_install'], 10, 0 );
+		add_action( 'middle_load-theme-install.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
+		
 		// Theme install and update.
-		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
-
+		add_action( 'upgrader_process_complete', [__NAMESPACE__.'\Async_Tracker','async_upgrader_process_complete'], 10, 2 );
+		add_action( 'middle_upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
+		
 		// Theme switch.
-		add_action( 'switch_theme', array( __CLASS__, 'on_switch_theme' ), 10, 3 );
-
+		add_action( 'switch_theme', [__NAMESPACE__.'\Async_Tracker','async_switch_theme'], 10, 3 );
+		add_action( 'middle_switch_theme', array( __CLASS__, 'on_switch_theme' ), 10, 3 );
+		
 		// Theme delete.
-		add_action( 'delete_theme', array( __CLASS__, 'on_delete_theme' ), 10, 2 );
+		add_action( 'delete_theme', [__NAMESPACE__.'\Async_Tracker','async_delete_theme'], 10, 2 );
+		add_action( 'middle_delete_theme', array( __CLASS__, 'on_delete_theme' ), 10, 2 );
 	}
 
 	/**
@@ -84,8 +90,11 @@ class Theme_Tracker {
 	 *     }
 	 * }
 	 */
-	public static function on_upgrader_process_complete( WP_Upgrader $upgrader, array $hook_extra ) {
+	public static function on_upgrader_process_complete( $s_upgrader, $hook_extra ) {
 		// Check this is a theme upgrader.
+
+		$upgrader = unserialize($s_upgrader);
+
 		if ( ! $upgrader instanceof Theme_Upgrader || $hook_extra['type'] !== 'theme' ) {
 			return;
 		}
@@ -183,7 +192,11 @@ class Theme_Tracker {
 	 * @param WP_Theme $new_theme WP_Theme instance of the new theme.
 	 * @param WP_Theme $old_theme WP_Theme instance of the old theme.
 	 */
-	public static function on_switch_theme( string $new_name, WP_Theme $new_theme, WP_Theme $old_theme ) {
+	public static function on_switch_theme( string $new_name, $s_new_theme, $s_old_theme ) {
+
+		$new_theme = unserialize($s_new_theme);
+		$old_theme = unserialize($s_old_theme);
+
 		$metas         = array();
 		$old_theme_ref = Object_Reference::new_from_wp_object( $old_theme );
 		Eventmeta::update_array( $metas, 'old_theme', $old_theme_ref );

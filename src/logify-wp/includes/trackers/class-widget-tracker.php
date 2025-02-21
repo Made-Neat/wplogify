@@ -33,9 +33,14 @@ class Widget_Tracker {
 	 */
 	public static function init() {
 		// Changes to widget options.
-		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
-		add_action( 'updated_option', array( __CLASS__, 'on_updated_option' ), 10, 3 );
-		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
+		add_action( 'update_option', [__NAMESPACE__.'\Async_Tracker','async_update_option'], 10, 3 );
+		add_action( 'middle_update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
+		
+		add_action( 'updated_option', [__NAMESPACE__.'\Async_Tracker','async_updated_option'], 10, 3 );
+		add_action( 'middle_updated_option', array( __CLASS__, 'on_updated_option' ), 10, 3 );
+		
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown'], 10, 0 );
+		add_action( 'middle_shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**

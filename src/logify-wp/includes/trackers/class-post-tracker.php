@@ -42,25 +42,42 @@ class Post_Tracker {
 	 */
 	public static function init() {
 		// Track post creation and update.
-		add_action( 'save_post', array( __CLASS__, 'on_save_post' ), 10, 3 );
-		add_action( 'pre_post_update', array( __CLASS__, 'on_pre_post_update' ), 10, 2 );
-		add_action( 'post_updated', array( __CLASS__, 'on_post_updated' ), 10, 3 );
-		add_action( 'update_post_meta', array( __CLASS__, 'on_update_post_meta' ), 10, 4 );
-
+		add_action( 'save_post', [__NAMESPACE__.'\Async_Tracker','async_save_post'], 10, 3 );
+		add_action( 'middle_save_post', array( __CLASS__, 'on_save_post' ), 10, 3 );
+		
+		add_action( 'pre_post_update', [__NAMESPACE__.'\Async_Tracker','async_pre_post_update'], 10, 2 );
+		add_action( 'middle_pre_post_update', array( __CLASS__, 'on_pre_post_update' ), 10, 2 );
+		
+		add_action( 'post_updated', [__NAMESPACE__.'\Async_Tracker','async_post_updated'], 10, 3 );
+		add_action( 'middle_post_updated', array( __CLASS__, 'on_post_updated' ), 10, 3 );
+		
+		add_action( 'update_post_meta', [__NAMESPACE__.'\Async_Tracker','async_update_post_meta'], 10, 4 );
+		add_action( 'middle_update_post_meta', array( __CLASS__, 'on_update_post_meta' ), 10, 4 );
+		
 		// Post status change.
-		add_action( 'transition_post_status', array( __CLASS__, 'on_transition_post_status' ), 10, 3 );
-
+		add_action( 'transition_post_status', [__NAMESPACE__.'\Async_Tracker','async_transition_post_status'], 10, 3 );
+		add_action( 'middle_transition_post_status', array( __CLASS__, 'on_transition_post_status' ), 10, 3 );
+		
 		// Track post deletion.
-		add_action( 'before_delete_post', array( __CLASS__, 'on_before_delete_post' ), 10, 2 );
-		add_action( 'delete_post', array( __CLASS__, 'on_delete_post' ), 10, 2 );
+		add_action( 'before_delete_post', [__NAMESPACE__.'\Async_Tracker','async_before_delete_post'], 10, 2 );
+		add_action( 'middle_before_delete_post', array( __CLASS__, 'on_before_delete_post' ), 10, 2 );
 
+		add_action( 'delete_post', [__NAMESPACE__.'\Async_Tracker','async_delete_post'], 10, 2 );
+		add_action( 'middledelete_post', array( __CLASS__, 'on_delete_post' ), 10, 2 );
+		
 		// Track linking and unlinking of terms and posts.
-		add_action( 'added_term_relationship', array( __CLASS__, 'on_added_term_relationship' ), 10, 3 );
-		add_action( 'wp_after_insert_post', array( __CLASS__, 'on_wp_after_insert_post' ), 10, 4 );
-		add_action( 'deleted_term_relationships', array( __CLASS__, 'on_deleted_term_relationships' ), 10, 3 );
-
+		add_action( 'added_term_relationship', [__NAMESPACE__.'\Async_Tracker','async_added_term_relationship'], 10, 3 );
+		add_action( 'middle_added_term_relationship', array( __CLASS__, 'on_added_term_relationship' ), 10, 3 );
+		
+		add_action( 'wp_after_insert_post', [__NAMESPACE__.'\Async_Tracker','async_wp_after_insert_post'], 10, 4 );
+		add_action( 'middle_wp_after_insert_post', array( __CLASS__, 'on_wp_after_insert_post' ), 10, 4 );
+		
+		add_action( 'deleted_term_relationships', [__NAMESPACE__.'\Async_Tracker','async_deleted_term_relationships'], 10, 3 );
+		add_action( 'middle_deleted_term_relationships', array( __CLASS__, 'on_deleted_term_relationships' ), 10, 3 );
+		
 		// Shutdown.
-		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown'], 10, 0 );
+		add_action( 'middle_shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	// =============================================================================================
@@ -80,9 +97,10 @@ class Post_Tracker {
 	 * @param WP_Post $post    The post object.
 	 * @param bool    $update  Whether this is an update or a new post.
 	 */
-	public static function on_save_post( int $post_id, WP_Post $post, bool $update ) {
+	public static function on_save_post( int $post_id, $s_post, bool $update ) {
 		// Ignore updates. We track post updates by tracking the creation of revisions, which
 		// enables us to link to the compare revisions page.
+		$post = unserialize($s_post);
 		if ( $update ) {
 			return;
 		}
@@ -165,7 +183,10 @@ class Post_Tracker {
 	 * @param WP_Post $post_after   Post object following the update.
 	 * @param WP_Post $post_before  Post object before the update.
 	 */
-	public static function on_post_updated( int $post_id, WP_Post $post_after, WP_Post $post_before ) {
+	public static function on_post_updated( int $post_id, $s_post_after, $s_post_before ) {
+
+		$post_after = unserialize($s_post_after);
+		$post_before = unserialize($s_post_before);
 		Debug::info( 'on_post_updated' );
 
 		// Get changes to the post.
@@ -242,9 +263,10 @@ class Post_Tracker {
 	 * @param string  $old_status Old post status.
 	 * @param WP_Post $post       Post object.
 	 */
-	public static function on_transition_post_status( string $new_status, string $old_status, WP_Post $post ) {
+	public static function on_transition_post_status( string $new_status, string $old_status, $s_post ) {
 		global $wpdb;
 
+		$post = unserialize($s_post);
 		// Ignore navigation menu items.
 		if ( $post->post_type === 'nav_menu_item' ) {
 			return;
@@ -312,8 +334,9 @@ class Post_Tracker {
 	 * @param int     $post_id Post ID.
 	 * @param WP_Post $post    Post object.
 	 */
-	public static function on_before_delete_post( int $post_id, WP_Post $post ) {
+	public static function on_before_delete_post( int $post_id, $s_post ) {
 		// Ignore revisions.
+		$post = unserialize($s_post);
 		if ( wp_is_post_revision( $post ) ) {
 			return;
 		}
@@ -417,8 +440,9 @@ class Post_Tracker {
 	 * @param int     $post_id The ID of the post that was deleted.
 	 * @param WP_Post $post    The post object that was deleted.
 	 */
-	public static function on_delete_post( int $post_id, WP_Post $post ) {
+	public static function on_delete_post( int $post_id, $s_post ) {
 		// Ensure this is not a revision.
+		$post = unserialize($s_post);
 		if ( wp_is_post_revision( $post ) ) {
 			return;
 		}
@@ -504,8 +528,10 @@ class Post_Tracker {
 	 * @param bool     $update      Whether this is an existing post being updated.
 	 * @param ?WP_Post $post_before Null for new posts, the WP_Post object prior to the update for updated posts.
 	 */
-	public static function on_wp_after_insert_post( int $post_id, WP_Post $post, bool $update, ?WP_Post $post_before ) {
+	public static function on_wp_after_insert_post( int $post_id, $post, bool $update, ?WP_Post $post_before ) {
 		// Ignore revisions.
+		$post = unserialize($s_post);
+		$post_before = unserialize($s_post_before);
 		if ( wp_is_post_revision( $post_id ) ) {
 			return;
 		}
