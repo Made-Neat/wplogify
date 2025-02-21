@@ -22,18 +22,26 @@ class Plugin_Tracker {
 	 */
 	public static function init() {
 		// Plugin install and update.
-		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
-
+		add_action( 'upgrader_process_complete', [__NAMESPACE__.'\Async_Tracker','async_upgrader_process_complete'], 10, 2 );
+		add_action( 'middle_upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
+		
 		// Plugin activation and deactivation.
-		add_action( 'activate_plugin', array( __CLASS__, 'on_activate_plugin' ), 10, 2 );
-		add_action( 'deactivate_plugin', array( __CLASS__, 'on_deactivate_plugin' ), 10, 2 );
+		add_action( 'activate_plugin', [__NAMESPACE__.'\Async_Tracker','async_activate_plugin'], 10, 2 );
+		add_action( 'middle_activate_plugin', array( __CLASS__, 'on_activate_plugin' ), 10, 2 );
 
+		add_action( 'deactivate_plugin', [__NAMESPACE__.'\Async_Tracker','async_deactivate_plugin'], 10, 2 );
+		add_action( 'middle_deactivate_plugin', array( __CLASS__, 'on_deactivate_plugin' ), 10, 2 );
+		
 		// Plugin deletion and uninstall.
-		add_action( 'delete_plugin', array( __CLASS__, 'on_delete_plugin' ), 10, 1 );
-		add_action( 'pre_uninstall_plugin', array( __CLASS__, 'on_pre_uninstall_plugin' ), 10, 2 );
+		add_action( 'delete_plugin', [__NAMESPACE__.'\Async_Tracker','async_delete_plugin'], 10, 1 );
+		add_action( 'middle_delete_plugin', array( __CLASS__, 'on_delete_plugin' ), 10, 1 );
 
+		add_action( 'pre_uninstall_plugin', [__NAMESPACE__.'\Async_Tracker','async_pre_uninstall_plugin'], 10, 2 );
+		add_action( 'middle_pre_uninstall_plugin', array( __CLASS__, 'on_pre_uninstall_plugin' ), 10, 2 );
+		
 		// Enabling and disabling auto-updates.
-		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
+		add_action( 'update_option', [__NAMESPACE__.'\Async_Tracker','async_update_option'], 10, 3 );
+		add_action( 'middle_update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
 	}
 
 	/**
@@ -62,8 +70,10 @@ class Plugin_Tracker {
 	 *     }
 	 * }
 	 */
-	public static function on_upgrader_process_complete( WP_Upgrader $upgrader, array $hook_extra ) {
+	public static function on_upgrader_process_complete( $s_upgrader, array $hook_extra ) {
 		// Check this is a plugin upgrader.
+
+		$upgrader = unserialize($s_upgrader);
 		if ( ! $upgrader instanceof Plugin_Upgrader ) {
 			return;
 		}

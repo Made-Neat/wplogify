@@ -28,13 +28,16 @@ class Term_Tracker {
 	 */
 	public static function init() {
 		// Term creation.
-		add_action( 'created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
-
+		add_action( 'created_term', [__NAMESPACE__.'\Async_Tracker','async_created_term'], 10, 4 );
+		add_action( 'middle_created_term', array( __CLASS__, 'on_created_term' ), 10, 4 );
+		
 		// Term update.
-		add_action( 'edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
-
+		add_action( 'edit_terms', [__NAMESPACE__.'\Async_Tracker','async_edit_terms'], 10, 3 );
+		add_action( 'middle_edit_terms', array( __CLASS__, 'on_edit_terms' ), 10, 3 );
+		
 		// Term deletion.
-		add_action( 'pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
+		add_action( 'pre_delete_term', [__NAMESPACE__.'\Async_Tracker','async_pre_delete_term'], 10, 2 );
+		add_action( 'middle_pre_delete_term', array( __CLASS__, 'on_pre_delete_term' ), 10, 2 );
 	}
 
 	// =============================================================================================
