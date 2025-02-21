@@ -362,3 +362,10 @@
 #logify-wp-reset-filters-wrapper {
   margin: 1rem 0;
 }
+
+button.ui-button.ui-corner-all.ui-widget.ui-button-icon-only.ui-dialog-titlebar-close {
+  float: right;
+}
+.ui-dialog-titlebar.ui-corner-all.ui-widget-header.ui-helper-clearfix.ui-draggable-handle {
+  padding: 5px;
+}

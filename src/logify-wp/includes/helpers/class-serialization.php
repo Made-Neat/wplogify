@@ -44,22 +44,25 @@ class Serialization {
 	 * @return bool True if the provided value was null or successfully unserialized; otherwise false.
 	 */
 	public static function try_unserialize( ?string $serialized_value, mixed &$unserialized_value ): bool {
-		// Handle the null case.
 		if ( $serialized_value === null ) {
 			$unserialized_value = null;
 			return true;
 		}
-
-		// Attempt to unserialize the value.
+	
+		if ( ! self::is_valid_serialized( $serialized_value ) ) {
+			return false; // Invalid serialized string.
+		}
+	
 		try {
 			$unserialized_value = @unserialize( $serialized_value );
-
-			// Check if unserialization was successful.
 			return $unserialized_value !== false || $serialized_value === 'b:0;';
-
 		} catch ( Throwable $e ) {
-			// Unserialization failed.
 			return false;
 		}
+	}
+
+	private static function is_valid_serialized( string $data ): bool {
+		// Basic serialized string validation.
+		return preg_match('/^(?:[aOs]:|b:0;|N;|i:\d+;|d:\d+\.\d+;)/', $data) === 1;
 	}
 }

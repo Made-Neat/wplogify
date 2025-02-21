@@ -344,8 +344,6 @@ class Media_Tracker {
 	 * Fires on shutdown, after PHP execution.
 	 */
 	public static function on_shutdown() {
-		Debug::info( __CLASS__, __FUNCTION__ );
-
 		// Save the media updated or added event, if it exists.
 		if ( self::$update_media_event ) {
 			if ( self::$creating || self::$update_media_event->has_changes() ) {

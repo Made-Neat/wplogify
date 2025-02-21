@@ -97,6 +97,14 @@ class Event {
 	public ?string $object_subtype;
 
 	/**
+	 * 
+	 * The note related to event
+	 *
+	 * @var ?string
+	 */
+	public ?object  $eventnotes;
+
+	/**
 	 * The unique identifier of the object associated with the event.
 	 *
 	 * This will be an integer matching a database primary key in the case of a post, user, term, or

@@ -3,9 +3,9 @@
 Contributors: madeneat
 Tags: activity log, audit log, security, user tracking, event log
 Requires at least: 6.2
-Tested up to: 6.6.1
+Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.1.1
+Stable tag: 1.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Website: https://logifywp.com/
@@ -16,12 +16,15 @@ Logify WP is a user-friendly plugin that tracks critical actions on your WordPre
 
 **Logify WP** provides real-time, detailed logs of activities happening across your WordPress website. Whether you're an **agency**, **freelancer**, **IT team**, **developer**, or **website administrator**, Logify WP gives you full visibility into your website’s activity with a comprehensive **activity log** and **audit log**. From tracking post edits to user login attempts and plugin updates, Logify WP helps you monitor and secure your site with clear and easy-to-understand logs.
 
+Take your activity logs to the next level with activity **Notes**! This feature allows you to attach **searchable notes** linked to logged events, providing valuable context. Need to document why a plugin was installed, who approved an update, or where a license is stored? Now you can, with simple markup support for clarity.
+
 Built to be simple yet powerful, Logify WP features a clean layout of activity information, easy filtering and search options, and customizable role-based access controls. The user-friendly dashboard widget makes it easy to review recent critical activities at a glance.
 
 ### Key Features:
 
 - **Track Core WordPress Activities:** Record actions on posts, pages, custom post types, taxonomies, plugins, themes, users, and more.
 - **Real-time Monitoring:** Get instant insights into who made changes, when, and where, via a secure **event log**.
+- **Action Notes (New!):** Add and search **notes** linked to actions for improved tracking and accountability.
 - **User Login Monitoring:** Track user logins, logouts, and failed attempts with IP addresses.
 - **Media Management:** Know who is uploading, editing, or deleting media files and when.
 - **Role-Based Access Control:** Limit who can access the activity logs based on their WordPress role.
@@ -45,7 +48,7 @@ Logify WP is actively being developed, with new features in the pipeline. If you
 
 1. Download and install Logify WP from the WordPress Plugin Directory or upload the plugin files to your `/wp-content/plugins/` directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
-3. Navigate to **Logify WP > Settings** to configure tracking options and start monitoring your website’s activity.
+3. Navigate to **Logify WP > Settings** to configure tracking options, activate **Notes** and start monitoring your website’s activity.
 
 == Frequently Asked Questions ==
 
@@ -67,10 +70,11 @@ Absolutely! Logify WP provides advanced search and filtering options, allowing y
 
 == Screenshots ==
 
-1. **Activity Dashboard** – View a summary of recent activities on your site at a glance.
-2. **Detailed Log View** – See full details of logged activities, including user avatars and advanced metadata.
-3. **Settings Page** – Customize what actions are logged and who has access to view them.
-4. **Search & Filter** – Easily search through logs by user, date, post type, and more.
+1. **Real-Time Monitoring** – Stay in control with live updates on every change happening on your WordPress site.
+2. **Role-Based Access Control** – Keep your logs private with customizable role-based access controls.
+3. **Advanced Search & Filtering** – Easily find the information you need with powerful search and filtering tools.
+4. **User-Friendly Dashboard Widget** – Get an at-a-glance view of critical site activities with a convenient dashboard widget. 
+5. **Log Retention** – Take full control of your activity logs with customizable log retention settings. 
 
 == Changelog ==
 
@@ -80,6 +84,13 @@ Absolutely! Logify WP provides advanced search and filtering options, allowing y
 = 1.1 =
 * Code style updates to improve security.
 * Added documentation of third-party services.
+
+= 1.2.0 =
+* Added Notes feature with advanced search and filtering
+* Add or update a note against a log
+
+= 1.2.1 =
+* Fixed issue in Notes feature
 
 == Links ==
 

@@ -1,8 +1,8 @@
 jQuery(($) => {
 
-    // Get the event ID from the query string.
+    // Get the Notes ID from the query string.
     let urlParams = new URLSearchParams(window.location.search);
-    const eventIdToExpand = urlParams.get('event_id');
+    const eventIdToExpand = urlParams.get('note_id');
 
     // Set up the datatable.
     let eventsTable = $('#logify-wp-activity-log').DataTable({
@@ -15,7 +15,7 @@ jQuery(($) => {
             url: logifyWpLogPage.ajaxUrl,
             type: "POST",
             data: (d) => {
-                d.action = 'logify_wp_fetch_logs';
+                d.action = 'logify_wp_fetch_notes';
                 d.security = logifyWpLogPage.ajaxNonce;
                 console.log('Sending AJAX request with data:', d);
             },
@@ -26,18 +26,13 @@ jQuery(($) => {
         },
         columns: [
             {
-                data: "event_id",
+                data: "note_id",
                 width: '70px'
             },
-            { data: "when_happened" },
+            { data: "created_at" },
             { data: "display_name" },
-            { data: "user_ip" },
-            { data: "event_type" },
-            { data: "object_name" },
-            {
-                data: "object_type",
-                visible: false
-            },
+            { data: "short_note" },
+            { data: "event_id" },
             {
                 data: "edit_link",
                 render: (data, type, row) => {
@@ -372,59 +367,6 @@ jQuery(($) => {
         eventsTable.ajax.reload();
     });
 
-    // Submit form to save or update the note
-    $('#edit-note-form').on('submit', function (e) {
-        e.preventDefault();
-
-        const noteId = $('#edit-note-id').val();
-        const eventId = $('#edit-event-id').val();
-        const noteContent = tinyMCE.get('edit-note-content')
-            ? tinyMCE.get('edit-note-content').getContent() // Get TinyMCE content
-            : $('#edit-note-content').val(); // Fallback for textarea
-
-        // Validate content before submitting
-        if (!noteContent || noteContent.trim() === '') {
-            alert('Note content cannot be empty.');
-            return;
-        }
-
-        $.ajax({
-            url: ajaxurl,
-            method: 'POST',
-            data: {
-                action: noteId ? 'logify_update_note' : 'logify_add_note', // Choose action based on note ID
-                security: logifyWpLogPage.ajaxNonce,
-                note_id: noteId,
-                event_id: eventId,
-                note_content: noteContent,
-            },
-            success: function (response) {
-                if (response.success) {
-                    // Display success message
-                    $('<div class="success notice updated"><p>Note saved successfully!</p></div>')
-                        .appendTo('#edit-note-form')
-                        .fadeIn()
-                        .delay(2000) // Show the message for 2 seconds
-                        .fadeOut(2000, function () {
-                            $(this).remove(); // Remove the message after fading out
-                            eventsTable.ajax.reload();
-                            $('#edit-note-modal').dialog('close');
-                        });
-                    
-                } else {
-                    // Display error message inline
-                    $('<div id="message" class="error notice updated"><p>Failed to save note: ' + response.data.message + '</p></div>')
-                        .appendTo('#edit-note-form')
-                        .fadeIn()
-                        .delay(2000)
-                        .fadeOut(500, function () {
-                            $(this).remove();
-                        });
-                }
-            },
-        });
-    });
-
     // Set up the button to reset search filters.
     $('#logify-wp-reset-filters').on('click', function () {
         // Clear the search text.
@@ -471,5 +413,73 @@ jQuery(($) => {
     });
 
     // Initialize the search form.
-    initSearchForm();    
+    initSearchForm();
+
+    // Open modal for editing an existing note
+    $('#notes-table').on('click', '.edit-note', function () {
+        const noteId = parseInt($(this).data('id'), 10); // Ensure numeric value
+        const noteContent = $(this).data('note');
+
+        $('#edit-note-id').val(noteId);
+
+        if (tinyMCE.get('edit-note-content')) {
+            tinyMCE.get('edit-note-content').setContent(noteContent); // Set content in TinyMCE
+        } else {
+            $('#edit-note-content').val(noteContent); // Fallback for textarea
+        }
+
+        $('#edit-note-modal').dialog('open');
+    });
+
+    // Submit form to save or update the note
+    $('#edit-note-form').on('submit', function (e) {
+        e.preventDefault();
+
+        const noteId = $('#edit-note-id').val();
+        const noteContent = tinyMCE.get('edit-note-content')
+            ? tinyMCE.get('edit-note-content').getContent() // Get TinyMCE content
+            : $('#edit-note-content').val(); // Fallback for textarea
+
+        // Validate content before submitting
+        if (!noteContent || noteContent.trim() === '') {
+            alert('Note content cannot be empty.');
+            return;
+        }
+
+        $.ajax({
+            url: ajaxurl,
+            method: 'POST',
+            data: {
+                action: noteId ? 'logify_update_notes' : 'logify_add_notes', // Choose action based on note ID
+                security: logifyWpLogPage.ajaxNonce,
+                note_id: noteId,
+                note_content: noteContent,
+            },
+            success: function (response) {
+                if (response.success) {
+                    // Display success message
+                    $('<div class="success notice updated"><p>Note saved successfully!</p></div>')
+                        .appendTo('#edit-note-form')
+                        .fadeIn()
+                        .delay(2000) // Show the message for 2 seconds
+                        .fadeOut(2000, function () {
+                            $(this).remove(); // Remove the message after fading out
+                            eventsTable.ajax.reload();
+                            $('#edit-note-modal').dialog('close');
+                        });
+                    
+                } else {
+                    // Display error message inline
+                    $('<div id="message" class="error notice updated"><p>Failed to save note: ' + response.data.message + '</p></div>')
+                        .appendTo('#edit-note-form')
+                        .fadeIn()
+                        .delay(2000)
+                        .fadeOut(500, function () {
+                            $(this).remove();
+                        });
+                }
+            },
+        });
+    });
+    
 });

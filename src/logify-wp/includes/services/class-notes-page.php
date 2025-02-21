@@ -1,6 +1,6 @@
 <?php
 /**
- * Contains the Log_Page class.
+ * Contains the Notes_Page class.
  *
  * @package Logify_WP
  */
@@ -11,24 +11,25 @@ use DateTime;
 use DateTimeZone;
 
 /**
- * Class Logify_WP\Log_Page
+ * Class Logify_WP\Notes_Page
  *
- * Contains methods for formatting event log entries for display in the admin area.
+ * Contains methods for formatting notes entries for display in the admin area.
  */
-class Log_Page {
+class Notes_Page {
 
 	/**
 	 * Initialize the log page.
 	 */
 	public static function init() {
-		add_action( 'wp_ajax_logify_wp_fetch_logs', array( __CLASS__, 'fetch_logs' ) );
-		add_action('wp_ajax_logify_update_note', array( __CLASS__, 'logify_update_note' ) );
-		add_action('wp_ajax_logify_add_note', array( __CLASS__, 'logify_add_note' ) );
+		add_action( 'wp_ajax_logify_wp_fetch_notes', array( __CLASS__, 'fetch_notes' ) );
+		add_action('wp_ajax_logify_update_notes', array( __CLASS__, 'logify_update_notes' ) );
+		add_action('wp_ajax_logify_add_notes', array( __CLASS__, 'logify_add_notes' ) );
 	}
 
-	public static function logify_update_note() {
+	public static function logify_update_notes() {
+		self::ensure_feature_enabled();
 		
-		check_ajax_referer('logify-wp-log-page', 'security');
+		check_ajax_referer('logify-wp-notes-page', 'security');
 		$note_id = intval($_POST['note_id']);
 		$event_id = intval($_POST['event_id']);
 
@@ -69,9 +70,10 @@ class Log_Page {
 		}
 	}
 
-	public static function logify_add_note() {
+	public static function logify_add_notes() {
+		self::ensure_feature_enabled();
 		
-		check_ajax_referer('logify-wp-log-page', 'security');
+		check_ajax_referer('logify-wp-notes-page', 'security');
 	
 		// Validate input
 		if (empty($_POST['note_content'])) {
@@ -99,26 +101,37 @@ class Log_Page {
 		} else {
 			wp_send_json_error(['message' => 'Failed to add note.']);
 		}
+	}
+
+	/**
+	 * Check if the notes feature is enabled
+	 */
+	private static function ensure_feature_enabled() {
+		if (!get_option('logify_wp_enable_notes', false)) {
+			wp_send_json_error(['message' => 'Notes feature is not enabled in settings.']);
+		}
 	}	
 
 	/**
 	 * Display the log page.
 	 */
-	public static function display_log_page() {
+	public static function display_notes_page() {
+		self::ensure_feature_enabled();
+		
 		if ( ! Access_Control::can_access_log_page() ) {
 			// Disallow access.
 			wp_die( esc_html( 'Sorry, you are not allowed to access this page.' ), 403 );
 		}
 
 		// Get all the data required for the log page.
-		$post_types  = Event_Repository::get_post_types();
-		$taxonomies  = Event_Repository::get_taxonomies();
-		$event_types = Event_Repository::get_event_types();
+		//$post_types  = Note_Repository::get_post_types();
+		//$taxonomies  = Note_Repository::get_taxonomies();
+		//$note_types = Note_Repository::get_event_types();
 		$users       = Event_Repository::get_users();
 		$roles       = Event_Repository::get_roles();
 
 		// Include the log page template.
-		include LOGIFY_WP_PLUGIN_DIR . 'templates/log-page.php';
+		include LOGIFY_WP_PLUGIN_DIR . 'templates/notes-page.php';
 	}
 
 	/**
@@ -132,11 +145,13 @@ class Log_Page {
 	}
 
 	/**
-	 * Fetches logs from the database based on the provided search criteria.
+	 * Fetches notes from the database based on the provided search criteria.
 	 */
-	public static function fetch_logs() {
+	public static function fetch_notes() {
+		self::ensure_feature_enabled();
+		
 		// Verify the nonce
-		check_ajax_referer( 'logify-wp-log-page', 'security' );
+		check_ajax_referer( 'logify-wp-notes-page', 'security' );
 
 		// Check user capabilities.
 		if ( ! Access_Control::can_access_log_page() ) {
@@ -146,19 +161,17 @@ class Log_Page {
 		global $wpdb;
 
 		// Get table names.
-		$events_table_name = Event_Repository::get_table_name();
+		$notes_table_name = Note_Repository::get_table_name();
 		$users_table_name  = $wpdb->users;
 
-		// These should match the columns in admin.js.
+		// These should match the columns.
 		$columns = array(
-			'event_id',
-			'when_happened',
+			'note_id',
+			'created_at',
 			'display_name',
-			'user_ip',
-			'event_type',
-			'object_name',
-			'object_type',
-			'edit_link',
+			'note',
+			'event_id',
+			'edit_link'
 		);
 
 		// -----------------------------------------------------------------------------------------
@@ -174,17 +187,17 @@ class Log_Page {
 			$start = 0;
 		}
 
-		// Get the order-by column. Default to when_happened.
-		$order_by_columns = array( 'when_happened' );
+		// Get the order-by column. Default to created_at.
+		$order_by_columns = array( 'created_at' );
 		if ( isset( $_POST['order'][0]['column'] ) ) {
 			$column_number = (int) $_POST['order'][0]['column'];
 			if ( key_exists( $column_number, $columns ) ) {
 				$order_by_columns = array( $columns[ $column_number ] );
 			}
 		}
-		// Include ordering by event ID, if not already included.
-		if ( ! in_array( 'event_id', $order_by_columns ) ) {
-			$order_by_columns[] = 'event_id';
+		// Include ordering by note ID, if not already included.
+		if ( ! in_array( 'note_id', $order_by_columns ) ) {
+			$order_by_columns[] = 'note_id';
 		}
 
 		// Get the order-by direction. Check it's valid. Default to DESC.
@@ -227,7 +240,7 @@ class Log_Page {
 			: null;
 
 		// Get the event type.
-		$event_type = isset( $_COOKIE['event_type'] )
+		$note_type = isset( $_COOKIE['event_type'] )
 			? sanitize_text_field( wp_unslash( $_COOKIE['event_type'] ) )
 			: null;
 
@@ -242,9 +255,9 @@ class Log_Page {
 			: null;
 
 		// -----------------------------------------------------------------------------------------
-		// Get the total number of events in the database.
+		// Get the total number of notes in the database.
 		$num_total_records = (int) $wpdb->get_var(
-			$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $events_table_name )
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $notes_table_name )
 		);
 
 		// -----------------------------------------------------------------------------------------
@@ -260,14 +273,9 @@ class Log_Page {
 		// Filter by search string if specified.
 		if ( $search_value !== '' ) {
 			$where_parts[] =
-				'(when_happened LIKE %s
-                    OR user_role LIKE %s
-                    OR user_ip LIKE %s
-                    OR user_location LIKE %s
-                    OR user_agent LIKE %s
-                    OR event_type LIKE %s
-                    OR object_type LIKE %s
-                    OR object_name LIKE %s
+				'(created_at LIKE %s
+                	OR note LIKE %s    
+					OR user_role LIKE %s
                     OR user_login LIKE %s
                     OR user_email LIKE %s
                     OR display_name LIKE %s)';
@@ -281,57 +289,15 @@ class Log_Page {
 					$like_value,
 					$like_value,
 					$like_value,
-					$like_value,
-					$like_value,
-					$like_value,
-					$like_value,
-					$like_value,
 				)
 			);
-		}
-
-		// Filter by object type and subtype if specified.
-		$all_object_types_selected = empty( array_diff( $valid_object_types, $object_types ) );
-		if ( ! $all_object_types_selected || $post_type || $taxonomy ) {
-			// Assemble the OR parts.
-			$or_parts = array();
-
-			// Filter by post type if specified.
-			if ( in_array( 'post', $object_types ) && $post_type ) {
-				// Remove 'post' from object_types.
-				$object_types = array_diff( $object_types, array( 'post' ) );
-				$or_parts[]   = "(object_type = 'post' AND object_subtype = %s)";
-				$where_args[] = $post_type;
-			}
-
-			// Filter by taxonomy if specified.
-			if ( in_array( 'term', $object_types ) && $taxonomy ) {
-				// Remove 'term' from object_types.
-				$object_types = array_diff( $object_types, array( 'term' ) );
-				$or_parts[]   = "(object_type = 'term' AND object_subtype = %s)";
-				$where_args[] = $taxonomy;
-			}
-
-			// Filter by the remaining object types.
-			if ( $object_types ) {
-				$object_type_string = implode( ',', array_map( fn( $object_type ) => "'$object_type'", $object_types ) );
-				$or_parts[]         = "object_type IN ($object_type_string)";
-			} else {
-				//$or_parts[] = 'object_type IS NULL';
-			}
-
-			// Add the OR parts to the where clause.
-			if ( count( $or_parts ) === 1 ) {
-				$where_parts[] = $or_parts[0];
-			} elseif ( count( $or_parts ) > 1 ) {
-				$where_parts[] = '(' . implode( ' OR ', $or_parts ) . ')';
-			}
 		}
 
 		// Filter by date range if specified.
 		if ( $start_date || $end_date ) {
 			// Get the date format and time zone from the site settings.
 			$date_format = get_option( 'date_format' );
+
 			$timezone_string = get_option('timezone_string');
 			if (!$timezone_string) {
 				// Fallback to gmt_offset if timezone_string is empty
@@ -342,12 +308,13 @@ class Log_Page {
 				}
 			}
 			$time_zone = new DateTimeZone($timezone_string);
+
 			// Start date.
 			if ( $start_date ) {
 				// Check the provided string is valid by converting it to a DateTime object.
 				$start_date = DateTime::createFromFormat( $date_format, $start_date, $time_zone );
 				if ( $start_date ) {
-					$where_parts[] = 'when_happened >= %s';
+					$where_parts[] = 'created_at >= %s';
 					$where_args[]  = $start_date->format( 'Y-m-d 00:00:00' );
 				}
 			}
@@ -359,16 +326,16 @@ class Log_Page {
 				if ( $end_date ) {
 					// Add a day, and look for events before this.
 					$end_date      = DateTimes::add_days( $end_date, 1 );
-					$where_parts[] = 'when_happened < %s';
+					$where_parts[] = 'created_at < %s';
 					$where_args[]  = $end_date->format( 'Y-m-d 00:00:00' );
 				}
 			}
 		}
 
 		// Filter by event type if specified.
-		if ( $event_type ) {
+		if ( $note_type ) {
 			$where_parts[] = 'event_type = %s';
-			$where_args[]  = $event_type;
+			$where_args[]  = $note_type;
 		}
 
 		// Filter by user if specified.
@@ -387,7 +354,7 @@ class Log_Page {
 		$where = $where_parts ? ( 'WHERE ' . implode( ' AND ', $where_parts ) ) : '';
 
 		// Construct and run the SQL statement.
-		$select_args          = array( $events_table_name, $users_table_name );
+		$select_args          = array( $notes_table_name, $users_table_name );
 		$args                 = array_merge( $select_args, $where_args );
 		$num_filtered_records = (int) $wpdb->get_var(
 			$wpdb->prepare( "$select_count $where", $args )
@@ -397,7 +364,7 @@ class Log_Page {
 		// Get the requested records.
 
 		// Select clause.
-		$select = 'SELECT event_id FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
+		$select = 'SELECT note_id FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
 
 		// Order-by clause.
 		$order_by      = '';
@@ -418,58 +385,71 @@ class Log_Page {
 
 		// Construct and run the SQL statement.
 		$args = array_merge( $select_args, $where_args, $order_by_args, $limit_args );
-		// Debug::sql( $wpdb->prepare( "$select $where $order_by $limit", $args ) );
 		$recordset = $wpdb->get_results(
 			$wpdb->prepare( "$select $where $order_by $limit", $args ),
 			ARRAY_A
 		);
-		//echo $wpdb->last_query;die;
+		//echo $wpdb->last_query;die; // Displays the query on the page (for debugging purposes only)
+
 		// -----------------------------------------------------------------------------------------
 		// Construct the data array to return to the client.
 		$data = array();
 		foreach ( $recordset as $record ) {
-			// Construct the Event object.
-			$event = Event_Repository::load( $record['event_id'] );
-
+			// Construct the Note object.
+			$note = Note_Repository::load( $record['note_id'] );
 			// Create a new data item.
 			$item             = array();
-			$item['event_id'] = $event->id;
+			$item['note_id'] = $note->id;
 
 			// Date and time of the event.
-			$formatted_datetime    = DateTimes::format_datetime_site( $event->when_happened );
-			$time_ago              = DateTimes::get_ago_string( $event->when_happened );
-			$item['when_happened'] = '<div>' . wp_kses_post( $formatted_datetime ) . ' (' . esc_html( $time_ago ) . ')</div>';
-
-			// User details.
-			$user_tag             = User_Utility::get_tag( $event->user_id, $event->user_name );
-			$user_role            = ucwords( $event->user_role ?? 'none' );
-			$item['display_name'] = get_avatar( $event->user_id, 32 ) . ' <div class="logify-wp-user-info">' . wp_kses_post( $user_tag ) . '<br><span class="logify-wp-user-role">' . esc_html( $user_role ) . '</span></div>';
-
-			// Source IP.
-			$item['user_ip'] = wp_kses_post( Urls::get_ip_link( $event->user_ip ) );
-
-			// Event type.
-			$item['event_type'] = '<span class="' . esc_attr( "logify-wp-event-type logify-wp-object-type-$event->object_type" ) . '">' . esc_html( $event->event_type ) . '</span>';
-
-			// Get the HTML for the object name.
-			$item['object_name'] = wp_kses_post( $event->get_object_tag() );
-
-			// Include the object type.
-			$item['object_type'] = $event->object_type;
-
-			// Format the details.
-			$item['details'] = self::format_details( $event );
-
-			$note = Note_Repository::load_by_event_id( $record['event_id'] );
-			if (get_option('logify_wp_enable_notes', false)) {
-				if (isset($note->user_id) && $note->user_id == get_current_user_id()) {
-					$item['edit_link'] = '<a href="#" class="edit-note-link" data-note-id="' . intval($note->note_id) . '" data-note-content="' . esc_attr($note->note) . '">View/Edit Note</a>';
-				}else{
-					$item['edit_link'] = '<a href="#" class="edit-note-link" data-event-id="' . intval($event->id) . '">Add Note</a>';
-				}
-			}else{
-				$item['edit_link'] = '';
+			try {
+				$created_at_datetime = new \DateTime($note->created_at); // Convert to DateTime object.
+				$formatted_datetime  = DateTimes::format_datetime_site($created_at_datetime);
+				$time_ago            = DateTimes::get_ago_string($created_at_datetime); // Pass DateTime object.
+				$item['created_at']  = '<div>' . wp_kses_post($formatted_datetime) . ' (' . esc_html($time_ago) . ')</div>';
+			} catch (\Exception $e) {
+				// Handle the exception if the date string is invalid.
+				error_log('Invalid date format for $note->created_at: ' . $e->getMessage());
+				$item['created_at'] = '<div>Invalid date</div>';
 			}
+			
+			// User details.
+			$user_tag             = User_Utility::get_tag( $note->user_id, $note->user_name );
+			$user_role            = ucwords( $note->user_role ?? 'none' );
+			$item['display_name'] = get_avatar( $note->user_id, 32 ) . ' <div class="logify-wp-user-info">' . wp_kses_post( $user_tag ) . '<br><span class="logify-wp-user-role">' . esc_html( $user_role ) . '</span></div>';
+
+			// Note text
+			$item['note'] = wp_kses_post( $note->note );
+			
+			// Strip HTML tags
+			$plainText = strip_tags($item['note']);
+
+			// Decode HTML entities like &nbsp; into regular spaces
+			$plainText = html_entity_decode($plainText, ENT_QUOTES | ENT_HTML5);
+
+			// Replace non-breaking spaces (\u00a0) with regular spaces
+			$plainText = str_replace("\u{00a0}", ' ', $plainText);
+
+			// Replace multiple spaces (including non-breaking spaces) with a single space
+			$plainText = preg_replace('/\s+/', ' ', $plainText);
+
+			// Trim leading and trailing spaces
+			$plainText = trim($plainText);
+
+			// Trim the text to 50 characters and add ellipsis if necessary
+			$item['short_note'] = mb_strimwidth($plainText, 0, 50, '...');
+
+			// Note ID.
+			$item['event_id'] = $note->event_id;
+
+			$item['edit_link'] = '';
+
+			$item['details'] = self::format_details( $note );
+			
+			if ($note->user_id == get_current_user_id()) {
+				$item['edit_link'] = '<a href="#" class="edit-note-link" data-note-id="' . intval($note->id) . '" data-note-content="' . esc_attr($note->note) . '">Edit</a>';
+			}
+			
 			// Add the item to the data array.
 			$data[] = $item;
 		}
@@ -489,10 +469,10 @@ class Log_Page {
 	/**
 	 * Formats user details for a log entry.
 	 *
-	 * @param Event $event The event.
+	 * @param Note $note The event.
 	 * @return string The formatted user details as an HTML table.
 	 */
-	public static function format_user_details( Event $event ): string {
+	public static function format_user_details( Note $note ): string {
 		// Construct the HTML.
 		$html  = "<div class='logify-wp-details-section logify-wp-user-details-section'>\n";
 		$html .= "<h4>User Details</h4>\n";
@@ -500,36 +480,28 @@ class Log_Page {
 		$html .= "<table class='logify-wp-details-table logify-wp-user-details-table'>\n";
 
 		// User tag.
-		$user_tag = User_Utility::get_tag( $event->user_id, $event->user_name );
+		$user_tag = User_Utility::get_tag( $note->user_id, $note->user_name );
 		$html    .= "<tr><th>User</th><td>$user_tag</td></tr>\n";
 
 		// Role.
-		$user_role = esc_html( ucwords( $event->user_role ) );
+		$user_role = esc_html( ucwords( $note->user_role ) );
 		$html     .= "<tr><th>Role</th><td>$user_role</td></tr>\n";
 
 		// User ID.
-		$html .= "<tr><th>ID</th><td>$event->user_id</td></tr>";
+		$html .= "<tr><th>ID</th><td>$note->ip_address</td></tr>";
 
 		// IP address.
-		$ip_link = $event->user_ip ? Urls::get_ip_link( $event->user_ip ) : 'Unknown';
+		$ip_link = $note->ip_address ? Urls::get_ip_link( $note->ip_address ) : 'Unknown';
 		$html   .= "<tr><th>IP address</th><td>$ip_link</td></tr>\n";
-
-		// User location.
-		$user_location = empty( $event->user_location ) ? 'Unknown' : esc_html( $event->user_location );
-		$html         .= "<tr><th>Location</th><td>$user_location</td></tr>\n";
-
-		// User agent.
-		$user_agent = empty( $event->user_agent ) ? 'Unknown' : esc_html( $event->user_agent );
-		$html      .= "<tr><th>User agent</th><td>$user_agent</td></tr>\n";
 
 		// If the user has been deleted, we won't have all their details. Although, we could
 		// try looking up the log entry for when the user was deleted, and see if we can
 		// get their details from there.
 
 		// Get some extra details if the user has not been deleted.
-		if ( User_Utility::exists( $event->user_id ) ) {
+		if ( User_Utility::exists( $note->user_id ) ) {
 			// Load the user.
-			$user = User_Utility::load( $event->user_id );
+			$user = User_Utility::load( $note->user_id );
 
 			// User email.
 			$user_email = empty( $user->user_email ) ? 'Unknown' : esc_html( $user->user_email );
@@ -541,12 +513,12 @@ class Log_Page {
 			$html                        .= "<tr><th>Registered</th><td>$registration_datetime_string</td></tr>\n";
 
 			// Get the last login datetime.
-			$last_login_datetime        = User_Utility::get_last_login_datetime( $event->user_id );
+			$last_login_datetime        = User_Utility::get_last_login_datetime( $note->user_id );
 			$last_login_datetime_string = $last_login_datetime !== null ? DateTimes::format_datetime_site( $last_login_datetime ) : 'Unknown';
 			$html                      .= "<tr><th>Last login</th><td>$last_login_datetime_string</td></tr>\n";
 
 			// Get the last active datetime.
-			$last_active_datetime        = User_Utility::get_last_active_datetime( $event->user_id );
+			$last_active_datetime        = User_Utility::get_last_active_datetime( $note->user_id );
 			$last_active_datetime_string = $last_active_datetime !== null ? DateTimes::format_datetime_site( $last_active_datetime ) : 'Unknown';
 			$html                       .= "<tr><th>Last active</th><td>$last_active_datetime_string</td></tr>\n";
 		}
@@ -561,24 +533,25 @@ class Log_Page {
 	/**
 	 * Formats the eventmetas of a log entry.
 	 *
-	 * @param Event $event The event.
+	 * @param Note $note The event.
 	 * @return string The formatted eventmetas as an HTML table.
 	 */
-	public static function format_eventmetas( Event $event ): string {
-		// Handle the null case.
-		if ( empty( $event->eventmetas ) ) {
-			return '';
-		}
+	public static function format_eventmetas( Note $note ): string {
 
 		// Convert eventmetas to a table of key-value pairs.
 		$html  = "<div class='logify-wp-details-section logify-wp-eventmeta-section'>\n";
-		$html .= "<h4>Event Details</h4>\n";
+		$html .= "<h4>Note Details</h4>\n";
 		$html .= "<div class='logify-wp-details-table-wrapper'>\n";
 		$html .= "<table class='logify-wp-details-table logify-wp-eventmeta-table'>\n";
-		foreach ( $event->eventmetas as $eventmeta ) {
-			$label = Strings::key_to_label( $eventmeta->meta_key );
-			$value = Types::value_to_html( $eventmeta->meta_key, $eventmeta->meta_value );
-			$html .= "<tr><th>$label</th><td>$value</td></tr>";
+		$html .= "<tr><th>Note</th><td>$note->note</td></tr>";
+				// Handle the null case.
+		if ( !empty( $note->eventmetas ) ) {
+					
+			foreach ( $note->eventmetas as $notemeta ) {
+				$label = Strings::key_to_label( $notemeta->meta_key );
+				$value = Types::value_to_html( $notemeta->meta_key, $notemeta->meta_value );
+				$html .= "<tr><th>$label</th><td>$value</td></tr>";
+			}
 		}
 		$html .= "</table>\n";
 		$html .= "</div>\n";
@@ -589,16 +562,16 @@ class Log_Page {
 	/**
 	 * Get the title for a post type event.
 	 *
-	 * @param Event $event The event object.
+	 * @param Note $note The event object.
 	 * @return string The post type title.
 	 */
-	public static function get_post_type_title( $event ) {
+	public static function get_post_type_title( $note ) {
 		// Get the post type. It might be in the properties.
-		$post_type = $event->get_prop( 'post_type' )?->val;
+		$post_type = $note->get_prop( 'post_type' )?->val;
 
 		// If not, we can get it from the post.
 		if ( ! $post_type ) {
-			$post_type = $event->get_object()?->post_type;
+			$post_type = $note->get_object()?->post_type;
 		}
 
 		// If we have a post type, get the singular name.
@@ -613,16 +586,16 @@ class Log_Page {
 	/**
 	 * Get the title for a term type event.
 	 *
-	 * @param Event $event The event object.
+	 * @param Note $note The event object.
 	 * @return string The term type title.
 	 */
-	public static function get_term_type_title( $event ) {
+	public static function get_term_type_title( $note ) {
 		// Get the taxonomy. It might be in the properties.
-		$taxonomy = $event->get_prop( 'taxonomy' )?->val;
+		$taxonomy = $note->get_prop( 'taxonomy' )?->val;
 
 		// If not, we can get it from the term.
 		if ( ! $taxonomy ) {
-			$taxonomy = $event->get_object()?->taxonomy;
+			$taxonomy = $note->get_object()?->taxonomy;
 		}
 
 		// If we have a taxonomy, get the singular name.
@@ -637,18 +610,18 @@ class Log_Page {
 	/**
 	 * Format object properties.
 	 *
-	 * @param Event $event The event.
+	 * @param Note $note The event.
 	 * @return string The object properties formatted as an HTML table.
 	 */
-	public static function format_properties( Event $event ): string {
+	public static function format_properties( Note $note ): string {
 		// Handle the null case.
-		if ( empty( $event->properties ) ) {
+		if ( empty( $note->properties ) ) {
 			return '';
 		}
 
 		// Check which columns to show.
 		$show_new_vals = false;
-		foreach ( $event->properties as $prop ) {
+		foreach ( $note->properties as $prop ) {
 			// Check if we want to show the 'After' column.
 			if ( $prop->new_val !== null ) {
 				$show_new_vals = true;
@@ -660,12 +633,12 @@ class Log_Page {
 		$html = "<div class='logify-wp-details-section logify-wp-properties-section'>\n";
 
 		// Get the title given the object type.
-		$object_type_title = match ( $event->object_type ) {
+		$object_type_title = match ( $note->object_type ) {
 			'user'   => 'Account',
 			'option' => 'Setting',
-			'post'   => self::get_post_type_title( $event ),
-			'term'   => self::get_term_type_title( $event ),
-			default  => Strings::key_to_label( $event->object_type, true ),
+			'post'   => self::get_post_type_title( $note ),
+			'term'   => self::get_term_type_title( $note ),
+			default  => Strings::key_to_label( $note->object_type, true ),
 		};
 
 		$html .= "<h4>$object_type_title Details</h4>\n";
@@ -683,7 +656,7 @@ class Log_Page {
 		}
 
 		// Property rows.
-		foreach ( $event->properties as $prop ) {
+		foreach ( $note->properties as $prop ) {
 			// Some info we don't care about. Maybe we shouldn't even store these.
 			if ( $prop->key === 'session_tokens' || $prop->key === 'wp_user_level' ) {
 				continue;
@@ -730,14 +703,14 @@ class Log_Page {
 	/**
 	 * Formats the details of a log entry.
 	 *
-	 * @param Event $event The event.
+	 * @param Note $note The event.
 	 * @return string The formatted details as HTML.
 	 */
-	public static function format_details( Event $event ): string {
+	public static function format_details( Note $note ): string {
 		$html  = "<div class='logify-wp-details'>\n";
-		$html .= self::format_user_details( $event );
-		$html .= self::format_properties( $event );
-		$html .= self::format_eventmetas( $event );
+		$html .= self::format_user_details( $note );
+		$html .= self::format_properties( $note );
+		$html .= self::format_eventmetas( $note );
 		$html .= "</div>\n";
 		return $html;
 	}

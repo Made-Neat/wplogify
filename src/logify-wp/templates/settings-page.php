@@ -167,6 +167,10 @@ settings_errors( 'logify_wp_messages' );
 					</td>
 				</tr>
 				<tr valign="top">
+					<th scope="row">Notes<br>(Enable notes feature to allow adding custom notes linked to logs)</th>
+					<td><input type="checkbox" name="logify_wp_enable_notes" value="1" <?php echo checked( Plugin_Settings::get_enable_notes(), 1 ); ?> /></td>
+				</tr>
+				<tr valign="top">
 					<th scope="row">Show submenu in admin bar</th>
 					<td><input type="checkbox" name="logify_wp_show_in_admin_bar" value="1" <?php echo checked( Plugin_Settings::get_show_in_admin_bar(), 1 ); ?> /></td>
 				</tr>

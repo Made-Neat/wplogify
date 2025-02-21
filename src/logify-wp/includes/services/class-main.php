@@ -16,10 +16,20 @@ use ReflectionClass;
  */
 class Main {
 
+	const DB_VERSION = '1.2.0'; // Update this when changing the database structure.
+
 	/**
 	 * Initialize the plugin.
 	 */
 	public static function init() {
+		
+		add_action('upgrader_process_complete', [__CLASS__, 'maybe_upgrade_db'], 10, 2);
+    
+		// Only check DB upgrade when loading admin area (to avoid unnecessary checks on frontend).
+		if (is_admin()) {
+			add_action('admin_init', [__CLASS__, 'maybe_upgrade_db']);
+		}
+
 		// Get all declared classes.
 		$classes = get_declared_classes();
 
@@ -51,7 +61,21 @@ class Main {
 	public static function activate() {
 		// Create the database tables used by the plugin.
 		Database::create_all_tables();
+		update_option('logify_wp_db_version', self::DB_VERSION);
 	}
+
+    /**
+     * Run on plugin update to check if a database upgrade is needed.
+     */
+    public static function maybe_upgrade_db($upgrader_object = null, $options = null) {
+        $installed_version = get_option('logify_wp_db_version', '1.0');
+
+        if (version_compare($installed_version, self::DB_VERSION, '<')) {
+            error_log("Updating database from version $installed_version to " . self::DB_VERSION); // Debugging log
+            Database::create_all_tables();
+            update_option('logify_wp_db_version', self::DB_VERSION);
+        }
+    }	
 
 	/**
 	 * Run on deactivation.

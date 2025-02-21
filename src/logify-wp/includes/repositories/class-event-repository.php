@@ -63,6 +63,9 @@ class Event_Repository extends Repository {
 		// Load the eventmetas.
 		$event->eventmetas = Eventmeta_Repository::load_by_event_id( $event->id );
 
+		// Load the notes.
+		$event->eventnotes = Note_Repository::load_by_event_id( $event->id );
+
 		return $event;
 	}
 
@@ -171,6 +174,9 @@ class Event_Repository extends Repository {
 
 		// Delete the eventmeta records.
 		Eventmeta_Repository::delete_by_event_id( $event_id );
+
+		// Delete the notes records
+		Note_Repository::delete_by_event_id( $event_id );
 
 		// Return success.
 		return (bool) $result;

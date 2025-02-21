@@ -25,6 +25,13 @@ class Plugin_Settings {
 	private const DEFAULT_DELETE_ON_UNINSTALL = false;
 
 	/**
+	 * The default value for the 'enable notes' setting.
+	 *
+	 * @var bool
+	 */
+	private const DEFAULT_ENABLE_NOTES = false;
+
+	/**
 	 * The default value for the 'roles with access' setting.
 	 *
 	 * @var array
@@ -84,6 +91,15 @@ class Plugin_Settings {
 	 * Registers the settings for the Logify WP plugin.
 	 */
 	public static function register_settings() {
+		register_setting(
+			'logify_wp_settings_group',
+			'logify_wp_enable_notes',
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'default'           => self::DEFAULT_ENABLE_NOTES,
+			)
+		);
 		register_setting(
 			'logify_wp_settings_group',
 			'logify_wp_delete_on_uninstall',
@@ -232,6 +248,15 @@ class Plugin_Settings {
 	 */
 	public static function get_delete_on_uninstall(): bool {
 		return get_option( 'logify_wp_delete_on_uninstall', self::DEFAULT_DELETE_ON_UNINSTALL );
+	}
+
+	/**
+	 * Retrieves the value of the 'enable notes' setting.
+	 *
+	 * @return bool Enabled or disable notes feature.
+	 */
+	public static function get_enable_notes(): bool {
+		return get_option( 'logify_wp_enable_notes', self::DEFAULT_ENABLE_NOTES );
 	}
 
 	/**

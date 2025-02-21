@@ -3,7 +3,7 @@
  * Plugin Name: Logify WP
  * Plugin URI: https://logifywp.com
  * Description: Logify WP features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
- * Version: 1.1.1
+ * Version: 1.2.3
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
  * Requires at least: 6.2
@@ -53,12 +53,14 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/helpers/class-urls.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-event.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-eventmeta.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-property.php';
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-note.php';
 
 // Classes for interacting with the database.
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-repository.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-event-repository.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-eventmeta-repository.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-property-repository.php';
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-note-repository.php';
 
 // Classes that provide plugin functionality.
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-access-control.php';
@@ -69,6 +71,7 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-data-migration.php'
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-database.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-debug.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-log-page.php';
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-notes-page.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-logger.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-main.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-plugin-settings.php';

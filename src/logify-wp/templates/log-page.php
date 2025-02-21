@@ -131,7 +131,21 @@ namespace Logify_WP;
 	<div id="logify-wp-reset-filters-wrapper">
 		<button id="logify-wp-reset-filters" class="button button-primary">Reset search filters</button>
 	</div>
-
+	<div id="edit-note-modal" title="Add/Edit Note" style="display: none;">
+		<form id="edit-note-form" style="max-width: 100%; padding: 20px;">
+			<input type="hidden" id="edit-note-id" name="note_id">
+			<input type="hidden" id="edit-event-id" name="event_id">
+			<div style="margin-bottom: 15px;">
+				<!-- WordPress Editor -->
+				<div id="editor-wrapper">
+					<textarea id="edit-note-content" name="note_content" required></textarea>
+				</div>
+			</div>
+			<div style="text-align: right;">
+				<button type="submit" class="button button-primary">Save Note</button>
+			</div>
+		</form>
+	</div>
 	<table id="logify-wp-activity-log" class="widefat fixed table-logify-wp" cellspacing="0">
 		<thead>
 			<tr>
@@ -141,6 +155,8 @@ namespace Logify_WP;
 				<th>Source IP</th>
 				<th>Event</th>
 				<th>Object</th>
+				<th></th>
+				<th>Actions</th>
 			</tr>
 		</thead>
 		<tbody>

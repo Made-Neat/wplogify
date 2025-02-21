@@ -64,6 +64,12 @@ class Admin {
 		// Log page submenu.
 		add_submenu_page( 'logify-wp', 'View Log', 'View Log', 'read', 'logify-wp', array( 'Logify_WP\Log_Page', 'display_log_page' ) );
 
+		// Check if the notes feature is enabled
+		if (get_option('logify_wp_enable_notes', false)) {
+			// Log page submenu.
+			$noteshook = add_submenu_page( 'logify-wp', 'View Notes', 'View Notes', 'read', 'logify-wp-notes', array( 'Logify_WP\Notes_Page', 'display_notes_page' ) );
+			add_action( "load-$noteshook", array( __CLASS__, 'add_screen_options' ) );
+		}
 		// Settings submenu (only for users with 'manage_options' capability).
 		add_submenu_page( 'logify-wp', 'Settings', 'Settings', 'manage_options', 'logify-wp-settings', array( 'Logify_WP\Plugin_Settings', 'display_settings_page' ) );
 
@@ -100,6 +106,27 @@ class Admin {
 				'href'   => admin_url( 'admin.php?page=logify-wp' ),
 			)
 		);
+
+		$wp_admin_bar->add_node(
+			array(
+				'id'     => 'logify-wp-view-log',
+				'parent' => 'logify-wp',
+				'title'  => 'View Log',
+				'href'   => admin_url( 'admin.php?page=logify-wp' ),
+			)
+		);
+
+		// Check if the notes feature is enabled
+		if (get_option('logify_wp_enable_notes', false)) {
+			$wp_admin_bar->add_node(
+				array(
+					'id'     => 'logify-wp-notes',
+					'parent' => 'logify-wp',
+					'title'  => 'View Notes',
+					'href'   => admin_url('admin.php?page=logify-wp-notes'),
+				)
+			);
+		}
 
 		// If the user has the manage_options capability, show the settings link.
 		if ( current_user_can( 'manage_options' ) ) {
@@ -215,7 +242,7 @@ class Admin {
 	 *
 	 * @param string $hook The current admin page hook.
 	 */
-	public static function enqueue_assets( $hook ) {
+	public static function enqueue_assets( $hook ) { 
 		// Dashboard widget.
 		if ( $hook === 'index.php' ) {
 			// Styles.
@@ -231,37 +258,56 @@ class Admin {
 			self::enqueue_script( 'assets/js/settings-page.js', array( 'jquery' ), 'auto', true );
 		}
 
-		// Log page.
-		if ( $hook === 'toplevel_page_logify-wp' ) {
-			// Styles.
-			self::enqueue_style( 'assets/css/log-page.css' );
+		// Log page
+		if ($hook === 'toplevel_page_logify-wp') {
+			self::setup_page($hook, 'assets/js/log-page.js', 'logify-wp-log-page');
+		}
 
-			// Get the date format to pass to JS.
-			$date_format = DateTimes::convert_php_date_format_to_js( get_option( 'date_format' ) );
-
-			// Scripts.
-			$log_page_script_handle = self::enqueue_script( 'assets/js/log-page.js', array( 'jquery' ), 'auto', true );
-
-			// The handle here must match the handle of the JS script to attach to.
-			wp_localize_script(
-				$log_page_script_handle,
-				'logifyWpLogPage',
-				array(
-					'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-					'ajaxNonce'  => wp_create_nonce( 'logify-wp-log-page' ),
-					'dateFormat' => $date_format,
-				)
-			);
-
-			// Include jQuery UI datepicker.
-			wp_enqueue_script( 'jquery-ui-datepicker' );
-			self::enqueue_style( 'assets/jquery/jquery-ui.css', array(), '1.14.0' );
-
-			// DataTables assets.
-			self::enqueue_style( 'assets/datatables/datatables.css', array(), '2.0.8' );
-			self::enqueue_script( 'assets/datatables/datatables.js', array( 'jquery' ), '2.0.8', true );
+		// Notes page
+		if ($hook === 'logify-wp_page_logify-wp-notes') {
+			self::setup_page($hook, 'assets/js/notes-page.js', 'logify-wp-notes-page');
 		}
 	}
+
+
+	// Helper function for common setups
+	private static function setup_page($hook, $script_file, $nonce_action) {
+		wp_enqueue_editor();
+		
+		// Include jQuery UI Dialog
+		wp_enqueue_script('jquery-ui-dialog');
+		wp_enqueue_style('jquery-ui-dialog'); // Ensure styles for the dialog are loaded
+		
+		// Styles
+		self::enqueue_style('assets/css/log-page.css');
+
+		// Get the date format to pass to JS
+		$date_format = DateTimes::convert_php_date_format_to_js(get_option('date_format'));
+
+		// Scripts
+		$script_handle = self::enqueue_script($script_file, array('jquery'), 'auto', true);
+		wp_localize_script(
+			$script_handle,
+			'logifyWpLogPage',
+			array(
+				'ajaxUrl'    => admin_url('admin-ajax.php'),
+				'ajaxNonce'  => wp_create_nonce($nonce_action),
+				'dateFormat' => $date_format,
+			)
+		);
+
+		// Include jQuery UI datepicker
+		wp_enqueue_script('jquery-ui-datepicker');
+		self::enqueue_style('assets/jquery/jquery-ui.css', array(), '1.14.0');
+
+		// DataTables assets
+		self::enqueue_style('assets/datatables/datatables.css', array(), '2.0.8');
+		self::enqueue_script('assets/datatables/datatables.js', array('jquery'), '2.0.8', true);
+
+		// Common script
+		self::enqueue_script('assets/js/common-page.js', array('jquery'), 'auto', true);
+	}
+
 
 	/**
 	 * Resets logs by truncating the logify_wp_events table and redirects to the settings page.
