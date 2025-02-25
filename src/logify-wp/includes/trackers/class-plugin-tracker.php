@@ -15,33 +15,36 @@ use Plugin_Upgrader;
  *
  * Provides tracking of events related to plugins.
  */
-class Plugin_Tracker {
+class Plugin_Tracker
+{
 
 	/**
 	 * Set up hooks for the events we want to log.
 	 */
-	public static function init() {
+	public static function init()
+	{
 		// Plugin install and update.
-		add_action( 'upgrader_process_complete', [__NAMESPACE__.'\Async_Tracker','async_upgrader_process_complete'], 10, 2 );
-		add_action( 'middle_upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
-		
+		add_action('upgrader_process_complete', [__NAMESPACE__ . '\Async_Tracker', 'async_upgrader_process_complete_plugin'], 10, 2);
+		add_action('middle_upgrader_process_complete_plugin', array(__CLASS__, 'on_upgrader_process_complete'), 10, 2);
+		// add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
+
 		// Plugin activation and deactivation.
-		add_action( 'activate_plugin', [__NAMESPACE__.'\Async_Tracker','async_activate_plugin'], 10, 2 );
-		add_action( 'middle_activate_plugin', array( __CLASS__, 'on_activate_plugin' ), 10, 2 );
+		add_action('activate_plugin', [__NAMESPACE__ . '\Async_Tracker', 'async_activate_plugin'], 10, 2);
+		add_action('middle_activate_plugin', array(__CLASS__, 'on_activate_plugin'), 10, 2);
 
-		add_action( 'deactivate_plugin', [__NAMESPACE__.'\Async_Tracker','async_deactivate_plugin'], 10, 2 );
-		add_action( 'middle_deactivate_plugin', array( __CLASS__, 'on_deactivate_plugin' ), 10, 2 );
-		
+		add_action('deactivate_plugin', [__NAMESPACE__ . '\Async_Tracker', 'async_deactivate_plugin'], 10, 2);
+		add_action('middle_deactivate_plugin', array(__CLASS__, 'on_deactivate_plugin'), 10, 2);
+
 		// Plugin deletion and uninstall.
-		add_action( 'delete_plugin', [__NAMESPACE__.'\Async_Tracker','async_delete_plugin'], 10, 1 );
-		add_action( 'middle_delete_plugin', array( __CLASS__, 'on_delete_plugin' ), 10, 1 );
+		add_action('delete_plugin', [__NAMESPACE__ . '\Async_Tracker', 'async_delete_plugin'], 10, 1);
+		add_action('middle_delete_plugin', array(__CLASS__, 'on_delete_plugin'), 10, 1);
 
-		add_action( 'pre_uninstall_plugin', [__NAMESPACE__.'\Async_Tracker','async_pre_uninstall_plugin'], 10, 2 );
-		add_action( 'middle_pre_uninstall_plugin', array( __CLASS__, 'on_pre_uninstall_plugin' ), 10, 2 );
-		
+		add_action('pre_uninstall_plugin', [__NAMESPACE__ . '\Async_Tracker', 'async_pre_uninstall_plugin'], 10, 2);
+		add_action('middle_pre_uninstall_plugin', array(__CLASS__, 'on_pre_uninstall_plugin'), 10, 2);
+
 		// Enabling and disabling auto-updates.
-		add_action( 'update_option', [__NAMESPACE__.'\Async_Tracker','async_update_option'], 10, 3 );
-		add_action( 'middle_update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
+		add_action('update_option', [__NAMESPACE__ . '\Async_Tracker', 'async_update_option_plugin'], 10, 3);
+		add_action('middle_update_option_plugin', array(__CLASS__, 'on_update_option'), 10, 3);
 	}
 
 	/**
@@ -70,32 +73,29 @@ class Plugin_Tracker {
 	 *     }
 	 * }
 	 */
-	public static function on_upgrader_process_complete( $s_upgrader, array $hook_extra ) {
-		// Check this is a plugin upgrader.
 
-		$upgrader = unserialize($s_upgrader);
-		if ( ! $upgrader instanceof Plugin_Upgrader ) {
-			return;
-		}
-
-		// Check we're installing or updating a plugin.
+	public static function on_upgrader_process_complete($upgrader, array $hook_extra)
+	{
+		//Get all installed plugin data
+		$upgrader = (object)$upgrader;
+		
 		$installing = $hook_extra['action'] === 'install';
-		$updating   = $hook_extra['action'] === 'update';
-		if ( ! $installing && ! $updating ) {
+		$updating = $hook_extra['action'] === 'update';
+		if (!$installing && !$updating) {
 			return;
 		}
-
+		
 		// Check we have a plugin name. In theory this shouldn't happen, but it has.
-		if ( empty( $upgrader->new_plugin_data['Name'] ) ) {
+		if (empty($upgrader->new_plugin_data['Name'])) {
 			return;
 		}
 
 		// Get the plugin name and load the plugin.
 		$plugin_name = $upgrader->new_plugin_data['Name'];
-		$plugin      = Plugin_Utility::load_by_name( $plugin_name );
+		$plugin = Plugin_Utility::load_by_name($plugin_name);
 
 		// If we couldn't find the plugin, return.
-		if ( ! $plugin ) {
+		if (!$plugin) {
 			return;
 		}
 
@@ -104,15 +104,15 @@ class Plugin_Tracker {
 		// If the result is null, the plugin was not installed or updated yet, so we won't log
 		// anything. Most likely we're on the confirmation page prior to upgrade, downgrade, or
 		// re-installation.
-		if ( $upgrader->result === null ) {
+		if ($upgrader->result === null) {
 
 			// Remember the current plugin version.
-			if ( $plugin ) {
+			if ($plugin) {
 				$old_version = $plugin['Version'] ?? null;
-				if ( $old_version ) {
-					$versions                 = get_option( 'logify_wp_plugin_versions', array() );
-					$versions[ $plugin_slug ] = $old_version;
-					update_option( 'logify_wp_plugin_versions', $versions );
+				if ($old_version) {
+					$versions = get_option('logify_wp_plugin_versions', array());
+					$versions[$plugin_slug] = $old_version;
+					update_option('logify_wp_plugin_versions', $versions);
 				}
 			}
 
@@ -124,38 +124,39 @@ class Plugin_Tracker {
 
 		// Get the new version.
 		$new_version = $upgrader->new_plugin_data['Version'] ?? null;
-
+		
 		// Get the event type.
-		if ( $installing ) {
+		if ($installing) {
 			// Installing the plugin.
 			$verb = 'Installed';
 
 			// See if the old version was stored in the options.
-			$versions    = get_option( 'logify_wp_plugin_versions', array() );
-			$old_version = $versions[ $plugin_slug ] ?? null;
+			$versions = get_option('logify_wp_plugin_versions', array());
+			$old_version = $versions[$plugin_slug] ?? null;
 
 			// Modify the verb for upgrade, downgrade, and re-installation events.
 			$clear_destination = $upgrader->result['clear_destination'] ?? null;
-			if ( $clear_destination === 'downgrade-plugin' ) {
+			if ($clear_destination === 'downgrade-plugin') {
 				$verb = 'Downgraded';
-			} elseif ( $clear_destination === 'update-plugin' ) {
+			} elseif ($clear_destination === 'update-plugin') {
 				$verb = $old_version === $new_version ? 'Re-installed' : 'Upgraded';
 			}
 		} else {
 			// Updating the plugin from the install page.
-			$verb        = 'Upgraded';
+			$verb = 'Upgraded';
 			$old_version = $upgrader->skin->plugin_info['Version'] ?? null;
 		}
 
 		// Create the event.
-		$event = Event::create( "Plugin $verb", $plugin );
-		if ( ! $event ) {
+		$event = Event::create("Plugin $verb", $plugin);
+
+		if (!$event) {
 			return;
 		}
-
+		
 		// If we have both the old and new versions, and they are different, show the change.
-		if ( $old_version && $new_version && $old_version !== $new_version ) {
-			$event->set_prop( 'version', null, $old_version, $new_version );
+		if ($old_version && $new_version && $old_version !== $new_version) {
+			$event->set_prop('version', null, $old_version, $new_version);
 		}
 
 		// Save the event.
@@ -172,18 +173,19 @@ class Plugin_Tracker {
 	 * @param bool   $network_wide Whether to enable the plugin for all sites in the network
 	 *                             or just the current site. Multisite only. Default false.
 	 */
-	public static function on_activate_plugin( string $plugin_file, bool $network_wide ) {
+	public static function on_activate_plugin(string $plugin_file, bool $network_wide)
+	{
 		// Load the plugin.
-		$plugin = Plugin_Utility::load_by_file( $plugin_file );
+		$plugin = Plugin_Utility::load_by_file($plugin_file);
 
 		// If this is a multisite, record if the plugin activation was network-wide.
 		$metas = array();
-		if ( is_multisite() ) {
-			Eventmeta::update_array( $metas, 'network_wide', $network_wide );
+		if (is_multisite()) {
+			Eventmeta::update_array($metas, 'network_wide', $network_wide);
 		}
 
 		// Log the event.
-		Logger::log_event( 'Plugin Activated', $plugin, $metas );
+		Logger::log_event('Plugin Activated', $plugin, $metas);
 	}
 
 	/**
@@ -196,18 +198,19 @@ class Plugin_Tracker {
 	 * @param bool   $network_deactivating Whether the plugin is deactivated for all sites in the network
 	 *                                     or just the current site. Multisite only. Default false.
 	 */
-	public static function on_deactivate_plugin( string $plugin_file, bool $network_deactivating ) {
+	public static function on_deactivate_plugin(string $plugin_file, bool $network_deactivating)
+	{
 		// Load the plugin.
-		$plugin = Plugin_Utility::load_by_file( $plugin_file );
+		$plugin = Plugin_Utility::load_by_file($plugin_file);
 
 		// If this is a multisite, record if the plugin deactivation was network-wide.
 		$metas = array();
-		if ( is_multisite() ) {
-			Eventmeta::update_array( $metas, 'network_wide', $network_deactivating );
+		if (is_multisite()) {
+			Eventmeta::update_array($metas, 'network_wide', $network_deactivating);
 		}
 
 		// Log the event.
-		Logger::log_event( 'Plugin Deactivated', $plugin, $metas );
+		Logger::log_event('Plugin Deactivated', $plugin, $metas);
 	}
 
 	/**
@@ -215,12 +218,10 @@ class Plugin_Tracker {
 	 *
 	 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
 	 */
-	public static function on_delete_plugin( string $plugin_file ) {
-		// Load the plugin.
-		$plugin = Plugin_Utility::load_by_file( $plugin_file );
-
+	public static function on_delete_plugin($plugin)
+	{
 		// Log the event.
-		Logger::log_event( 'Plugin Deleted', $plugin );
+		Logger::log_event('Plugin Deleted', $plugin);
 	}
 
 	/**
@@ -229,12 +230,11 @@ class Plugin_Tracker {
 	 * @param string $plugin_file           Path to the plugin file relative to the plugins directory.
 	 * @param array  $uninstallable_plugins Uninstallable plugins.
 	 */
-	public static function on_pre_uninstall_plugin( string $plugin_file, array $uninstallable_plugins ) {
-		// Load the plugin.
-		$plugin = Plugin_Utility::load_by_file( $plugin_file );
+	public static function on_pre_uninstall_plugin(string $plugin, array $uninstallable_plugins)
+	{
 
 		// Log the event.
-		Logger::log_event( 'Plugin Uninstalled', $plugin );
+		Logger::log_event('Plugin Uninstalled', $plugin);
 	}
 
 	/**
@@ -244,40 +244,41 @@ class Plugin_Tracker {
 	 * @param mixed  $old_value The old option value.
 	 * @param mixed  $value     The new option value.
 	 */
-	public static function on_update_option( string $option, mixed $old_value, mixed $value ) {
+	public static function on_update_option(string $option, mixed $old_value, mixed $value)
+	{
 		// Check if the changed option is the auto_update_plugins option.
-		if ( $option !== 'auto_update_plugins' ) {
+		if ($option !== 'auto_update_plugins') {
 			return;
 		}
 
 		// Log an event for each plugin for which auto-update has been enabled.
-		$enabled = array_diff( $value, $old_value );
-		foreach ( $enabled as $plugin_file ) {
+		$enabled = array_diff($value, $old_value);
+		foreach ($enabled as $plugin_file) {
 			// Load the plugin.
-			$plugin = Plugin_Utility::load_by_file( $plugin_file );
+			$plugin = Plugin_Utility::load_by_file($plugin_file);
 
 			// If the plugin wasn't found, don't log the event.
-			if ( ! $plugin ) {
+			if (!$plugin) {
 				continue;
 			}
 
 			// Log the event.
-			Logger::log_event( 'Plugin Auto-Update Enabled', $plugin );
+			Logger::log_event('Plugin Auto-Update Enabled', $plugin);
 		}
 
 		// Log an event for each plugin for which auto-update has been enabled.
-		$disabled = array_diff( $old_value, $value );
-		foreach ( $disabled as $plugin_file ) {
+		$disabled = array_diff($old_value, $value);
+		foreach ($disabled as $plugin_file) {
 			// Load the plugin.
-			$plugin = Plugin_Utility::load_by_file( $plugin_file );
+			$plugin = Plugin_Utility::load_by_file($plugin_file);
 
 			// If the plugin wasn't found, don't log the event.
-			if ( ! $plugin ) {
+			if (!$plugin) {
 				continue;
 			}
 
 			// Log the event.
-			Logger::log_event( 'Plugin Auto-Update Disabled', $plugin );
+			Logger::log_event('Plugin Auto-Update Disabled', $plugin);
 		}
 	}
 }

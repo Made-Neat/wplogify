@@ -49,8 +49,9 @@ class Media_Tracker {
 	 */
 	public static function init() {
 		// Add or update media.
-		add_action( 'add_attachment', [__NAMESPACE__.'\Async_Tracker','async_add_attachment'], 10, 1 );
-		add_action( 'middle_add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
+		// add_action( 'add_attachment', [__NAMESPACE__.'\Async_Tracker','async_add_attachment'], 10, 1 );
+		// add_action( 'middle_add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
+		add_action( 'add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
 		
 		add_action( 'add_post_meta', [__NAMESPACE__.'\Async_Tracker','async_add_post_meta'], 10, 3 );
 		add_action( 'middle_add_post_meta', array( __CLASS__, 'on_add_post_meta' ), 10, 3 );
@@ -66,8 +67,8 @@ class Media_Tracker {
 		add_action( 'middle_delete_attachment', array( __CLASS__, 'on_delete_attachment' ), 10, 2 );
 		
 		// Shutdown.
-		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown'], 10, 0 );
-		add_action( 'middle_shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown_media'], 10, 0 );
+		add_action( 'middle_shutdown_media', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**
@@ -76,9 +77,9 @@ class Media_Tracker {
 	 * @param int|WP_Post $post The attachment post the event is about.
 	 * @return ?Event The event, if it could be found or created.
 	 */
-	private static function get_update_media_event( int|WP_Post $s_post ): ?Event {
+	private static function get_update_media_event( int|WP_Post $post ): ?Event {
 
-		$post = unserialize($s_post);
+		// $post = unserialize($s_post);
 		// If we already have an event, return it.
 		if ( self::$update_media_event ) {
 			return self::$update_media_event;
@@ -239,11 +240,14 @@ class Media_Tracker {
 	 * @param WP_Post $post_after  Post object following the update.
 	 * @param WP_Post $post_before Post object before the update.
 	 */
-	public static function on_attachment_updated( int $post_id, $s_post_after, $s_post_before ) {
+	public static function on_attachment_updated( int $post_id, $serialize_post_after, $serialize_post_before ) {
+
+		//unserialize post objects
+		$post_after = unserialize($serialize_post_after);
+		$post_before = unserialize($serialize_post_before);
+		
 		// Get the media type.
 
-		$post_after = unserialize($s_post_after);
-		$post_before = unserialize($s_post_before);
 		$media_type = Media_Utility::get_media_type( $post_id );
 
 		// This method is only for media.
@@ -314,9 +318,9 @@ class Media_Tracker {
 	 * @param int     $post_id The ID of the post to be deleted.
 	 * @param WP_Post $post    The post object to be deleted.
 	 */
-	public static function on_delete_attachment( int $post_id, WP_Post $s_post ) {
+	public static function on_delete_attachment( int $post_id, $serialize_post ) {
 		// This method is only for attachments.
-		$post = unserialize($s_post);
+		$post = unserialize($serialize_post);
 
 		if ( get_post_type( $post_id ) !== 'attachment' ) {
 			return;

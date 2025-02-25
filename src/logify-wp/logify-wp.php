@@ -32,6 +32,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if (!function_exists('get_plugin_data')) {
+    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+}
+
 // Some useful globals.
 define( 'LOGIFY_WP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'LOGIFY_WP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -103,6 +107,10 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-term-utility.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-theme-utility.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-user-utility.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-widget-utility.php';
+
+// Require action scheduler library
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'woocommerce' . DIRECTORY_SEPARATOR . 'action-scheduler' . DIRECTORY_SEPARATOR . 'action-scheduler.php';
+
 
 // require_once LOGIFY_WP_PLUGIN_DIR . 'includes/test.php';
 

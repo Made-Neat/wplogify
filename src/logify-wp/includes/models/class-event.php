@@ -192,6 +192,7 @@ class Event {
 		// deletion is tracked regardless of who did it. Then we will definitely have the old name.
 
 		// Get the acting user data.
+		sleep(5);
 		$user_data = User_Utility::get_user_data( $acting_user );
 
 		// If this is not a login event, and we aren't tracking this user's role, or the user isn't

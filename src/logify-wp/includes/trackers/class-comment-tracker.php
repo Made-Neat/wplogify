@@ -60,11 +60,12 @@ class Comment_Tracker {
 	 * @param int        $id      The comment ID.
 	 * @param WP_Comment $comment Comment object.
 	 */
-	public static function on_wp_insert_comment( $id, $s_comment ) {
-		
-		$comment = unserialize($s_comment);
-		Debug::info( 'on_wp_insert_comment', $id );
+	public static function on_wp_insert_comment( int $id, $serialize_comment ) {
 
+		//unserialize comment object
+		$comment = unserialize($serialize_comment);
+		Debug::info( 'on_wp_insert_comment', $id );
+		
 		Logger::log_event( 'Comment Added', $comment );
 	}
 
@@ -81,16 +82,16 @@ class Comment_Tracker {
 	 * @param array          $commentarr The new, raw comment data.
 	 * @return array|WP_Error The new, processed comment data, or WP_Error.
 	 */
-	public static function on_wp_update_comment_data( array|WP_Error $s_data, array $comment, array $commentarr ): array|WP_Error {
+	public static function on_wp_update_comment_data( $data, array $comment, array $commentarr ): array|WP_Error {
 		
-		$data = unserialize($s_data);
+		
 		// If the data is an error, ignore.
 		if ( is_wp_error( $data ) ) {
 			return $data;
 		}
-
+		
 		global $wpdb;
-
+		
 		// Record changes in the properties.
 		foreach ( $comment as $key => $val ) {
 			// Ignore post fields.
@@ -137,9 +138,10 @@ class Comment_Tracker {
 	 * @param string     $comment_id The comment ID as a numeric string.
 	 * @param WP_Comment $comment    The comment to be deleted.
 	 */
-	public static function on_delete_comment( $comment_id, $s_comment ) {
+	public static function on_delete_comment( $comment_id, $serialize_comment ) {
 
-		$comment = unserialize($s_comment);
+		//unserialize comment object
+		$comment = unserialize($serialize_comment);
 		Debug::info( 'on_delete_comment', $comment_id );
 		
 		// Get all the comment properties in case we need to restore it.
@@ -157,8 +159,9 @@ class Comment_Tracker {
 	 * @param WP_Comment $comment    Comment object.
 	 */
 	public static function on_transition_comment_status( int|string $new_status, int|string $old_status, $comment ) {
-		$comment = unserialize($s_comment);
-
+		
+		//Convert to Object
+		$comment = (object)$comment;
 		Debug::info( 'on_transition_comment_status', $new_status, $old_status );
 		
 		// Ignore delete events.
