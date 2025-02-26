@@ -16,30 +16,39 @@ use WP_Upgrader;
  *
  * Provides tracking of events related to themes.
  */
-class Theme_Tracker {
+class Theme_Tracker
+{
 
 	/**
 	 * Set up hooks for the events we want to log.
 	 */
-	public static function init() {
+	public static function init()
+	{
 		// Load the themes pages.
-		add_action( 'load-themes.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
-		add_action( 'load-theme-install.php', array( __CLASS__, 'on_load_themes_page' ), 10, 0 );
+		add_action('load-themes.php', [__NAMESPACE__ . '\Async_Tracker', 'async_load_themes'], 10, 0);
+		add_action('middle_load-themes.php', array(__CLASS__, 'on_load_themes_page'), 10, 0);
+
+		add_action('load-theme-install.php', [__NAMESPACE__ . '\Async_Tracker', 'async_load_theme_install'], 10, 0);
+		add_action('middle_load-theme-install.php', array(__CLASS__, 'on_load_themes_page'), 10, 0);
 
 		// Theme install and update.
-		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
+		add_action('upgrader_process_complete', [__NAMESPACE__ . '\Async_Tracker', 'async_upgrader_process_complete_theme'], 10, 2);
+		add_action('middle_upgrader_process_complete_theme', array(__CLASS__, 'on_upgrader_process_complete'), 10, 2);
 
 		// Theme switch.
-		add_action( 'switch_theme', array( __CLASS__, 'on_switch_theme' ), 10, 3 );
+		add_action('switch_theme', [__NAMESPACE__ . '\Async_Tracker', 'async_switch_theme'], 10, 3);
+		add_action('middle_switch_theme', array(__CLASS__, 'on_switch_theme'), 10, 3);
 
 		// Theme delete.
-		add_action( 'delete_theme', array( __CLASS__, 'on_delete_theme' ), 10, 2 );
+		add_action('delete_theme', [__NAMESPACE__ . '\Async_Tracker', 'async_delete_theme'], 10, 2);
+		add_action('middle_delete_theme', array(__CLASS__, 'on_delete_theme'), 10, 2);
 	}
 
 	/**
 	 * Fires when the themes.php page is loaded.
 	 */
-	public static function on_load_themes_page() {
+	public static function on_load_themes_page()
+	{
 		// Store the current version numbers of all the installed themes, which enables us to show
 		// the old version number when a theme is upgraded.
 		$versions = array();
@@ -48,14 +57,14 @@ class Theme_Tracker {
 		$all_themes = wp_get_themes();
 
 		// Loop through all the installed themes and store their version numbers.
-		foreach ( $all_themes as $theme ) {
-			$stylesheet              = $theme->get_stylesheet();
-			$version                 = $theme->get( 'Version' );
-			$versions[ $stylesheet ] = $version;
+		foreach ($all_themes as $theme) {
+			$stylesheet = $theme->get_stylesheet();
+			$version = $theme->get('Version');
+			$versions[$stylesheet] = $version;
 		}
 
 		// Store the theme versions in an option.
-		update_option( 'logify_wp_theme_versions', $versions );
+		update_option('logify_wp_theme_versions', $versions);
 	}
 
 	/**
@@ -84,9 +93,12 @@ class Theme_Tracker {
 	 *     }
 	 * }
 	 */
-	public static function on_upgrader_process_complete( WP_Upgrader $upgrader, array $hook_extra ) {
+	public static function on_upgrader_process_complete($upgrader_data, array $hook_extra)
+	{
 		// Check this is a theme upgrader.
-		if ( ! $upgrader instanceof Theme_Upgrader || $hook_extra['type'] !== 'theme' ) {
+
+		$upgrader = (object) $upgrader_data;
+		if ($hook_extra['type'] !== 'theme') {
 			return;
 		}
 
@@ -94,78 +106,78 @@ class Theme_Tracker {
 		// Either way, we aren't installing the new plugin on this HTTP request.
 		// Most likely, there is already a version of this theme present, and they attempting an
 		// upgrade, downgrade, or re-install, and WordPress is asking the user what the want to do.
-		if ( ! is_array( $upgrader->result ) ) {
+		if (!is_array($upgrader->result)) {
 			return;
 		}
 
 		// Try to load the theme.
 		$theme_loaded = false;
-		$theme        = null;
-		$stylesheet   = null;
+		$theme = null;
+		$stylesheet = null;
 
 		// Attempt to get the theme name from new_theme_data.
-		if ( ! empty( $upgrader->new_theme_data['Name'] ) ) {
+		if (!empty($upgrader->new_theme_data['Name'])) {
 			$name = $upgrader->new_theme_data['Name'];
 			// Load the theme by name.
-			$theme = Theme_Utility::load_by_name( $name );
-			if ( $theme ) {
+			$theme = Theme_Utility::load_by_name($name);
+			if ($theme) {
 				$theme_loaded = true;
-				$stylesheet   = $theme->get_stylesheet();
+				$stylesheet = $theme->get_stylesheet();
 			}
 		}
 
 		// If we couldn't load it by name, try to get the stylesheet from $hook_extra.
-		if ( ! $theme_loaded ) {
+		if (!$theme_loaded) {
 			// Check if 'theme' key exists in $hook_extra.
-			if ( ! empty( $hook_extra['theme'] ) ) {
-				$stylesheet = sanitize_text_field( $hook_extra['theme'] );
-			} elseif ( ! empty( $hook_extra['themes'] ) && is_array( $hook_extra['themes'] ) ) {
+			if (!empty($hook_extra['theme'])) {
+				$stylesheet = sanitize_text_field($hook_extra['theme']);
+			} elseif (!empty($hook_extra['themes']) && is_array($hook_extra['themes'])) {
 				// If multiple themes are involved, take the first one.
-				$stylesheet = sanitize_text_field( $hook_extra['themes'][0] );
+				$stylesheet = sanitize_text_field($hook_extra['themes'][0]);
 			}
 
-			if ( $stylesheet ) {
+			if ($stylesheet) {
 				// Load the theme by stylesheet.
-				$theme = Theme_Utility::load( $stylesheet );
-				if ( $theme ) {
+				$theme = Theme_Utility::load($stylesheet);
+				if ($theme) {
 					$theme_loaded = true;
 				}
 			}
 		}
 
 		// If we couldn't load the theme, we can't log the event.
-		if ( ! $theme_loaded ) {
-			Debug::warning( "Couldn't load the theme." );
+		if (!$theme_loaded) {
+			Debug::warning("Couldn't load the theme.");
 			return;
 		}
 
 		$props = array();
 
 		// Get the old version, if it's there.
-		$versions    = get_option( 'logify_wp_theme_versions', array() );
-		$old_version = $versions[ $stylesheet ] ?? null;
+		$versions = get_option('logify_wp_theme_versions', array());
+		$old_version = $versions[$stylesheet] ?? null;
 
-		if ( $old_version ) {
+		if ($old_version) {
 			// The user is overwriting the existing theme with a new version.
 
 			// Get the new version.
 			$new_version = $upgrader->new_theme_data['Version'];
 
 			// Determine if we're upgrading, downgrading, or re-installing.
-			$old_version_numeric = Strings::version_to_float( $old_version );
-			$new_version_numeric = Strings::version_to_float( $new_version );
+			$old_version_numeric = Strings::version_to_float($old_version);
+			$new_version_numeric = Strings::version_to_float($new_version);
 
-			if ( $old_version_numeric < $new_version_numeric ) {
+			if ($old_version_numeric < $new_version_numeric) {
 				$event_type = 'Theme Upgraded';
-			} elseif ( $old_version_numeric > $new_version_numeric ) {
+			} elseif ($old_version_numeric > $new_version_numeric) {
 				$event_type = 'Theme Downgraded';
 			} else {
 				$event_type = 'Theme Re-installed';
 			}
 
 			// Put the old and new versions in the props, if they are different.
-			if ( $old_version !== $new_version ) {
-				Property::update_array( $props, 'version', null, $old_version, $new_version );
+			if ($old_version !== $new_version) {
+				Property::update_array($props, 'version', null, $old_version, $new_version);
 			}
 		} else {
 			// The user is installing a new theme.
@@ -173,7 +185,7 @@ class Theme_Tracker {
 		}
 
 		// Log the event.
-		Logger::log_event( $event_type, $theme, null, $props );
+		Logger::log_event($event_type, $theme, null, $props);
 	}
 
 	/**
@@ -183,11 +195,16 @@ class Theme_Tracker {
 	 * @param WP_Theme $new_theme WP_Theme instance of the new theme.
 	 * @param WP_Theme $old_theme WP_Theme instance of the old theme.
 	 */
-	public static function on_switch_theme( string $new_name, WP_Theme $new_theme, WP_Theme $old_theme ) {
-		$metas         = array();
-		$old_theme_ref = Object_Reference::new_from_wp_object( $old_theme );
-		Eventmeta::update_array( $metas, 'old_theme', $old_theme_ref );
-		Logger::log_event( 'Theme Switched', $new_theme, $metas );
+	public static function on_switch_theme(string $new_name, $serialize_new_theme, $serialize_old_theme)
+	{
+
+		$new_theme = unserialize($serialize_new_theme);
+		$old_theme = unserialize($serialize_old_theme);
+
+		$metas = array();
+		$old_theme_ref = Object_Reference::new_from_wp_object($old_theme);
+		Eventmeta::update_array($metas, 'old_theme', $old_theme_ref);
+		Logger::log_event('Theme Switched', $new_theme, $metas);
 	}
 
 	/**
@@ -195,11 +212,12 @@ class Theme_Tracker {
 	 *
 	 * @param string $stylesheet Stylesheet of the theme to delete.
 	 */
-	public static function on_delete_theme( string $stylesheet ) {
+	public static function on_delete_theme(string $stylesheet)
+	{
 		// Load the theme before it gets deleted.
-		$theme = Theme_Utility::load( $stylesheet );
+		$theme = Theme_Utility::load($stylesheet);
 
 		// Log the theme deletion event.
-		Logger::log_event( 'Theme Deleted', $theme );
+		Logger::log_event('Theme Deleted', $theme);
 	}
 }

@@ -30,8 +30,11 @@ class Option_Tracker {
 	 */
 	public static function init() {
 		// Track settings updates.
-		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
-		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
+		add_action( 'update_option', [__NAMESPACE__.'\Async_Tracker','async_update_option_option'], 10, 3 );
+		add_action( 'middle_update_option_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
+		
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown_option'], 10, 0 );
+		add_action( 'middle_shutdown_option', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**
