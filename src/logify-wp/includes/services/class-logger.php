@@ -99,14 +99,11 @@ class Logger {
 		bool $all_users = false
 	): bool {
 
-		error_log("111");
 		// Create the new event.
 		$event = Event::create( $event_type, $wp_object, $eventmetas, $properties, $acting_user, $all_users );
-		error_log("222");
 		
 		// If an event was not created, return.
 		if ( ! $event ) {
-			error_log("333");
 			return false;
 		}
 
