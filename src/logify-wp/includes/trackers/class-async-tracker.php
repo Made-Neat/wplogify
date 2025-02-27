@@ -22,7 +22,12 @@ use WP_Comment;
 
 class Async_Tracker
 {
-
+	/**
+     * Handles async login failure tracking.
+     *
+	 * @param string  $user_login The username of the user that logged in.
+	 * @param WP_User $user       The WP_User object of the user that logged in.
+     */
 	public static function async_wp_login(string $user_login, WP_User $user)
     {
         as_enqueue_async_action('middle_wp_login', [$user_login, $user->ID]); // Enqueue async action for login.
@@ -201,308 +206,532 @@ class Async_Tracker
         as_enqueue_async_action('middle_load_theme_install');
     }
 
-	public static function async_switch_theme(string $new_name, WP_Theme $new_theme, WP_Theme $old_theme)
-	{
-		//serialize theme object
-		$serialize_new_theme = serialize($new_theme);
-		$serialize_old_theme = serialize($old_theme);
-		//async request
-		as_enqueue_async_action('middle_switch_theme', [$new_name, $serialize_new_theme, $serialize_old_theme]);
-	}
+    /**
+     * Handle theme switch asynchronously.
+     *
+     * @param string   $new_name  The name of the new theme.
+     * @param WP_Theme $new_theme The WP_Theme object of the new theme.
+     * @param WP_Theme $old_theme The WP_Theme object of the old theme.
+     */
+    public static function async_switch_theme(string $new_name, WP_Theme $new_theme, WP_Theme $old_theme)
+    {
+        // Serialize the new theme object for storage or processing.
+        $serialize_new_theme = serialize($new_theme);
+        $serialize_old_theme = serialize($old_theme);
 
-	public static function async_delete_theme(string $stylesheet)
-	{
+        // Enqueue an asynchronous action to handle the theme switch.
+        as_enqueue_async_action('middle_switch_theme', [$new_name, $serialize_new_theme, $serialize_old_theme]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_delete_theme', [$stylesheet]);
+    /**
+     * Handle theme deletion asynchronously.
+     *
+     * @param string $stylesheet The stylesheet name of the theme to delete.
+     */
+    public static function async_delete_theme(string $stylesheet)
+    {
+        // Enqueue an asynchronous action to handle the theme deletion.
+        as_enqueue_async_action('middle_delete_theme', [$stylesheet]);
+    }
 
-	}
-	public static function async_created_term(int $term_id, int $tt_id, string $taxonomy, array $args)
-	{
+    /**
+     * Handle term creation asynchronously.
+     *
+     * @param int    $term_id   The term ID.
+     * @param int    $tt_id     The term taxonomy ID.
+     * @param string $taxonomy  The taxonomy for the term.
+     * @param array  $args      Additional arguments for the term.
+     */
+    public static function async_created_term(int $term_id, int $tt_id, string $taxonomy, array $args)
+    {
+        // Enqueue an asynchronous action to handle the term creation.
+        as_enqueue_async_action('middle_created_term', [$term_id, $tt_id, $taxonomy, $args]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_created_term', [$term_id, $tt_id, $taxonomy, $args]);
+    /**
+     * Handle term editing asynchronously.
+     *
+     * @param int    $term_id   The term ID.
+     * @param string $taxonomy  The taxonomy for the term.
+     * @param array  $args      The arguments for the updated term.
+     */
+    public static function async_edit_terms(int $term_id, string $taxonomy, array $args)
+    {
+        // Enqueue an asynchronous action to handle the term editing.
+        as_enqueue_async_action('middle_edit_terms', [$term_id, $taxonomy, $args]);
+    }
 
-	}
-	public static function async_edit_terms(int $term_id, string $taxonomy, array $args)
-	{
+    /**
+     * Handle pre-term deletion asynchronously.
+     *
+     * @param int    $term_id   The term ID.
+     * @param string $taxonomy  The taxonomy for the term.
+     */
+    public static function async_pre_delete_term(int $term_id, string $taxonomy)
+    {
+        // Enqueue an asynchronous action to handle the pre-deletion of the term.
+        as_enqueue_async_action('middle_pre_delete_term', [$term_id, $taxonomy]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_edit_terms', [$term_id, $taxonomy, $args]);
+    /**
+     * Handle post saving asynchronously.
+     *
+     * @param int    $post_id   The ID of the post being saved.
+     * @param WP_Post $post     The WP_Post object of the post being saved.
+     * @param bool   $update    Flag indicating if this is an update or new post.
+     */
+    public static function async_save_post(int $post_id, WP_Post $post, bool $update)
+    {
+        // Serialize the post object for storage or processing.
+        $serialize_post = serialize($post);
 
-	}
-	public static function async_pre_delete_term(int $term_id, string $taxonomy)
-	{
+        // Enqueue an asynchronous action to handle the post save.
+        as_enqueue_async_action('middle_save_post', [$post_id, $serialize_post, $update]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_pre_delete_term', [$term_id, $taxonomy]);
+    /**
+     * Handle pre-post update asynchronously.
+     *
+     * @param int   $post_id The ID of the post being updated.
+     * @param array $data    The post data being updated.
+     */
+    public static function async_pre_post_update(int $post_id, array $data)
+    {
+        // Enqueue an asynchronous action to handle the pre-update of the post.
+        as_enqueue_async_action('middle_pre_post_update', [$post_id, $data]);
+    }
+    /**
+     * Handle post update asynchronously.
+     *
+     * @param int     $post_id        The ID of the updated post.
+     * @param WP_Post $post_after     The WP_Post object after the update.
+     * @param WP_Post $post_before    The WP_Post object before the update.
+     */
+    public static function async_post_updated(int $post_id, WP_Post $post_after, WP_Post $post_before)
+    {
+        // Serialize the post_after and post_before objects for processing.
+        $serialize_post_after = serialize($post_after);
+        $serialize_post_before = serialize($post_before);
 
-	}
-	public static function async_save_post(int $post_id, WP_Post $post, bool $update)
-	{
-		//serialize post object
-		$serialize_post = serialize($post);
+        // Enqueue an asynchronous action to handle the post update.
+        as_enqueue_async_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_save_post', [$post_id, $serialize_post, $update]);
+    /**
+     * Handle post meta update asynchronously.
+     *
+     * @param int    $meta_id   The ID of the meta.
+     * @param int    $post_id   The ID of the post.
+     * @param string $meta_key  The meta key.
+     * @param mixed  $meta_value The meta value.
+     */
+    public static function async_update_post_meta(int $meta_id, int $post_id, string $meta_key, mixed $meta_value)
+    {
+        // Enqueue an asynchronous action to handle the post meta update.
+        as_enqueue_async_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value]);
+    }
 
-	}
-	public static function async_pre_post_update(int $post_id, array $data)
-	{
+    /**
+     * Handle post status transition asynchronously.
+     *
+     * @param string  $new_status The new post status.
+     * @param string  $old_status The old post status.
+     * @param WP_Post $post       The WP_Post object of the post.
+     */
+    public static function async_transition_post_status(string $new_status, string $old_status, WP_Post $post)
+    {
+        // Serialize the post object for processing.
+        $serialize_post = serialize($post);
 
-		//async request
-		as_enqueue_async_action('middle_pre_post_update', [$post_id, $data]);
+        // Enqueue an asynchronous action to handle the post status transition.
+        as_enqueue_async_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post]);
+    }
 
-	}
-	public static function async_post_updated(int $post_id, WP_Post $post_after, WP_Post $post_before)
-	{
+    /**
+     * Handle pre-post deletion asynchronously.
+     *
+     * @param int    $post_id The ID of the post to be deleted.
+     * @param WP_Post $post   The WP_Post object of the post to be deleted.
+     */
+    public static function async_before_delete_post(int $post_id, WP_Post $post)
+    {
+        // Serialize the post object for processing.
+        $serialize_post = serialize($post);
 
-		//serialize post_after, post_before object
-		$serialize_post_after = serialize($post_after);
-		$serialize_post_before = serialize($post_before);
+        // Enqueue an asynchronous action to handle the pre-post deletion.
+        as_enqueue_async_action('middle_before_delete_post', [$post_id, $serialize_post]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before]);
+    /**
+     * Handle post deletion asynchronously.
+     *
+     * @param int    $post_id The ID of the deleted post.
+     * @param WP_Post $post   The WP_Post object of the deleted post.
+     */
+    public static function async_delete_post(int $post_id, WP_Post $post)
+    {
+        // Serialize the post object for processing.
+        $serialize_post = serialize($post);
 
-	}
-	public static function async_update_post_meta(int $meta_id, int $post_id, string $meta_key, mixed $meta_value)
-	{
+        // Enqueue an asynchronous action to handle the post deletion.
+        as_enqueue_async_action('middle_deleted_post', [$post_id, $serialize_post]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value]);
+    /**
+     * Handle added term relationship asynchronously.
+     *
+     * @param int    $post_id   The ID of the post.
+     * @param int    $tt_id     The term taxonomy ID.
+     * @param string $taxonomy  The taxonomy of the term.
+     */
+    public static function async_added_term_relationship(int $post_id, int $tt_id, string $taxonomy)
+    {
+        // Enqueue an asynchronous action to handle the added term relationship.
+        as_enqueue_async_action('middle_added_term_relationship', [$post_id, $tt_id, $taxonomy]);
+    }
 
-	}
-	public static function async_transition_post_status(string $new_status, string $old_status, WP_Post $post)
-	{
-		//serialize post object
-		$serialize_post = serialize($post);
-		//async request
-		as_enqueue_async_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post]);
+    /**
+     * Handle post insertion asynchronously after the post is saved.
+     *
+     * @param int     $post_id       The ID of the inserted post.
+     * @param WP_Post $post          The WP_Post object of the inserted post.
+     * @param bool    $update        Flag indicating whether this is an update or new post.
+     * @param WP_Post|null $post_before The WP_Post object before the post was saved (optional).
+     */
+    public static function async_wp_after_insert_post(int $post_id, WP_Post $post, bool $update, ?WP_Post $post_before)
+    {
+        // Serialize the post and post_before objects for processing.
+        $serialize_post = serialize($post);
+        $serialize_post_before = serialize($post_before);
 
-	}
-	public static function async_before_delete_post(int $post_id, WP_Post $post)
-	{
-		//serialize post object
-		$serialize_post = serialize($post);
-		//async request
-		as_enqueue_async_action('middle_before_delete_post', [$post_id, $serialize_post]);
+        // Enqueue an asynchronous action to handle the post insert event.
+        as_enqueue_async_action('middle_wp_after_insert_post', [$post_id, $serialize_post, $update, $serialize_post_before]);
+    }
 
-	}
-	public static function async_delete_post(int $post_id, WP_Post $post)
-	{
-		//serialize post object
-		$serialize_post = serialize($post);
-		//async request
-		as_enqueue_async_action('middle_deletd_post', [$post_id, $serialize_post]);
+    /**
+     * Handle deleted term relationships asynchronously.
+     *
+     * @param int   $post_id  The ID of the post.
+     * @param array $tt_ids   An array of term taxonomy IDs.
+     * @param string $taxonomy The taxonomy of the term.
+     */
+    public static function async_deleted_term_relationships(int $post_id, array $tt_ids, string $taxonomy)
+    {
+        // Enqueue an asynchronous action to handle the deleted term relationships.
+        as_enqueue_async_action('middle_deleted_term_relationships', [$post_id, $tt_ids, $taxonomy]);
+    }
 
-	}
-	public static function async_added_term_relationship(int $post_id, int $tt_id, string $taxonomy)
-	{
+    /**
+     * Handle the theme upgrader process completion asynchronously.
+     *
+     * @param WP_Upgrader $upgrader    The WP_Upgrader instance handling the upgrade.
+     * @param array       $hook_extra  Additional hook data for processing.
+     */
+    public static function async_upgrader_process_complete_theme(WP_Upgrader $upgrader, array $hook_extra)
+    {
+        // Filter only the necessary fields to avoid transferring large data.
+        $upgrader_data = (object) [
+            'new_theme_data' => $upgrader->new_theme_data,
+            'result' => null,
+            'skin' => null,
+        ];
 
-		//async request
-		as_enqueue_async_action('middle_added_term_relationship', [$post_id, $tt_id, $taxonomy]);
+        // Check if the upgrader result is available and filter the relevant information.
+        if (isset($upgrader->result)) {
+            $upgrader_data->result = [
+                'clear_destination' => $upgrader->result['clear_destination'],
+            ];
+        }
 
-	}
-	public static function async_wp_after_insert_post(int $post_id, WP_Post $post, bool $update, ?WP_Post $post_before)
-	{
+        // Create an object for skin data related to the theme upgrade.
+        $upgrader_data->skin = (object) [
+            'theme_info' => $upgrader->skin->theme_info
+        ];
 
-		//serialize post object
-		$serialize_post = serialize($post);
-		$serialize_post_before = serialize($post_before);
-		//async request
-		as_enqueue_async_action('middle_wp_after_insert_post', [$post_id, $serialize_post, $update, $serialize_post_before]);
+        // Enqueue an asynchronous action to handle the theme upgrade completion.
+        as_enqueue_async_action('middle_upgrader_process_complete_theme', [$upgrader_data, $hook_extra]);
+    }
+    /**
+     * Handle the plugin upgrader process completion asynchronously.
+     *
+     * @param WP_Upgrader $upgrader   The WP_Upgrader instance handling the upgrade.
+     * @param array       $hook_extra Extra hook data for processing.
+     */
+    public static function async_upgrader_process_complete_plugin(WP_Upgrader $upgrader, array $hook_extra)
+    {
+        // Filter only the necessary fields to avoid transferring large data.
+        $upgrader_data = (object) [
+            'new_plugin_data' => $upgrader->new_plugin_data,
+            'result' => null,
+            'skin' => null,
+        ];
+        // Check if the upgrader result is available and filter the relevant information.
+        if (isset($upgrader->result)) {
+            $upgrader_data->result = [
+                'clear_destination' => $upgrader->result['clear_destination'],
+            ];
+        }
 
-	}
-	public static function async_deleted_term_relationships(int $post_id, array $tt_ids, string $taxonomy)
-	{
+        // Create an object for skin data related to the plugin upgrade.
+        $upgrader_data->skin = (object) [
+            'plugin_info' => $upgrader->skin->plugin_info
+        ];
 
-		//async request
-		as_enqueue_async_action('middle_deleted_term_relationships', [$post_id, $tt_ids, $taxonomy]);
+        // Enqueue an asynchronous action to handle the plugin upgrade completion.
+        as_enqueue_async_action('middle_upgrader_process_complete_plugin', [$upgrader_data, $hook_extra]);
+    }
 
-	}
-	public static function async_upgrader_process_complete_theme(WP_Upgrader $upgrader, array $hook_extra)
-	{
+    /**
+     * Handle plugin activation asynchronously.
+     *
+     * @param string $plugin_file   The plugin file path.
+     * @param bool   $network_wide  Flag indicating if the plugin is activated network-wide.
+     */
+    public static function async_activate_plugin(string $plugin_file, bool $network_wide)
+    {
+        // Enqueue an asynchronous action to handle the plugin activation.
+        as_enqueue_async_action('middle_activate_plugin', [$plugin_file, $network_wide]);
+    }
 
-		// filter only needed field because it has too long to transfer with parameter
-		$upgrader_data = (object) [
-			'new_theme_data' => $upgrader->new_theme_data,
-			'result' => NULL,
-			'skin' => NULL,
-		];
-		if (isset($upgrader->result)) {
-			$upgrader_data->result = [
-				'clear_destination' => $upgrader->result['clear_destination'],
-			];
-		}
-		$upgrader_data->skin = (object) [
-			'theme_info' => $upgrader->skin->theme_info
-		];
-		//async request
-		as_enqueue_async_action('middle_upgrader_process_complete_theme', [$upgrader_data, $hook_extra]);
+    /**
+     * Handle plugin deactivation asynchronously.
+     *
+     * @param string $plugin_file           The plugin file path.
+     * @param bool   $network_deactivating  Flag indicating if the plugin is deactivated network-wide.
+     */
+    public static function async_deactivate_plugin(string $plugin_file, bool $network_deactivating)
+    {
+        // Enqueue an asynchronous action to handle the plugin deactivation.
+        as_enqueue_async_action('middle_deactivate_plugin', [$plugin_file, $network_deactivating]);
+    }
 
-	}
+    /**
+     * Handle plugin deletion asynchronously.
+     *
+     * @param string $plugin_file The plugin file path.
+     */
+    public static function async_delete_plugin(string $plugin_file)
+    {
+        // Load the plugin by its file path.
+        $plugin = Plugin_Utility::load_by_file($plugin_file);
 
-	public static function async_upgrader_process_complete_plugin(WP_Upgrader $upgrader, array $hook_extra)
-	{
-		// filter only needed field because it has too long to transfer with parameter
-		$upgrader_data = (object) [
-			'new_plugin_data' => $upgrader->new_plugin_data,
-			'result' => NULL,
-			'skin' => NULL,
-		];
-		if (isset($upgrader->result)) {
-			$upgrader_data->result = [
-				'clear_destination' => $upgrader->result['clear_destination'],
-			];
-		}
-		$upgrader_data->skin = (object) [
-			'plugin_info' => $upgrader->skin->plugin_info
-		];
+        // Enqueue an asynchronous action to handle the plugin deletion.
+        as_enqueue_async_action('middle_delete_plugin', [$plugin]);
+    }
 
-		as_enqueue_async_action('middle_upgrader_process_complete_plugin', [$upgrader_data, $hook_extra]);
-		
-	}
-	public static function async_activate_plugin(string $plugin_file, bool $network_wide)
-	{
+    /**
+     * Handle pre-uninstallation of a plugin asynchronously.
+     *
+     * @param string $plugin_file           The plugin file path.
+     * @param array  $uninstallable_plugins List of plugins that are uninstallable.
+     */
+    public static function async_pre_uninstall_plugin(string $plugin_file, array $uninstallable_plugins)
+    {
+        // Load the plugin by its file path.
+        $plugin = Plugin_Utility::load_by_file($plugin_file);
 
-		//async request
-		as_enqueue_async_action('middle_activate_plugin', [$plugin_file, $network_wide]);
+        // Enqueue an asynchronous action to handle the pre-uninstallation of the plugin.
+        as_enqueue_async_action('middle_pre_uninstall_plugin', [$plugin, $uninstallable_plugins]);
+    }
 
-	}
-	public static function async_deactivate_plugin(string $plugin_file, bool $network_deactivating)
-	{
+    /**
+     * Handle plugin option update asynchronously.
+     *
+     * @param string $option   The option name.
+     * @param mixed  $old_value The old value of the option.
+     * @param mixed  $value    The new value of the option.
+     */
+    public static function async_update_option_plugin(string $option, mixed $old_value, mixed $value)
+    {
+        // Enqueue an asynchronous action to handle the plugin option update.
+        as_enqueue_async_action('middle_update_option_plugin', [$option, $old_value, $value]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_deactivate_plugin', [$plugin_file, $network_deactivating]);
+    /**
+     * Handle general option update asynchronously.
+     *
+     * @param string $option   The option name.
+     * @param mixed  $old_value The old value of the option.
+     * @param mixed  $value    The new value of the option.
+     */
+    public static function async_update_option_option(string $option, mixed $old_value, mixed $value)
+    {
+        // Enqueue an asynchronous action to handle the general option update.
+        as_enqueue_async_action('middle_update_option_option', [$option, $old_value, $value]);
+    }
 
-	}
-	public static function async_delete_plugin(string $plugin_file)
-	{
-		//Load plugin		
-		$plugin = Plugin_Utility::load_by_file($plugin_file);
-		//async request
-		as_enqueue_async_action('middle_delete_plugin', [$plugin]);
+    /**
+     * Handle widget option update asynchronously.
+     *
+     * @param string $option   The option name.
+     * @param mixed  $old_value The old value of the option.
+     * @param mixed  $value    The new value of the option.
+     */
+    public static function async_update_option_widget(string $option, mixed $old_value, mixed $value)
+    {
+        // Enqueue an asynchronous action to handle the widget option update.
+        as_enqueue_async_action('middle_update_option_widget', [$option, $old_value, $value]);
+    }
 
-	}
-	public static function async_pre_uninstall_plugin(string $plugin_file, array $uninstallable_plugins)
-	{
-		// Load the plugin.
-		$plugin = Plugin_Utility::load_by_file($plugin_file);
-		//async request
-		as_enqueue_async_action('middle_pre_uninstall_plugin', [$plugin, $uninstallable_plugins]);
+    /**
+     * Handle adding an attachment asynchronously.
+     *
+     * @param int $post_id The ID of the post the attachment is added to.
+     */
+    public static function async_add_attachment(int $post_id)
+    {
+        // Enqueue an asynchronous action to handle adding an attachment.
+        as_enqueue_async_action('middle_add_attachment', [$post_id]);
+    }
 
-	}
-	public static function async_update_option_plugin(string $option, mixed $old_value, mixed $value)
-	{
+    /**
+     * Handle adding post meta asynchronously.
+     *
+     * @param int    $post_id   The ID of the post.
+     * @param string $meta_key  The meta key.
+     * @param mixed  $meta_value The meta value.
+     */
+    public static function async_add_post_meta(int $post_id, string $meta_key, mixed $meta_value)
+    {
+        // Enqueue an asynchronous action to handle adding post meta.
+        as_enqueue_async_action('middle_add_post_meta', [$post_id, $meta_key, $meta_value]);
+    }
+    /**
+     * Handle attachment update asynchronously.
+     *
+     * @param int     $post_id        The ID of the updated post.
+     * @param WP_Post $post_after     The WP_Post object after the update.
+     * @param WP_Post $post_before    The WP_Post object before the update.
+     */
+    public static function async_attachment_updated(int $post_id, WP_Post $post_after, WP_Post $post_before)
+    {
+        // Serialize the post_after and post_before objects for processing.
+        $serialize_post_after = serialize($post_after);
+        $serialize_post_before = serialize($post_before);
 
-		//async request
-		as_enqueue_async_action('middle_update_option_plugin', [$option, $old_value, $value]);
+        // Enqueue an asynchronous action to handle the attachment update.
+        as_enqueue_async_action('middle_attachment_updated', [$post_id, $serialize_post_after, $serialize_post_before]);
+    }
 
-	}
-	public static function async_update_option_option(string $option, mixed $old_value, mixed $value)
-	{
-		//async request
-		as_enqueue_async_action('middle_update_option_option', [$option, $old_value, $value]);
+    /**
+     * Handle attachment deletion asynchronously.
+     *
+     * @param int    $post_id The ID of the deleted post.
+     * @param WP_Post $post   The WP_Post object of the deleted post.
+     */
+    public static function async_delete_attachment(int $post_id, WP_Post $post)
+    {
+        // Serialize the post object for processing.
+        $serialize_post = serialize($post);
 
-	}
-	public static function async_update_option_widget(string $option, mixed $old_value, mixed $value)
-	{
+        // Enqueue an asynchronous action to handle the attachment deletion.
+        as_enqueue_async_action('middle_delete_attachment', [$post_id, $serialize_post]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_update_option_widget', [$option, $old_value, $value]);
+    /**
+     * Handle core WordPress update completion asynchronously.
+     *
+     * @param string $wp_version The new WordPress version.
+     */
+    public static function async_core_updated_successfully(string $wp_version)
+    {
+        // Enqueue an asynchronous action to handle the successful core update.
+        as_enqueue_async_action('middle_core_updated_successfully', [$wp_version]);
+    }
 
-	}
-	public static function async_add_attachment(int $post_id)
-	{
+    /**
+     * Handle new comment insertion asynchronously.
+     *
+     * @param int       $id      The comment ID.
+     * @param WP_Comment $comment The WP_Comment object of the inserted comment.
+     */
+    public static function async_wp_insert_comment(int $id, WP_Comment $comment)
+    {
+        // Serialize the comment object for processing.
+        $serialize_comment = serialize($comment);
 
-		//async request
-		as_enqueue_async_action('middle_add_attachment', [$post_id]);
+        // Enqueue an asynchronous action to handle the comment insertion.
+        as_enqueue_async_action('middle_wp_insert_comment', [$id, $serialize_comment]);
+    }
 
-	}
-	public static function async_add_post_meta(int $post_id, string $meta_key, mixed $meta_value)
-	{
+    /**
+     * Handle comment data update asynchronously.
+     *
+     * @param array|WP_Error $data       The comment data or error.
+     * @param array          $comment    The comment array.
+     * @param array          $commentarr The array of comment data.
+     */
+    public static function async_wp_update_comment_data(array|WP_Error $data, array $comment, array $commentarr)
+    {
+        // Enqueue an asynchronous action to handle the comment data update.
+        as_enqueue_async_action('middle_wp_update_comment_data', [$data, $comment, $commentarr]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_add_post_meta', [$post_id, $meta_key, $meta_value]);
+    /**
+     * Handle comment edit asynchronously.
+     *
+     * @param int   $comment_id The ID of the edited comment.
+     * @param array $data       The edited comment data.
+     */
+    public static function async_edit_comment(int $comment_id, array $data)
+    {
+        // Enqueue an asynchronous action to handle the comment editing.
+        as_enqueue_async_action('middle_edit_comment', [$comment_id, $data]);
+    }
 
-	}
-	public static function async_attachment_updated(int $post_id, WP_Post $post_after, WP_Post $post_before)
-	{
+    /**
+     * Handle comment deletion asynchronously.
+     *
+     * @param string   $comment_id The ID of the deleted comment.
+     * @param WP_Comment $comment   The WP_Comment object of the deleted comment.
+     */
+    public static function async_delete_comment(string $comment_id, WP_Comment $comment)
+    {
+        // Serialize the comment object for processing.
+        $serialize_comment = serialize($comment);
 
-		//serialize post objects
-		$serialize_post_after = serialize($post_after);
-		$serialize_post_before = serialize($post_before);
-		//async request
-		as_enqueue_async_action('middle_attachment_updated', [$post_id, $serialize_post_after, $serialize_post_before]);
+        // Enqueue an asynchronous action to handle the comment deletion.
+        as_enqueue_async_action('middle_delete_comment', [$comment_id, $serialize_comment]);
+    }
 
-	}
-	public static function async_delete_attachment(int $post_id, WP_Post $post)
-	{
-		//serialize Post object
-		$serialize_post = serialize($post);
-		//async request
-		as_enqueue_async_action('middle_delete_attachment', [$post_id, $serialize_post]);
+    /**
+     * Handle comment status transition asynchronously.
+     *
+     * @param int|string $new_status The new status of the comment.
+     * @param int|string $old_status The old status of the comment.
+     * @param WP_Comment $comment    The WP_Comment object of the comment.
+     */
+    public static function async_transition_comment_status(int|string $new_status, int|string $old_status, WP_Comment $comment)
+    {
+        // Serialize the comment object for processing.
+        $serialize_comment = serialize($comment);
 
-	}
-	public static function async_core_updated_successfully(string $wp_version)
-	{
+        // Enqueue an asynchronous action to handle the comment status transition.
+        as_enqueue_async_action('middle_transition_comment_status', [$new_status, $old_status, $serialize_comment]);
+    }
 
-		//async request
-		as_enqueue_async_action('middle_core_updated_successfully', [$wp_version]);
+    /**
+     * Handle trashed post comments asynchronously.
+     *
+     * @param int   $post_id The ID of the post.
+     * @param array $statuses The statuses of the trashed comments.
+     */
+    public static function async_trashed_post_comments(int $post_id, array $statuses)
+    {
+        // Enqueue an asynchronous action to handle trashed post comments.
+        as_enqueue_async_action('middle_trashed_post_comments', [$post_id, $statuses]);
+    }
 
-	}
-	public static function async_wp_insert_comment(int $id, WP_Comment $comment)
-	{
+    /**
+     * Handle untrashing post comments asynchronously.
+     *
+     * @param int $post_id The ID of the post.
+     */
+    public static function async_untrash_post_comments(int $post_id)
+    {
+        // Enqueue an asynchronous action to handle untrashing post comments.
+        as_enqueue_async_action('middle_untrash_post_comments', [$post_id]);
+    }
 
-		//serialize comment object
-		$serialize_comment = serialize($comment);
-		//async request
-		as_enqueue_async_action('middle_wp_insert_comment', [$id, $serialize_comment]);
-
-	}
-	public static function async_wp_update_comment_data(array|WP_Error $data, array $comment, array $commentarr)
-	{
-		//async request
-		as_enqueue_async_action('middle_wp_update_comment_data', [$data, $comment, $commentarr]);
-
-	}
-	public static function async_edit_comment(int $comment_id, array $data)
-	{
-
-		//async request
-		as_enqueue_async_action('middle_edit_comment', [$comment_id, $data]);
-
-	}
-	public static function async_delete_comment(string $comment_id, WP_Comment $comment)
-	{
-
-		//serialize comment object
-		$serialize_comment = serialize($comment);
-		//async request
-		as_enqueue_async_action('middle_delete_comment', [$comment_id, $serialize_comment]);
-
-	}
-	public static function async_transition_comment_status(int|string $new_status, int|string $old_status, WP_Comment $comment)
-	{
-		//serialize comment object
-		$serialize_comment = serialize($comment);
-		//async request
-		as_enqueue_async_action('middle_transition_comment_status', [$new_status, $old_status, $serialize_comment]);
-
-	}
-	public static function async_trashed_post_comments(int $post_id, array $statuses)
-	{
-
-		//async request
-		as_enqueue_async_action('middle_trashed_post_comments', [$post_id, $statuses]);
-
-	}
-	public static function async_untrash_post_comments(int $post_id)
-	{
-
-		//async request
-		as_enqueue_async_action('middle_untrash_post_comments', [$post_id]);
-
-	}
 
 }

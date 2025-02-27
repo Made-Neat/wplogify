@@ -160,6 +160,7 @@ class Comment_Tracker {
 	 */
 	public static function on_transition_comment_status( int|string $new_status, int|string $old_status, $comment ) {
 		
+		//Convert to Object
 		$comment = (object)$comment;
 		Debug::info( 'on_transition_comment_status', $new_status, $old_status );
 		

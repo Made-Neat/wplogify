@@ -48,10 +48,10 @@ class Media_Tracker {
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
+		
 		// Add or update media.
-		// add_action( 'add_attachment', [__NAMESPACE__.'\Async_Tracker','async_add_attachment'], 10, 1 );
-		// add_action( 'middle_add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
-		add_action( 'add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
+		add_action( 'add_attachment', [__NAMESPACE__.'\Async_Tracker','async_add_attachment'], 10, 1 );
+		add_action( 'middle_add_attachment', array( __CLASS__, 'on_add_attachment' ), 10, 1 );
 		
 		add_action( 'add_post_meta', [__NAMESPACE__.'\Async_Tracker','async_add_post_meta'], 10, 3 );
 		add_action( 'middle_add_post_meta', array( __CLASS__, 'on_add_post_meta' ), 10, 3 );
@@ -134,6 +134,7 @@ class Media_Tracker {
 	 * @param int $post_id Attachment ID.
 	 */
 	public static function on_add_attachment( int $post_id ) {
+		
 		Debug::info( __CLASS__, __FUNCTION__ );
 
 		// Get the event.

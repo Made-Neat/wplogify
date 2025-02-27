@@ -76,7 +76,6 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-database.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-debug.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-log-page.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-notes-page.php';
-require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-php-error-log.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-logger.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-main.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-plugin-settings.php';

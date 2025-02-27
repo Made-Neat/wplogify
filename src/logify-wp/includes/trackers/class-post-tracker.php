@@ -98,9 +98,11 @@ class Post_Tracker {
 	 * @param bool    $update  Whether this is an update or a new post.
 	 */
 	public static function on_save_post( int $post_id, $serialize_post, bool $update ) {
+		
+		//Unserialize Post object
+		$post = unserialize($serialize_post);
 		// Ignore updates. We track post updates by tracking the creation of revisions, which
 		// enables us to link to the compare revisions page.
-		$post = unserialize($serialize_post);
 		if ( $update ) {
 			return;
 		}
@@ -185,6 +187,7 @@ class Post_Tracker {
 	 */
 	public static function on_post_updated( int $post_id, $serialize_post_after, $serialize_post_before ) {
 
+		//Unserialize Posts object
 		$post_after = unserialize($serialize_post_after);
 		$post_before = unserialize($serialize_post_before);
 		Debug::info( 'on_post_updated' );
@@ -531,11 +534,12 @@ class Post_Tracker {
 	 * @param ?WP_Post $post_before Null for new posts, the WP_Post object prior to the update for updated posts.
 	 */
 	public static function on_wp_after_insert_post( int $post_id, $serialize_post, bool $update, $serialize_post_before ) {
-		// Ignore revisions.
+		
 		//unserialize post object
 		$post = unserialize($serialize_post);
 		$post_before = unserialize($serialize_post_before);
-
+		
+		// Ignore revisions.
 		if ( wp_is_post_revision( $post_id ) ) {
 			return;
 		}

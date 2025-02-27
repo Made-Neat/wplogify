@@ -56,38 +56,6 @@ settings_errors('logify_wp_messages');
 		<?php settings_fields('logify_wp_settings_group'); ?>
 
 		<fieldset class="logify-wp-settings-group">
-			<legend>PHP Error</legend>
-			<table class="form-table logify-wp-settings-table">
-				<tr valign="top">
-					<th scope="row">PHP Error Tracking</th>
-					<td>
-						<!-- Hidden field to ensure that the administrator role is always selected. -->
-						<!-- Because the administrator checkbox is disabled, it doesn't get submitted with the form. -->
-
-						<label>
-						<input type="checkbox" name="fatal_error_tracking" value="1">
-							<?php
-							echo esc_html("Fatal Error");
-							?>
-						</label><br/>
-						<label>
-						<input type="checkbox" name="warning_tracking" value="2">
-							<?php
-							echo esc_html("Warnings");
-							?>
-						</label><br/>
-						<label>
-						<input type="checkbox" name="notice_tracking" value="3">
-							<?php
-							echo esc_html("Notices");
-							?>
-						</label><br/>
-					</td>
-				</tr>
-			</table>
-		</fieldset>
-
-		<fieldset class="logify-wp-settings-group">
 			<legend>Access control</legend>
 			<table class="form-table logify-wp-settings-table">
 				<tr valign="top">

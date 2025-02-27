@@ -46,10 +46,6 @@ class User_Tracker
 	public static function init()
 	{
 		// User login.
-		// $var = new Async_Tracker();
-
-		// as_schedule_single_action( time(), 'wp_login', [string $user_login, WP_User $user] );
-
 		add_action('wp_login', [__NAMESPACE__ . '\Async_Tracker', 'async_wp_login'], 10, 2);
 		add_action('middle_wp_login', array(__CLASS__, 'on_wp_login'), 10, 2);
 

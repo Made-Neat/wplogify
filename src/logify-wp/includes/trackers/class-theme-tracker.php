@@ -95,9 +95,11 @@ class Theme_Tracker
 	 */
 	public static function on_upgrader_process_complete($upgrader_data, array $hook_extra)
 	{
+		//Convert to Object type
+		$upgrader = (object) $upgrader_data;
+		
 		// Check this is a theme upgrader.
 
-		$upgrader = (object) $upgrader_data;
 		if ($hook_extra['type'] !== 'theme') {
 			return;
 		}
@@ -197,7 +199,7 @@ class Theme_Tracker
 	 */
 	public static function on_switch_theme(string $new_name, $serialize_new_theme, $serialize_old_theme)
 	{
-
+		//Unserialize the theme objects
 		$new_theme = unserialize($serialize_new_theme);
 		$old_theme = unserialize($serialize_old_theme);
 
