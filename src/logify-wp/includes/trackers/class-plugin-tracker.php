@@ -76,7 +76,7 @@ class Plugin_Tracker
 
 	public static function on_upgrader_process_complete($upgrader, array $hook_extra)
 	{
-		//Get all the installed plugin data
+		//Get all installed plugin data
 		$upgrader = (object)$upgrader;
 		
 		$installing = $hook_extra['action'] === 'install';

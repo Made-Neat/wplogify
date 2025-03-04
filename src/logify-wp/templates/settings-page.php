@@ -5,11 +5,17 @@
  * @package Logify_WP
  */
 
+// use Error_Tracker;
+
 namespace Logify_WP;
 
 // Show a success message if settings were saved.
 $settings_updated = isset($_GET['settings-updated']) ? sanitize_text_field(wp_unslash($_GET['settings-updated'])) : '';
 if ($settings_updated) {
+	$selected_errors = get_option('logify_wp_php_error_types', []);
+	$errors_capture_period = get_option('logify_wp_keep_period_errors', []);
+	$get_error = new Error_Tracker();
+	as_enqueue_async_action('schedule_process', [$selected_errors, $errors_capture_period]);
 	add_settings_error(
 		'logify_wp_messages',
 		'logify_wp_settings_saved',
@@ -54,6 +60,48 @@ settings_errors('logify_wp_messages');
 	<form method="post" action="options.php">
 
 		<?php settings_fields('logify_wp_settings_group'); ?>
+
+		<fieldset class="logify-wp-settings-group">
+			<legend>PHP Error</legend>
+			<table class="form-table logify-wp-settings-table">
+				<tr valign="top">
+					<th scope="row">PHP Error Tracking</th>
+					<td>
+						<!-- Hidden field to ensure that the administrator role is always selected. -->
+						<!-- Because the administrator checkbox is disabled, it doesn't get submitted with the form. -->
+						<!-- <input type="hidden" name="logfiy_wp_php_error_type[]" value="administrator"> -->
+
+						<?php
+						$errors = array("Fatal Error", "Warnings", "Notices");
+						$selected_error_type = Plugin_Settings::get_php_error_types();
+
+						foreach ($errors as $error) {
+							$checked = in_array($error, $selected_error_type, true) ? 'checked' : '';
+							echo '<label>';
+							echo '<input type="checkbox" name="logify_wp_php_error_types[]" value="' . esc_attr($error) . '" ' . esc_attr($checked) . '>';
+							echo esc_html($error);
+							echo '</label><br>';
+						}
+						?>
+					</td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Period</th>
+					<td>
+						<?php
+						$errors_period = Plugin_Settings::get_keep_period_errors();
+						?>
+						<select name="logify_wp_keep_period_errors">
+							<option value="10mins" <?php selected($errors_period, '10mins'); ?>>10mins</option>
+							<option value="30mins" <?php selected($errors_period, '30mins'); ?>>30mins</option>
+							<option value="1hour" <?php selected($errors_period, '1hour'); ?>>1hour</option>
+							<option value="untill_deactive" <?php selected($errors_period, 'untill_deactive'); ?>>Untill
+								Deactive</option>
+						</select>
+					</td>
+				</tr>
+			</table>
+		</fieldset>
 
 		<fieldset class="logify-wp-settings-group">
 			<legend>Access control</legend>

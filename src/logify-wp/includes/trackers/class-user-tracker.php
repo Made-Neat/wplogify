@@ -45,7 +45,8 @@ class User_Tracker
 	 */
 	public static function init()
 	{
-		// User login.
+
+		//User Login
 		add_action('wp_login', [__NAMESPACE__ . '\Async_Tracker', 'async_wp_login'], 10, 2);
 		add_action('middle_wp_login', array(__CLASS__, 'on_wp_login'), 10, 2);
 
@@ -119,13 +120,13 @@ class User_Tracker
 
 	public static function on_wp_login_failed($username, $error_s)
 	{
+		//Unserialize Error object
+		$error = unserialize($error_s);
 		// Create the event.
 		// This event does not require an object, since the acting user *is* the object, but it does
 		// require an object type ('user') in order to be grouped properly.
 
-		
-		$error = unserialize($error_s);
-		// $error = unserialize($s_error);
+
 		$event = Event::create('Failed Login', 'user', all_users: true);
 		// If the event could not be created, exit. This shouldn't happen, because we track all
 		// failed logins.
@@ -136,7 +137,7 @@ class User_Tracker
 		$event->set_meta('username_entered', $username);
 		$event->set_meta('error_code', $error->get_error_code());
 		$event->set_meta('error_message', Strings::strip_tags($error->get_error_message()));
-		
+
 		// Log the event.
 		$event->save();
 	}
@@ -185,6 +186,7 @@ class User_Tracker
 	{
 		global $wpdb;
 
+		//Unserialize User Object
 		$user = unserialize($serialize_user);
 		// Get the user's properties.
 		$props = User_Utility::get_properties($user);
@@ -229,12 +231,15 @@ class User_Tracker
 	{
 		global $wpdb;
 
+		//Unserialize User Object
 		$user = unserialize($serialize_user);
 		// Compare values and make note of any changes.
 		foreach ($user->data as $key => $value) {
 			// Process values.
 			$val = Types::process_database_value($key, $value);
 			$new_val = Types::process_database_value($key, $userdata[$key]);
+			// error_log("aaa".$new_val);
+			// error_log("aaa");
 
 			// If the value has changed, add the before and after values to the properties.
 			if (!Types::are_equal($val, $new_val)) {

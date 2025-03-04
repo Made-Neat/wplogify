@@ -54,6 +54,7 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/helpers/class-types.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/helpers/class-urls.php';
 
 // Classes that encapsulate the core plugin data types.
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-error.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-event.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-eventmeta.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/models/class-property.php';
@@ -65,6 +66,7 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-event-repositor
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-eventmeta-repository.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-property-repository.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-note-repository.php';
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/repositories/class-error-repository.php';
 
 // Classes that provide plugin functionality.
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-access-control.php';
@@ -76,12 +78,14 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-database.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-debug.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-log-page.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-notes-page.php';
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-php-error-log.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-logger.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-main.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/services/class-plugin-settings.php';
 
 // Classes for tracking events.
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-async-tracker.php';
+require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-error-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-comment-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-core-tracker.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/trackers/class-media-tracker.php';

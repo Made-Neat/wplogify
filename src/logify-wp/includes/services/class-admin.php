@@ -71,6 +71,11 @@ class Admin {
 			add_action( "load-$noteshook", array( __CLASS__, 'add_screen_options' ) );
 		}
 
+		$errorhook = add_submenu_page( 'logify-wp', 'PHP Error Log', 'PHP Error Log', 'read', 'logify-wp-php-error-log', array( 'Logify_WP\PHP_Error_Log', 'display_php_error_log_page' ) );
+		// Settings submenu (only for users with 'manage_options' capability).
+
+		// Add screen options for the log page.
+		add_action( "load-$errorhook", array( __CLASS__, 'add_screen_options' ) );
 		// Settings submenu (only for users with 'manage_options' capability).
 		add_submenu_page( 'logify-wp', 'Settings', 'Settings', 'manage_options', 'logify-wp-settings', array( 'Logify_WP\Plugin_Settings', 'display_settings_page' ) );
 
@@ -117,6 +122,14 @@ class Admin {
 			)
 		);
 
+		$wp_admin_bar->add_node(
+			array(
+				'id'     => 'logify-wp-php-error-log',
+				'parent' => 'logify-wp',
+				'title'  => 'View PHP Error Log',
+				'href'   => admin_url('admin.php?page=logify-wp-php-error-log'),
+			)
+		);
 		// Check if the notes feature is enabled
 		if (get_option('logify_wp_enable_notes', false)) {
 			$wp_admin_bar->add_node(
@@ -267,6 +280,10 @@ class Admin {
 		// Notes page
 		if ($hook === 'logify-wp_page_logify-wp-notes') {
 			self::setup_page($hook, 'assets/js/notes-page.js', 'logify-wp-notes-page');
+		}
+		// PHP Error Log page
+		if ($hook === 'logify-wp_page_logify-wp-php-error-log') {
+			self::setup_page($hook, 'assets/js/php-error-log-page.js', 'logify-wp-php-error-log-page');
 		}
 	}
 

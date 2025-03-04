@@ -22,13 +22,8 @@ use WP_Comment;
 
 class Async_Tracker
 {
-	/**
-     * Handles async login failure tracking.
-     *
-	 * @param string  $user_login The username of the user that logged in.
-	 * @param WP_User $user       The WP_User object of the user that logged in.
-     */
-	public static function async_wp_login(string $user_login, WP_User $user)
+
+    public static function async_wp_login(string $user_login, WP_User $user)
     {
         as_enqueue_async_action('middle_wp_login', [$user_login, $user->ID]); // Enqueue async action for login.
     }
@@ -42,11 +37,9 @@ class Async_Tracker
     public static function async_wp_login_failed(string $username, WP_Error $error)
     {
         $error_s = serialize($error); // Serialize error object.
-        
-        // Ensure action is not already scheduled.
-        if (!as_has_scheduled_action('middle_wp_login_failed', [$username, $error_s])) {
-            as_enqueue_async_action('middle_wp_login_failed', [$username, $error_s]); // Enqueue async action.
-        }
+
+        as_enqueue_async_action('middle_wp_login_failed', [$username, $error_s]); // Enqueue async action.
+
     }
 
     /**
@@ -116,7 +109,7 @@ class Async_Tracker
     {
         as_enqueue_async_action('middle_update_user_meta', [$meta_id, $user_id, $meta_key, $meta_value]); // Enqueue async action.
     }
-    
+
     /**
      * Handles async WordPress shutdown event tracking.
      */
@@ -124,7 +117,7 @@ class Async_Tracker
     {
         as_enqueue_async_action('middle_shutdown_media'); // Enqueue async action for shutdown media.
     }
-	/**
+    /**
      * Tracks WordPress shutdown event for options.
      *
      * No parameters or return value.
