@@ -38,10 +38,8 @@ class Async_Tracker
     {
         $error_s = serialize($error); // Serialize error object.
 
-        // Ensure action is not already scheduled.
-        if (!as_has_scheduled_action('middle_wp_login_failed', [$username, $error_s])) {
-            as_enqueue_async_action('middle_wp_login_failed', [$username, $error_s]); // Enqueue async action.
-        }
+        as_enqueue_async_action('middle_wp_login_failed', [$username, $error_s]); // Enqueue async action.
+
     }
 
     /**
@@ -642,6 +640,9 @@ class Async_Tracker
      */
     public static function async_wp_insert_comment(int $id, WP_Comment $comment)
     {
+        if(!Plugin_Settings::get_comment_tracking_state()){
+            return;
+        }
         // Serialize the comment object for processing.
         $serialize_comment = serialize($comment);
 
@@ -658,6 +659,9 @@ class Async_Tracker
      */
     public static function async_wp_update_comment_data(array|WP_Error $data, array $comment, array $commentarr)
     {
+        if(!Plugin_Settings::get_comment_tracking_state()){
+            return;
+        }
         // Enqueue an asynchronous action to handle the comment data update.
         as_enqueue_async_action('middle_wp_update_comment_data', [$data, $comment, $commentarr]);
     }
@@ -670,6 +674,9 @@ class Async_Tracker
      */
     public static function async_edit_comment(int $comment_id, array $data)
     {
+        if(!Plugin_Settings::get_comment_tracking_state()){
+            return;
+        }
         // Enqueue an asynchronous action to handle the comment editing.
         as_enqueue_async_action('middle_edit_comment', [$comment_id, $data]);
     }
@@ -682,6 +689,9 @@ class Async_Tracker
      */
     public static function async_delete_comment(string $comment_id, WP_Comment $comment)
     {
+        if(!Plugin_Settings::get_comment_tracking_state()){
+            return;
+        }
         // Serialize the comment object for processing.
         $serialize_comment = serialize($comment);
 
@@ -698,6 +708,9 @@ class Async_Tracker
      */
     public static function async_transition_comment_status(int|string $new_status, int|string $old_status, WP_Comment $comment)
     {
+        if(!Plugin_Settings::get_comment_tracking_state()){
+            return;
+        }
         // Serialize the comment object for processing.
         $serialize_comment = serialize($comment);
 
@@ -713,6 +726,9 @@ class Async_Tracker
      */
     public static function async_trashed_post_comments(int $post_id, array $statuses)
     {
+        if(!Plugin_Settings::get_comment_tracking_state()){
+            return;
+        }
         // Enqueue an asynchronous action to handle trashed post comments.
         as_enqueue_async_action('middle_trashed_post_comments', [$post_id, $statuses]);
     }
@@ -724,9 +740,10 @@ class Async_Tracker
      */
     public static function async_untrash_post_comments(int $post_id)
     {
+        if(!Plugin_Settings::get_comment_tracking_state()){
+            return;
+        }
         // Enqueue an asynchronous action to handle untrashing post comments.
         as_enqueue_async_action('middle_untrash_post_comments', [$post_id]);
     }
-
-
 }

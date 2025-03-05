@@ -12,8 +12,7 @@ namespace Logify_WP;
  *
  * Provides tracking of events related to comments.
  */
-class Widget_Tracker
-{
+class Widget_Tracker {
 
 	/**
 	 * Widget events.
@@ -32,17 +31,16 @@ class Widget_Tracker
 	/**
 	 * Set up hooks for the events we want to log.
 	 */
-	public static function init()
-	{
+	public static function init() {
 		// Changes to widget options.
-		add_action('update_option', [__NAMESPACE__ . '\Async_Tracker', 'async_update_option_widget'], 10, 3);
-		add_action('middle_update_option_widget', array(__CLASS__, 'on_update_option'), 10, 3);
-
-		add_action('updated_option', [__NAMESPACE__ . '\Async_Tracker', 'async_updated_option'], 10, 3);
-		add_action('middle_updated_option', array(__CLASS__, 'on_updated_option'), 10, 3);
-
-		add_action('shutdown', [__NAMESPACE__ . '\Async_Tracker', 'async_shutdown_widget'], 10, 0);
-		add_action('middle_shutdown_widget', array(__CLASS__, 'on_shutdown'), 10, 0);
+		add_action( 'update_option', [__NAMESPACE__.'\Async_Tracker','async_update_option_widget'], 10, 3 );
+		add_action( 'middle_update_option_widget', array( __CLASS__, 'on_update_option' ), 10, 3 );
+		
+		add_action( 'updated_option', [__NAMESPACE__.'\Async_Tracker','async_updated_option'], 10, 3 );
+		add_action( 'middle_updated_option', array( __CLASS__, 'on_updated_option' ), 10, 3 );
+		
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown_widget'], 10, 0 );
+		add_action( 'middle_shutdown_widget', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**
@@ -52,27 +50,26 @@ class Widget_Tracker
 	 * @param array  $old_option_value The old option value.
 	 * @param array  $new_option_value The new option value.
 	 */
-	public static function on_update_option($option, $old_option_value, $new_option_value)
-	{
+	public static function on_update_option( $option, $old_option_value, $new_option_value ) {
 		// Record changes to the widget locations.
-		if ($option === 'sidebars_widgets') {
-			self::record_widget_areas($old_option_value);
-			self::record_widget_areas($new_option_value);
+		if ( $option === 'sidebars_widgets' ) {
+			self::record_widget_areas( $old_option_value );
+			self::record_widget_areas( $new_option_value );
 			return;
 		}
 
 		// Beyond this point we're only interested in changes to widget details.
-		if (!str_starts_with($option, 'widget_')) {
+		if ( ! str_starts_with( $option, 'widget_' ) ) {
 			return;
 		}
 
 		// Get the widget type from the option name.
-		$widget_type = substr($option, strlen('widget_'));
+		$widget_type = substr( $option, strlen( 'widget_' ) );
 
 		// Look for widget updates or deletions.
-		foreach ($old_option_value as $widget_number => $widget) {
+		foreach ( $old_option_value as $widget_number => $widget ) {
 			// Ignore non-integer keys like '_multiwidget'.
-			if (!is_int($widget_number) && !Strings::looks_like_int($widget_number)) {
+			if ( ! is_int( $widget_number ) && ! Strings::looks_like_int( $widget_number ) ) {
 				continue;
 			}
 
@@ -80,54 +77,54 @@ class Widget_Tracker
 			$widget_id = $widget_type . '-' . $widget_number;
 
 			// Load the widget details from the option values, so we get the extra properties.
-			$old_widget = Widget_Utility::get_from_option($widget_id, $old_option_value);
-			$new_widget = Widget_Utility::get_from_option($widget_id, $new_option_value);
+			$old_widget = Widget_Utility::get_from_option( $widget_id, $old_option_value );
+			$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
-			if (!key_exists($widget_number, $new_option_value)) {
+			if ( ! key_exists( $widget_number, $new_option_value ) ) {
 				// The widget is being deleted. Create an event.
-				$event = Event::create('Widget Deleted', $old_widget);
+				$event = Event::create( 'Widget Deleted', $old_widget );
 
 				// If the event was successfully created, remember it.
-				if ($event) {
-					self::$events[$widget_id] = $event;
+				if ( $event ) {
+					self::$events[ $widget_id ] = $event;
 				}
-			} elseif ($old_widget !== $new_widget) {
+			} elseif ( $old_widget !== $new_widget ) {
 				// The widget is being updated.
 
 				// Store the property changes.
 				$props = array();
 
 				// Record the changed widget settings in the event properties.
-				$keys = array_unique(array_merge(array_keys($old_widget), array_keys($new_widget)));
-				foreach ($keys as $key) {
+				$keys = array_unique( array_merge( array_keys( $old_widget ), array_keys( $new_widget ) ) );
+				foreach ( $keys as $key ) {
 
 					// Get the old and new values.
-					$old_widget_value = $old_widget[$key] ?? null;
-					$new_widget_value = $new_widget[$key] ?? null;
+					$old_widget_value = $old_widget[ $key ] ?? null;
+					$new_widget_value = $new_widget[ $key ] ?? null;
 
-					if ($key === 'content') {
+					if ( $key === 'content' ) {
 						// Strip tags from content.
-						$old_widget_value = Strings::strip_tags($old_widget_value);
-						$new_widget_value = Strings::strip_tags($new_widget_value);
-					} elseif ($key === 'nav_menu') {
+						$old_widget_value = Strings::strip_tags( $old_widget_value );
+						$new_widget_value = Strings::strip_tags( $new_widget_value );
+					} elseif ( $key === 'nav_menu' ) {
 						// For menus, convert to an object reference.
-						$old_widget_value = empty($old_widget_value) ? null : new Object_Reference('term', $old_widget_value);
-						$new_widget_value = empty($new_widget_value) ? null : new Object_Reference('term', $new_widget_value);
+						$old_widget_value = empty( $old_widget_value ) ? null : new Object_Reference( 'term', $old_widget_value );
+						$new_widget_value = empty( $new_widget_value ) ? null : new Object_Reference( 'term', $new_widget_value );
 					}
 
 					// If the values are different, record the change.
-					if (!Types::are_equal($old_widget_value, $new_widget_value)) {
-						Property::update_array($props, $key, null, $old_widget_value, $new_widget_value);
+					if ( ! Types::are_equal( $old_widget_value, $new_widget_value ) ) {
+						Property::update_array( $props, $key, null, $old_widget_value, $new_widget_value );
 					}
 				}
 
 				// If there were property changes, create an event.
-				if (!empty($props)) {
-					$event = Event::create('Widget Updated', $old_widget, null, $props);
+				if ( ! empty( $props ) ) {
+					$event = Event::create( 'Widget Updated', $old_widget, null, $props );
 
 					// If the event was successfully created, remember it.
-					if ($event) {
-						self::$events[$widget_id] = $event;
+					if ( $event ) {
+						self::$events[ $widget_id ] = $event;
 					}
 				}
 			}
@@ -141,37 +138,36 @@ class Widget_Tracker
 	 * @param array  $old_option_value The old option value.
 	 * @param array  $new_option_value The new option value.
 	 */
-	public static function on_updated_option($option, $old_option_value, $new_option_value)
-	{
+	public static function on_updated_option( $option, $old_option_value, $new_option_value ) {
 		// Beyond this point we're only interested in changes to widget details.
-		if (!str_starts_with($option, 'widget_')) {
+		if ( ! str_starts_with( $option, 'widget_' ) ) {
 			return;
 		}
 
 		// Get the widget type from the option name.
-		$widget_type = substr($option, strlen('widget_'));
+		$widget_type = substr( $option, strlen( 'widget_' ) );
 
 		// Look for widget additions.
-		foreach ($new_option_value as $widget_number => $widget) {
+		foreach ( $new_option_value as $widget_number => $widget ) {
 			// Ignore non-integer keys like '_multiwidget'.
-			if (!is_int($widget_number) && !Strings::looks_like_int($widget_number)) {
+			if ( ! is_int( $widget_number ) && ! Strings::looks_like_int( $widget_number ) ) {
 				continue;
 			}
 
 			// Check if this is new.
-			if (!key_exists($widget_number, $old_option_value)) {
+			if ( ! key_exists( $widget_number, $old_option_value ) ) {
 				// Get the widget ID.
 				$widget_id = $widget_type . '-' . $widget_number;
 
 				// Load the widget details from the option values, so we get the extra properties.
-				$new_widget = Widget_Utility::get_from_option($widget_id, $new_option_value);
+				$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 				// Create the event.
-				$event = Event::create('Widget Created', $new_widget);
+				$event = Event::create( 'Widget Created', $new_widget );
 
 				// If the event was successfully created, remember it.
-				if ($event) {
-					self::$events[$widget_id] = $event;
+				if ( $event ) {
+					self::$events[ $widget_id ] = $event;
 				}
 			}
 		}
@@ -182,22 +178,21 @@ class Widget_Tracker
 	 *
 	 * @param array $sidebars_widgets The value of the sidebars_widgets option.
 	 */
-	public static function record_widget_areas($sidebars_widgets)
-	{
+	public static function record_widget_areas( $sidebars_widgets ) {
 		// Is this the first time recording the widget areas?
-		$first_time = empty(self::$areas);
+		$first_time = empty( self::$areas );
 
-		foreach ($sidebars_widgets as $sidebar_id => $widgets) {
+		foreach ( $sidebars_widgets as $sidebar_id => $widgets ) {
 			// Ignore non-array values.
-			if (!is_array($widgets)) {
+			if ( ! is_array( $widgets ) ) {
 				continue;
 			}
 
 			// Loop through the widget positions.
-			foreach ($widgets as $widget_id) {
+			foreach ( $widgets as $widget_id ) {
 				// The first time through, get the old area; after that, get the new one.
-				$key = $first_time ? 'old' : 'new';
-				self::$areas[$widget_id][$key] = $sidebar_id;
+				$key                               = $first_time ? 'old' : 'new';
+				self::$areas[ $widget_id ][ $key ] = $sidebar_id;
 			}
 		}
 	}
@@ -205,52 +200,51 @@ class Widget_Tracker
 	/**
 	 * Fires on shutdown, after PHP execution.
 	 */
-	public static function on_shutdown()
-	{
+	public static function on_shutdown() {
 
 		// Update and create events for area changes.
-		foreach (self::$areas as $widget_id => $area) {
+		foreach ( self::$areas as $widget_id => $area ) {
 
 			// Compare the old and new areas.
 			$old_area = $area['old'] ?? null;
 			$new_area = $area['new'] ?? null;
 
 			// Check for an area change.
-			if ($old_area !== $new_area) {
+			if ( $old_area !== $new_area ) {
 
 				// Create the event for this widget ID if it hasn't been done already.
-				if (!isset(self::$events[$widget_id])) {
+				if ( ! isset( self::$events[ $widget_id ] ) ) {
 
 					// As this event is an area change only, find a more descriptive event type.
-					if ($old_area === 'wp_inactive_widgets') {
+					if ( $old_area === 'wp_inactive_widgets' ) {
 						$event_type = 'Widget Activated';
-					} elseif ($new_area === 'wp_inactive_widgets') {
+					} elseif ( $new_area === 'wp_inactive_widgets' ) {
 						$event_type = 'Widget Deactivated';
 					} else {
 						$event_type = 'Widget Moved';
 					}
 
 					// Create a new event for this widget.
-					$widget = Widget_Utility::load($widget_id);
-					$event = Event::create($event_type, $widget);
+					$widget = Widget_Utility::load( $widget_id );
+					$event  = Event::create( $event_type, $widget );
 
 					// If the event was successfully created, remember it.
-					if ($event) {
-						self::$events[$widget_id] = $event;
+					if ( $event ) {
+						self::$events[ $widget_id ] = $event;
 					}
 				}
 
 				// If an event exists, add the changed area to the properties.
-				if (isset(self::$events[$widget_id])) {
-					$old_area_name = Widget_Utility::get_area_name($old_area);
-					$new_area_name = Widget_Utility::get_area_name($new_area);
-					self::$events[$widget_id]->set_prop('area', null, $old_area_name, $new_area_name);
+				if ( isset( self::$events[ $widget_id ] ) ) {
+					$old_area_name = Widget_Utility::get_area_name( $old_area );
+					$new_area_name = Widget_Utility::get_area_name( $new_area );
+					self::$events[ $widget_id ]->set_prop( 'area', null, $old_area_name, $new_area_name );
 				}
 			}
 		}
 
 		// Save the events.
-		foreach (self::$events as $event) {
+		foreach ( self::$events as $event ) {
 			$event->save();
 		}
 	}

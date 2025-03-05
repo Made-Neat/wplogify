@@ -28,6 +28,7 @@ class Comment_Tracker {
 	 * Set up hooks for the events we want to log.
 	 */
 	public static function init() {
+
 		// Add comment.
 		add_action( 'wp_insert_comment', [__NAMESPACE__.'\Async_Tracker','async_wp_insert_comment'], 10, 2 );
 		add_action( 'middle_wp_insert_comment', array( __CLASS__, 'on_wp_insert_comment' ), 10, 2 );

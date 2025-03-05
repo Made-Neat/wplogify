@@ -20,6 +20,7 @@ class Database {
 		Eventmeta_Repository::create_table();
 		Property_Repository::create_table();
 		Note_Repository::create_table();
+		Error_Repository::create_table();
 	}
 
 	/**
@@ -30,6 +31,7 @@ class Database {
 		Eventmeta_Repository::drop_table();
 		Property_Repository::drop_table();
 		Note_Repository::drop_table();
+		Error_Repository::drop_table();
 	}
 
 	/**
@@ -40,5 +42,6 @@ class Database {
 		Eventmeta_Repository::truncate_table();
 		Property_Repository::truncate_table();
 		Note_Repository::truncate_table();
+		Error_Repository::truncate_table();
 	}
 }

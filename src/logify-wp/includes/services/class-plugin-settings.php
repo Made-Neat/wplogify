@@ -65,6 +65,19 @@ class Plugin_Settings {
 	 * @var string
 	 */
 	private const DEFAULT_KEEP_PERIOD_UNITS = 'month';
+	/**
+	 * The default value for the 'keep period error' setting.
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_KEEP_PERIOD_ERRORS = '10mins';
+	/**
+	 * The default value for the 'keep period error' setting.
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_PHP_ERROR_TYPES = array('Fatal Error');
+	private const DEFAULT_COMMENT_TRACKING_STATE = false;
 
 	/**
 	 * Get the names of all current roles.
@@ -163,6 +176,33 @@ class Plugin_Settings {
 				'default'           => self::DEFAULT_KEEP_PERIOD_UNITS,
 			)
 		);
+		register_setting(
+			'logify_wp_settings_group',
+			'logify_wp_keep_period_errors',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => self::DEFAULT_KEEP_PERIOD_ERRORS,
+			)
+		);
+		register_setting(
+			'logify_wp_settings_group',
+			'logify_wp_php_error_types',
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_errors' ),
+				'default'           => self::DEFAULT_PHP_ERROR_TYPES,
+			)
+		);
+		register_setting(
+			'logify_wp_settings_group',
+			'logify_wp_comment_tracking',
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'default'           => self::DEFAULT_COMMENT_TRACKING_STATE,
+			)
+		);
 	}
 
 	/**
@@ -213,6 +253,19 @@ class Plugin_Settings {
 
 		$valid_roles = self::get_roles();
 		return array_intersect( $roles, $valid_roles );
+	}
+	/**
+	 * Sanitizes the given array of roles by filtering out any invalid roles.
+	 *
+	 * @param ?array $roles The array of roles to be sanitized.
+	 * @return array The sanitized array of roles.
+	 */
+	public static function sanitize_errors( ?array $errors ): array {
+		// Handle null or empty array.
+		if ( empty( $errors ) ) {
+			return array();
+		}
+		return  $errors;
 	}
 
 	/**
@@ -311,5 +364,20 @@ class Plugin_Settings {
 	 */
 	public static function get_keep_period_units(): string {
 		return get_option( 'logify_wp_keep_period_units', self::DEFAULT_KEEP_PERIOD_UNITS );
+	}
+	/**
+	 * Retrieves the keep period units setting for the Logify WP plugin.
+	 *
+	 * @return string The keep period units setting.
+	 */
+	public static function get_keep_period_errors(): string {
+		return get_option( 'logify_wp_keep_period_errors', self::DEFAULT_KEEP_PERIOD_ERRORS );
+	}
+
+	public static function get_php_error_types(): array {
+		return get_option( 'logify_wp_php_error_types', self::DEFAULT_PHP_ERROR_TYPES );
+	}
+	public static function get_comment_tracking_state(): bool {
+		return get_option( 'logify_wp_comment_tracking', self::DEFAULT_COMMENT_TRACKING_STATE );
 	}
 }
