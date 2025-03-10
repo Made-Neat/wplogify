@@ -45,24 +45,25 @@ class Post_Tracker
 	{
 		// Track post creation and update.
 		add_action('save_post', [__NAMESPACE__ . '\Async_Tracker', 'async_save_post'], 10, 3);
-		add_action('middle_save_post', array(__CLASS__, 'on_save_post'), 10, 3);
+		add_action('middle_save_post', array(__CLASS__, 'on_save_post'), 10, 4);
+		// add_action('save_post', array(__CLASS__, 'on_save_post'), 10, 3);
 
 		add_action('pre_post_update', [__NAMESPACE__ . '\Async_Tracker', 'async_pre_post_update'], 10, 2);
-		add_action('middle_pre_post_update', array(__CLASS__, 'on_pre_post_update'), 10, 2);
+		add_action('middle_pre_post_update', array(__CLASS__, 'on_pre_post_update'), 10, 3);
 
 		add_action('post_updated', [__NAMESPACE__ . '\Async_Tracker', 'async_post_updated'], 10, 3);
-		add_action('middle_post_updated', array(__CLASS__, 'on_post_updated'), 10, 3);
+		add_action('middle_post_updated', array(__CLASS__, 'on_post_updated'), 10, 4);
 
 		add_action('update_post_meta', [__NAMESPACE__ . '\Async_Tracker', 'async_update_post_meta'], 10, 4);
-		add_action('middle_update_post_meta', array(__CLASS__, 'on_update_post_meta'), 10, 4);
+		add_action('middle_update_post_meta', array(__CLASS__, 'on_update_post_meta'), 10, 5);
 
 		// Post status change.
 		add_action('transition_post_status', [__NAMESPACE__ . '\Async_Tracker', 'async_transition_post_status'], 10, 3);
-		add_action('middle_transition_post_status', array(__CLASS__, 'on_transition_post_status'), 10, 3);
+		add_action('middle_transition_post_status', array(__CLASS__, 'on_transition_post_status'), 10, 4);
 
 		// Track post deletion.
 		add_action('before_delete_post', [__NAMESPACE__ . '\Async_Tracker', 'async_before_delete_post'], 10, 2);
-		add_action('middle_before_delete_post', array(__CLASS__, 'on_before_delete_post'), 10, 2);
+		add_action('middle_before_delete_post', array(__CLASS__, 'on_before_delete_post'), 10, 3);
 
 		add_action('delete_post', [__NAMESPACE__ . '\Async_Tracker', 'async_delete_post'], 10, 2);
 		add_action('middledelete_post', array(__CLASS__, 'on_delete_post'), 10, 2);
@@ -72,7 +73,7 @@ class Post_Tracker
 		add_action('middle_added_term_relationship', array(__CLASS__, 'on_added_term_relationship'), 10, 3);
 
 		add_action('wp_after_insert_post', [__NAMESPACE__ . '\Async_Tracker', 'async_wp_after_insert_post'], 10, 4);
-		add_action('middle_wp_after_insert_post', array(__CLASS__, 'on_wp_after_insert_post'), 10, 4);
+		add_action('middle_wp_after_insert_post', array(__CLASS__, 'on_wp_after_insert_post'), 10, 5);
 
 		add_action('deleted_term_relationships', [__NAMESPACE__ . '\Async_Tracker', 'async_deleted_term_relationships'], 10, 3);
 		add_action('middle_deleted_term_relationships', array(__CLASS__, 'on_deleted_term_relationships'), 10, 3);
@@ -99,13 +100,14 @@ class Post_Tracker
 	 * @param WP_Post $post    The post object.
 	 * @param bool    $update  Whether this is an update or a new post.
 	 */
-	public static function on_save_post(int $post_id, $serialize_post, bool $update)
+	public static function on_save_post(int $post_id, $serialize_post, bool $update, int $acting_user_id)
 	{
 
-		//Unserialize Post object
+		// Unserialize Post object
 		$post = unserialize($serialize_post);
 		// Ignore updates. We track post updates by tracking the creation of revisions, which
 		// enables us to link to the compare revisions page.
+
 		if ($update) {
 			return;
 		}
@@ -137,7 +139,7 @@ class Post_Tracker
 		$event_type_verb = self::$creating || $post->post_status === 'auto-draft' ? 'Created' : 'Updated';
 
 		// Get the event.
-		$event = self::get_update_post_event($event_type_verb, $post);
+		$event = self::get_update_post_event($event_type_verb, $post, $acting_user_id);
 		if (!$event) {
 			return;
 		}
@@ -163,14 +165,14 @@ class Post_Tracker
 	 * @param int   $post_id The ID of the post being updated.
 	 * @param array $data    The data for the post.
 	 */
-	public static function on_pre_post_update(int $post_id, array $data, )
+	public static function on_pre_post_update(int $post_id, array $data, $acting_user_id)
 	{
 		global $wpdb;
 
 		Debug::info('on_pre_post_update');
 
 		// Get the new event.
-		$event = self::get_update_post_event('Updated', $post_id);
+		$event = self::get_update_post_event('Updated', $post_id, $acting_user_id);
 		if (!$event) {
 			return;
 		}
@@ -189,7 +191,7 @@ class Post_Tracker
 	 * @param WP_Post $post_after   Post object following the update.
 	 * @param WP_Post $post_before  Post object before the update.
 	 */
-	public static function on_post_updated(int $post_id, $serialize_post_after, $serialize_post_before)
+	public static function on_post_updated(int $post_id, $serialize_post_after, $serialize_post_before, $acting_user_id)
 	{
 
 		$post_after = unserialize($serialize_post_after);
@@ -205,7 +207,7 @@ class Post_Tracker
 		// If any changes remain, update the event.
 		if (!empty($props)) {
 			// Get the new event.
-			$event = self::get_update_post_event('Updated', $post_after);
+			$event = self::get_update_post_event('Updated', $post_after, $acting_user_id);
 			if (!$event) {
 				return;
 			}
@@ -223,7 +225,7 @@ class Post_Tracker
 	 * @param string $meta_key   The key of the meta data.
 	 * @param mixed  $meta_value The new value of the meta data.
 	 */
-	public static function on_update_post_meta(int $meta_id, int $post_id, string $meta_key, mixed $meta_value)
+	public static function on_update_post_meta(int $meta_id, int $post_id, string $meta_key, mixed $meta_value, $acting_user_id)
 	{
 		global $wpdb;
 
@@ -248,7 +250,7 @@ class Post_Tracker
 
 		if (!Types::are_equal($val, $new_val)) {
 			// Get the new event.
-			$event = self::get_update_post_event('Updated', $post_id);
+			$event = self::get_update_post_event('Updated', $post_id, $acting_user_id);
 			if (!$event) {
 				return;
 			}
@@ -271,11 +273,12 @@ class Post_Tracker
 	 * @param string  $old_status Old post status.
 	 * @param WP_Post $post       Post object.
 	 */
-	public static function on_transition_post_status(string $new_status, string $old_status, $serialize_post)
+	public static function on_transition_post_status(string $new_status, string $old_status, $serialize_post, $acting_user_id)
 	{
 		global $wpdb;
 		//unserialize post object
 		$post = unserialize($serialize_post);
+		error_log("POSTTYPE:");
 		// Ignore navigation menu items.
 		if ($post->post_type === 'nav_menu_item') {
 			return;
@@ -309,7 +312,7 @@ class Post_Tracker
 		$event_type = "$post_type $event_type_verb";
 
 		// Create the event.
-		$event = Event::create($event_type, $post);
+		$event = Event::create($event_type, $post, null, null, $acting_user_id);
 
 		// If the event could not be created, we aren't tracking this user.
 		if (!$event) {
@@ -343,7 +346,7 @@ class Post_Tracker
 	 * @param int     $post_id Post ID.
 	 * @param WP_Post $post    Post object.
 	 */
-	public static function on_before_delete_post(int $post_id, $serialize_post)
+	public static function on_before_delete_post(int $post_id, $serialize_post, $acting_user_id)
 	{
 
 		//unserialize post object
@@ -359,7 +362,7 @@ class Post_Tracker
 		$event_type = self::get_delete_event_type($post->post_type);
 
 		// Create the event.
-		$event = Event::create($event_type, $post);
+		$event = Event::create($event_type, $post, null, null, $acting_user_id);
 
 		// If the event could not be created, we aren't tracking this user.
 		if (!$event) {
@@ -452,7 +455,7 @@ class Post_Tracker
 	 * @param int     $post_id The ID of the post that was deleted.
 	 * @param WP_Post $post    The post object that was deleted.
 	 */
-	public static function on_delete_post(int $post_id, $serialize_post)
+	public static function on_delete_post(int $post_id, $serialize_post )
 	{
 		//unserialize post object
 		$post = unserialize($serialize_post);
@@ -544,13 +547,16 @@ class Post_Tracker
 	 * @param bool     $update      Whether this is an existing post being updated.
 	 * @param ?WP_Post $post_before Null for new posts, the WP_Post object prior to the update for updated posts.
 	 */
-	public static function on_wp_after_insert_post(int $post_id, $serialize_post, bool $update, $serialize_post_before)
+	public static function on_wp_after_insert_post(int $post_id, $serialize_post, bool $update, $serialize_post_before, $acting_user_id)
 	{
-		// Ignore revisions.
 		//unserialize post object
 		$post = unserialize($serialize_post);
 		$post_before = unserialize($serialize_post_before);
 
+		//Current User id
+		$acting_user = $acting_user_id ?? null;
+		
+		// Ignore revisions.
 		if (wp_is_post_revision($post_id)) {
 			return;
 		}
@@ -575,7 +581,7 @@ class Post_Tracker
 				}
 
 				// Create the event.
-				$event = Event::create($event_type, $post);
+				$event = Event::create($event_type, $post, null,null, $acting_user);
 
 				// If the event could not be created, we aren't tracking this user.
 				if (!$event) {
@@ -635,7 +641,7 @@ class Post_Tracker
 	 * @param int|WP_Post $post            The post the event is about.
 	 * @return ?Event The event, or null if it couldn't be created.
 	 */
-	private static function get_update_post_event(string $event_type_verb, int|WP_Post $post): ?Event
+	private static function get_update_post_event(string $event_type_verb, int|WP_Post $post, $acting_user_id): ?Event
 	{
 		// Create the event if not done already.
 		if (!self::$update_post_event) {
@@ -652,7 +658,7 @@ class Post_Tracker
 			$event_type = "$post_type $event_type_verb";
 
 			// Create the event.
-			self::$update_post_event = Event::create($event_type, $post);
+			self::$update_post_event = Event::create($event_type, $post, null, null, $acting_user_id);
 		}
 
 		return self::$update_post_event;

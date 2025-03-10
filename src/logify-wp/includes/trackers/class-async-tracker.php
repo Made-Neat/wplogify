@@ -57,7 +57,11 @@ class Async_Tracker
      */
     public static function async_wp_loaded()
     {
-        as_enqueue_async_action('middle_wp_loaded'); // Enqueue async action for WordPress loaded.
+        if (!as_has_scheduled_action('middle_wp_loaded')) {
+            //Get Current User
+            $acting_user_id = get_current_user_id();
+            as_enqueue_async_action('middle_wp_loaded', [$acting_user_id]); // Enqueue async action for WordPress loaded.
+        }
     }
 
     /**
@@ -172,9 +176,9 @@ class Async_Tracker
      */
     public static function async_updated_option(string $option, mixed $old_option_value, mixed $new_option_value): void
     {
-        // Enqueues an async action for tracking option updates
-        // Includes the option name, old value, and new value
-        as_enqueue_async_action('middle_updated_option', [$option, $old_option_value, $new_option_value]);
+        if (!as_has_scheduled_action('middle_update_option'))
+            // Enqueues an async action for tracking option updates
+            as_enqueue_async_action('middle_updated_option', [$option, $old_option_value, $new_option_value]);
     }
 
     /**
@@ -184,8 +188,9 @@ class Async_Tracker
      */
     public static function async_load_themes(): void
     {
-        // Enqueues an async action for tracking theme load event
-        as_enqueue_async_action('middle_load_themes');
+        if (!as_has_scheduled_action('middle_load_themes'))
+            // Enqueues an async action for tracking theme load event
+            as_enqueue_async_action('middle_load_themes');
     }
 
     /**
@@ -278,8 +283,13 @@ class Async_Tracker
         // Serialize the post object for storage or processing.
         $serialize_post = serialize($post);
 
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
+
         // Enqueue an asynchronous action to handle the post save.
-        as_enqueue_async_action('middle_save_post', [$post_id, $serialize_post, $update]);
+        if (!as_has_scheduled_action('middle_save_post', [$post_id, $serialize_post, $update, $acting_user_id])) {
+            as_enqueue_async_action('middle_save_post', [$post_id, $serialize_post, $update, $acting_user_id]);
+        }
     }
 
     /**
@@ -290,8 +300,12 @@ class Async_Tracker
      */
     public static function async_pre_post_update(int $post_id, array $data)
     {
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
         // Enqueue an asynchronous action to handle the pre-update of the post.
-        as_enqueue_async_action('middle_pre_post_update', [$post_id, $data]);
+        if (!as_has_scheduled_action('middle_pre_post_update', [$post_id, $data, $acting_user_id])) {
+            as_enqueue_async_action('middle_pre_post_update', [$post_id, $data, $acting_user_id]);
+        }
     }
     /**
      * Handle post update asynchronously.
@@ -306,8 +320,13 @@ class Async_Tracker
         $serialize_post_after = serialize($post_after);
         $serialize_post_before = serialize($post_before);
 
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
+
         // Enqueue an asynchronous action to handle the post update.
-        as_enqueue_async_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before]);
+        if (!as_has_scheduled_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before, $acting_user_id])) {
+            as_enqueue_async_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before, $acting_user_id]);
+        }
     }
 
     /**
@@ -320,8 +339,11 @@ class Async_Tracker
      */
     public static function async_update_post_meta(int $meta_id, int $post_id, string $meta_key, mixed $meta_value)
     {
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
         // Enqueue an asynchronous action to handle the post meta update.
-        as_enqueue_async_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value]);
+        if (!as_has_scheduled_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value, $acting_user_id]))
+            as_enqueue_async_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value, $acting_user_id]);
     }
 
     /**
@@ -336,8 +358,12 @@ class Async_Tracker
         // Serialize the post object for processing.
         $serialize_post = serialize($post);
 
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
+
         // Enqueue an asynchronous action to handle the post status transition.
-        as_enqueue_async_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post]);
+        if (!as_has_scheduled_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post, $acting_user_id]))
+            as_enqueue_async_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post, $acting_user_id]);
     }
 
     /**
@@ -350,9 +376,12 @@ class Async_Tracker
     {
         // Serialize the post object for processing.
         $serialize_post = serialize($post);
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
 
         // Enqueue an asynchronous action to handle the pre-post deletion.
-        as_enqueue_async_action('middle_before_delete_post', [$post_id, $serialize_post]);
+        if (!as_has_scheduled_action('middle_before_delete_post', [$post_id, $serialize_post, $acting_user_id]))
+            as_enqueue_async_action('middle_before_delete_post', [$post_id, $serialize_post, $acting_user_id]);
     }
 
     /**
@@ -397,8 +426,11 @@ class Async_Tracker
         $serialize_post = serialize($post);
         $serialize_post_before = serialize($post_before);
 
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
+
         // Enqueue an asynchronous action to handle the post insert event.
-        as_enqueue_async_action('middle_wp_after_insert_post', [$post_id, $serialize_post, $update, $serialize_post_before]);
+        as_enqueue_async_action('middle_wp_after_insert_post', [$post_id, $serialize_post, $update, $serialize_post_before, $acting_user_id]);
     }
 
     /**
@@ -470,8 +502,10 @@ class Async_Tracker
             'plugin_info' => $upgrader->skin->plugin_info
         ];
 
+        //Get Acting User ID
+        $acting_user_id = get_current_user_id();
         // Enqueue an asynchronous action to handle the plugin upgrade completion.
-        as_enqueue_async_action('middle_upgrader_process_complete_plugin', [$upgrader_data, $hook_extra]);
+        as_enqueue_async_action('middle_upgrader_process_complete_plugin', [$upgrader_data, $hook_extra, $acting_user_id]);
     }
 
     /**
@@ -536,8 +570,9 @@ class Async_Tracker
      */
     public static function async_update_option_plugin(string $option, mixed $old_value, mixed $value)
     {
-        // Enqueue an asynchronous action to handle the plugin option update.
-        as_enqueue_async_action('middle_update_option_plugin', [$option, $old_value, $value]);
+        if (!as_has_scheduled_action('middle_update_option_plugin', [$option, $old_value, $value]))
+            // Enqueue an asynchronous action to handle the plugin option update.
+            as_enqueue_async_action('middle_update_option_plugin', [$option, $old_value, $value]);
     }
 
     /**
@@ -549,8 +584,12 @@ class Async_Tracker
      */
     public static function async_update_option_option(string $option, mixed $old_value, mixed $value)
     {
-        // Enqueue an asynchronous action to handle the general option update.
-        as_enqueue_async_action('middle_update_option_option', [$option, $old_value, $value]);
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
+
+        if (!as_has_scheduled_action('middle_update_option_option', [$option, $old_value, $value, $acting_user_id]))
+            // Enqueue an asynchronous action to handle the general option update.
+            as_enqueue_async_action('middle_update_option_option', [$option, $old_value, $value, $acting_user_id]);
     }
 
     /**
@@ -562,8 +601,11 @@ class Async_Tracker
      */
     public static function async_update_option_widget(string $option, mixed $old_value, mixed $value)
     {
-        // Enqueue an asynchronous action to handle the widget option update.
-        as_enqueue_async_action('middle_update_option_widget', [$option, $old_value, $value]);
+        //Get current User ID
+        $acting_user_id = get_current_user_id();
+        if (!as_has_scheduled_action('middle_update_option_widget', [$option, $old_value, $value, $acting_user_id]))
+            // Enqueue an asynchronous action to handle the widget option update.
+            as_enqueue_async_action('middle_update_option_widget', [$option, $old_value, $value, $acting_user_id]);
     }
 
     /**
@@ -640,7 +682,7 @@ class Async_Tracker
      */
     public static function async_wp_insert_comment(int $id, WP_Comment $comment)
     {
-        if(!Plugin_Settings::get_comment_tracking_state()){
+        if (!Plugin_Settings::get_comment_tracking_state()) {
             return;
         }
         // Serialize the comment object for processing.
@@ -659,7 +701,7 @@ class Async_Tracker
      */
     public static function async_wp_update_comment_data(array|WP_Error $data, array $comment, array $commentarr)
     {
-        if(!Plugin_Settings::get_comment_tracking_state()){
+        if (!Plugin_Settings::get_comment_tracking_state()) {
             return;
         }
         // Enqueue an asynchronous action to handle the comment data update.
@@ -674,7 +716,7 @@ class Async_Tracker
      */
     public static function async_edit_comment(int $comment_id, array $data)
     {
-        if(!Plugin_Settings::get_comment_tracking_state()){
+        if (!Plugin_Settings::get_comment_tracking_state()) {
             return;
         }
         // Enqueue an asynchronous action to handle the comment editing.
@@ -689,7 +731,7 @@ class Async_Tracker
      */
     public static function async_delete_comment(string $comment_id, WP_Comment $comment)
     {
-        if(!Plugin_Settings::get_comment_tracking_state()){
+        if (!Plugin_Settings::get_comment_tracking_state()) {
             return;
         }
         // Serialize the comment object for processing.
@@ -708,7 +750,7 @@ class Async_Tracker
      */
     public static function async_transition_comment_status(int|string $new_status, int|string $old_status, WP_Comment $comment)
     {
-        if(!Plugin_Settings::get_comment_tracking_state()){
+        if (!Plugin_Settings::get_comment_tracking_state()) {
             return;
         }
         // Serialize the comment object for processing.
@@ -726,7 +768,7 @@ class Async_Tracker
      */
     public static function async_trashed_post_comments(int $post_id, array $statuses)
     {
-        if(!Plugin_Settings::get_comment_tracking_state()){
+        if (!Plugin_Settings::get_comment_tracking_state()) {
             return;
         }
         // Enqueue an asynchronous action to handle trashed post comments.
@@ -740,7 +782,7 @@ class Async_Tracker
      */
     public static function async_untrash_post_comments(int $post_id)
     {
-        if(!Plugin_Settings::get_comment_tracking_state()){
+        if (!Plugin_Settings::get_comment_tracking_state()) {
             return;
         }
         // Enqueue an asynchronous action to handle untrashing post comments.

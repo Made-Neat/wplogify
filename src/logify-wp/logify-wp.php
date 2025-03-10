@@ -112,8 +112,11 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-theme-utility.php'
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-user-utility.php';
 require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-widget-utility.php';
 
-// Require action scheduler library
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'woocommerce' . DIRECTORY_SEPARATOR . 'action-scheduler' . DIRECTORY_SEPARATOR . 'action-scheduler.php';
+//check website already has ActionScheduler library
+if(!class_exists('ActionScheduler')){
+    // Require action scheduler library
+    require_once __DIR__ . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'woocommerce' . DIRECTORY_SEPARATOR . 'action-scheduler' . DIRECTORY_SEPARATOR . 'action-scheduler.php';
+}
 
 
 // require_once LOGIFY_WP_PLUGIN_DIR . 'includes/test.php';

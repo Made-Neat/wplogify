@@ -24,7 +24,7 @@ class User_Tracker
 	 *
 	 * @var int
 	 */
-	private const MAX_BREAK_PERIOD = 1200; // 20 minutes
+	private const MAX_BREAK_PERIOD = 2; // 20 minutes
 
 	/**
 	 * Array to remember metadata between different events.
@@ -59,7 +59,7 @@ class User_Tracker
 
 		// User activity.
 		add_action('wp_loaded', [__NAMESPACE__ . '\Async_Tracker', 'async_wp_loaded']);
-		add_action('middle_wp_loaded', array(__CLASS__, 'on_wp_loaded'));
+		add_action('middle_wp_loaded', array(__CLASS__, 'on_wp_loaded'),10,1);
 
 		// New user registration.
 		add_action('user_register', [__NAMESPACE__ . '\Async_Tracker', 'async_user_register'], 10, 2);
@@ -308,31 +308,30 @@ class User_Tracker
 	/**
 	 * Log user activity.
 	 */
-	public static function on_wp_loaded()
+	public static function on_wp_loaded($user)
 	{
 		// Ignore AJAX requests, as it's likely WP doing something and not the user.
 		// The user has probably just left the web page open in the browser while they do something
 		// else.
+		
 		if (wp_doing_ajax()) {
 			return;
 		}
-
-		// Get the current user.
-		$user = wp_get_current_user();
-
+		
 		// Don't record activity if the user isn't logged in.
 		if (!$user->exists()) {
 			return;
 		}
-
+		
 		// Prepare event details.
 		$event_type = 'User Active';
 		$now = DateTimes::current_datetime();
-
+		
 		// Flags for whether or not we need to create a new event or update an existing one.
 		$create_new_event = true;
+		
 
-		$event = Event_Repository::get_most_recent_event($event_type);
+		$event = Event_Repository::get_most_recent_event($event_type, $user);
 		if ($event) {
 			// Check we have the info we need.
 			if ($event->has_meta('activity_start') && $event->has_meta('activity_end')) {

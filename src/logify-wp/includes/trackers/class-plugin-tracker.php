@@ -25,7 +25,7 @@ class Plugin_Tracker
 	{
 		// Plugin install and update.
 		add_action('upgrader_process_complete', [__NAMESPACE__ . '\Async_Tracker', 'async_upgrader_process_complete_plugin'], 10, 2);
-		add_action('middle_upgrader_process_complete_plugin', array(__CLASS__, 'on_upgrader_process_complete'), 10, 2);
+		add_action('middle_upgrader_process_complete_plugin', array(__CLASS__, 'on_upgrader_process_complete'), 10, 3);
 		// add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_process_complete' ), 10, 2 );
 
 		// Plugin activation and deactivation.
@@ -74,7 +74,7 @@ class Plugin_Tracker
 	 * }
 	 */
 
-	public static function on_upgrader_process_complete($upgrader, array $hook_extra)
+	public static function on_upgrader_process_complete($upgrader, array $hook_extra, $acting_user_id)
 	{
 		//Get all installed plugin data
 		$upgrader = (object)$upgrader;
@@ -148,7 +148,7 @@ class Plugin_Tracker
 		}
 
 		// Create the event.
-		$event = Event::create("Plugin $verb", $plugin);
+		$event = Event::create("Plugin $verb", $plugin, null, null, $acting_user_id);
 
 		if (!$event) {
 			return;

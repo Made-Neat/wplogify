@@ -666,12 +666,13 @@ class Event_Repository extends Repository {
 	 * @param ?string $event_type The event type. If null, get the most recent event of any type.
 	 * @return ?Event The most recent event matching the provided arguments.
 	 */
-	public static function get_most_recent_event( ?string $event_type = null ): ?Event {
+	public static function get_most_recent_event( ?string $event_type = null, ?int $user_id = null ): ?Event {
 		global $wpdb;
 
-		// Get the current user ID.
-		$user_id = get_current_user_id();
+		// // Get the current user ID.
+		// $user_id = get_current_user_id();
 
+		error_log("get_event:".$event_type. "".$user_id."");
 		// If we don't have a user ID, we can't get the most recent event they caused.
 		if ( ! $user_id ) {
 			return null;
