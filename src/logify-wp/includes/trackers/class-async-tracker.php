@@ -22,10 +22,24 @@ use WP_Comment;
 
 class Async_Tracker
 {
+    /**
+     * Helper to schedule an asynchronous action.
+     *
+     * @param string $hook   The hook name to trigger when running the action.
+     * @param array  $args   The arguments passed to the callback.
+     * @param string $group  (Optional) The group this job belongs to.
+     * @param bool   $unique (Optional) Whether to avoid scheduling if an identical action is already pending.
+     */
+    private static function schedule_action(string $hook, array $args = [], string $group = '', bool $unique = false): void
+    {
+        as_enqueue_async_action($hook, $args, $group, $unique);
+    }
 
     public static function async_wp_login(string $user_login, WP_User $user)
     {
-        as_enqueue_async_action('middle_wp_login', [$user_login, $user->ID]); // Enqueue async action for login.
+        // Enqueue async action for login.
+        self::schedule_action('middle_wp_login', [ $user_login, $user->ID ]);
+
     }
 
     /**
@@ -38,7 +52,7 @@ class Async_Tracker
     {
         $error_s = serialize($error); // Serialize error object.
 
-        as_enqueue_async_action('middle_wp_login_failed', [$username, $error_s]); // Enqueue async action.
+        self::schedule_action('middle_wp_login_failed', [$username, $error_s]); // Enqueue async action.
 
     }
 
@@ -49,7 +63,7 @@ class Async_Tracker
      */
     public static function async_wp_logout(int $user_id)
     {
-        as_enqueue_async_action('middle_wp_logout', [$user_id]); // Enqueue async action for logout.
+        self::schedule_action('middle_wp_logout', [$user_id]); // Enqueue async action for logout.
     }
 
     /**
@@ -60,7 +74,7 @@ class Async_Tracker
         if (!as_has_scheduled_action('middle_wp_loaded')) {
             //Get Current User
             $acting_user_id = get_current_user_id();
-            as_enqueue_async_action('middle_wp_loaded', [$acting_user_id]); // Enqueue async action for WordPress loaded.
+            self::schedule_action('middle_wp_loaded', [$acting_user_id]); // Enqueue async action for WordPress loaded.
         }
     }
 
@@ -72,7 +86,7 @@ class Async_Tracker
      */
     public static function async_user_register(int $user_id, array $userdata)
     {
-        as_enqueue_async_action('middle_user_register', [$user_id, $userdata]); // Enqueue async action for user registration.
+        self::schedule_action('middle_user_register', [$user_id, $userdata]); // Enqueue async action for user registration.
     }
 
     /**
@@ -85,7 +99,7 @@ class Async_Tracker
     public static function async_delete_user(int $user_id, ?int $reassign, WP_User $user)
     {
         $serialize_user = serialize($user); // Serialize user object.
-        as_enqueue_async_action('middle_delete_user', [$user_id, $reassign, $serialize_user]); // Enqueue async action for user deletion.
+        self::schedule_action('middle_delete_user', [$user_id, $reassign, $serialize_user]); // Enqueue async action for user deletion.
     }
 
     /**
@@ -98,7 +112,7 @@ class Async_Tracker
     public static function async_profile_update(int $user_id, WP_User $user, array $userdata)
     {
         $serialize_user = serialize($user); // Serialize user object.
-        as_enqueue_async_action('middle_profile_update', [$user_id, $serialize_user, $userdata]); // Enqueue async action.
+        self::schedule_action('middle_profile_update', [$user_id, $serialize_user, $userdata]); // Enqueue async action.
     }
 
     /**
@@ -111,7 +125,7 @@ class Async_Tracker
      */
     public static function async_update_user_meta(int $meta_id, int $user_id, string $meta_key, mixed $meta_value)
     {
-        as_enqueue_async_action('middle_update_user_meta', [$meta_id, $user_id, $meta_key, $meta_value]); // Enqueue async action.
+        self::schedule_action('middle_update_user_meta', [$meta_id, $user_id, $meta_key, $meta_value]); // Enqueue async action.
     }
 
     /**
@@ -119,7 +133,7 @@ class Async_Tracker
      */
     public static function async_shutdown_media()
     {
-        as_enqueue_async_action('middle_shutdown_media'); // Enqueue async action for shutdown media.
+        self::schedule_action('middle_shutdown_media'); // Enqueue async action for shutdown media.
     }
     /**
      * Tracks WordPress shutdown event for options.
@@ -129,7 +143,7 @@ class Async_Tracker
     public static function async_shutdown_option(): void
     {
         // Enqueues an async action for tracking option shutdown event
-        as_enqueue_async_action('middle_shutdown_option');
+        self::schedule_action('middle_shutdown_option');
     }
 
     /**
@@ -140,7 +154,7 @@ class Async_Tracker
     public static function async_shutdown_post(): void
     {
         // Enqueues an async action for tracking post shutdown event
-        as_enqueue_async_action('middle_shutdown_post');
+        self::schedule_action('middle_shutdown_post');
     }
 
     /**
@@ -151,7 +165,7 @@ class Async_Tracker
     public static function async_shutdown_user(): void
     {
         // Enqueues an async action for tracking user shutdown event
-        as_enqueue_async_action('middle_shutdown_user');
+        self::schedule_action('middle_shutdown_user');
     }
 
     /**
@@ -162,7 +176,7 @@ class Async_Tracker
     public static function async_shutdown_widget(): void
     {
         // Enqueues an async action for tracking widget shutdown event
-        as_enqueue_async_action('middle_shutdown_widget');
+        self::schedule_action('middle_shutdown_widget');
     }
 
     /**
@@ -178,7 +192,7 @@ class Async_Tracker
     {
         if (!as_has_scheduled_action('middle_update_option'))
             // Enqueues an async action for tracking option updates
-            as_enqueue_async_action('middle_updated_option', [$option, $old_option_value, $new_option_value]);
+            self::schedule_action('middle_updated_option', [$option, $old_option_value, $new_option_value]);
     }
 
     /**
@@ -190,7 +204,7 @@ class Async_Tracker
     {
         if (!as_has_scheduled_action('middle_load_themes'))
             // Enqueues an async action for tracking theme load event
-            as_enqueue_async_action('middle_load_themes');
+            self::schedule_action('middle_load_themes');
     }
 
     /**
@@ -201,7 +215,7 @@ class Async_Tracker
     public static function async_load_theme_install(): void
     {
         // Enqueues an async action for tracking theme installation event
-        as_enqueue_async_action('middle_load_theme_install');
+        self::schedule_action('middle_load_theme_install');
     }
 
     /**
@@ -218,7 +232,7 @@ class Async_Tracker
         $serialize_old_theme = serialize($old_theme);
 
         // Enqueue an asynchronous action to handle the theme switch.
-        as_enqueue_async_action('middle_switch_theme', [$new_name, $serialize_new_theme, $serialize_old_theme]);
+        self::schedule_action('middle_switch_theme', [$new_name, $serialize_new_theme, $serialize_old_theme]);
     }
 
     /**
@@ -229,7 +243,7 @@ class Async_Tracker
     public static function async_delete_theme(string $stylesheet)
     {
         // Enqueue an asynchronous action to handle the theme deletion.
-        as_enqueue_async_action('middle_delete_theme', [$stylesheet]);
+        self::schedule_action('middle_delete_theme', [$stylesheet]);
     }
 
     /**
@@ -243,7 +257,7 @@ class Async_Tracker
     public static function async_created_term(int $term_id, int $tt_id, string $taxonomy, array $args)
     {
         // Enqueue an asynchronous action to handle the term creation.
-        as_enqueue_async_action('middle_created_term', [$term_id, $tt_id, $taxonomy, $args]);
+        self::schedule_action('middle_created_term', [$term_id, $tt_id, $taxonomy, $args]);
     }
 
     /**
@@ -256,7 +270,7 @@ class Async_Tracker
     public static function async_edit_terms(int $term_id, string $taxonomy, array $args)
     {
         // Enqueue an asynchronous action to handle the term editing.
-        as_enqueue_async_action('middle_edit_terms', [$term_id, $taxonomy, $args]);
+        self::schedule_action('middle_edit_terms', [$term_id, $taxonomy, $args]);
     }
 
     /**
@@ -268,7 +282,7 @@ class Async_Tracker
     public static function async_pre_delete_term(int $term_id, string $taxonomy)
     {
         // Enqueue an asynchronous action to handle the pre-deletion of the term.
-        as_enqueue_async_action('middle_pre_delete_term', [$term_id, $taxonomy]);
+        self::schedule_action('middle_pre_delete_term', [$term_id, $taxonomy]);
     }
 
     /**
@@ -288,7 +302,7 @@ class Async_Tracker
 
         // Enqueue an asynchronous action to handle the post save.
         if (!as_has_scheduled_action('middle_save_post', [$post_id, $serialize_post, $update, $acting_user_id])) {
-            as_enqueue_async_action('middle_save_post', [$post_id, $serialize_post, $update, $acting_user_id]);
+            self::schedule_action('middle_save_post', [$post_id, $serialize_post, $update, $acting_user_id]);
         }
     }
 
@@ -304,7 +318,7 @@ class Async_Tracker
         $acting_user_id = get_current_user_id();
         // Enqueue an asynchronous action to handle the pre-update of the post.
         if (!as_has_scheduled_action('middle_pre_post_update', [$post_id, $data, $acting_user_id])) {
-            as_enqueue_async_action('middle_pre_post_update', [$post_id, $data, $acting_user_id]);
+            self::schedule_action('middle_pre_post_update', [$post_id, $data, $acting_user_id]);
         }
     }
     /**
@@ -325,7 +339,7 @@ class Async_Tracker
 
         // Enqueue an asynchronous action to handle the post update.
         if (!as_has_scheduled_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before, $acting_user_id])) {
-            as_enqueue_async_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before, $acting_user_id]);
+            self::schedule_action('middle_post_updated', [$post_id, $serialize_post_after, $serialize_post_before, $acting_user_id]);
         }
     }
 
@@ -343,7 +357,7 @@ class Async_Tracker
         $acting_user_id = get_current_user_id();
         // Enqueue an asynchronous action to handle the post meta update.
         if (!as_has_scheduled_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value, $acting_user_id]))
-            as_enqueue_async_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value, $acting_user_id]);
+            self::schedule_action('middle_update_post_meta', [$meta_id, $post_id, $meta_key, $meta_value, $acting_user_id]);
     }
 
     /**
@@ -363,7 +377,7 @@ class Async_Tracker
 
         // Enqueue an asynchronous action to handle the post status transition.
         if (!as_has_scheduled_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post, $acting_user_id]))
-            as_enqueue_async_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post, $acting_user_id]);
+            self::schedule_action('middle_transition_post_status', [$new_status, $old_status, $serialize_post, $acting_user_id]);
     }
 
     /**
@@ -381,7 +395,7 @@ class Async_Tracker
 
         // Enqueue an asynchronous action to handle the pre-post deletion.
         if (!as_has_scheduled_action('middle_before_delete_post', [$post_id, $serialize_post, $acting_user_id]))
-            as_enqueue_async_action('middle_before_delete_post', [$post_id, $serialize_post, $acting_user_id]);
+            self::schedule_action('middle_before_delete_post', [$post_id, $serialize_post, $acting_user_id]);
     }
 
     /**
@@ -396,7 +410,7 @@ class Async_Tracker
         $serialize_post = serialize($post);
 
         // Enqueue an asynchronous action to handle the post deletion.
-        as_enqueue_async_action('middle_deleted_post', [$post_id, $serialize_post]);
+        self::schedule_action('middle_deleted_post', [$post_id, $serialize_post]);
     }
 
     /**
@@ -409,7 +423,7 @@ class Async_Tracker
     public static function async_added_term_relationship(int $post_id, int $tt_id, string $taxonomy)
     {
         // Enqueue an asynchronous action to handle the added term relationship.
-        as_enqueue_async_action('middle_added_term_relationship', [$post_id, $tt_id, $taxonomy]);
+        self::schedule_action('middle_added_term_relationship', [$post_id, $tt_id, $taxonomy]);
     }
 
     /**
@@ -430,7 +444,7 @@ class Async_Tracker
         $acting_user_id = get_current_user_id();
 
         // Enqueue an asynchronous action to handle the post insert event.
-        as_enqueue_async_action('middle_wp_after_insert_post', [$post_id, $serialize_post, $update, $serialize_post_before, $acting_user_id]);
+        self::schedule_action('middle_wp_after_insert_post', [$post_id, $serialize_post, $update, $serialize_post_before, $acting_user_id]);
     }
 
     /**
@@ -443,7 +457,7 @@ class Async_Tracker
     public static function async_deleted_term_relationships(int $post_id, array $tt_ids, string $taxonomy)
     {
         // Enqueue an asynchronous action to handle the deleted term relationships.
-        as_enqueue_async_action('middle_deleted_term_relationships', [$post_id, $tt_ids, $taxonomy]);
+        self::schedule_action('middle_deleted_term_relationships', [$post_id, $tt_ids, $taxonomy]);
     }
 
     /**
@@ -474,7 +488,7 @@ class Async_Tracker
         ];
 
         // Enqueue an asynchronous action to handle the theme upgrade completion.
-        as_enqueue_async_action('middle_upgrader_process_complete_theme', [$upgrader_data, $hook_extra]);
+        self::schedule_action('middle_upgrader_process_complete_theme', [$upgrader_data, $hook_extra]);
     }
     /**
      * Handle the plugin upgrader process completion asynchronously.
@@ -505,7 +519,7 @@ class Async_Tracker
         //Get Acting User ID
         $acting_user_id = get_current_user_id();
         // Enqueue an asynchronous action to handle the plugin upgrade completion.
-        as_enqueue_async_action('middle_upgrader_process_complete_plugin', [$upgrader_data, $hook_extra, $acting_user_id]);
+        self::schedule_action('middle_upgrader_process_complete_plugin', [$upgrader_data, $hook_extra, $acting_user_id]);
     }
 
     /**
@@ -517,7 +531,7 @@ class Async_Tracker
     public static function async_activate_plugin(string $plugin_file, bool $network_wide)
     {
         // Enqueue an asynchronous action to handle the plugin activation.
-        as_enqueue_async_action('middle_activate_plugin', [$plugin_file, $network_wide]);
+        self::schedule_action('middle_activate_plugin', [$plugin_file, $network_wide]);
     }
 
     /**
@@ -529,7 +543,7 @@ class Async_Tracker
     public static function async_deactivate_plugin(string $plugin_file, bool $network_deactivating)
     {
         // Enqueue an asynchronous action to handle the plugin deactivation.
-        as_enqueue_async_action('middle_deactivate_plugin', [$plugin_file, $network_deactivating]);
+        self::schedule_action('middle_deactivate_plugin', [$plugin_file, $network_deactivating]);
     }
 
     /**
@@ -543,7 +557,7 @@ class Async_Tracker
         $plugin = Plugin_Utility::load_by_file($plugin_file);
 
         // Enqueue an asynchronous action to handle the plugin deletion.
-        as_enqueue_async_action('middle_delete_plugin', [$plugin]);
+        self::schedule_action('middle_delete_plugin', [$plugin]);
     }
 
     /**
@@ -558,7 +572,7 @@ class Async_Tracker
         $plugin = Plugin_Utility::load_by_file($plugin_file);
 
         // Enqueue an asynchronous action to handle the pre-uninstallation of the plugin.
-        as_enqueue_async_action('middle_pre_uninstall_plugin', [$plugin, $uninstallable_plugins]);
+        self::schedule_action('middle_pre_uninstall_plugin', [$plugin, $uninstallable_plugins]);
     }
 
     /**
@@ -572,7 +586,7 @@ class Async_Tracker
     {
         if (!as_has_scheduled_action('middle_update_option_plugin', [$option, $old_value, $value]))
             // Enqueue an asynchronous action to handle the plugin option update.
-            as_enqueue_async_action('middle_update_option_plugin', [$option, $old_value, $value]);
+            self::schedule_action('middle_update_option_plugin', [$option, $old_value, $value]);
     }
 
     /**
@@ -589,7 +603,7 @@ class Async_Tracker
 
         if (!as_has_scheduled_action('middle_update_option_option', [$option, $old_value, $value, $acting_user_id]))
             // Enqueue an asynchronous action to handle the general option update.
-            as_enqueue_async_action('middle_update_option_option', [$option, $old_value, $value, $acting_user_id]);
+            self::schedule_action('middle_update_option_option', [$option, $old_value, $value, $acting_user_id]);
     }
 
     /**
@@ -605,7 +619,7 @@ class Async_Tracker
         $acting_user_id = get_current_user_id();
         if (!as_has_scheduled_action('middle_update_option_widget', [$option, $old_value, $value, $acting_user_id]))
             // Enqueue an asynchronous action to handle the widget option update.
-            as_enqueue_async_action('middle_update_option_widget', [$option, $old_value, $value, $acting_user_id]);
+            self::schedule_action('middle_update_option_widget', [$option, $old_value, $value, $acting_user_id]);
     }
 
     /**
@@ -616,7 +630,7 @@ class Async_Tracker
     public static function async_add_attachment(int $post_id)
     {
         // Enqueue an asynchronous action to handle adding an attachment.
-        as_enqueue_async_action('middle_add_attachment', [$post_id]);
+        self::schedule_action('middle_add_attachment', [$post_id]);
     }
 
     /**
@@ -629,7 +643,7 @@ class Async_Tracker
     public static function async_add_post_meta(int $post_id, string $meta_key, mixed $meta_value)
     {
         // Enqueue an asynchronous action to handle adding post meta.
-        as_enqueue_async_action('middle_add_post_meta', [$post_id, $meta_key, $meta_value]);
+        self::schedule_action('middle_add_post_meta', [$post_id, $meta_key, $meta_value]);
     }
     /**
      * Handle attachment update asynchronously.
@@ -645,7 +659,7 @@ class Async_Tracker
         $serialize_post_before = serialize($post_before);
 
         // Enqueue an asynchronous action to handle the attachment update.
-        as_enqueue_async_action('middle_attachment_updated', [$post_id, $serialize_post_after, $serialize_post_before]);
+        self::schedule_action('middle_attachment_updated', [$post_id, $serialize_post_after, $serialize_post_before]);
     }
 
     /**
@@ -660,7 +674,7 @@ class Async_Tracker
         $serialize_post = serialize($post);
 
         // Enqueue an asynchronous action to handle the attachment deletion.
-        as_enqueue_async_action('middle_delete_attachment', [$post_id, $serialize_post]);
+        self::schedule_action('middle_delete_attachment', [$post_id, $serialize_post]);
     }
 
     /**
@@ -671,7 +685,7 @@ class Async_Tracker
     public static function async_core_updated_successfully(string $wp_version)
     {
         // Enqueue an asynchronous action to handle the successful core update.
-        as_enqueue_async_action('middle_core_updated_successfully', [$wp_version]);
+        self::schedule_action('middle_core_updated_successfully', [$wp_version]);
     }
 
     /**
@@ -689,7 +703,7 @@ class Async_Tracker
         $serialize_comment = serialize($comment);
 
         // Enqueue an asynchronous action to handle the comment insertion.
-        as_enqueue_async_action('middle_wp_insert_comment', [$id, $serialize_comment]);
+        self::schedule_action('middle_wp_insert_comment', [$id, $serialize_comment]);
     }
 
     /**
@@ -705,7 +719,7 @@ class Async_Tracker
             return;
         }
         // Enqueue an asynchronous action to handle the comment data update.
-        as_enqueue_async_action('middle_wp_update_comment_data', [$data, $comment, $commentarr]);
+        self::schedule_action('middle_wp_update_comment_data', [$data, $comment, $commentarr]);
     }
 
     /**
@@ -720,7 +734,7 @@ class Async_Tracker
             return;
         }
         // Enqueue an asynchronous action to handle the comment editing.
-        as_enqueue_async_action('middle_edit_comment', [$comment_id, $data]);
+        self::schedule_action('middle_edit_comment', [$comment_id, $data]);
     }
 
     /**
@@ -738,7 +752,7 @@ class Async_Tracker
         $serialize_comment = serialize($comment);
 
         // Enqueue an asynchronous action to handle the comment deletion.
-        as_enqueue_async_action('middle_delete_comment', [$comment_id, $serialize_comment]);
+        self::schedule_action('middle_delete_comment', [$comment_id, $serialize_comment]);
     }
 
     /**
@@ -757,7 +771,7 @@ class Async_Tracker
         $serialize_comment = serialize($comment);
 
         // Enqueue an asynchronous action to handle the comment status transition.
-        as_enqueue_async_action('middle_transition_comment_status', [$new_status, $old_status, $serialize_comment]);
+        self::schedule_action('middle_transition_comment_status', [$new_status, $old_status, $serialize_comment]);
     }
 
     /**
@@ -772,7 +786,7 @@ class Async_Tracker
             return;
         }
         // Enqueue an asynchronous action to handle trashed post comments.
-        as_enqueue_async_action('middle_trashed_post_comments', [$post_id, $statuses]);
+        self::schedule_action('middle_trashed_post_comments', [$post_id, $statuses]);
     }
 
     /**
@@ -786,6 +800,6 @@ class Async_Tracker
             return;
         }
         // Enqueue an asynchronous action to handle untrashing post comments.
-        as_enqueue_async_action('middle_untrash_post_comments', [$post_id]);
+        self::schedule_action('middle_untrash_post_comments', [$post_id]);
     }
 }

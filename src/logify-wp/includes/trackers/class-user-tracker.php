@@ -238,8 +238,6 @@ class User_Tracker
 			// Process values.
 			$val = Types::process_database_value($key, $value);
 			$new_val = Types::process_database_value($key, $userdata[$key]);
-			// error_log("aaa".$new_val);
-			// error_log("aaa");
 
 			// If the value has changed, add the before and after values to the properties.
 			if (!Types::are_equal($val, $new_val)) {

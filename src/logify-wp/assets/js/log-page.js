@@ -60,7 +60,6 @@ jQuery(($) => {
             // Get the event ID of this row.
             const $row = $(row);
             const eventId = $row.find('td:first-child').text();
-            console.log("sssssssssssssss" + eventId);
 
             // Add CSS classes to the tr element, and set the event-id.
             $row.addClass('logify-wp-summary-row').attr('data-event-id', eventId);
