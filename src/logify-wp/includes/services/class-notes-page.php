@@ -403,7 +403,7 @@ class Notes_Page {
 
 			// Date and time of the event.
 			try {
-				$created_at_datetime = new \DateTime($note->created_at); // Convert to DateTime object.
+				$created_at_datetime = new DateTime($note->created_at); // Convert to DateTime object.
 				$formatted_datetime  = DateTimes::format_datetime_site($created_at_datetime);
 				$time_ago            = DateTimes::get_ago_string($created_at_datetime); // Pass DateTime object.
 				$item['created_at']  = '<div>' . wp_kses_post($formatted_datetime) . ' (' . esc_html($time_ago) . ')</div>';
@@ -422,7 +422,7 @@ class Notes_Page {
 			$item['note'] = wp_kses_post( $note->note );
 			
 			// Strip HTML tags
-			$plainText = strip_tags($item['note']);
+			$plainText = wp_strip_all_tags($item['note']);
 
 			// Decode HTML entities like &nbsp; into regular spaces
 			$plainText = html_entity_decode($plainText, ENT_QUOTES | ENT_HTML5);

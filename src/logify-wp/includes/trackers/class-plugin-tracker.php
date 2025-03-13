@@ -8,7 +8,6 @@
 namespace Logify_WP;
 
 use WP_Upgrader;
-use Plugin_Upgrader;
 
 /**
  * Class Logify_WP\Plugin_Tracker

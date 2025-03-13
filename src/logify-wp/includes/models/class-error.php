@@ -65,12 +65,12 @@ class PHP_Error {
     public function validate() {
         // Check if the error type is provided.
         if (empty($this->error_type)) {
-            return __('Error type is required.', 'logify');
+            return __('Error type is required.', 'logify-wp');
         }
         
         // Check if the error content is provided.
         if (empty($this->error_content)) {
-            return __('Error content is required.', 'logify');
+            return __('Error content is required.', 'logify-wp');
         }
         
         return true; // Validation passed.

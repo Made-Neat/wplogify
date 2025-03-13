@@ -15,7 +15,8 @@ if ($settings_updated) {
 	$selected_errors = get_option('logify_wp_php_error_types', []);
 	$errors_capture_period = get_option('logify_wp_keep_period_errors', []);
 	$get_error = new Error_Tracker();
-	as_enqueue_async_action('schedule_process', [$selected_errors, $errors_capture_period]);
+	update_option('logify_wp_capture_start_time', time());
+	as_enqueue_async_action('schedule_process');
 	add_settings_error(
 		'logify_wp_messages',
 		'logify_wp_settings_saved',
@@ -72,13 +73,13 @@ settings_errors('logify_wp_messages');
 						<!-- <input type="hidden" name="logfiy_wp_php_error_type[]" value="administrator"> -->
 
 						<?php
-						$errors = array("Fatal Error", "Warnings", "Notices");
+						$errors = array("Fatal_Errors", "Warnings", "Notices");
 						$selected_error_type = Plugin_Settings::get_php_error_types();
 
 						foreach ($errors as $error) {
 							$checked = in_array($error, $selected_error_type, true) ? 'checked' : '';
 							echo '<label>';
-							echo '<input id = ' . $error . ' type="checkbox" name="logify_wp_php_error_types[]" value="' . esc_attr($error) . '" ' . esc_attr($checked) . '>';
+							echo '<input id="'.esc_attr($error).'" type="checkbox" name="logify_wp_php_error_types[]" value="' . esc_attr($error) . '" ' . esc_attr($checked) . '>';
 							echo esc_html($error);
 							echo '</label><br>';
 						}

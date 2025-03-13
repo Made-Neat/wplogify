@@ -91,13 +91,13 @@ class Note {
      */
     public function validate() {
         if (empty($this->activity_id)) {
-            return __('Activity ID is required.', 'logify');
+            return __('Activity ID is required.', 'logify-wp');
         }
         if (empty($this->user_id)) {
-            return __('User ID is required.', 'logify');
+            return __('User ID is required.', 'logify-wp');
         }
         if (empty($this->note)) {
-            return __('Note content cannot be empty.', 'logify');
+            return __('Note content cannot be empty.', 'logify-wp');
         }
         return true;
     }

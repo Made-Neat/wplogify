@@ -53,7 +53,7 @@ class Error_Repository extends Repository
         $sql = "CREATE TABLE {$table_name} (
             error_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             error_type VARCHAR(255) NOT NULL,
-            error_content VARCHAR(255) NOT NULL,
+            error_content TEXT NOT NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY (error_id)
         ) {$charset_collate} ENGINE=InnoDB;";
