@@ -81,6 +81,8 @@ class Main {
 	 * Run on deactivation.
 	 */
 	public static function deactivate() {
+		
+		Error_Tracker::stop_all_scheduled_actions();
 		wp_clear_scheduled_hook( 'logify_wp_cleanup' );
 	}
 
@@ -111,6 +113,10 @@ class Main {
 		// Link to view the log.
 		$log_page_link = '<a href="' . admin_url( 'admin.php?page=logify-wp' ) . '">' . __( 'View log', 'logify-wp' ) . '</a>';
 		array_unshift( $links, $log_page_link );
+
+		// Link to php_error.
+		$php_error_page_link = '<a href="' . admin_url( 'admin.php?page=logify-wp-php-error-log' ) . '">' . __( 'View PHP error', 'logify-wp' ) . '</a>';
+		array_unshift( $links, $php_error_page_link );
 
 		return $links;
 	}

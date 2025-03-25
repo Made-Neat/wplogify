@@ -33,9 +33,14 @@ class Widget_Tracker {
 	 */
 	public static function init() {
 		// Changes to widget options.
-		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
-		add_action( 'updated_option', array( __CLASS__, 'on_updated_option' ), 10, 3 );
-		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
+		add_action( 'update_option', [__NAMESPACE__.'\Async_Tracker','async_update_option_widget'], 10, 3 );
+		add_action( 'middle_update_option_widget', array( __CLASS__, 'on_update_option' ), 10, 4 );
+		
+		add_action( 'updated_option', [__NAMESPACE__.'\Async_Tracker','async_updated_option'], 10, 3 );
+		add_action( 'middle_updated_option', array( __CLASS__, 'on_updated_option' ), 10, 4 );
+		
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown_widget'], 10, 0 );
+		add_action( 'middle_shutdown_widget', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**
@@ -45,7 +50,7 @@ class Widget_Tracker {
 	 * @param array  $old_option_value The old option value.
 	 * @param array  $new_option_value The new option value.
 	 */
-	public static function on_update_option( $option, $old_option_value, $new_option_value ) {
+	public static function on_update_option( $option, $old_option_value, $new_option_value, $acting_user_id ) {
 		// Record changes to the widget locations.
 		if ( $option === 'sidebars_widgets' ) {
 			self::record_widget_areas( $old_option_value );
@@ -77,7 +82,7 @@ class Widget_Tracker {
 
 			if ( ! key_exists( $widget_number, $new_option_value ) ) {
 				// The widget is being deleted. Create an event.
-				$event = Event::create( 'Widget Deleted', $old_widget );
+				$event = Event::create( 'Widget Deleted', $old_widget, null, null, $acting_user_id );
 
 				// If the event was successfully created, remember it.
 				if ( $event ) {
@@ -115,7 +120,7 @@ class Widget_Tracker {
 
 				// If there were property changes, create an event.
 				if ( ! empty( $props ) ) {
-					$event = Event::create( 'Widget Updated', $old_widget, null, $props );
+					$event = Event::create( 'Widget Updated', $old_widget, null, $props, $acting_user_id );
 
 					// If the event was successfully created, remember it.
 					if ( $event ) {
@@ -133,7 +138,7 @@ class Widget_Tracker {
 	 * @param array  $old_option_value The old option value.
 	 * @param array  $new_option_value The new option value.
 	 */
-	public static function on_updated_option( $option, $old_option_value, $new_option_value ) {
+	public static function on_updated_option( $option, $old_option_value, $new_option_value, $acting_user_id ) {
 		// Beyond this point we're only interested in changes to widget details.
 		if ( ! str_starts_with( $option, 'widget_' ) ) {
 			return;
@@ -158,7 +163,7 @@ class Widget_Tracker {
 				$new_widget = Widget_Utility::get_from_option( $widget_id, $new_option_value );
 
 				// Create the event.
-				$event = Event::create( 'Widget Created', $new_widget );
+				$event = Event::create( 'Widget Created', $new_widget, null, null, $acting_user_id );
 
 				// If the event was successfully created, remember it.
 				if ( $event ) {

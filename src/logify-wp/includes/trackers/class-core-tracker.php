@@ -19,7 +19,8 @@ class Core_Tracker {
 	 */
 	public static function init() {
 		// Core update.
-		add_action( '_core_updated_successfully', array( __CLASS__, 'on_core_updated_successfully' ), 10, 1 );
+		add_action( '_core_updated_successfully', [__NAMESPACE__.'\Async_Tracker','async_core_updated_successfully'], 10, 1 );
+		add_action( 'middle_core_updated_successfully', array( __CLASS__, 'on_core_updated_successfully' ), 10, 1 );
 	}
 
 	/**

@@ -98,9 +98,10 @@ class Logger {
 		null|int|WP_User $acting_user = null,
 		bool $all_users = false
 	): bool {
+
 		// Create the new event.
 		$event = Event::create( $event_type, $wp_object, $eventmetas, $properties, $acting_user, $all_users );
-
+		
 		// If an event was not created, return.
 		if ( ! $event ) {
 			return false;

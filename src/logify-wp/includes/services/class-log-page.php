@@ -40,7 +40,7 @@ class Log_Page {
 		}
 	
 		// Fetch the note to validate ownership
-		$note_repo = new \Logify_WP\Note_Repository();	
+		$note_repo = new \Logify_WP\Note_Repository();
 
 		if ( $event_id ){
 			$existing_note = $note_repo->load_by_event_id($event_id);
@@ -173,7 +173,7 @@ class Log_Page {
 		if ( $start < 0 ) {
 			$start = 0;
 		}
-
+		
 		// Get the order-by column. Default to when_happened.
 		$order_by_columns = array( 'when_happened' );
 		if ( isset( $_POST['order'][0]['column'] ) ) {
@@ -200,6 +200,7 @@ class Log_Page {
 			? sanitize_text_field( wp_unslash( $_POST['search']['value'] ) )
 			: '';
 
+		
 		// Get the object types to show events for.
 		$valid_object_types = array_keys( Logger::VALID_OBJECT_TYPES );
 		if ( ! empty( $_COOKIE['object_types'] ) ) {
@@ -256,6 +257,7 @@ class Log_Page {
 		// Build the where clause.
 		$where_parts = array();
 		$where_args  = array();
+		
 
 		// Filter by search string if specified.
 		if ( $search_value !== '' ) {
@@ -392,13 +394,12 @@ class Log_Page {
 		$num_filtered_records = (int) $wpdb->get_var(
 			$wpdb->prepare( "$select_count $where", $args )
 		);
-
 		// -----------------------------------------------------------------------------------------
 		// Get the requested records.
-
+		
 		// Select clause.
 		$select = 'SELECT event_id FROM %i e LEFT JOIN %i u ON e.user_id = u.ID';
-
+		
 		// Order-by clause.
 		$order_by      = '';
 		$order_by_args = array();
@@ -427,6 +428,7 @@ class Log_Page {
 		// -----------------------------------------------------------------------------------------
 		// Construct the data array to return to the client.
 		$data = array();
+
 		foreach ( $recordset as $record ) {
 			// Construct the Event object.
 			$event = Event_Repository::load( $record['event_id'] );
@@ -473,7 +475,6 @@ class Log_Page {
 			// Add the item to the data array.
 			$data[] = $item;
 		}
-
 		$draw = isset( $_POST['draw'] ) ? intval( wp_unslash( $_POST['draw'] ) ) : 0;
 
 		wp_send_json(

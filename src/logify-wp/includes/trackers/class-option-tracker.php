@@ -30,8 +30,11 @@ class Option_Tracker {
 	 */
 	public static function init() {
 		// Track settings updates.
-		add_action( 'update_option', array( __CLASS__, 'on_update_option' ), 10, 3 );
-		add_action( 'shutdown', array( __CLASS__, 'on_shutdown' ), 10, 0 );
+		add_action( 'update_option', [__NAMESPACE__.'\Async_Tracker','async_update_option_option'], 10, 3 );
+		add_action( 'middle_update_option_option', array( __CLASS__, 'on_update_option' ), 10, 4 );
+		
+		add_action( 'shutdown', [__NAMESPACE__.'\Async_Tracker','async_shutdown_option'], 10, 0 );
+		add_action( 'middle_shutdown_option', array( __CLASS__, 'on_shutdown' ), 10, 0 );
 	}
 
 	/**
@@ -41,7 +44,7 @@ class Option_Tracker {
 	 * @param mixed  $old_value   The old option value.
 	 * @param mixed  $new_value   The new option value.
 	 */
-	public static function on_update_option( string $option_name, mixed $old_value, mixed $new_value ) {
+	public static function on_update_option( string $option_name, mixed $old_value, mixed $new_value, int $acting_user_id ) {
 		global $wpdb, $wp_registered_settings;
 
 		// Ignore options that aren't settings.
@@ -65,7 +68,7 @@ class Option_Tracker {
 			// Create the event object to encapsulate setting updates, if it doesn't already exist.
 			if ( ! isset( self::$event ) ) {
 				$object_ref  = new Object_Reference( 'option', null, null );
-				self::$event = Event::create( 'Settings Updated', $object_ref );
+				self::$event = Event::create( 'Settings Updated', $object_ref, null, null, $acting_user_id);
 
 				// If the event could not be created, we aren't tracking this user.
 				if ( ! self::$event ) {
