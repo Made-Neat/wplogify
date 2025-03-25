@@ -42,7 +42,7 @@ class PHP_Error_Log
 
         // Check if the user has the required permissions.
         if (!Access_Control::can_access_log_page()) {
-            wp_send_json_error(['message' => esc_html__('You are not allowed to access this data.', 'logify')], 403);
+            wp_send_json_error(['message' => esc_html__('You are not allowed to access this data.', 'logify-wp')], 403);
         }
 
         global $wpdb;
@@ -122,7 +122,7 @@ class PHP_Error_Log
     {
         // Ensure the user has permission to view the log page.
         if (!Access_Control::can_access_log_page()) {
-            wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'logify'), 403);
+            wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'logify-wp'), 403);
         }
 
         // Retrieve necessary data for rendering the log page.

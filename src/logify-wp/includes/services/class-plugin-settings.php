@@ -72,12 +72,14 @@ class Plugin_Settings {
 	 */
 	private const DEFAULT_KEEP_PERIOD_ERRORS = '10mins';
 	/**
-	 * The default value for the 'keep period error' setting.
+	 * The default value for the 'error type' setting.
 	 *
 	 * @var string
 	 */
 	private const DEFAULT_PHP_ERROR_TYPES = array('Fatal Error');
 	private const DEFAULT_COMMENT_TRACKING_STATE = false;
+
+	private const DEFAULT_CAPTURE_START_TIME = 1;
 
 	/**
 	 * Get the names of all current roles.
@@ -203,6 +205,15 @@ class Plugin_Settings {
 				'default'           => self::DEFAULT_COMMENT_TRACKING_STATE,
 			)
 		);
+		register_setting(
+			'logify_wp_settings_group',
+			'logify_wp_capture_start_time',
+			array(
+				'type'	=> 'integer',
+				'sanitize_callback'=>'absint',
+				'default' => self::DEFAULT_CAPTURE_START_TIME,
+			)
+			);
 	}
 
 	/**
@@ -379,5 +390,8 @@ class Plugin_Settings {
 	}
 	public static function get_comment_tracking_state(): bool {
 		return get_option( 'logify_wp_comment_tracking', self::DEFAULT_COMMENT_TRACKING_STATE );
+	}
+	public static function get_capture_start_time(): int {
+		return get_option('logify_wp_capture_start_time', self::DEFAULT_CAPTURE_START_TIME );
 	}
 }

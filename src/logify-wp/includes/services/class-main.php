@@ -81,6 +81,8 @@ class Main {
 	 * Run on deactivation.
 	 */
 	public static function deactivate() {
+		
+		Error_Tracker::stop_all_scheduled_actions();
 		wp_clear_scheduled_hook( 'logify_wp_cleanup' );
 	}
 
