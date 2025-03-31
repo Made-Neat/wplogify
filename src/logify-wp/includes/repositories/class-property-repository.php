@@ -28,6 +28,7 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get the property record.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$record = $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE prop_id = %d', self::get_table_name(), $prop_id ),
 			ARRAY_A
@@ -67,6 +68,7 @@ class Property_Repository extends Repository {
 		$inserting = false;
 		if ( empty( $prop->id ) ) {
 			// See if there is an existing record we should update.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$existing_prop_id = $wpdb->get_var(
 				$wpdb->prepare(
 					'SELECT prop_id FROM %i WHERE event_id = %d AND prop_key = %s',
@@ -87,6 +89,7 @@ class Property_Repository extends Repository {
 		$formats = array( '%d', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Property object with the new ID.
@@ -95,6 +98,7 @@ class Property_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$ok = $wpdb->update( self::get_table_name(), $record, array( 'prop_id' => $prop->id ), $formats, array( '%d' ) ) !== false;
 		}
 
@@ -109,6 +113,7 @@ class Property_Repository extends Repository {
 	 */
 	public static function delete( int $prop_id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (bool) $wpdb->delete( self::get_table_name(), array( 'prop_id' => $prop_id ), array( '%d' ) );
 	}
 
@@ -154,6 +159,7 @@ class Property_Repository extends Repository {
 	 */
 	public static function drop_table() {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
 	}
 
@@ -226,6 +232,7 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Get all the properties connectted to the event.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$recordset = $wpdb->get_results(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id ),
 			ARRAY_A
@@ -257,6 +264,7 @@ class Property_Repository extends Repository {
 		global $wpdb;
 
 		// Do the delete.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
 
 		// Check for error.

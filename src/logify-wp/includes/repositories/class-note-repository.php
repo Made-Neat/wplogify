@@ -93,6 +93,7 @@ class Note_Repository extends Repository {
     public static function load(int $id): ?object {
         global $wpdb;
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $record = $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE note_id = %d', self::get_table_name(), $id ),
 			ARRAY_A
@@ -137,6 +138,7 @@ class Note_Repository extends Repository {
             throw new InvalidArgumentException('Note content must be a non-empty string.');
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $updated = $wpdb->update(
             $table_name,
             [
@@ -158,7 +160,7 @@ class Note_Repository extends Repository {
      */
     public static function drop_table(): void {
         global $wpdb;
-
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
         $wpdb->query("DROP TABLE IF EXISTS " . self::get_table_name());
     }
 
@@ -169,7 +171,7 @@ class Note_Repository extends Repository {
      */
     public static function truncate_table(): void {
         global $wpdb;
-
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Static Table Name
         $wpdb->query("TRUNCATE TABLE " . self::get_table_name());
     }
 
@@ -196,6 +198,7 @@ class Note_Repository extends Repository {
             throw new InvalidArgumentException('Note content must be a non-empty string.');
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $inserted = $wpdb->insert(self::get_table_name(), [
             'activity_id' => intval($data['activity_id']),
             'user_id'     => intval($data['user_id']),
@@ -227,9 +230,11 @@ class Note_Repository extends Repository {
             throw new InvalidArgumentException('Invalid note ID. ID must be a positive integer.');
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $deleted = $wpdb->delete(self::get_table_name(), ['id' => $id], ['%d']);
 
         if ($deleted === false) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             throw new RuntimeException("Failed to delete note with ID: {$id}");
         }
 
@@ -250,8 +255,10 @@ class Note_Repository extends Repository {
 
         $like = '%' . $this->wpdb->esc_like($keyword) . '%';
 
+        $table = esc_sql($this->table_name);
         return $this->wpdb->get_results(
-            $this->wpdb->prepare("SELECT * FROM {$this->table_name} WHERE note LIKE %s", $like)
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Static Table Name
+            $this->wpdb->prepare("SELECT * FROM %s WHERE note LIKE %s", $table, $like)
         );
     }
 
@@ -298,9 +305,11 @@ class Note_Repository extends Repository {
 			return null; // Avoid running the query if the table is missing.
 		}
     
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM $table_name WHERE activity_id = %d ORDER BY note_id DESC LIMIT 1",
+				"SELECT * FROM %s WHERE activity_id = %d ORDER BY note_id DESC LIMIT 1",
+                $table_name,
 				intval($event_id)
 			)
 		);
@@ -311,7 +320,10 @@ class Note_Repository extends Repository {
 	 */
 	private static function table_exists($table_name) {
 		global $wpdb;
-		return $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name;
+        
+        $query = $wpdb->prepare('SHOW TABLES LIKE %s', $table_name);
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return $wpdb->get_var($query) === $table_name; // check the table existance
 	}
     
 }

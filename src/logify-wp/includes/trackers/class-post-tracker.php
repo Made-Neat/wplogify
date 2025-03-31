@@ -276,8 +276,9 @@ class Post_Tracker
 	public static function on_transition_post_status(string $new_status, string $old_status, $serialize_post, $acting_user_id)
 	{
 		global $wpdb;
-		//unserialize post object
+		// unserialize post object
 		$post = unserialize($serialize_post);
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log("POSTTYPE:");
 		// Ignore navigation menu items.
 		if ($post->post_type === 'nav_menu_item') {

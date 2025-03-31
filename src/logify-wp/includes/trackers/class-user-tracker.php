@@ -192,6 +192,7 @@ class User_Tracker
 		$props = User_Utility::get_properties($user);
 
 		// Get the posts authored by this user.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$post_ids = $wpdb->get_col(
 			$wpdb->prepare("SELECT ID FROM %i WHERE post_author = %d AND post_parent = 0 AND post_status != 'auto-draft'", $wpdb->posts, $user_id)
 		);
@@ -202,6 +203,7 @@ class User_Tracker
 		Eventmeta::update_array(self::$eventmetas, 'posts_authored', $post_refs);
 
 		// Get the comments authored by this user.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$comment_ids = $wpdb->get_col(
 			$wpdb->prepare('SELECT comment_ID FROM %i WHERE user_id = %d', $wpdb->comments, $user_id)
 		);

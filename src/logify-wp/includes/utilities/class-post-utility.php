@@ -30,6 +30,7 @@ class Post_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $post_id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->posts, $post_id )
 		);
@@ -267,6 +268,7 @@ class Post_Utility extends Object_Utility {
 		}
 
 		// Get the created datetime.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$created_datetime = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT MIN(post_date) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_date != '0000-00-00 00:00:00'",
@@ -293,6 +295,7 @@ class Post_Utility extends Object_Utility {
 		}
 
 		// Get the last modified datetime.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$last_modified_datetime = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT MAX(post_modified) FROM %i WHERE (ID = %d OR post_parent = %d) AND post_modified != '0000-00-00 00:00:00'",

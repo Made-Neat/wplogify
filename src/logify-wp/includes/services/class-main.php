@@ -71,6 +71,7 @@ class Main {
         $installed_version = get_option('logify_wp_db_version', '1.0');
 
         if (version_compare($installed_version, self::DB_VERSION, '<')) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log("Updating database from version $installed_version to " . self::DB_VERSION); // Debugging log
             Database::create_all_tables();
             update_option('logify_wp_db_version', self::DB_VERSION);

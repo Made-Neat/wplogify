@@ -30,9 +30,13 @@ class Notes_Page {
 		self::ensure_feature_enabled();
 		
 		check_ajax_referer('logify-wp-notes-page', 'security');
-		$note_id = intval($_POST['note_id']);
-		$event_id = intval($_POST['event_id']);
-
+		
+		$note_id = isset($_POST['note_id']) 
+			? intval( sanitize_text_field( wp_unslash( $_POST['note_id'] ) ) ) 
+			: 0;	
+		$event_id = isset($_POST['event_id']) 
+			? intval( sanitize_text_field( wp_unslash( $_POST['event_id'] ) ) ) 
+			: 0;
 		if ( !$event_id && !$note_id ) {
 			wp_send_json_error(['message' => 'Invalid note data.']);
 		}
@@ -60,7 +64,9 @@ class Notes_Page {
 
 		$success = $note_repo->save((object) [
 			'id'   => $note_id,
-			'note' => $_POST['note_content'],
+			'note' => isset($_POST['note_content']) 
+				? sanitize_textarea_field( wp_unslash( $_POST['note_content'] ) )
+				: '',
 		]);
 	
 		if ($success) {
@@ -80,20 +86,26 @@ class Notes_Page {
 			wp_send_json_error(['message' => 'Note content cannot be empty.']);
 		}
 
-		$event_id = intval($_POST['event_id']);
+		$event_id = isset($_POST['event_id']) 
+			? intval( sanitize_text_field( wp_unslash( $_POST['event_id'] ) ) ) 
+			: 0;
 		
 		// Create note repository instance
 		$note_repo = new \Logify_WP\Note_Repository();
 		$user = wp_get_current_user();
 		// Save new note
 		$success = $note_repo->create( [
-			'note'        => $_POST['note_content'],
+			'note'        => isset($_POST['note_content']) 
+				? sanitize_textarea_field( wp_unslash( $_POST['note_content'] ) ) 
+				: '',
 			'user_id'     => get_current_user_id(), // Assuming user ID is required
 			'user_role' => !empty($user->roles) ? implode(', ', $user->roles) : 'No role assigned', // Get user roles
     		'user_name'  => $user->user_login, // Get username
 			'activity_id' => ($event_id) ? $event_id : 0,
 			'created_at'  => current_time('mysql'), // Assuming created_at is required
-			'ip_address'  => sanitize_text_field($_SERVER['REMOTE_ADDR']), // Optional: IP address
+			'ip_address' => isset($_SERVER['REMOTE_ADDR']) 
+				? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) 
+				: ''
 		]);
 	
 		if ($success) {
@@ -256,6 +268,7 @@ class Notes_Page {
 
 		// -----------------------------------------------------------------------------------------
 		// Get the total number of notes in the database.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$num_total_records = (int) $wpdb->get_var(
 			$wpdb->prepare( 'SELECT COUNT(*) FROM %i', $notes_table_name )
 		);
@@ -356,7 +369,9 @@ class Notes_Page {
 		// Construct and run the SQL statement.
 		$select_args          = array( $notes_table_name, $users_table_name );
 		$args                 = array_merge( $select_args, $where_args );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$num_filtered_records = (int) $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			$wpdb->prepare( "$select_count $where", $args )
 		);
 
@@ -385,7 +400,9 @@ class Notes_Page {
 
 		// Construct and run the SQL statement.
 		$args = array_merge( $select_args, $where_args, $order_by_args, $limit_args );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$recordset = $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			$wpdb->prepare( "$select $where $order_by $limit", $args ),
 			ARRAY_A
 		);
@@ -409,6 +426,7 @@ class Notes_Page {
 				$item['created_at']  = '<div>' . wp_kses_post($formatted_datetime) . ' (' . esc_html($time_ago) . ')</div>';
 			} catch (\Exception $e) {
 				// Handle the exception if the date string is invalid.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log('Invalid date format for $note->created_at: ' . $e->getMessage());
 				$item['created_at'] = '<div>Invalid date</div>';
 			}

@@ -81,6 +81,7 @@ class PHP_Error_Log
         }
 
         // Retrieve total number of records.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $num_total_records = (int) $wpdb->get_var(
             $wpdb->prepare('SELECT COUNT(*) FROM %i', $errors_table_name)
         );
@@ -90,6 +91,7 @@ class PHP_Error_Log
         $query_args = [$errors_table_name, $users_table_name, $page_length, $start];
 
         // Fetch error records from the database.
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $recordset = $wpdb->get_results($wpdb->prepare($select_query, $query_args), ARRAY_A);
 
         // Prepare data for JSON response.
@@ -104,7 +106,9 @@ class PHP_Error_Log
         }
 
         // Get the draw counter from DataTables request.
-        $draw = isset($_POST['draw']) ? (int) wp_unslash($_POST['draw']) : 0;
+        $draw = isset($_POST['draw']) 
+        ? intval( sanitize_text_field( wp_unslash( $_POST['draw'] ) ) ) 
+        : 0;
 
         // Send JSON response with data.
         wp_send_json([

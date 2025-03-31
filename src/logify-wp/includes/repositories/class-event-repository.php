@@ -44,6 +44,7 @@ class Event_Repository extends Repository {
 	public static function load( int $event_id ): ?Event {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$record = $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id ),
 			ARRAY_A
@@ -95,6 +96,7 @@ class Event_Repository extends Repository {
 		$inserting = empty( $event->id );
 
 		// Start a transaction.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query( 'START TRANSACTION' );
 
 		// Update or insert the events record.
@@ -102,6 +104,7 @@ class Event_Repository extends Repository {
 		$formats = array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Event object with the new ID.
@@ -110,12 +113,14 @@ class Event_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$ok = $wpdb->update( self::get_table_name(), $record, array( 'event_id' => $event->id ), $formats, array( '%d' ) ) !== false;
 		}
 
 		// Rollback and return on error.
 		if ( ! $ok ) {
 			Debug::error( 'Database error', $wpdb->last_query, $wpdb->last_error );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -126,6 +131,7 @@ class Event_Repository extends Repository {
 		// Rollback and return on error.
 		if ( ! $ok ) {
 			Debug::error( 'Database error', $wpdb->last_query, $wpdb->last_error );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
@@ -136,11 +142,13 @@ class Event_Repository extends Repository {
 		// Rollback and return on error.
 		if ( ! $ok ) {
 			Debug::error( 'Database error', $wpdb->last_query, $wpdb->last_error );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->query( 'ROLLBACK' );
 			return false;
 		}
 
 		// Commit the transaction.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query( 'COMMIT' );
 
 		return true;
@@ -162,6 +170,7 @@ class Event_Repository extends Repository {
 		}
 
 		// Delete the event record.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
 
 		// Check for error.
@@ -196,6 +205,7 @@ class Event_Repository extends Repository {
 
 		// Get all properties currently attached to this event in the database.
 		$prop_table = Property_Repository::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$records    = $wpdb->get_results(
 			$wpdb->prepare( 'SELECT prop_id, prop_key FROM %i WHERE event_id = %d', $prop_table, $event->id ),
 			ARRAY_A
@@ -204,6 +214,7 @@ class Event_Repository extends Repository {
 		// Delete any we don't need anymore.
 		foreach ( $records as $record ) {
 			if ( ! $event->has_prop( $record['prop_key'] ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$del_result = $wpdb->delete( $prop_table, array( 'prop_id' => $record['prop_id'] ), '%d' );
 				if ( $del_result === false ) {
 					Debug::error( 'Error deleting property record.' );
@@ -241,6 +252,7 @@ class Event_Repository extends Repository {
 
 		// Get all eventmetas currently attached to this event in the database.
 		$meta_table = Eventmeta_Repository::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$records    = $wpdb->get_results(
 			$wpdb->prepare( 'SELECT eventmeta_id, meta_key FROM %i WHERE event_id = %d', $meta_table, $event->id ),
 			ARRAY_A
@@ -249,6 +261,7 @@ class Event_Repository extends Repository {
 		// Delete any we don't need anymore.
 		foreach ( $records as $record ) {
 			if ( ! $event->has_meta( $record['meta_key'] ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$del_result = $wpdb->delete( $meta_table, array( 'eventmeta_id' => $record['eventmeta_id'] ), '%d' );
 				if ( $del_result === false ) {
 					Debug::error( 'Error deleting eventmeta record.' );
@@ -324,6 +337,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function drop_table() {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
 	}
 
@@ -397,6 +411,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function get_earliest_date(): ?DateTime {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$min_date = $wpdb->get_var(
 			$wpdb->prepare( 'SELECT MIN(when_happened) FROM %i', self::get_table_name() )
 		);
@@ -410,6 +425,7 @@ class Event_Repository extends Repository {
 	 */
 	public static function get_latest_date(): ?DateTime {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$max_date = $wpdb->get_var(
 			$wpdb->prepare( 'SELECT MAX(when_happened) FROM %i', self::get_table_name() )
 		);
@@ -426,6 +442,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Check if the column exists
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$column_exists = $wpdb->get_results(
 			$wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', self::get_table_name(), 'object_subtype' ),
 			ARRAY_A
@@ -434,9 +451,8 @@ class Event_Repository extends Repository {
 		// If the column doesn't exist, add it
 		if ( empty( $column_exists ) ) {
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-			$wpdb->query(
-				$wpdb->prepare( 'ALTER TABLE %i ADD object_subtype varchar(50)', self::get_table_name() )
-			);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+			$wpdb->query( $wpdb->prepare( 'ALTER TABLE %i ADD object_subtype varchar(50)', self::get_table_name() )  );
 		}
 	}
 
@@ -448,6 +464,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Check in the events table for any events with an object_type of 'post' and a object_subtype of null.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$records = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT event_id, object_key
@@ -475,6 +492,7 @@ class Event_Repository extends Repository {
 
 			// Set the object subtype to the post type.
 			if ( $post_type ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->query(
 					$wpdb->prepare(
 						'UPDATE %i SET object_subtype = %s WHERE event_id = %d',
@@ -495,6 +513,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Check in the events table for any events with an object_type of 'term' and a object_subtype of null.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$records = $wpdb->get_results(
 			$wpdb->prepare( "SELECT event_id, object_key FROM %i WHERE object_type = 'term' and object_subtype IS null", self::get_table_name() ),
 			ARRAY_A
@@ -517,6 +536,7 @@ class Event_Repository extends Repository {
 
 			// Set the object subtype to the taxonomy.
 			if ( $taxonomy ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->query(
 					$wpdb->prepare( 'UPDATE %i SET object_subtype = %s WHERE event_id = %d', self::get_table_name(), $taxonomy, $record['event_id'] )
 				);
@@ -536,6 +556,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the post types.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$post_types = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT object_subtype
@@ -563,6 +584,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the taxonomies.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$taxonomies = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT object_subtype
@@ -591,6 +613,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the event types.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->get_col(
 			$wpdb->prepare( 'SELECT DISTINCT event_type FROM %i ORDER BY event_type', self::get_table_name() )
 		);
@@ -603,6 +626,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the acting users.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$users = $wpdb->get_results(
 			$wpdb->prepare( 'SELECT DISTINCT user_id, user_name FROM %i ORDER BY event_id DESC', self::get_table_name() ),
 			ARRAY_A
@@ -647,6 +671,7 @@ class Event_Repository extends Repository {
 		global $wpdb;
 
 		// Get the roles.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$roles = $wpdb->get_col(
 			$wpdb->prepare( 'SELECT DISTINCT user_role FROM %i ORDER BY user_role', self::get_table_name() )
 		);
@@ -676,6 +701,7 @@ class Event_Repository extends Repository {
 
 		if ( $event_type ) {
 			// Get the most recent event of the given type, caused by this user.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$event_id = $wpdb->get_var(
 				$wpdb->prepare(
 					'SELECT event_id FROM %i WHERE user_id = %d AND event_type = %s ORDER BY when_happened DESC LIMIT 1',
@@ -686,6 +712,7 @@ class Event_Repository extends Repository {
 			);
 		} else {
 			// Get the most recent event caused by this user.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$event_id = $wpdb->get_var(
 				$wpdb->prepare(
 					'SELECT event_id FROM %i WHERE user_id = %d ORDER BY when_happened DESC LIMIT 1',

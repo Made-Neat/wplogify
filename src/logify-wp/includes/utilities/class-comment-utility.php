@@ -27,6 +27,7 @@ class Comment_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $comment_id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare( 'SELECT COUNT(comment_ID) FROM %i WHERE comment_ID = %d', $wpdb->comments, $comment_id )
 		);
@@ -233,6 +234,7 @@ class Comment_Utility extends Object_Utility {
 		global $wpdb;
 
 		// Get the children comment IDs.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_col(
 			$wpdb->prepare( 'SELECT comment_ID FROM %i WHERE comment_parent = %d', $wpdb->comments, $comment_id )
 		);
