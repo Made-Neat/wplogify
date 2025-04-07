@@ -115,7 +115,7 @@ require_once LOGIFY_WP_PLUGIN_DIR . 'includes/utilities/class-widget-utility.php
 //check website already has ActionScheduler library
 if(!class_exists('ActionScheduler')){
     // Require action scheduler library
-    require_once __DIR__ . '/vendor/woocommerce/action-scheduler/action-scheduler.php';
+    require_once __DIR__ . DIRECTORY_SEPARATOR . 'action-scheduler' . DIRECTORY_SEPARATOR . 'action-scheduler.php';
 }
 
 // =================================================================================================
