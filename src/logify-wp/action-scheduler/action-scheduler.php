@@ -1,33 +1,4 @@
 <?php
-/**
- * Plugin Name: Action Scheduler
- * Plugin URI: https://actionscheduler.org
- * Description: A robust scheduling library for use in WordPress plugins.
- * Author: Automattic
- * Author URI: https://automattic.com/
- * Version: 3.9.2
- * License: GPLv3
- * Requires at least: 6.5
- * Tested up to: 6.7
- * Requires PHP: 7.1
- *
- * Copyright 2019 Automattic, Inc.  (https://automattic.com/contact/)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * @package ActionScheduler
- */
 
 if ( ! function_exists( 'action_scheduler_register_3_dot_9_dot_2' ) && function_exists( 'add_action' ) ) { // WRCS: DEFINED_VERSION.
 
