@@ -73,6 +73,7 @@ class Debug {
 		};
 
 		// Log the strings.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( $severity_string . ': ' . implode( ', ', $strings ) );
 	}
 
@@ -110,6 +111,7 @@ class Debug {
 	 */
 	public static function sql( string $sql ) {
 		global $wpdb;
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( 'SQL: ' . $wpdb->remove_placeholder_escape( $sql ) );
 	}
 }

@@ -127,12 +127,13 @@ function as_schedule_recurring_action( $timestamp, $interval_in_seconds, $hook, 
 
 	// We expect an integer and allow it to be passed using float and string types, but otherwise
 	// should reject unexpected values.
+	// phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
 	if ( ! is_numeric( $interval_in_seconds ) || $interval_in_seconds != $interval ) {
 		_doing_it_wrong(
 			__METHOD__,
 			sprintf(
 				/* translators: 1: provided value 2: provided type. */
-				esc_html__( 'An integer was expected but "%1$s" (%2$s) was received.', 'action-scheduler' ),
+				esc_html__('An integer was expected but "%1$s" (%2$s) was received.', 'logify-wp' ),
 				esc_html( $interval_in_seconds ),
 				esc_html( gettype( $interval_in_seconds ) )
 			),
@@ -285,7 +286,7 @@ function as_unschedule_action( $hook, $args = array(), $group = '' ) {
 				$action_id,
 				sprintf(
 					/* translators: %1$s is the name of the hook to be cancelled, %2$s is the exception message. */
-					__( 'Caught exception while cancelling action "%1$s": %2$s', 'action-scheduler' ),
+					__('Caught exception while cancelling action "%1$s": %2$s', 'logify-wp' ),
 					$hook,
 					$exception->getMessage()
 				)
@@ -456,7 +457,7 @@ function as_get_scheduled_actions( $args = array(), $return_format = OBJECT ) {
 		$actions[ $action_id ] = $store->fetch_action( $action_id );
 	}
 
-	if ( ARRAY_A == $return_format ) {
+	if ( ARRAY_A === $return_format ) {
 		foreach ( $actions as $action_id => $action_object ) {
 			$actions[ $action_id ] = get_object_vars( $action_object );
 		}

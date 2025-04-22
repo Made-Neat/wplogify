@@ -2,27 +2,42 @@
 
 /**
  * Class ActionScheduler_AdminView
+ *
  * @codeCoverageIgnore
  */
 class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 
-	/** @var null|self */
-	private static $admin_view = NULL;
+	/**
+	 * Instance.
+	 *
+	 * @var null|self
+	 */
+	private static $admin_view = null;
 
-	/** @var string */
+	/**
+	 * Screen ID.
+	 *
+	 * @var string
+	 */
 	private static $screen_id = 'tools_page_action-scheduler';
 
-	/** @var ActionScheduler_ListTable */
+	/**
+	 * ActionScheduler_ListTable instance.
+	 *
+	 * @var ActionScheduler_ListTable
+	 */
 	protected $list_table;
 
 	/**
+	 * Get instance.
+	 *
 	 * @return ActionScheduler_AdminView
 	 * @codeCoverageIgnore
 	 */
 	public static function instance() {
 
 		if ( empty( self::$admin_view ) ) {
-			$class = apply_filters('action_scheduler_admin_view_class', 'ActionScheduler_AdminView');
+			$class            = apply_filters( 'action_scheduler_admin_view_class', 'ActionScheduler_AdminView' );
 			self::$admin_view = new $class();
 		}
 
@@ -35,7 +50,7 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 	 * @codeCoverageIgnore
 	 */
 	public function init() {
-		if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || false == DOING_AJAX ) ) {
+		if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
 
 			if ( class_exists( 'WooCommerce' ) ) {
 				add_action( 'woocommerce_admin_status_content_action-scheduler', array( $this, 'render_admin_ui' ) );
@@ -64,7 +79,7 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 	 * @return array $tabs An associative array of tab key => label, including Action Scheduler's tabs
 	 */
 	public function register_system_status_tab( array $tabs ) {
-		$tabs['action-scheduler'] = __( 'Scheduled Actions', 'action-scheduler' );
+		$tabs['action-scheduler'] = __('Scheduled Actions', 'logify-wp' );
 
 		return $tabs;
 	}
@@ -79,13 +94,13 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 	public function register_menu() {
 		$hook_suffix = add_submenu_page(
 			'tools.php',
-			__( 'Scheduled Actions', 'action-scheduler' ),
-			__( 'Scheduled Actions', 'action-scheduler' ),
+			__('Scheduled Actions', 'logify-wp' ),
+			__('Scheduled Actions', 'logify-wp' ),
 			'manage_options',
 			'action-scheduler',
 			array( $this, 'render_admin_ui' )
 		);
-		add_action( 'load-' . $hook_suffix , array( $this, 'process_admin_ui' ) );
+		add_action( 'load-' . $hook_suffix, array( $this, 'process_admin_ui' ) );
 	}
 
 	/**
@@ -145,8 +160,6 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 
 	/**
 	 * Check past-due actions, and print notice.
-	 *
-	 * @todo update $link_url to "Past-due" filter when released (see issue #510, PR #511)
 	 */
 	protected function check_pastdue_actions() {
 
@@ -174,7 +187,7 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 
 		// If no third-party preempted, run default check.
 		if ( is_null( $check ) ) {
-			$store = ActionScheduler_Store::instance();
+			$store               = ActionScheduler_Store::instance();
 			$num_pastdue_actions = (int) $store->query_actions( $query_args, 'count' );
 
 			// Check if past-due actions count is greater than or equal to threshold.
@@ -190,23 +203,31 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 			return;
 		}
 
-		$actions_url = add_query_arg( array(
-			'page'   => 'action-scheduler',
-			'status' => 'past-due',
-			'order'  => 'asc',
-		), admin_url( 'tools.php' ) );
+		$actions_url = add_query_arg(
+			array(
+				'page'   => 'action-scheduler',
+				'status' => 'past-due',
+				'order'  => 'asc',
+			),
+			admin_url( 'tools.php' )
+		);
 
 		// Print notice.
 		echo '<div class="notice notice-warning"><p>';
 		printf(
-			// translators: 1) is the number of affected actions, 2) is a link to an admin screen.
-			_n(
-				'<strong>Action Scheduler:</strong> %1$d <a href="%2$s">past-due action</a> found; something may be wrong. <a href="https://actionscheduler.org/faq/#my-site-has-past-due-actions-what-can-i-do" target="_blank">Read documentation &raquo;</a>',
-				'<strong>Action Scheduler:</strong> %1$d <a href="%2$s">past-due actions</a> found; something may be wrong. <a href="https://actionscheduler.org/faq/#my-site-has-past-due-actions-what-can-i-do" target="_blank">Read documentation &raquo;</a>',
-				$num_pastdue_actions,
-				'action-scheduler'
+			wp_kses(
+				// translators: 1) is the number of affected actions, 2) is a link to an admin screen.
+				_n('<strong>Action Scheduler:</strong> %1$d <a href="%2$s">past-due action</a> found; something may be wrong. <a href="https://actionscheduler.org/faq/#my-site-has-past-due-actions-what-can-i-do" target="_blank">Read documentation &raquo;</a>', '<strong>Action Scheduler:</strong> %1$d <a href="%2$s">past-due actions</a> found; something may be wrong. <a href="https://actionscheduler.org/faq/#my-site-has-past-due-actions-what-can-i-do" target="_blank">Read documentation &raquo;</a>', $num_pastdue_actions, 'logify-wp'
+				),
+				array(
+					'strong' => array(),
+					'a'      => array(
+						'href'   => true,
+						'target' => true,
+					),
+				)
 			),
-			$num_pastdue_actions,
+			absint( $num_pastdue_actions ),
 			esc_attr( esc_url( $actions_url ) )
 		);
 		echo '</p></div>';
@@ -221,20 +242,46 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 	public function add_help_tabs() {
 		$screen = get_current_screen();
 
-		if ( ! $screen || self::$screen_id != $screen->id ) {
+		if ( ! $screen || self::$screen_id !== $screen->id ) {
 			return;
 		}
 
-		$as_version = ActionScheduler_Versions::instance()->latest_version();
+		$as_version       = ActionScheduler_Versions::instance()->latest_version();
+		$as_source        = ActionScheduler_SystemInformation::active_source();
+		$as_source_path   = ActionScheduler_SystemInformation::active_source_path();
+		$as_source_markup = sprintf( '<code>%s</code>', esc_html( $as_source_path ) );
+
+		if ( ! empty( $as_source ) ) {
+			$as_source_markup = sprintf(
+				'%s: <abbr title="%s">%s</abbr>',
+				ucfirst( $as_source['type'] ),
+				esc_attr( $as_source_path ),
+				esc_html( $as_source['name'] )
+			);
+		}
+
 		$screen->add_help_tab(
 			array(
 				'id'      => 'action_scheduler_about',
-				'title'   => __( 'About', 'action-scheduler' ),
+				'title'   => __('About', 'logify-wp' ),
 				'content' =>
 					// translators: %s is the Action Scheduler version.
-					'<h2>' . sprintf( __( 'About Action Scheduler %s', 'action-scheduler' ), $as_version ) . '</h2>' .
+					'<h2>' . sprintf( __('About Action Scheduler %s', 'logify-wp' ), $as_version ) . '</h2>' .
 					'<p>' .
-						__( 'Action Scheduler is a scalable, traceable job queue for background processing large sets of actions. Action Scheduler works by triggering an action hook to run at some time in the future. Scheduled actions can also be scheduled to run on a recurring schedule.', 'action-scheduler' ) .
+						__('Action Scheduler is a scalable, traceable job queue for background processing large sets of actions. Action Scheduler works by triggering an action hook to run at some time in the future. Scheduled actions can also be scheduled to run on a recurring schedule.', 'logify-wp' ) .
+					'</p>' .
+					'<h3>' . esc_html__('Source', 'logify-wp' ) . '</h3>' .
+					'<p>' .
+						esc_html__('Action Scheduler is currently being loaded from the following location. This can be useful when debugging, or if requested by the support team.', 'logify-wp' ) .
+					'</p>' .
+					'<p>' . $as_source_markup . '</p>' .
+					'<h3>' . esc_html__('WP CLI', 'logify-wp' ) . '</h3>' .
+					'<p>' .
+						sprintf(
+							/* translators: %1$s is WP CLI command (not translatable) */
+							esc_html__('WP CLI commands are available: execute %1$s for a list of available commands.', 'logify-wp' ),
+							'<code>wp help action-scheduler</code>'
+						) .
 					'</p>',
 			)
 		);
@@ -242,17 +289,17 @@ class ActionScheduler_AdminView extends ActionScheduler_AdminView_Deprecated {
 		$screen->add_help_tab(
 			array(
 				'id'      => 'action_scheduler_columns',
-				'title'   => __( 'Columns', 'action-scheduler' ),
+				'title'   => __('Columns', 'logify-wp' ),
 				'content' =>
-					'<h2>' . __( 'Scheduled Action Columns', 'action-scheduler' ) . '</h2>' .
+					'<h2>' . __('Scheduled Action Columns', 'logify-wp' ) . '</h2>' .
 					'<ul>' .
-					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __( 'Hook', 'action-scheduler' ), __( 'Name of the action hook that will be triggered.', 'action-scheduler' ) ) .
-					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __( 'Status', 'action-scheduler' ), __( 'Action statuses are Pending, Complete, Canceled, Failed', 'action-scheduler' ) ) .
-					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __( 'Arguments', 'action-scheduler' ), __( 'Optional data array passed to the action hook.', 'action-scheduler' ) ) .
-					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __( 'Group', 'action-scheduler' ), __( 'Optional action group.', 'action-scheduler' ) ) .
-					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __( 'Recurrence', 'action-scheduler' ), __( 'The action\'s schedule frequency.', 'action-scheduler' ) ) .
-					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __( 'Scheduled', 'action-scheduler' ), __( 'The date/time the action is/was scheduled to run.', 'action-scheduler' ) ) .
-					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __( 'Log', 'action-scheduler' ), __( 'Activity log for the action.', 'action-scheduler' ) ) .
+					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __('Hook', 'logify-wp' ), __('Name of the action hook that will be triggered.', 'logify-wp' ) ) .
+					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __('Status', 'logify-wp' ), __('Action statuses are Pending, Complete, Canceled, Failed', 'logify-wp' ) ) .
+					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __('Arguments', 'logify-wp' ), __('Optional data array passed to the action hook.', 'logify-wp' ) ) .
+					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __('Group', 'logify-wp' ), __('Optional action group.', 'logify-wp' ) ) .
+					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __('Recurrence', 'logify-wp' ), __('The action\'s schedule frequency.', 'logify-wp' ) ) .
+					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __('Scheduled', 'logify-wp' ), __('The date/time the action is/was scheduled to run.', 'logify-wp' ) ) .
+					sprintf( '<li><strong>%1$s</strong>: %2$s</li>', __('Log', 'logify-wp' ), __('Activity log for the action.', 'logify-wp' ) ) .
 					'</ul>',
 			)
 		);

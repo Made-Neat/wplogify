@@ -154,33 +154,54 @@ class Error_Tracker
             foreach (self::$selected_error_types as $selected_error_type) {
                 foreach ($new_logs as $new_log) {
                     if (
-                        $selected_error_type === 'Fatal_Errors' &&
-                        preg_match('/\[(.*?)\] PHP Fatal error: (.+?) in (.+?) on line (\d+)/', $new_log, $matches)
+                        ($selected_error_type === 'Fatal_Errors') &&
+                        (strpos($new_log, 'PHP Fatal error') !== false)
                     ) {
-
+                        // Extract just the error message part
+                        $error_message = '';
+                        if (preg_match('/PHP Fatal error:\s*(.*?)(?:\s+in\s+.*?on\s+line\s+\d+)?$/', $new_log, $matches)) {
+                            $error_message = trim($matches[1]);
+                        } else {
+                            $error_message = $new_log;
+                        }
+                        
                         $error_repo->save((object) [
                             'error_type' => "Fatal Error",
-                            'error_content' => esc_html($matches[2])
+                            'error_content' => esc_html($error_message)
                         ]);
 
                     } elseif (
-                        $selected_error_type === 'Warnings' &&
-                        preg_match('/\[(.*?)\] PHP Warning: (.+?) in (.+?) on line (\d+)/', $new_log, $matches)
+                        ($selected_error_type === 'Warnings') &&
+                        (strpos($new_log, 'PHP Warning') !== false)
                     ) {
+                        // Extract just the error message part
+                        $error_message = '';
+                        if (preg_match('/PHP Warning:\s*(.*?)(?:\s+in\s+.*?on\s+line\s+\d+)?$/', $new_log, $matches)) {
+                            $error_message = trim($matches[1]);
+                        } else {
+                            $error_message = $new_log;
+                        }
                         
                         $error_repo->save((object) [
                             'error_type' => "Warning",
-                            'error_content' => esc_html($matches[2])
+                            'error_content' => esc_html($error_message)
                         ]);
                         
                     } elseif (
-                        $selected_error_type === 'Notices' &&
-                        preg_match('/\[(.*?)\] PHP Notice: (.+?) in (.+?) on line (\d+)/', $new_log, $matches)
+                        ($selected_error_type === 'Notices') &&
+                        (strpos($new_log, 'PHP Notice') !== false)
                     ) {
+                        // Extract just the error message part
+                        $error_message = '';
+                        if (preg_match('/PHP Notice:\s*(.*?)(?:\s+in\s+.*?on\s+line\s+\d+)?$/', $new_log, $matches)) {
+                            $error_message = trim($matches[1]);
+                        } else {
+                            $error_message = $new_log;
+                        }
 
                         $error_repo->save((object) [
                             'error_type' => "Notice",
-                            'error_content' => esc_html($matches[2])
+                            'error_content' => esc_html($error_message)
                         ]);
                     }
                 }

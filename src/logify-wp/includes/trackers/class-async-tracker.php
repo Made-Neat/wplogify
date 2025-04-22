@@ -71,7 +71,7 @@ class Async_Tracker
      */
     public static function async_wp_loaded()
     {
-        if (!as_has_scheduled_action('middle_wp_loaded')) {
+        if (did_action('init') && function_exists('as_has_scheduled_action') && !as_has_scheduled_action('middle_wp_loaded')) {
             //Get Current User
             $acting_user_id = get_current_user_id();
             self::schedule_action('middle_wp_loaded', [$acting_user_id]); // Enqueue async action for WordPress loaded.

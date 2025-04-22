@@ -5,7 +5,7 @@ Tags: activity log, audit log, security, user tracking, event log
 Requires at least: 6.2
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.2.3
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Website: https://logifywp.com/
@@ -91,6 +91,9 @@ Absolutely! Logify WP provides advanced search and filtering options, allowing y
 
 = 1.2.1 =
 * Fixed issue in Notes feature
+
+= 1.3.0 =
+* Added asynchrnous log processing using action scheduler
 
 == Links ==
 

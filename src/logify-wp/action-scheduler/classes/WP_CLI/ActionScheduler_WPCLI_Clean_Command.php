@@ -41,7 +41,7 @@ class ActionScheduler_WPCLI_Clean_Command extends WP_CLI_Command {
 
 		$batches_completed = 0;
 		$actions_deleted   = 0;
-		$unlimited         = $batches === 0;
+		$unlimited         = 0 === $batches;
 		try {
 			$lifespan = as_get_datetime_object( $before );
 		} catch ( Exception $e ) {
@@ -58,7 +58,7 @@ class ActionScheduler_WPCLI_Clean_Command extends WP_CLI_Command {
 					sleep( $sleep );
 				}
 
-				$deleted = count( $cleaner->clean_actions( $status, $lifespan, null,'CLI' ) );
+				$deleted = count( $cleaner->clean_actions( $status, $lifespan, null, 'CLI' ) );
 				if ( $deleted <= 0 ) {
 					break;
 				}
@@ -85,7 +85,7 @@ class ActionScheduler_WPCLI_Clean_Command extends WP_CLI_Command {
 		WP_CLI::log(
 			sprintf(
 				/* translators: %d refers to the total number of batches processed */
-				_n( '%d batch processed.', '%d batches processed.', $batches_processed, 'action-scheduler' ),
+				_n('%d batch processed.', '%d batches processed.', $batches_processed, 'logify-wp' ),
 				$batches_processed
 			)
 		);
@@ -95,14 +95,12 @@ class ActionScheduler_WPCLI_Clean_Command extends WP_CLI_Command {
 	 * Convert an exception into a WP CLI error.
 	 *
 	 * @param Exception $e The error object.
-	 *
-	 * @throws \WP_CLI\ExitException
 	 */
 	protected function print_error( Exception $e ) {
 		WP_CLI::error(
 			sprintf(
 				/* translators: %s refers to the exception error message */
-				__( 'There was an error deleting an action: %s', 'action-scheduler' ),
+				__('There was an error deleting an action: %s', 'logify-wp' ),
 				$e->getMessage()
 			)
 		);
@@ -117,7 +115,7 @@ class ActionScheduler_WPCLI_Clean_Command extends WP_CLI_Command {
 		WP_CLI::success(
 			sprintf(
 				/* translators: %d refers to the total number of actions deleted */
-				_n( '%d action deleted.', '%d actions deleted.', $actions_deleted, 'action-scheduler' ),
+				_n('%d action deleted.', '%d actions deleted.', $actions_deleted, 'logify-wp' ),
 				$actions_deleted
 			)
 		);

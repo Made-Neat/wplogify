@@ -18,10 +18,10 @@ class ActionScheduler_DataController {
 	const DATASTORE_CLASS = 'ActionScheduler_DBStore';
 
 	/** Logger data store class name. */
-	const LOGGER_CLASS    = 'ActionScheduler_DBLogger';
+	const LOGGER_CLASS = 'ActionScheduler_DBLogger';
 
 	/** Migration status option name. */
-	const STATUS_FLAG     = 'action_scheduler_migration_status';
+	const STATUS_FLAG = 'action_scheduler_migration_status';
 
 	/** Migration status option value. */
 	const STATUS_COMPLETE = 'complete';
@@ -29,13 +29,25 @@ class ActionScheduler_DataController {
 	/** Migration minimum required PHP version. */
 	const MIN_PHP_VERSION = '5.5';
 
-	/** @var ActionScheduler_DataController */
+	/**
+	 * Instance.
+	 *
+	 * @var ActionScheduler_DataController
+	 */
 	private static $instance;
 
-	/** @var int */
+	/**
+	 * Sleep time in seconds.
+	 *
+	 * @var int
+	 */
 	private static $sleep_time = 0;
 
-	/** @var int */
+	/**
+	 * Tick count required for freeing memory.
+	 *
+	 * @var int
+	 */
 	private static $free_ticks = 50;
 
 	/**
@@ -130,13 +142,15 @@ class ActionScheduler_DataController {
 	public static function free_memory() {
 		if ( 0 < self::$sleep_time ) {
 			/* translators: %d: amount of time */
-			\WP_CLI::warning( sprintf( _n( 'Stopped the insanity for %d second', 'Stopped the insanity for %d seconds', self::$sleep_time, 'action-scheduler' ), self::$sleep_time ) );
+			\WP_CLI::warning( sprintf( _n('Stopped the insanity for %d second', 'Stopped the insanity for %d seconds', self::$sleep_time, 'logify-wp' ), self::$sleep_time ) );
 			sleep( self::$sleep_time );
 		}
 
-		\WP_CLI::warning( __( 'Attempting to reduce used memory...', 'action-scheduler' ) );
+		\WP_CLI::warning( __('Attempting to reduce used memory...', 'logify-wp' ) );
 
 		/**
+		 * Globals.
+		 *
 		 * @var $wpdb            \wpdb
 		 * @var $wp_object_cache \WP_Object_Cache
 		 */

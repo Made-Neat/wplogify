@@ -29,6 +29,7 @@ class Eventmeta_Repository extends Repository {
 	public static function load( int $eventmeta_id ): ?Eventmeta {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$record = $wpdb->get_row(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE eventmeta_id = %d', self::get_table_name(), $eventmeta_id ),
 			ARRAY_A
@@ -68,6 +69,7 @@ class Eventmeta_Repository extends Repository {
 		$inserting = false;
 		if ( empty( $eventmeta->id ) ) {
 			// See if there is an existing record we should update.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$existing_eventmeta_id = $wpdb->get_var(
 				$wpdb->prepare(
 					'SELECT eventmeta_id FROM %i WHERE event_id = %d AND meta_key = %s',
@@ -88,6 +90,7 @@ class Eventmeta_Repository extends Repository {
 		$formats = array( '%d', '%s', '%s' );
 		if ( $inserting ) {
 			// Do the insert.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$ok = $wpdb->insert( self::get_table_name(), $record, $formats ) !== false;
 
 			// If the new record was inserted ok, update the Eventmeta object with the new ID.
@@ -96,6 +99,7 @@ class Eventmeta_Repository extends Repository {
 			}
 		} else {
 			// Do the update.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$ok = $wpdb->update( self::get_table_name(), $record, array( 'eventmeta_id' => $eventmeta->id ), $formats, array( '%d' ) ) !== false;
 		}
 
@@ -110,6 +114,7 @@ class Eventmeta_Repository extends Repository {
 	 */
 	public static function delete( int $eventmeta_id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return (bool) $wpdb->delete( self::get_table_name(), array( 'eventmeta_id' => $eventmeta_id ), array( '%d' ) );
 	}
 
@@ -154,6 +159,7 @@ class Eventmeta_Repository extends Repository {
 	 */
 	public static function drop_table() {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::get_table_name() ) );
 	}
 
@@ -197,11 +203,8 @@ class Eventmeta_Repository extends Repository {
 	 * @return array The database record.
 	 */
 	protected static function object_to_record( Eventmeta $eventmeta ): array {
-		return array(
-			'event_id'   => $eventmeta->event_id,
-			'meta_key'   => $eventmeta->meta_key,
-			'meta_value' => Serialization::serialize( $eventmeta->meta_value ),
-		);
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+		return array( 'event_id'   => $eventmeta->event_id, 'meta_key'   => $eventmeta->meta_key, 'meta_value' => Serialization::serialize( $eventmeta->meta_value ));
 	}
 
 	// =============================================================================================
@@ -217,6 +220,7 @@ class Eventmeta_Repository extends Repository {
 		global $wpdb;
 
 		// Get the metadata records for the event from the eventmeta table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$recordset = $wpdb->get_results(
 			$wpdb->prepare( 'SELECT * FROM %i WHERE event_id = %d', self::get_table_name(), $event_id ),
 			ARRAY_A
@@ -247,6 +251,7 @@ class Eventmeta_Repository extends Repository {
 		global $wpdb;
 
 		// Do the delete.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, 
 		$result = $wpdb->delete( self::get_table_name(), array( 'event_id' => $event_id ), array( '%d' ) );
 
 		// Check for error.

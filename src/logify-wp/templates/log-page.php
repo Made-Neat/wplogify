@@ -7,6 +7,12 @@
 
 namespace Logify_WP;
 
+// Trigger a warning (e.g., undefined array index)
+$array = array();
+echo $array['undefined_index']; // This will trigger a warning
+
+// Trigger a warning manually
+trigger_error("This is a custom warning", E_USER_WARNING);
 ?>
 
 <div class="wrap">
