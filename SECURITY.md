@@ -6,9 +6,10 @@ We release security updates for all versions of our plugin. Currently, the lates
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in our plugin, please report it to us as soon as possible. You can reach us at:
+If you discover any security vulnerabilities, please report them responsibly via the Patchstack Vulnerability Disclosure Program (VDP):  
+https://patchstack.com/database/vdp
 
-**Email:** [security@madeneat.com.au](mailto:security@madeneat.com.au)
+We do not accept security reports via GitHub issues or public channels.
 
 Please include as much detail as possible, including:
 
