@@ -27,6 +27,7 @@ class Term_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $term_id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare( 'SELECT COUNT(term_id) FROM %i WHERE term_id = %d', $wpdb->terms, $term_id )
 		);
@@ -201,6 +202,7 @@ class Term_Utility extends Object_Utility {
 		global $wpdb;
 
 		// Retrieve the term ID from the term_taxonomy_id.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$term_id = $wpdb->get_var(
 			$wpdb->prepare( 'SELECT term_id FROM %i WHERE term_taxonomy_id = %d', $wpdb->term_taxonomy, $term_taxonomy_id )
 		);

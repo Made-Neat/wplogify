@@ -88,6 +88,7 @@ class Error_Repository extends Repository
         global $wpdb; // Access the global database object
         
         // Fetch the error record from the database
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $record = $wpdb->get_row(
             $wpdb->prepare('SELECT * FROM %i WHERE error_id = %d', self::get_table_name(), $id),
             ARRAY_A
@@ -113,6 +114,7 @@ class Error_Repository extends Repository
         }
 
         // Insert error data into the database
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         return (bool) $wpdb->insert(
             self::get_table_name(),
             [
@@ -131,6 +133,7 @@ class Error_Repository extends Repository
     public static function drop_table(): void
     {
         global $wpdb; // Access the global database object
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
         $wpdb->query("DROP TABLE IF EXISTS " . self::get_table_name()); // Execute drop table query
     }
 
@@ -142,6 +145,7 @@ class Error_Repository extends Repository
     public static function truncate_table(): void
     {
         global $wpdb; // Access the global database object
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Static Table Name
         $wpdb->query("TRUNCATE TABLE " . self::get_table_name()); // Execute truncate table query
     }
 
@@ -161,9 +165,11 @@ class Error_Repository extends Repository
         }
 
         // Execute delete query
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $deleted = $wpdb->delete(self::get_table_name(), ['error_id' => $id], ['%d']);
 
         if ($deleted === false) { // Handle deletion failure
+            // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
             throw new RuntimeException("Failed to delete error with ID: {$id}");
         }
 
@@ -179,6 +185,9 @@ class Error_Repository extends Repository
     private static function table_exists(string $table_name): bool
     {
         global $wpdb; // Access the global database object
-        return $wpdb->get_var("SHOW TABLES LIKE '$table_name'") === $table_name; // Check table existence
+        
+        $query = $wpdb->prepare('SHOW TABLES LIKE %s', $table_name);
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        return $wpdb->get_var($query) === $table_name; // check the table existance
     }
 }

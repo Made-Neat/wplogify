@@ -66,13 +66,23 @@ class ActionScheduler_WPCommentCleaner {
 	 * Attached to the migration complete hook 'action_scheduler/migration_complete'.
 	 */
 	public static function maybe_schedule_cleanup() {
-		if ( (bool) get_comments( array( 'type' => ActionScheduler_wpCommentLogger::TYPE, 'number' => 1, 'fields' => 'ids' ) ) ) {
-			update_option( self::$has_logs_option_key, 'yes' );
+		$has_logs = 'no';
+
+		$args = array(
+			'type'   => ActionScheduler_wpCommentLogger::TYPE,
+			'number' => 1,
+			'fields' => 'ids',
+		);
+
+		if ( (bool) get_comments( $args ) ) {
+			$has_logs = 'yes';
 
 			if ( ! as_next_scheduled_action( self::$cleanup_hook ) ) {
 				as_schedule_single_action( gmdate( 'U' ) + ( 6 * MONTH_IN_SECONDS ), self::$cleanup_hook );
 			}
 		}
+
+		update_option( self::$has_logs_option_key, $has_logs, true );
 	}
 
 	/**
@@ -80,8 +90,16 @@ class ActionScheduler_WPCommentCleaner {
 	 */
 	public static function delete_all_action_comments() {
 		global $wpdb;
-		$wpdb->delete( $wpdb->comments, array( 'comment_type' => ActionScheduler_wpCommentLogger::TYPE, 'comment_agent' => ActionScheduler_wpCommentLogger::AGENT ) );
-		delete_option( self::$has_logs_option_key );
+
+		$wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->comments,
+			array(
+				'comment_type'  => ActionScheduler_wpCommentLogger::TYPE,
+				'comment_agent' => ActionScheduler_wpCommentLogger::AGENT,
+			)
+		);
+
+		update_option( self::$has_logs_option_key, 'no', true );
 	}
 
 	/**
@@ -100,12 +118,12 @@ class ActionScheduler_WPCommentCleaner {
 
 		if ( $next_scheduled_cleanup_hook ) {
 			/* translators: %s: date interval */
-			$next_cleanup_message = sprintf( __( 'This data will be deleted in %s.', 'action-scheduler' ), human_time_diff( gmdate( 'U' ), $next_scheduled_cleanup_hook ) );
+			$next_cleanup_message = sprintf( __('This data will be deleted in %s.', 'logify-wp' ), human_time_diff( gmdate( 'U' ), $next_scheduled_cleanup_hook ) );
 		}
 
 		$notice = sprintf(
 			/* translators: 1: next cleanup message 2: github issue URL */
-			__( 'Action Scheduler has migrated data to custom tables; however, orphaned log entries exist in the WordPress Comments table. %1$s <a href="%2$s">Learn more &raquo;</a>', 'action-scheduler' ),
+			__('Action Scheduler has migrated data to custom tables; however, orphaned log entries exist in the WordPress Comments table. %1$s <a href="%2$s">Learn more &raquo;</a>', 'logify-wp' ),
 			$next_cleanup_message,
 			'https://github.com/woocommerce/action-scheduler/issues/368'
 		);

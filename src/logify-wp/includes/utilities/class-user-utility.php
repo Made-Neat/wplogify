@@ -30,6 +30,7 @@ class User_Utility extends Object_Utility {
 	 */
 	public static function exists( int|string $user_id ): bool {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare( 'SELECT COUNT(ID) FROM %i WHERE ID = %d', $wpdb->users, $user_id )
 		);
@@ -332,6 +333,7 @@ class User_Utility extends Object_Utility {
 		}
 
 		// Get the last login datetime from the logify_wp_events table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$record = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT when_happened
@@ -362,6 +364,7 @@ class User_Utility extends Object_Utility {
 		}
 
 		// Get the most recent activity_end datetime from the logify_wp_events table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$record = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT *

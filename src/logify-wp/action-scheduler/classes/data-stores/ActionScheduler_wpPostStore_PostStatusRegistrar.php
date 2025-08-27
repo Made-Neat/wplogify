@@ -2,6 +2,7 @@
 
 /**
  * Class ActionScheduler_wpPostStore_PostStatusRegistrar
+ *
  * @codeCoverageIgnore
  */
 class ActionScheduler_wpPostStore_PostStatusRegistrar {
@@ -37,9 +38,9 @@ class ActionScheduler_wpPostStore_PostStatusRegistrar {
 	 */
 	protected function post_status_failed_labels() {
 		$labels = array(
-			'label'       => _x( 'Failed', 'post', 'action-scheduler' ),
+			'label'       => _x('Failed', 'post', 'logify-wp' ),
 			/* translators: %s: count */
-			'label_count' => _n_noop( 'Failed <span class="count">(%s)</span>', 'Failed <span class="count">(%s)</span>', 'action-scheduler' ),
+			'label_count' => _n_noop( 'Failed <span class="count">(%s)</span>', 'Failed <span class="count">(%s)</span>', 'logify-wp' ),
 		);
 
 		return apply_filters( 'action_scheduler_post_status_failed_labels', $labels );
@@ -52,9 +53,9 @@ class ActionScheduler_wpPostStore_PostStatusRegistrar {
 	 */
 	protected function post_status_running_labels() {
 		$labels = array(
-			'label'       => _x( 'In-Progress', 'post', 'action-scheduler' ),
+			'label'       => _x('In-Progress', 'post', 'logify-wp' ),
 			/* translators: %s: count */
-			'label_count' => _n_noop( 'In-Progress <span class="count">(%s)</span>', 'In-Progress <span class="count">(%s)</span>', 'action-scheduler' ),
+			'label_count' => _n_noop( 'In-Progress <span class="count">(%s)</span>', 'In-Progress <span class="count">(%s)</span>', 'logify-wp' ),
 		);
 
 		return apply_filters( 'action_scheduler_post_status_running_labels', $labels );

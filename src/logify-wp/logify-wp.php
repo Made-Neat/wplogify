@@ -3,7 +3,7 @@
  * Plugin Name: Logify WP
  * Plugin URI: https://logifywp.com
  * Description: Logify WP features advanced tracking to ensure awareness of all changes made to your WordPress website, including who made them and when.
- * Version: 1.2.3
+ * Version: 1.3.0
  * Author: Made Neat
  * Author URI: https://madeneat.com.au
  * Requires at least: 6.2
@@ -117,9 +117,6 @@ if(!class_exists('ActionScheduler')){
     // Require action scheduler library
     require_once __DIR__ . DIRECTORY_SEPARATOR . 'action-scheduler' . DIRECTORY_SEPARATOR . 'action-scheduler.php';
 }
-
-
-// require_once LOGIFY_WP_PLUGIN_DIR . 'includes/test.php';
 
 // =================================================================================================
 

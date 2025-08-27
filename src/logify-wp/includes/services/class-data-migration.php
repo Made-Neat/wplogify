@@ -49,9 +49,8 @@ class Data_Migration {
 
 		// Drop an old table.
 		global $wpdb;
-		$wpdb->query(
-			$wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'wp_logify_event_meta' )
-		);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'wp_logify_event_meta' ) );
 		Debug::info( 'Dropped wp_logify_event_meta table.' );
 
 		// After performing the action, generate a nonce for the redirect
@@ -84,6 +83,7 @@ class Data_Migration {
 		$table_name = $wpdb->prefix . 'wp_logify_properties';
 
 		// Check if the table exists.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
 		Debug::info( "Table exists: $table_exists" );
@@ -95,6 +95,7 @@ class Data_Migration {
 		}
 
 		// Check the current structure of the table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name ) );
 
 		// Debug::info( 'Columns:', $columns);
@@ -123,9 +124,8 @@ class Data_Migration {
 			Debug::info( 'Renaming primary key' );
 
 			// Execute the SQL query to rename the column.
-			$wpdb->query(
-				$wpdb->prepare( 'ALTER TABLE %i CHANGE `property_id` `prop_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT', $table_name )
-			);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+			$wpdb->query( $wpdb->prepare( 'ALTER TABLE %i CHANGE `property_id` `prop_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT', $table_name ) );
 		}
 	}
 
@@ -144,6 +144,7 @@ class Data_Migration {
 
 		// Check if the new table exists.
 		$new_table_name   = "{$wpdb->prefix}logify_wp_$table_key";
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$matching_table   = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $new_table_name )
 		);
@@ -161,6 +162,7 @@ class Data_Migration {
 
 		// Check if the old table exists.
 		$old_table_name   = "{$wpdb->prefix}wp_logify_$table_key";
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$matching_table   = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', $old_table_name )
 		);
@@ -172,6 +174,7 @@ class Data_Migration {
 		}
 
 		// Select all records from the old table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$old_records = $wpdb->get_results(
 			$wpdb->prepare( 'SELECT * FROM %i', $old_table_name ),
 			ARRAY_A
@@ -197,6 +200,7 @@ class Data_Migration {
 			}
 
 			// Insert the transformed record into the new table.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->insert( $new_table_name, $record );
 		}
 
@@ -213,6 +217,7 @@ class Data_Migration {
 		global $wpdb;
 
 		// Execute the query and get the results.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			$wpdb->prepare( 'SHOW COLUMNS FROM %i', $table_name )
 		);

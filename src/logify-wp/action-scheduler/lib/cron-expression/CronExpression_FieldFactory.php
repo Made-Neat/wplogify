@@ -45,7 +45,7 @@ class CronExpression_FieldFactory
                     break;
                 default:
                     throw new InvalidArgumentException(
-                        $position . ' is not a valid position'
+                        $position . ' is not a valid position' // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is handled internally
                     );
             }
         }

@@ -46,6 +46,7 @@ class Cron {
 		$days = absint( ceil( $days ) );
 
 		// Delete old records.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
 				'DELETE FROM %i WHERE when_happened < NOW() - INTERVAL %d DAY',

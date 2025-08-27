@@ -49,7 +49,7 @@ class ActionScheduler_Compatibility {
 			return wp_raise_memory_limit( 'admin' );
 		}
 
-		$current_limit     = @ini_get( 'memory_limit' );
+		$current_limit     = @ini_get( 'memory_limit' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		$current_limit_int = self::convert_hr_to_bytes( $current_limit );
 
 		if ( -1 === $current_limit_int ) {
@@ -61,19 +61,25 @@ class ActionScheduler_Compatibility {
 		$filtered_limit     = apply_filters( 'admin_memory_limit', $wp_max_limit );
 		$filtered_limit_int = self::convert_hr_to_bytes( $filtered_limit );
 
+		// phpcs:disable WordPress.PHP.IniSet.memory_limit_Blacklisted
+		// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged
+
 		if ( -1 === $filtered_limit_int || ( $filtered_limit_int > $wp_max_limit_int && $filtered_limit_int > $current_limit_int ) ) {
-			if ( false !== @ini_set( 'memory_limit', $filtered_limit ) ) {
+			if ( false !== @ini_set( 'memory_limit', $filtered_limit ) ) { // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 				return $filtered_limit;
 			} else {
 				return false;
 			}
 		} elseif ( -1 === $wp_max_limit_int || $wp_max_limit_int > $current_limit_int ) {
-			if ( false !== @ini_set( 'memory_limit', $wp_max_limit ) ) {
+			if ( false !== @ini_set( 'memory_limit', $wp_max_limit ) ) { // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 				return $wp_max_limit;
 			} else {
 				return false;
 			}
 		}
+
+		// phpcs:enable
+
 		return false;
 	}
 
@@ -85,7 +91,7 @@ class ActionScheduler_Compatibility {
 	 * @param int $limit The time limit in seconds.
 	 */
 	public static function raise_time_limit( $limit = 0 ) {
-		$limit = (int) $limit;
+		$limit              = (int) $limit;
 		$max_execution_time = (int) ini_get( 'max_execution_time' );
 
 		// If the max execution time is already set to zero (unlimited), there is no reason to make a further change.
@@ -99,7 +105,7 @@ class ActionScheduler_Compatibility {
 		if ( function_exists( 'wc_set_time_limit' ) ) {
 			wc_set_time_limit( $raise_by );
 		} elseif ( function_exists( 'set_time_limit' ) && false === strpos( ini_get( 'disable_functions' ), 'set_time_limit' ) && ! ini_get( 'safe_mode' ) ) { // phpcs:ignore PHPCompatibility.IniDirectives.RemovedIniDirectives.safe_modeDeprecatedRemoved
-			@set_time_limit( $raise_by ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			@set_time_limit( $raise_by ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,Squiz.PHP.DiscouragedFunctions.Discouraged
 		}
 	}
 }

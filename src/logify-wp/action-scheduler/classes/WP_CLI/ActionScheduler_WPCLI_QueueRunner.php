@@ -9,28 +9,40 @@ use Action_Scheduler\WP_CLI\ProgressBar;
  */
 class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRunner {
 
-	/** @var array */
+	/**
+	 * Claimed actions.
+	 *
+	 * @var array
+	 */
 	protected $actions;
 
-	/** @var  ActionScheduler_ActionClaim */
+	/**
+	 * ActionScheduler_ActionClaim instance.
+	 *
+	 * @var ActionScheduler_ActionClaim
+	 */
 	protected $claim;
 
-	/** @var \cli\progress\Bar */
+	/**
+	 * Progress bar instance.
+	 *
+	 * @var \cli\progress\Bar
+	 */
 	protected $progress_bar;
 
 	/**
 	 * ActionScheduler_WPCLI_QueueRunner constructor.
 	 *
-	 * @param ActionScheduler_Store             $store Store object.
-	 * @param ActionScheduler_FatalErrorMonitor $monitor Monitor object.
-	 * @param ActionScheduler_QueueCleaner      $cleaner Cleaner object.
+	 * @param ActionScheduler_Store|null             $store Store object.
+	 * @param ActionScheduler_FatalErrorMonitor|null $monitor Monitor object.
+	 * @param ActionScheduler_QueueCleaner|null      $cleaner Cleaner object.
 	 *
 	 * @throws Exception When this is not run within WP CLI.
 	 */
-	public function __construct( ActionScheduler_Store $store = null, ActionScheduler_FatalErrorMonitor $monitor = null, ActionScheduler_QueueCleaner $cleaner = null ) {
+	public function __construct( ?ActionScheduler_Store $store = null, ?ActionScheduler_FatalErrorMonitor $monitor = null, ?ActionScheduler_QueueCleaner $cleaner = null ) {
 		if ( ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			/* translators: %s php class name */
-			throw new Exception( sprintf( __( 'The %s class can only be run within WP CLI.', 'action-scheduler' ), __CLASS__ ) );
+			throw new Exception( sprintf( __('The %s class can only be run within WP CLI.', 'logify-wp' ), __CLASS__ ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message is handled internally in CLI context
 		}
 
 		parent::__construct( $store, $monitor, $cleaner );
@@ -38,8 +50,6 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 
 	/**
 	 * Set up the Queue before processing.
-	 *
-	 * @author Jeremy Pry
 	 *
 	 * @param int    $batch_size The batch size to process.
 	 * @param array  $hooks      The hooks being used to filter the actions claimed in this batch.
@@ -56,9 +66,9 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 		// Check to make sure there aren't too many concurrent processes running.
 		if ( $this->has_maximum_concurrent_batches() ) {
 			if ( $force ) {
-				WP_CLI::warning( __( 'There are too many concurrent batches, but the run is forced to continue.', 'action-scheduler' ) );
+				WP_CLI::warning( __('There are too many concurrent batches, but the run is forced to continue.', 'logify-wp' ) );
 			} else {
-				WP_CLI::error( __( 'There are too many concurrent batches.', 'action-scheduler' ) );
+				WP_CLI::error( __('There are too many concurrent batches.', 'logify-wp' ) );
 			}
 		}
 
@@ -72,8 +82,6 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 
 	/**
 	 * Add our hooks to the appropriate actions.
-	 *
-	 * @author Jeremy Pry
 	 */
 	protected function add_hooks() {
 		add_action( 'action_scheduler_before_execute', array( $this, 'before_execute' ) );
@@ -83,22 +91,18 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 
 	/**
 	 * Set up the WP CLI progress bar.
-	 *
-	 * @author Jeremy Pry
 	 */
 	protected function setup_progress_bar() {
 		$count              = count( $this->actions );
 		$this->progress_bar = new ProgressBar(
 			/* translators: %d: amount of actions */
-			sprintf( _n( 'Running %d action', 'Running %d actions', $count, 'action-scheduler' ), $count ),
+			sprintf( _n('Running %d action', 'Running %d actions', $count, 'logify-wp' ), $count ),
 			$count
 		);
 	}
 
 	/**
 	 * Process actions in the queue.
-	 *
-	 * @author Jeremy Pry
 	 *
 	 * @param string $context Optional runner context. Default 'WP CLI'.
 	 *
@@ -109,8 +113,8 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 		$this->setup_progress_bar();
 		foreach ( $this->actions as $action_id ) {
 			// Error if we lost the claim.
-			if ( ! in_array( $action_id, $this->store->find_actions_by_claim_id( $this->claim->get_id() ) ) ) {
-				WP_CLI::warning( __( 'The claim has been lost. Aborting current batch.', 'action-scheduler' ) );
+			if ( ! in_array( $action_id, $this->store->find_actions_by_claim_id( $this->claim->get_id() ), true ) ) {
+				WP_CLI::warning( __('The claim has been lost. Aborting current batch.', 'logify-wp' ) );
 				break;
 			}
 
@@ -129,19 +133,15 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 	/**
 	 * Handle WP CLI message when the action is starting.
 	 *
-	 * @author Jeremy Pry
-	 *
 	 * @param int $action_id Action ID.
 	 */
 	public function before_execute( $action_id ) {
 		/* translators: %s refers to the action ID */
-		WP_CLI::log( sprintf( __( 'Started processing action %s', 'action-scheduler' ), $action_id ) );
+		WP_CLI::log( sprintf( __('Started processing action %s', 'logify-wp' ), $action_id ) );
 	}
 
 	/**
 	 * Handle WP CLI message when the action has completed.
-	 *
-	 * @author Jeremy Pry
 	 *
 	 * @param int                         $action_id ActionID.
 	 * @param null|ActionScheduler_Action $action The instance of the action. Default to null for backward compatibility.
@@ -152,13 +152,11 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 			$action = $this->store->fetch_action( $action_id );
 		}
 		/* translators: 1: action ID 2: hook name */
-		WP_CLI::log( sprintf( __( 'Completed processing action %1$s with hook: %2$s', 'action-scheduler' ), $action_id, $action->get_hook() ) );
+		WP_CLI::log( sprintf( __('Completed processing action %1$s with hook: %2$s', 'logify-wp' ), $action_id, $action->get_hook() ) );
 	}
 
 	/**
 	 * Handle WP CLI message when the action has failed.
-	 *
-	 * @author Jeremy Pry
 	 *
 	 * @param int       $action_id Action ID.
 	 * @param Exception $exception Exception.
@@ -167,7 +165,7 @@ class ActionScheduler_WPCLI_QueueRunner extends ActionScheduler_Abstract_QueueRu
 	public function action_failed( $action_id, $exception ) {
 		WP_CLI::error(
 			/* translators: 1: action ID 2: exception message */
-			sprintf( __( 'Error processing action %1$s: %2$s', 'action-scheduler' ), $action_id, $exception->getMessage() ),
+			sprintf( __('Error processing action %1$s: %2$s', 'logify-wp' ), $action_id, $exception->getMessage() ),
 			false
 		);
 	}

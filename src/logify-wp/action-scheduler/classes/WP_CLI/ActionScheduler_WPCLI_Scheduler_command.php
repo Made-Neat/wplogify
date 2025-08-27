@@ -27,7 +27,7 @@ class ActionScheduler_WPCLI_Scheduler_command extends WP_CLI_Command {
 				WP_CLI::success(
 					sprintf(
 						/* translators: %s refers to the schema name*/
-						__( 'Registered schema for %s', 'action-scheduler' ),
+						__('Registered schema for %s', 'logify-wp' ),
 						$classname
 					)
 				);
@@ -91,12 +91,12 @@ class ActionScheduler_WPCLI_Scheduler_command extends WP_CLI_Command {
 
 		$batches_completed = 0;
 		$actions_completed = 0;
-		$unlimited         = $batches === 0;
-		if ( is_callable( [ ActionScheduler::store(), 'set_claim_filter' ] ) ) {
+		$unlimited         = 0 === $batches;
+		if ( is_callable( array( ActionScheduler::store(), 'set_claim_filter' ) ) ) {
 			$exclude_groups = $this->parse_comma_separated_string( $exclude_groups );
 
 			if ( ! empty( $exclude_groups ) ) {
-				ActionScheduler::store()->set_claim_filter('exclude-groups', $exclude_groups );
+				ActionScheduler::store()->set_claim_filter( 'exclude-groups', $exclude_groups );
 			}
 		}
 
@@ -141,15 +141,13 @@ class ActionScheduler_WPCLI_Scheduler_command extends WP_CLI_Command {
 	/**
 	 * Print WP CLI message about how many actions are about to be processed.
 	 *
-	 * @author Jeremy Pry
-	 *
 	 * @param int $total Number of actions found.
 	 */
 	protected function print_total_actions( $total ) {
 		WP_CLI::log(
 			sprintf(
 				/* translators: %d refers to how many scheduled tasks were found to run */
-				_n( 'Found %d scheduled task', 'Found %d scheduled tasks', $total, 'action-scheduler' ),
+				_n('Found %d scheduled task', 'Found %d scheduled tasks', $total, 'logify-wp' ),
 				$total
 			)
 		);
@@ -158,15 +156,13 @@ class ActionScheduler_WPCLI_Scheduler_command extends WP_CLI_Command {
 	/**
 	 * Print WP CLI message about how many batches of actions were processed.
 	 *
-	 * @author Jeremy Pry
-	 *
 	 * @param int $batches_completed Number of completed batches.
 	 */
 	protected function print_total_batches( $batches_completed ) {
 		WP_CLI::log(
 			sprintf(
 				/* translators: %d refers to the total number of batches executed */
-				_n( '%d batch executed.', '%d batches executed.', $batches_completed, 'action-scheduler' ),
+				_n('%d batch executed.', '%d batches executed.', $batches_completed, 'logify-wp' ),
 				$batches_completed
 			)
 		);
@@ -175,17 +171,15 @@ class ActionScheduler_WPCLI_Scheduler_command extends WP_CLI_Command {
 	/**
 	 * Convert an exception into a WP CLI error.
 	 *
-	 * @author Jeremy Pry
-	 *
 	 * @param Exception $e The error object.
 	 *
-	 * @throws \WP_CLI\ExitException
+	 * @throws \WP_CLI\ExitException Under some conditions WP CLI may throw an exception.
 	 */
 	protected function print_error( Exception $e ) {
 		WP_CLI::error(
 			sprintf(
 				/* translators: %s refers to the exception error message */
-				__( 'There was an error running the action scheduler: %s', 'action-scheduler' ),
+				__('There was an error running the action scheduler: %s', 'logify-wp' ),
 				$e->getMessage()
 			)
 		);
@@ -194,15 +188,13 @@ class ActionScheduler_WPCLI_Scheduler_command extends WP_CLI_Command {
 	/**
 	 * Print a success message with the number of completed actions.
 	 *
-	 * @author Jeremy Pry
-	 *
 	 * @param int $actions_completed Number of completed actions.
 	 */
 	protected function print_success( $actions_completed ) {
 		WP_CLI::success(
 			sprintf(
 				/* translators: %d refers to the total number of tasks completed */
-				_n( '%d scheduled task completed.', '%d scheduled tasks completed.', $actions_completed, 'action-scheduler' ),
+				_n('%d scheduled task completed.', '%d scheduled tasks completed.', $actions_completed, 'logify-wp' ),
 				$actions_completed
 			)
 		);

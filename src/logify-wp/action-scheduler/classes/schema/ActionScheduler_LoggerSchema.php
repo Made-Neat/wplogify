@@ -11,7 +11,11 @@ class ActionScheduler_LoggerSchema extends ActionScheduler_Abstract_Schema {
 	const LOG_TABLE = 'actionscheduler_logs';
 
 	/**
-	 * @var int Increment this value to trigger a schema update.
+	 * Schema version.
+	 *
+	 * Increment this value to trigger a schema update.
+	 *
+	 * @var int
 	 */
 	protected $schema_version = 3;
 
@@ -19,9 +23,9 @@ class ActionScheduler_LoggerSchema extends ActionScheduler_Abstract_Schema {
 	 * Construct.
 	 */
 	public function __construct() {
-		$this->tables = [
+		$this->tables = array(
 			self::LOG_TABLE,
-		];
+		);
 	}
 
 	/**
@@ -38,12 +42,11 @@ class ActionScheduler_LoggerSchema extends ActionScheduler_Abstract_Schema {
 	 */
 	protected function get_table_definition( $table ) {
 		global $wpdb;
-		$table_name       = $wpdb->$table;
-		$charset_collate  = $wpdb->get_charset_collate();
+		$table_name      = $wpdb->$table;
+		$charset_collate = $wpdb->get_charset_collate();
 		switch ( $table ) {
 
 			case self::LOG_TABLE:
-
 				$default_date = ActionScheduler_StoreSchema::DEFAULT_DATE;
 				return "CREATE TABLE $table_name (
 				        log_id bigint(20) unsigned NOT NULL auto_increment,
@@ -82,7 +85,7 @@ class ActionScheduler_LoggerSchema extends ActionScheduler_Abstract_Schema {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$table_name   = $wpdb->prefix . 'actionscheduler_logs';
-		$table_list   = $wpdb->get_col( "SHOW TABLES LIKE '{$table_name}'" );
+		$table_list   = $wpdb->get_col( "SHOW TABLES LIKE '{$table_name}'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$default_date = ActionScheduler_StoreSchema::DEFAULT_DATE;
 
 		if ( ! empty( $table_list ) ) {
@@ -91,7 +94,7 @@ class ActionScheduler_LoggerSchema extends ActionScheduler_Abstract_Schema {
 				MODIFY COLUMN log_date_gmt datetime NULL default '{$default_date}',
 				MODIFY COLUMN log_date_local datetime NULL default '{$default_date}'
 			";
-			$wpdb->query( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( $query ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}

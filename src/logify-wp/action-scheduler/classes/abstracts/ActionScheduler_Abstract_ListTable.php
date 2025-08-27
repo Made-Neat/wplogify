@@ -159,6 +159,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 
 		foreach ( $this->bulk_actions as $action => $label ) {
 			if ( ! is_callable( array( $this, 'bulk_' . $action ) ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Debug message for developers
 				throw new RuntimeException( "The bulk action $action does not have a callback method" );
 			}
 
@@ -187,7 +188,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 		if ( array_key_exists( $action, $this->bulk_actions ) && is_callable( array( $this, $method ) ) && ! empty( $_GET['ID'] ) && is_array( $_GET['ID'] ) ) {
 			$ids_sql = '(' . implode( ',', array_fill( 0, count( $_GET['ID'] ), '%s' ) ) . ')';
 			$id      = array_map( 'absint', $_GET['ID'] );
-			$this->$method( $id, $wpdb->prepare( $ids_sql, $id ) ); //phpcs:ignore WordPress.DB.PreparedSQL
+			$this->$method( $id, $wpdb->prepare( $ids_sql, $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL
 		}
 
 		if ( isset( $_SERVER['REQUEST_URI'] ) ) {
@@ -340,8 +341,8 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 
 		$valid_sortable_columns = array_values( $this->sort_by );
 
-		if ( ! empty( $_GET['orderby'] ) && in_array( $_GET['orderby'], $valid_sortable_columns, true ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$orderby = sanitize_text_field( wp_unslash( $_GET['orderby'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! empty( $_GET['orderby'] ) && in_array( $_GET['orderby'], $valid_sortable_columns, true ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$orderby = sanitize_text_field( wp_unslash( $_GET['orderby'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		} else {
 			$orderby = $valid_sortable_columns[0];
 		}
@@ -356,7 +357,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 	 */
 	protected function get_request_order() {
 
-		if ( ! empty( $_GET['order'] ) && 'desc' === strtolower( sanitize_text_field( wp_unslash( $_GET['order'] ) ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! empty( $_GET['order'] ) && 'desc' === strtolower( sanitize_text_field( wp_unslash( $_GET['order'] ) ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$order = 'DESC';
 		} else {
 			$order = 'ASC';
@@ -371,7 +372,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 	 * @return string
 	 */
 	protected function get_request_status() {
-		$status = ( ! empty( $_GET['status'] ) ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$status = ( ! empty( $_GET['status'] ) ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return $status;
 	}
 
@@ -381,7 +382,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 	 * @return string
 	 */
 	protected function get_request_search_query() {
-		$search_query = ( ! empty( $_GET['s'] ) ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$search_query = ( ! empty( $_GET['s'] ) ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return $search_query;
 	}
 
@@ -412,11 +413,11 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 	protected function get_items_query_search() {
 		global $wpdb;
 
-		if ( empty( $_GET['s'] ) || empty( $this->search_by ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( empty( $_GET['s'] ) || empty( $this->search_by ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return '';
 		}
 
-		$search_string = sanitize_text_field( wp_unslash( $_GET['s'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$search_string = sanitize_text_field( wp_unslash( $_GET['s'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		$filter = array();
 		foreach ( $this->search_by as $column ) {
@@ -434,18 +435,18 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 	protected function get_items_query_filters() {
 		global $wpdb;
 
-		if ( ! $this->filter_by || empty( $_GET['filter_by'] ) || ! is_array( $_GET['filter_by'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! $this->filter_by || empty( $_GET['filter_by'] ) || ! is_array( $_GET['filter_by'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return '';
 		}
 
 		$filter = array();
 
 		foreach ( $this->filter_by as $column => $options ) {
-			if ( empty( $_GET['filter_by'][ $column ] ) || empty( $options[ $_GET['filter_by'][ $column ] ] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( empty( $_GET['filter_by'][ $column ] ) || empty( $options[ $_GET['filter_by'][ $column ] ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				continue;
 			}
 
-			$filter[] = $wpdb->prepare( "`$column` = %s", sanitize_text_field( wp_unslash( $_GET['filter_by'][ $column ] ) ) ); //phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$filter[] = $wpdb->prepare( "`$column` = %s", sanitize_text_field( wp_unslash( $_GET['filter_by'][ $column ] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
 		return implode( ' AND ', $filter );
@@ -468,7 +469,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 
 		$this->process_row_actions();
 
-		if ( ! empty( $_REQUEST['_wp_http_referer'] && ! empty( $_SERVER['REQUEST_URI'] ) ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! empty( $_REQUEST['_wp_http_referer'] && ! empty( $_SERVER['REQUEST_URI'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			// _wp_http_referer is used only on bulk actions, we remove it to keep the $_GET shorter
 			wp_safe_redirect( remove_query_arg( array( '_wp_http_referer', '_wpnonce' ), esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
 			exit;
@@ -495,10 +496,10 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 
 		$sql = "SELECT $columns FROM {$this->table_name} {$where} {$order} {$limit} {$offset}";
 
-		$this->set_items( $wpdb->get_results( $sql, ARRAY_A ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$this->set_items( $wpdb->get_results( $sql, ARRAY_A ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$query_count = "SELECT COUNT({$this->ID}) FROM {$this->table_name} {$where}";
-		$total_items = $wpdb->get_var( $query_count ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$total_items = $wpdb->get_var( $query_count ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$per_page    = $this->get_items_per_page( $this->get_per_page_option_name(), $this->items_per_page );
 		$this->set_pagination_args(
 			array(
@@ -522,7 +523,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 		echo '<div class="alignleft actions">';
 
 		foreach ( $this->filter_by as $id => $options ) {
-			$default = ! empty( $_GET['filter_by'][ $id ] ) ? sanitize_text_field( wp_unslash( $_GET['filter_by'][ $id ] ) ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$default = ! empty( $_GET['filter_by'][ $id ] ) ? sanitize_text_field( wp_unslash( $_GET['filter_by'][ $id ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			if ( empty( $options[ $default ] ) ) {
 				$default = '';
 			}
@@ -538,7 +539,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 			echo '</select>';
 		}
 
-		submit_button( esc_html__( 'Filter', 'action-scheduler' ), '', 'filter_action', false, array( 'id' => 'post-query-submit' ) );
+		submit_button( esc_html__('Filter', 'logify-wp' ), '', 'filter_action', false, array( 'id' => 'post-query-submit' ) );
 		echo '</div>';
 	}
 
@@ -665,7 +666,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 		echo '<h1 class="wp-heading-inline">' . esc_attr( $this->table_header ) . '</h1>';
 		if ( $this->get_request_search_query() ) {
 			/* translators: %s: search query */
-			echo '<span class="subtitle">' . esc_attr( sprintf( __( 'Search results for "%s"', 'action-scheduler' ), $this->get_request_search_query() ) ) . '</span>';
+			echo '<span class="subtitle">' . esc_attr( sprintf( __('Search results for "%s"', 'logify-wp' ), $this->get_request_search_query() ) ) . '</span>';
 		}
 		echo '<hr class="wp-header-end">';
 	}
@@ -700,8 +701,8 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 
 		// Translated status labels.
 		$status_labels             = ActionScheduler_Store::instance()->get_status_labels();
-		$status_labels['all']      = esc_html_x( 'All', 'status labels', 'action-scheduler' );
-		$status_labels['past-due'] = esc_html_x( 'Past-due', 'status labels', 'action-scheduler' );
+		$status_labels['all']      = esc_html_x('All', 'status labels', 'logify-wp' );
+		$status_labels['past-due'] = esc_html_x('Past-due', 'status labels', 'logify-wp' );
 
 		foreach ( $this->status_counts as $status_slug => $count ) {
 
@@ -783,7 +784,7 @@ abstract class ActionScheduler_Abstract_ListTable extends WP_List_Table {
 	 * Get the text to display in the search box on the list table.
 	 */
 	protected function get_search_box_placeholder() {
-		return esc_html__( 'Search', 'action-scheduler' );
+		return esc_html__('Search', 'logify-wp' );
 	}
 
 	/**
